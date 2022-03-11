@@ -33,7 +33,8 @@
         <StackPanel Grid.Column="1">
         </StackPanel>
 
-        <ListBox Grid.Column="0" Grid.Row="1" Margin="0,0,10,0" ItemsSource="{Binding FolderPictures}" Name="PictureListBox">
+        <ListBox Grid.Column="0" Grid.Row="1" Margin="0,0,10,0" ItemsSource="{Binding FolderPictures}" Name="PictureListBox" 
+                 SelectionMode="Extended" SelectedItem="{Binding SelectedPicture}" >
             <ListBox.ItemsPanel>
                 <ItemsPanelTemplate>
                     <WrapPanel MaxWidth="{Binding ActualWidth, ElementName=PictureListBox}"/>
