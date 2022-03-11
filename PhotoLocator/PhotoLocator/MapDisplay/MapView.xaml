@@ -1,0 +1,187 @@
+﻿<UserControl x:Class="SampleApplication.MapView"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:map="clr-namespace:MapControl;assembly=MapControl.WPF"
+        xmlns:tools="clr-namespace:MapControl.UiTools;assembly=MapUiTools.WPF"
+        xmlns:local="clr-namespace:SampleApplication"
+        Stylus.IsPressAndHoldEnabled="False">
+
+    <UserControl.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="MapLayers.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+
+            <DataTemplate DataType="{x:Type local:PolylineItem}">
+                <map:MapPolyline Locations="{Binding Locations}" Stroke="Red" StrokeThickness="3"/>
+            </DataTemplate>
+
+            <Style x:Key="PointItemStyle" TargetType="map:MapItem">
+                <EventSetter Event="TouchDown" Handler="MapItemTouchDown"/>
+                <Setter Property="AutoCollapse" Value="True"/>
+                <Setter Property="Location" Value="{Binding Location}"/>
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="map:MapItem">
+                            <Canvas>
+                                <VisualStateManager.VisualStateGroups>
+                                    <VisualStateGroup x:Name="CommonStates">
+                                        <VisualState x:Name="Normal"/>
+                                        <VisualState x:Name="Disabled"/>
+                                        <VisualState x:Name="MouseOver">
+                                            <Storyboard>
+                                                <DoubleAnimation Storyboard.TargetName="hoverPath"
+                                                                 Storyboard.TargetProperty="Opacity"
+                                                                 To="0.7" Duration="0:0:0.1"/>
+                                            </Storyboard>
+                                        </VisualState>
+                                    </VisualStateGroup>
+                                    <VisualStateGroup x:Name="SelectionStates">
+                                        <VisualState x:Name="Unselected"/>
+                                        <VisualState x:Name="Selected">
+                                            <Storyboard>
+                                                <DoubleAnimation Storyboard.TargetName="selectedPath"
+                                                                 Storyboard.TargetProperty="Opacity"
+                                                                 To="0.7" Duration="0:0:0.1"/>
+                                            </Storyboard>
+                                        </VisualState>
+                                    </VisualStateGroup>
+                                </VisualStateManager.VisualStateGroups>
+                                <Path x:Name="selectedPath" Fill="White" Opacity="0">
+                                    <Path.Data>
+                                        <EllipseGeometry RadiusX="12" RadiusY="12"/>
+                                    </Path.Data>
+                                </Path>
+                                <Path x:Name="hoverPath" StrokeThickness="6" Stroke="White" Opacity="0">
+                                    <Path.Data>
+                                        <EllipseGeometry RadiusX="8" RadiusY="8"/>
+                                    </Path.Data>
+                                </Path>
+                                <Path StrokeThickness="2" Stroke="Gray" Fill="Transparent">
+                                    <Path.Data>
+                                        <EllipseGeometry RadiusX="8" RadiusY="8"/>
+                                    </Path.Data>
+                                </Path>
+                                <Grid Canvas.Left="15" Canvas.Top="-8">
+                                    <local:OutlinedText Margin="1" OutlineThickness="1.5" Text="{Binding Name}"
+                                                        Background="{Binding Background, RelativeSource={RelativeSource AncestorType=map:MapBase}}"/>
+                                </Grid>
+                            </Canvas>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+                <Style.Triggers>
+                    <Trigger Property="IsSelected" Value="True">
+                        <Setter Property="Panel.ZIndex" Value="1"/>
+                    </Trigger>
+                </Style.Triggers>
+            </Style>
+
+            <Style x:Key="PushpinItemStyle" TargetType="map:MapItem">
+                <EventSetter Event="TouchDown" Handler="MapItemTouchDown"/>
+                <Setter Property="AutoCollapse" Value="True"/>
+                <Setter Property="Location" Value="{Binding Location}"/>
+                <Setter Property="HorizontalAlignment" Value="Center"/>
+                <Setter Property="VerticalAlignment" Value="Bottom"/>
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="map:MapItem">
+                            <map:Pushpin Content="{Binding Name}"
+                                         HorizontalAlignment="{TemplateBinding HorizontalAlignment}"/>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+                <Style.Triggers>
+                    <Trigger Property="IsSelected" Value="True">
+                        <Setter Property="Panel.ZIndex" Value="1"/>
+                        <Setter Property="Foreground" Value="OrangeRed"/>
+                    </Trigger>
+                </Style.Triggers>
+            </Style>
+        </ResourceDictionary>
+    </UserControl.Resources>
+
+    <UserControl.DataContext>
+        <local:MapViewModel/>
+    </UserControl.DataContext>
+
+    <Grid>
+        <map:Map x:Name="map"
+                 MinZoomLevel="2" MaxZoomLevel="21" ZoomLevel="11" MouseWheelZoomDelta="1"
+                 Center="{Binding MapCenter}"
+                 MouseLeftButtonDown="MapMouseLeftButtonDown"
+                 MouseRightButtonDown="MapMouseRightButtonDown"
+                 MouseMove="MapMouseMove" MouseLeave="MapMouseLeave"
+                 ManipulationInertiaStarting="MapManipulationInertiaStarting">
+
+            <map:MapItemsControl ItemsSource="{Binding Polylines}"/>
+
+            <map:MapItemsControl ItemsSource="{Binding Points}"
+                                 ItemContainerStyle="{StaticResource PointItemStyle}"
+                                 SelectionMode="Extended"/>
+
+            <map:MapItemsControl ItemsSource="{Binding Pushpins}"
+                                 ItemContainerStyle="{StaticResource PushpinItemStyle}"/>
+        </map:Map>
+
+        <Border HorizontalAlignment="Right" VerticalAlignment="Bottom" Background="#AFFFFFFF">
+            <TextBlock Margin="4,2" FontSize="10"
+                       local:HyperlinkText.InlinesSource="{Binding MapLayer.Description, ElementName=map}"/>
+        </Border>
+
+        <StackPanel HorizontalAlignment="Left" VerticalAlignment="Top" Margin="6">
+            <tools:MapLayersMenuButton x:Name="mapLayersMenuButton"
+                Margin="2" ToolTip="Map Layers and Overlays"
+                Map="{Binding ElementName=map}">
+                <tools:MapLayerItem Text="OpenStreetMap" Layer="{StaticResource OpenStreetMap}"/>
+                <tools:MapLayerItem Text="OpenStreetMap German" Layer="{StaticResource OpenStreetMapGerman}"/>
+                <tools:MapLayerItem Text="OpenStreetMap French" Layer="{StaticResource OpenStreetMapFrench}"/>
+                <tools:MapLayerItem Text="OpenTopoMap" Layer="{StaticResource OpenTopoMap}"/>
+                <tools:MapLayerItem Text="TopPlusOpen WMTS" Layer="{StaticResource TopPlusOpenWMTS}"/>
+                <tools:MapLayerItem Text="TopPlusOpen WMS" Layer="{StaticResource TopPlusOpenWMS}"/>
+                <tools:MapLayerItem Text="OpenStreetMap WMS" Layer="{StaticResource OpenStreetMapWMS}"/>
+                <tools:MapLayersMenuButton.MapOverlays>
+                    <tools:MapLayerItem Text="Seamarks" Layer="{StaticResource Seamarks}"/>
+                    <tools:MapLayerItem Text="Graticule">
+                        <map:MapGraticule Opacity="0.7"/>
+                    </tools:MapLayerItem>
+                    <tools:MapLayerItem Text="Scale">
+                        <map:MapScale HorizontalAlignment="Center" VerticalAlignment="Bottom"/>
+                    </tools:MapLayerItem>
+                </tools:MapLayersMenuButton.MapOverlays>
+            </tools:MapLayersMenuButton>
+
+            <tools:MapProjectionsMenuButton x:Name="mapProjectionsMenuButton"
+                Margin="2" ToolTip="Map Projections"
+                Map="{Binding ElementName=map}">
+                <tools:MapProjectionItem Text="Web Mercator" Projection="EPSG:3857"/>
+                <tools:MapProjectionItem Text="Equirectangular" Projection="EPSG:4326"/>
+            </tools:MapProjectionsMenuButton>
+
+            <Slider Orientation="Vertical" Margin="8" Height="100"
+                    Minimum="{Binding MinZoomLevel, ElementName=map}"
+                    Maximum="{Binding MaxZoomLevel, ElementName=map}"
+                    Value="{Binding TargetZoomLevel, ElementName=map}"
+                    SmallChange="0.1"
+                    AutoToolTipPlacement="BottomRight" AutoToolTipPrecision="0"/>
+
+            <Button Margin="2" Padding="8" ToolTip="Reset Heading" Click="ResetHeadingButtonClick"
+                    FontSize="20" FontFamily="Segoe MDL2 Assets" Content="&#xEBE6;">
+                <Button.Visibility>
+                    <Binding Path="Heading" ElementName="map">
+                        <Binding.Converter>
+                            <local:HeadingToVisibilityConverter/>
+                        </Binding.Converter>
+                    </Binding>
+                </Button.Visibility>
+            </Button>
+        </StackPanel>
+
+        <local:OutlinedText
+            x:Name="mouseLocation" Margin="4"
+            Background="{Binding Background, ElementName=map}"
+            Foreground="{Binding Foreground, ElementName=map}"
+            HorizontalAlignment="Center" VerticalAlignment="Top"
+            IsHitTestVisible="False"/>
+    </Grid>
+</UserControl>
