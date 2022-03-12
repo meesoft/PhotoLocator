@@ -15,6 +15,8 @@
         </Style.Resources>
     </Style>
     <Style TargetType="TextBox">
+        <Setter Property="Background" Value="#FF333333" />
+        <Setter Property="Foreground" Value="#FFEEEEEE" />
         <Style.Resources>
             <Style TargetType="Border">
                 <Setter Property="CornerRadius" Value="4" />
@@ -22,6 +24,7 @@
         </Style.Resources>
     </Style>
     <Style TargetType="ListBox">
+        <Setter Property="Background" Value="#FF333333" />
         <Style.Resources>
             <Style TargetType="Border">
                 <Setter Property="CornerRadius" Value="4" />

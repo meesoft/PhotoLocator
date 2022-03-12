@@ -6,7 +6,7 @@
         xmlns:map="clr-namespace:MapControl;assembly=MapControl.WPF"
         xmlns:local="clr-namespace:PhotoLocator" xmlns:sampleapplication="clr-namespace:SampleApplication"
         mc:Ignorable="d"
-        d:DataContext="{d:DesignInstance Type=local:MainViewModel, IsDesignTimeCreatable=False}"
+        d:DataContext="{d:DesignInstance Type=local:MainViewModel, IsDesignTimeCreatable=True}"
         Loaded="HandleWindowLoaded" Closed="HandleWindowClosed"
         WindowState="Maximized"
         Title="PhotoLocator" 
@@ -26,6 +26,10 @@
             <ColumnDefinition/>
         </Grid.ColumnDefinitions>
 
+        <GridSplitter Grid.Column="0" Grid.RowSpan="2" Background="Black"
+              HorizontalAlignment="Right" VerticalAlignment="Stretch"
+              ShowsPreview="True" Width="8"/>
+
         <StackPanel Grid.Column="0">
             <TextBox Text="{Binding PhotoFolderPath}" Margin="0,0,10,0"/>
         </StackPanel>
@@ -34,7 +38,7 @@
         </StackPanel>
 
         <ListBox Grid.Column="0" Grid.Row="1" Margin="0,0,10,0" ItemsSource="{Binding FolderPictures}" Name="PictureListBox" 
-                 SelectionMode="Extended" SelectedItem="{Binding SelectedPicture}" >
+                 SelectionMode="Extended" SelectedItem="{Binding SelectedPicture}" SelectionChanged="HandlePictureListBoxSelectionChanged" >
             <ListBox.ItemsPanel>
                 <ItemsPanelTemplate>
                     <WrapPanel MaxWidth="{Binding ActualWidth, ElementName=PictureListBox}"/>

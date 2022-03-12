@@ -11,21 +11,16 @@
         <BooleanToVisibilityConverter x:Key="BooleanToVisibility" />
     </UserControl.Resources>
     <Grid>
-        <Border BorderThickness="1">
-            <Border.BorderBrush>
-                <SolidColorBrush Color="{DynamicResource {x:Static SystemColors.GradientInactiveCaptionColorKey}}"/>
-            </Border.BorderBrush>
-        </Border>
+        <Image Source="{Binding PreviewImage}" VerticalAlignment="Top"/>
 
         <Grid Margin="2" >
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="80" />
-            </Grid.ColumnDefinitions>
-            <Grid.RowDefinitions>
-                <RowDefinition/>
-            </Grid.RowDefinitions>
-
-            <TextBlock Text="{Binding Title}" TextWrapping="Wrap" FontWeight="Bold" />
+            <TextBlock Text="*" TextWrapping="Wrap" FontWeight="Bold" FontSize="20"
+                       VerticalAlignment="Bottom" HorizontalAlignment="Right" Foreground="Green" 
+                       Visibility="{Binding GeoTagSaved, Converter={StaticResource BooleanToVisibility}}"/>
+            <TextBlock Text="*" TextWrapping="Wrap" FontWeight="Bold" FontSize="20"
+                       VerticalAlignment="Bottom"  HorizontalAlignment="Right" Foreground="Yellow" 
+                       Visibility="{Binding GeoTagUpdated, Converter={StaticResource BooleanToVisibility}}"/>
+            <TextBlock Text="{Binding Title}" TextWrapping="Wrap" FontWeight="Bold" VerticalAlignment="Bottom" Foreground="#FFEEEEEE"/>
         </Grid>
     </Grid>
 </UserControl>

@@ -29,5 +29,10 @@ namespace PhotoLocator
             if (_viewModel.PhotoFolderPath != null)
                 settings.PhotoFolderPath = _viewModel.PhotoFolderPath;
         }
+
+        private void HandlePictureListBoxSelectionChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
+        {
+            _viewModel.PictureSelectionChanged();
+        }
     }
 }

@@ -1,9 +1,14 @@
 ﻿using MapControl;
+using SampleApplication;
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.ComponentModel;
+using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using System.Runtime.CompilerServices;
+using System.Threading.Tasks;
 using System.Windows;
 
 namespace PhotoLocator
@@ -23,14 +28,6 @@ namespace PhotoLocator
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }
 
-        void UpdatePropertyAndNotifyChange<T>(ref T? field, T? value, [CallerMemberName] string? propertyName = null) where T : IEquatable<T>
-        {
-            if (field != null && field.Equals(value))
-                return;
-            field = value;
-            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
-        }
-
         protected bool SetProperty<T>(ref T field, T newValue, [CallerMemberName] string? propertyName = null)
         {
             if (!Equals(field, newValue))
@@ -44,61 +41,82 @@ namespace PhotoLocator
 
         public string? PhotoFolderPath
         {
-            get => _photoFolderPath;
+            get => _isInDesignMode ? nameof(PhotoFolderPath) : _photoFolderPath;
             set
             {
-                UpdatePropertyAndNotifyChange(ref _photoFolderPath, value);
-                LoadPictures();
-            }
-        }
-
-        public Location MapCenter 
-        { 
-            get => _mapCenter; 
-            set => SetProperty(ref _mapCenter, value); 
-        }
-        private Location _mapCenter;
-
-        private void LoadPictures()
-        {
-            if (PhotoFolderPath is null)
-                return;
-            try
-            {
-                var items = new List<PictureItemViewModel>();
-                foreach (var fileName in Directory.GetFiles(PhotoFolderPath, "*.jpg"))
-                {
-                    items.Add(new PictureItemViewModel(fileName));
-                }
-                FolderPictures = items;
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.ToString());
+                if (SetProperty(ref _photoFolderPath, value))
+                    LoadFolder();
             }
         }
         private string? _photoFolderPath;
 
-        public IEnumerable<PictureItemViewModel>? FolderPictures
+        public ObservableCollection<PointItem> Points { get; } = new ObservableCollection<PointItem>();
+        public ObservableCollection<PointItem> Pushpins { get; } = new ObservableCollection<PointItem>();
+        public ObservableCollection<PolylineItem> Polylines { get; } = new ObservableCollection<PolylineItem>();
+
+        public Location? MapCenter 
+        { 
+            get => _mapCenter; 
+            set => SetProperty(ref _mapCenter, value); 
+        }
+        private Location? _mapCenter;       
+
+        public IEnumerable<PictureItemViewModel> FolderPictures
         {
-            get => _isInDesignMode ? new[] { new PictureItemViewModel { Title = "Picture" } } : _folderPictures;
+            get => _isInDesignMode ? new[] { new PictureItemViewModel() } : _folderPictures;
             set
             {
                 _folderPictures = value;
                 NotifyPropertyChanged();
             }
         }
-        private IEnumerable<PictureItemViewModel>? _folderPictures;
+        private IEnumerable<PictureItemViewModel> _folderPictures = Enumerable.Empty<PictureItemViewModel>();
 
         public PictureItemViewModel? SelectedPicture
         {
             get => _selectedPicture;
             set
             {
-                if (SetProperty(ref _selectedPicture, value) && value?.GeoTag != null)
-                    MapCenter = value.GeoTag;
+                if (SetProperty(ref _selectedPicture, value))
+                {
+                    Pushpins.Clear();
+                    if (value?.GeoTag != null)
+                    {
+                        MapCenter = value.GeoTag;
+                        Pushpins.Add(new PointItem { Location = MapCenter, Name = value.Title }); 
+                    }
+                }
             }
         }
         private PictureItemViewModel? _selectedPicture;
+
+        internal void PictureSelectionChanged()
+        {
+            Points.Clear();
+            foreach(var item in FolderPictures)
+                if (item != SelectedPicture && item.IsSelected && item.GeoTag != null)
+                    Points.Add(new PointItem { Location = item.GeoTag, Name = item.Title });
+        }
+
+        private void LoadFolder()
+        {
+            if (PhotoFolderPath is null)
+                return;
+            var items = new List<PictureItemViewModel>();
+            foreach (var fileName in Directory.GetFiles(PhotoFolderPath, "*.jpg"))
+                items.Add(new PictureItemViewModel(fileName));
+            FolderPictures = items;
+            LoadPictures();
+        }
+
+        private void LoadPictures()
+        {
+            Task.Run(() =>
+            {
+                Task.Delay(500).Wait();
+                Parallel.ForEach(FolderPictures.Where(p => p.PreviewImage is null), new ParallelOptions { MaxDegreeOfParallelism = 1 },
+                    item => item.LoadImage());
+            }).ContinueWith(t => { Debug.WriteLine(t.Exception?.ToString()); }, TaskContinuationOptions.OnlyOnFaulted);
+        }
     }
 }
