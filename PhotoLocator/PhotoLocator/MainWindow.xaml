@@ -24,6 +24,8 @@
         <KeyBinding Key="S" Modifiers="Ctrl" Command="{Binding SaveCommand}" />
         <KeyBinding Key="F1" Command="{Binding AboutCommand}" />
         <KeyBinding Key="F3" Command="{Binding BrowseForPhotosCommand}" />
+        <KeyBinding Key="F5" Command="{Binding RefreshFolderCommand}" />
+        <KeyBinding Key="Delete" Command="{Binding DeleteSelectedCommand}" />
     </Window.InputBindings>
 
     <Grid Margin="10">
@@ -32,8 +34,8 @@
             <RowDefinition/>
         </Grid.RowDefinitions>
         <Grid.ColumnDefinitions>
-            <ColumnDefinition/>
-            <ColumnDefinition/>
+            <ColumnDefinition Name="LeftColumn"/>
+            <ColumnDefinition Name="RightColumn"/>
         </Grid.ColumnDefinitions>
 
         <GridSplitter Grid.Column="0" Grid.RowSpan="2" Background="Black"
@@ -61,14 +63,13 @@
                     ToolTip="About" Width="32" />
         </StackPanel>
 
-        <ListBox Grid.Column="0" Grid.Row="1" Margin="0,0,10,0" ItemsSource="{Binding FolderPictures}" Name="PictureListBox" 
+        <ListBox Grid.Column="0" Grid.Row="1" Margin="0,0,10,0" ItemsSource="{Binding FolderPictures}" Name="PictureListBox"
                  SelectionMode="Extended" SelectedItem="{Binding SelectedPicture}" SelectionChanged="HandlePictureListBoxSelectionChanged" >
             <ListBox.ItemsPanel>
                 <ItemsPanelTemplate>
                     <WrapPanel MaxWidth="{Binding ActualWidth, ElementName=PictureListBox}"/>
                 </ItemsPanelTemplate>
             </ListBox.ItemsPanel>
-
             <ListBox.ItemContainerStyle>
                 <Style TargetType="{x:Type ListBoxItem}">
                     <Setter Property="IsSelected" Value="{Binding IsSelected}"/>
@@ -81,6 +82,11 @@
                     </Grid>
                 </DataTemplate>
             </ListBox.ItemTemplate>
+            <ListBox.ContextMenu>
+                <ContextMenu>
+                    <MenuItem Header="Delete selected" Command="{Binding DeleteSelectedCommand}" />
+                </ContextMenu>
+            </ListBox.ContextMenu>
         </ListBox>
 
         <sampleapplication:MapView Grid.Column="1" Grid.Row="1" x:Name="Map" />

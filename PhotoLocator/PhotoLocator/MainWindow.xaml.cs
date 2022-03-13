@@ -22,6 +22,10 @@ namespace PhotoLocator
             var settings = new RegistrySettings();
             _viewModel.PhotoFolderPath = settings.PhotoFolderPath;
             _viewModel.SavedFilePostfix = settings.SavedFilePostfix;
+            var i = settings.LeftColumnWidth;
+            if (i > 0 && i < Width)
+                LeftColumn.Width = new GridLength(i);
+            PictureListBox.Focus();
         }
 
         private void HandleWindowClosed(object sender, EventArgs e)
@@ -31,6 +35,7 @@ namespace PhotoLocator
                 settings.PhotoFolderPath = _viewModel.PhotoFolderPath;
             if (_viewModel.SavedFilePostfix != null)
                 settings.SavedFilePostfix = _viewModel.SavedFilePostfix;
+            settings.LeftColumnWidth = (int)LeftColumn.Width.Value;
         }
 
         private void HandlePictureListBoxSelectionChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)

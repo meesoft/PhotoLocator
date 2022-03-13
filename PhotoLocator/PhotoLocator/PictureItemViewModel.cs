@@ -130,7 +130,7 @@ namespace PhotoLocator
                 await Task.Run(() =>
                 {
                     using var file = File.Open(FullPath, FileMode.Open, FileAccess.Read, FileShare.Read);
-                    var decoder = BitmapDecoder.Create(file, BitmapCreateOptions.IgnoreColorProfile, BitmapCacheOption.OnDemand);
+                    var decoder = BitmapDecoder.Create(file, BitmapCreateOptions.IgnoreColorProfile, BitmapCacheOption.None);
                     var metadata = decoder.Frames[0].Metadata as BitmapMetadata;
                     if (metadata == null)
                         return;
@@ -146,7 +146,7 @@ namespace PhotoLocator
                     thumbnail.BeginInit();
                     thumbnail.UriSource = new Uri(FullPath);
                     thumbnail.DecodePixelWidth = 200;
-                    thumbnail.CreateOptions = BitmapCreateOptions.IgnoreImageCache;
+                    thumbnail.CacheOption = BitmapCacheOption.OnLoad;
                     thumbnail.EndInit();
                     thumbnail.Freeze();
                     return thumbnail;

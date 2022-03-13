@@ -27,7 +27,7 @@ namespace PhotoLocator.Metadata
         public static void SetGeotag(string sourceFileName, string targetFileName, Location location)
         {
             MemoryStream memoryStream;
-            using var originalFileStream = File.Open(sourceFileName, FileMode.Open, FileAccess.Read, FileShare.Read);
+            using (var originalFileStream = File.Open(sourceFileName, FileMode.Open, FileAccess.Read))
             {
                 // Decode
                 var sourceSize = originalFileStream.Length;
