@@ -10,15 +10,25 @@
         Loaded="HandleWindowLoaded" Closed="HandleWindowClosed"
         WindowState="Maximized"
         Title="PhotoLocator" 
-        Height="450" Width="800" Background="Black">
+        Height="450" Width="1024" 
+        Background="Black">
 
     <Window.Resources>
         <BooleanToVisibilityConverter x:Key="BooleanToVisibility" />
     </Window.Resources>
 
+    <Window.InputBindings>
+        <KeyBinding Key="T" Modifiers="Ctrl" Command="{Binding AutoTagCommand}" />
+        <KeyBinding Key="C" Modifiers="Ctrl" Command="{Binding CopyCommand}" />
+        <KeyBinding Key="V" Modifiers="Ctrl" Command="{Binding PasteCommand}" />
+        <KeyBinding Key="S" Modifiers="Ctrl" Command="{Binding SaveCommand}" />
+        <KeyBinding Key="F1" Command="{Binding AboutCommand}" />
+        <KeyBinding Key="F3" Command="{Binding BrowseForPhotosCommand}" />
+    </Window.InputBindings>
+
     <Grid Margin="10">
         <Grid.RowDefinitions>
-            <RowDefinition Height="22"/>
+            <RowDefinition Height="28"/>
             <RowDefinition/>
         </Grid.RowDefinitions>
         <Grid.ColumnDefinitions>
@@ -30,11 +40,25 @@
               HorizontalAlignment="Right" VerticalAlignment="Stretch"
               ShowsPreview="True" Width="8"/>
 
-        <StackPanel Grid.Column="0">
-            <TextBox Text="{Binding PhotoFolderPath}" Margin="0,0,10,0"/>
-        </StackPanel>
+        <Grid Grid.Column="0" Margin="0,0,10,4" >
+            <TextBox Text="{Binding PhotoFolderPath}" Margin="0,0,34,0" />
+            <Button Content="1" FontFamily="Wingdings" FontSize="20" Width="32" HorizontalAlignment="Right"
+                    Command="{Binding BrowseForPhotosCommand}" ToolTip="Browse for folder" />
+        </Grid>
 
-        <StackPanel Grid.Column="1">
+        <StackPanel Grid.Column="1" Orientation="Horizontal" Margin="0,0,0,4">
+            <Button Content="Auto tag" Width="100" Command="{Binding AutoTagCommand}"
+                    ToolTip="Auto assign tags to selected pictures (Ctrl+T)" />
+            <Button Content="Copy" Width="100" Command="{Binding CopyCommand}"
+                    ToolTip="Save location of current map center (Ctrl+C)" />
+            <Button Content="Paste" Width="100" Command="{Binding PasteCommand}"
+                    ToolTip="Apply saved location to selected photos (Ctrl+V)" />
+            <Button Content="Save changes" Width="100" Command="{Binding SaveCommand}"
+                    ToolTip="Save changed geotags to photo files (Ctrl+S)" />
+            <Button Content="¼" FontFamily="Webdings" FontSize="18" Command="{Binding SettingsCommand}"
+                    ToolTip="Settings" Width="32" />
+            <Button Content="i" FontFamily="Webdings" FontSize="20" Command="{Binding AboutCommand}"
+                    ToolTip="About" Width="32" />
         </StackPanel>
 
         <ListBox Grid.Column="0" Grid.Row="1" Margin="0,0,10,0" ItemsSource="{Binding FolderPictures}" Name="PictureListBox" 
@@ -59,7 +83,7 @@
             </ListBox.ItemTemplate>
         </ListBox>
 
-        <sampleapplication:MapView Grid.Column="1" Grid.Row="1" x:Name="Map"/>
+        <sampleapplication:MapView Grid.Column="1" Grid.Row="1" x:Name="Map" />
 
     </Grid>
 </Window>

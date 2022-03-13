@@ -12,7 +12,7 @@ using System.Windows.Media.Imaging;
 
 namespace PhotoLocator
 {
-    [DebuggerDisplay("Title={Title}")]
+    [DebuggerDisplay("Name={Name}")]
     public class PictureItemViewModel : INotifyPropertyChanged
     {
 #if DEBUG
@@ -27,15 +27,15 @@ namespace PhotoLocator
         {
             if (_isInDesignMode)
             {
-                Title = nameof(PictureItemViewModel);
+                Name = nameof(PictureItemViewModel);
                 GeoTagSaved = true;
             }
         }
 
         public PictureItemViewModel(string fileName)
         {
-            Title = Path.GetFileName(fileName);
-            FileName = fileName;
+            Name = Path.GetFileName(fileName);
+            FullPath = fileName;
         }
 
         void NotifyPropertyChanged([CallerMemberName] string? propertyName = null)
@@ -54,19 +54,19 @@ namespace PhotoLocator
             return false;
         }
 
-        public string? Title
+        public string? Name
         {
-            get => _title ?? (_isInDesignMode ? nameof(Title) : null);
-            set => SetProperty(ref _title, value);
+            get => _name ?? (_isInDesignMode ? nameof(Name) : null);
+            set => SetProperty(ref _name, value);
         }
-        string? _title;
+        string? _name;
 
-        public string? FileName
+        public string FullPath
         {
-            get => _fileName;
-            set => SetProperty(ref _fileName, value);
+            get => _fullPath;
+            set => SetProperty(ref _fullPath, value);
         }
-        string? _fileName;
+        string _fullPath = String.Empty;
 
         public bool IsSelected
         {
@@ -78,23 +78,36 @@ namespace PhotoLocator
         public bool GeoTagSaved
         {
             get => _geoTagSaved;
-            set => SetProperty(ref _geoTagSaved, value);
+            set
+            {
+                if (SetProperty(ref _geoTagSaved, value))
+                    NotifyPropertyChanged(nameof(GeoTagUpdated));
+            }
         }
         bool _geoTagSaved;
 
         public bool GeoTagUpdated
         {
-            get => _geoTagUpdated;
-            set => SetProperty(ref _geoTagUpdated, value);
+            get => GeoTag != null && !GeoTagSaved;
         }
-        bool _geoTagUpdated;
 
         public Location? GeoTag
         {
             get => _geoTag;
-            set => SetProperty(ref _geoTag, value);
+            set
+            {
+                if (SetProperty(ref _geoTag, value))
+                    NotifyPropertyChanged(nameof(GeoTagUpdated));
+            }
         }
         Location? _geoTag;
+
+        public DateTime? TimeStamp
+        {
+            get => _timeStamp;
+            set => SetProperty(ref _timeStamp, value);
+        }
+        DateTime? _timeStamp;
 
         public ImageSource? PreviewImage 
         { 
@@ -103,26 +116,54 @@ namespace PhotoLocator
         }
         private ImageSource? _previewImage;
 
-        public void LoadImage()
+        public string? ErrorMessage 
+        { 
+            get => _errorMessage; 
+            set => SetProperty(ref _errorMessage, value); 
+        }
+        private string? _errorMessage;
+
+        public async Task LoadImageAsync()
         {
             try
             {
-                GeoTag = ExifHandler.GetGeotag(FileName ?? throw new InvalidOperationException("FileName not set"));
+                await Task.Run(() =>
+                {
+                    using var file = File.Open(FullPath, FileMode.Open, FileAccess.Read, FileShare.Read);
+                    var decoder = BitmapDecoder.Create(file, BitmapCreateOptions.IgnoreColorProfile, BitmapCacheOption.OnDemand);
+                    var metadata = decoder.Frames[0].Metadata as BitmapMetadata;
+                    if (metadata == null)
+                        return;
+                    _geoTag = ExifHandler.GetGeotag(metadata);
+                    if (DateTime.TryParse(metadata.DateTaken, out var dateTaken))
+                        _timeStamp = dateTaken;
+                });
                 GeoTagSaved = GeoTag != null;
-                GeoTagUpdated = false;
 
-                var thumbnail = new BitmapImage();
-                thumbnail.BeginInit();
-                thumbnail.UriSource = new Uri(FileName);
-                thumbnail.DecodePixelWidth = 150;
-                thumbnail.EndInit();
-                thumbnail.Freeze();
-                PreviewImage = thumbnail;
+                PreviewImage = await Task.Run(() =>
+                {
+                    var thumbnail = new BitmapImage();
+                    thumbnail.BeginInit();
+                    thumbnail.UriSource = new Uri(FullPath);
+                    thumbnail.DecodePixelWidth = 200;
+                    thumbnail.CreateOptions = BitmapCreateOptions.IgnoreImageCache;
+                    thumbnail.EndInit();
+                    thumbnail.Freeze();
+                    return thumbnail;
+                });
             }
             catch (Exception ex)
             {
-                Debug.WriteLine(ex.ToString());
+                ErrorMessage = ex.ToString();
             }
+        }
+
+        internal void SaveGeoTag(string? postfix)
+        {
+            var newFileName = string.IsNullOrEmpty(postfix) ? FullPath :
+                Path.Combine(Path.GetDirectoryName(FullPath)!, Path.GetFileNameWithoutExtension(FullPath)) + postfix + Path.GetExtension(FullPath);
+            ExifHandler.SetGeotag(FullPath, newFileName, GeoTag ?? throw new InvalidOperationException(nameof(GeoTag) + " not set"));
+            GeoTagSaved = true;
         }
     }
 }

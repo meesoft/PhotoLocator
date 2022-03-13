@@ -5,7 +5,10 @@
     <TargetFramework>net6.0-windows</TargetFramework>
     <Nullable>enable</Nullable>
     <UseWPF>true</UseWPF>
+    <UseWindowsForms>true</UseWindowsForms>
     <ApplicationManifest>app.manifest</ApplicationManifest>
+	  <Copyright>(c) Michael Vinther</Copyright>
+	  <Company>MeeSoft</Company>
   </PropertyGroup>
 
   <ItemGroup>
@@ -14,6 +17,15 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\MapUiTools\WPF\MapUiTools.WPF.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Resources\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="..\..\LICENSE" Link="Resources\LICENSE" />
+    <EmbeddedResource Include="..\..\XamlMapControlLicense" Link="Resources\XamlMapControlLicense" />
   </ItemGroup>
 
 </Project>

@@ -27,7 +27,7 @@ namespace PhotoLocator.Metadata
         public static void SetGeotag(string sourceFileName, string targetFileName, Location location)
         {
             MemoryStream memoryStream;
-            using var originalFileStream = File.Open(sourceFileName, FileMode.Open, FileAccess.Read);
+            using var originalFileStream = File.Open(sourceFileName, FileMode.Open, FileAccess.Read, FileShare.Read);
             {
                 // Decode
                 var sourceSize = originalFileStream.Length;
@@ -49,7 +49,7 @@ namespace PhotoLocator.Metadata
                 CheckPixels(frame, BitmapDecoder.Create(memoryStream, CreateOptions, BitmapCacheOption.None).Frames[0]);
             }
             // Save
-            using var targetFileStream = File.Open(targetFileName, FileMode.Create, FileAccess.ReadWrite);
+            using var targetFileStream = File.Open(targetFileName, FileMode.Create, FileAccess.Write);
             memoryStream.Position = 0;
             memoryStream.CopyTo(targetFileStream);
             memoryStream.Dispose();
@@ -99,8 +99,8 @@ namespace PhotoLocator.Metadata
 
         public static Location? GetGeotag(string sourceFileName)
         {
-            using Stream savedFile = File.Open(sourceFileName, FileMode.Open, FileAccess.Read, FileShare.Read);
-            var decoder = BitmapDecoder.Create(savedFile, CreateOptions, BitmapCacheOption.OnDemand);
+            using var file = File.Open(sourceFileName, FileMode.Open, FileAccess.Read, FileShare.Read);
+            var decoder = BitmapDecoder.Create(file, CreateOptions, BitmapCacheOption.OnDemand);
             var metadata = decoder.Frames[0].Metadata as BitmapMetadata;
             return GetGeotag(metadata);
         }
