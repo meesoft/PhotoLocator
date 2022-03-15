@@ -15,12 +15,13 @@
         <Image Source="{Binding PreviewImage}" VerticalAlignment="Top"/>
 
         <Grid Margin="2" >
-            <TextBlock Text="*" TextWrapping="Wrap" FontWeight="Bold" FontSize="20"
-                       VerticalAlignment="Bottom" HorizontalAlignment="Right" Foreground="Green" 
+            <TextBlock Text="ë" TextWrapping="Wrap" FontSize="22" FontWeight="Bold" FontFamily="Webdings" 
+                       VerticalAlignment="Top" HorizontalAlignment="Right" Foreground="Green" 
                        Visibility="{Binding GeoTagSaved, Converter={StaticResource BooleanToVisibility}}"/>
-            <TextBlock Text="*" TextWrapping="Wrap" FontWeight="Bold" FontSize="20"
-                       VerticalAlignment="Bottom"  HorizontalAlignment="Right" Foreground="Yellow" 
+            <TextBlock Text="ë" TextWrapping="Wrap" FontSize="22" FontWeight="Bold" FontFamily="Webdings" 
+                       VerticalAlignment="Top"  HorizontalAlignment="Right" Foreground="Yellow" 
                        Visibility="{Binding GeoTagUpdated, Converter={StaticResource BooleanToVisibility}}"/>
+            
             <TextBlock Text="{Binding Name}" TextWrapping="Wrap" FontWeight="Bold" VerticalAlignment="Bottom" Foreground="#FFEEEEEE"/>
         </Grid>
     </Grid>

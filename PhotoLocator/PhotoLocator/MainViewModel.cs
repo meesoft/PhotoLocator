@@ -1,11 +1,11 @@
 ﻿using MapControl;
 using Microsoft.VisualBasic.FileIO;
 using PhotoLocator.Helpers;
+using PhotoLocator.Metadata;
 using SampleApplication;
 using System;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
-using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Runtime.CompilerServices;
@@ -53,14 +53,14 @@ namespace PhotoLocator
             set
             {
                 if (SetProperty(ref _photoFolderPath, value))
-                    LoadFolderContents();
+                    LoadFolderContentsAsync().WithExceptionLogging();
             }
         }
         private string? _photoFolderPath;
 
         public ObservableCollection<PointItem> Points { get; } = new ObservableCollection<PointItem>();
         public ObservableCollection<PointItem> Pushpins { get; } = new ObservableCollection<PointItem>();
-        public ObservableCollection<PolylineItem> Polylines { get; } = new ObservableCollection<PolylineItem>();
+        public ObservableCollection<GpsTrace> Polylines { get; } = new ObservableCollection<GpsTrace>();
 
         public Location? MapCenter
         {
@@ -192,7 +192,7 @@ namespace PhotoLocator
                 PhotoFolderPath = browser.SelectedPath;
         });
 
-        public ICommand RefreshFolderCommand => new RelayCommand(o => LoadFolderContents());
+        public ICommand RefreshFolderCommand => new RelayCommand(o => LoadFolderContentsAsync().WithExceptionLogging());
 
         public ICommand DeleteSelectedCommand => new RelayCommand(o =>
         {
@@ -214,19 +214,24 @@ namespace PhotoLocator
                 Pushpins.Add(new PointItem { Location = SavedLocation, Name = "Saved location" });
         }
 
-        private void LoadFolderContents()
+        private async Task LoadFolderContentsAsync()
         {
             if (PhotoFolderPath is null)
                 return;
             FolderPictures.Clear();
+            Polylines.Clear();
             foreach (var fileName in Directory.EnumerateFiles(PhotoFolderPath, "*.jpg"))
                 FolderPictures.Add(new PictureItemViewModel(fileName));
-            LoadPictures();
-        }
-
-        private void LoadPictures()
-        {
-            LoadPicturesAsync().ContinueWith(t => { Debug.WriteLine(t.Exception?.ToString()); }, TaskContinuationOptions.OnlyOnFaulted);
+            var loadPicturesTask = LoadPicturesAsync();
+            foreach (var fileName in Directory.EnumerateFiles(PhotoFolderPath, "*.gpx"))
+            {
+                var trace = await Task.Run(() => GpsTrace.DecodeGpxFile(fileName));
+                if (trace.TimeStamps.Count > 0)
+                    Polylines.Add(trace);
+            }
+            if (Polylines.Count > 0)
+                MapCenter = Polylines[0].Center;
+            await loadPicturesTask;
         }
 
         private async Task LoadPicturesAsync()
