@@ -44,7 +44,7 @@ namespace PhotoLocator
         public MainViewModel()
         {
             if (_isInDesignMode)
-                FolderPictures.Add(new PictureItemViewModel());
+                Pictures.Add(new PictureItemViewModel());
         }
 
         public string? PhotoFolderPath
@@ -80,7 +80,7 @@ namespace PhotoLocator
         }
         private Location? _SavedLocation;
 
-        public ObservableCollection<PictureItemViewModel> FolderPictures { get; } = new ObservableCollection<PictureItemViewModel>();
+        public ObservableCollection<PictureItemViewModel> Pictures { get; } = new ObservableCollection<PictureItemViewModel>();
 
         public PictureItemViewModel? SelectedPicture
         {
@@ -100,43 +100,25 @@ namespace PhotoLocator
         internal void PictureSelectionChanged()
         {
             Points.Clear();
-            foreach(var item in FolderPictures)
+            foreach(var item in Pictures)
                 if (item != SelectedPicture && item.IsSelected && item.GeoTag != null)
                     Points.Add(new PointItem { Location = item.GeoTag, Name = item.Name });
-        }
-
-        static Location? GetBestGeoFix(PictureItemViewModel[] sourceImages, DateTime timeStamp, TimeSpan maxTimeDifference)
-        {
-            Location? bestFix = null;
-            var minDist = maxTimeDifference + TimeSpan.FromMilliseconds(1);
-            foreach (var geoFix in sourceImages)
-            {
-                var dist = (timeStamp - geoFix.TimeStamp!.Value).Duration();
-                if (dist < minDist)
-                {
-                    minDist = dist;
-                    bestFix = geoFix.GeoTag;
-                }
-            }
-            return bestFix;
         }
 
         public ICommand AutoTagCommand => new RelayCommand(o =>
         {
             if (SelectedPicture is null)
-                MessageBox.Show("No photos selected");
-            var sourceImages = FolderPictures.Where(i => i.GeoTag != null && i.TimeStamp.HasValue).ToArray();
-            foreach (var item in FolderPictures.Where(i => i.IsSelected && i.GeoTag is null && i.TimeStamp.HasValue))
+                foreach (var item in Pictures)
+                    item.IsSelected = true;
+            var autoTagWin = new AutoTagWindow();
+            var autoTagViewModel = new AutoTagViewModel(Pictures, Polylines, () => { autoTagWin.DialogResult = true; });
+            autoTagWin.Owner = App.Current.MainWindow;
+            autoTagWin.DataContext = autoTagViewModel;
+            if (autoTagWin.ShowDialog() == true)
             {
-                var bestFix = GetBestGeoFix(sourceImages, item.TimeStamp!.Value, TimeSpan.FromMinutes(15));
-                if (bestFix != null)
-                {
-                    item.GeoTag = bestFix;
-                    item.GeoTagSaved = false;
-                }
+                UpdatePushpins();
+                PictureSelectionChanged();
             }
-            UpdatePushpins();
-            PictureSelectionChanged();
         });
 
         public ICommand CopyCommand => new RelayCommand(o =>
@@ -148,7 +130,7 @@ namespace PhotoLocator
         {
             if (SavedLocation is null)
                 return;
-            foreach (var item in FolderPictures.Where(i => i.IsSelected && !Equals(i.GeoTag, SavedLocation)))
+            foreach (var item in Pictures.Where(i => i.IsSelected && !Equals(i.GeoTag, SavedLocation)))
             {
                 item.GeoTag = SavedLocation;
                 item.GeoTagSaved = false;
@@ -161,7 +143,7 @@ namespace PhotoLocator
 
         public ICommand SaveCommand => new RelayCommand(o =>
         {
-            foreach (var item in FolderPictures.Where(i => i.GeoTagUpdated))
+            foreach (var item in Pictures.Where(i => i.GeoTagUpdated))
                 item.SaveGeoTag(SavedFilePostfix);
         });
 
@@ -198,10 +180,10 @@ namespace PhotoLocator
         {
             if (MessageBox.Show("Delete selected files?", "Confirm", MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes)
                 return;
-            foreach (var item in FolderPictures.Where(i => i.IsSelected).ToArray())
+            foreach (var item in Pictures.Where(i => i.IsSelected).ToArray())
             {
                 FileSystem.DeleteFile(item.FullPath, UIOption.OnlyErrorDialogs, RecycleOption.SendToRecycleBin);
-                FolderPictures.Remove(item);
+                Pictures.Remove(item);
             }
         });
 
@@ -218,10 +200,10 @@ namespace PhotoLocator
         {
             if (PhotoFolderPath is null)
                 return;
-            FolderPictures.Clear();
+            Pictures.Clear();
             Polylines.Clear();
             foreach (var fileName in Directory.EnumerateFiles(PhotoFolderPath, "*.jpg"))
-                FolderPictures.Add(new PictureItemViewModel(fileName));
+                Pictures.Add(new PictureItemViewModel(fileName));
             var loadPicturesTask = LoadPicturesAsync();
             foreach (var fileName in Directory.EnumerateFiles(PhotoFolderPath, "*.gpx"))
             {
@@ -236,7 +218,7 @@ namespace PhotoLocator
 
         private async Task LoadPicturesAsync()
         {
-            foreach (var item in FolderPictures.Where(i => i.PreviewImage is null).ToArray())
+            foreach (var item in Pictures.Where(i => i.PreviewImage is null).ToArray())
                 await item.LoadImageAsync();
         }
     }

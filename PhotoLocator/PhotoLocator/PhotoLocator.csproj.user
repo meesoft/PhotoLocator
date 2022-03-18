@@ -7,7 +7,15 @@
     </ApplicationDefinition>
   </ItemGroup>
   <ItemGroup>
+    <Compile Update="AutoTagWindow.xaml.cs">
+      <SubType>Code</SubType>
+    </Compile>
+  </ItemGroup>
+  <ItemGroup>
     <Page Update="AboutWindow.xaml">
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Update="AutoTagWindow.xaml">
       <SubType>Designer</SubType>
     </Page>
     <Page Update="PictureItemView.xaml">

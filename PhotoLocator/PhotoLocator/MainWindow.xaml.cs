@@ -1,5 +1,8 @@
-﻿using System;
+﻿using PhotoLocator.Helpers;
+using System;
 using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Input;
 
 namespace PhotoLocator
 {
@@ -23,9 +26,15 @@ namespace PhotoLocator
             _viewModel.PhotoFolderPath = settings.PhotoFolderPath;
             _viewModel.SavedFilePostfix = settings.SavedFilePostfix;
             var i = settings.LeftColumnWidth;
-            if (i > 0 && i < Width)
+            if (i > 10 && i < Width)
                 LeftColumn.Width = new GridLength(i);
             PictureListBox.Focus();
+
+            if (settings.FirstLaunch < 1)
+            {
+                _viewModel.AboutCommand.Execute(null);
+                settings.FirstLaunch = 1;
+            }
         }
 
         private void HandleWindowClosed(object sender, EventArgs e)
@@ -38,9 +47,15 @@ namespace PhotoLocator
             settings.LeftColumnWidth = (int)LeftColumn.Width.Value;
         }
 
-        private void HandlePictureListBoxSelectionChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
+        private void HandlePictureListBoxSelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             _viewModel.PictureSelectionChanged();
+        }
+
+        private void PathEditPreviewKeyUp(object sender, KeyEventArgs e)
+        {
+            if (e.Key == Key.Enter)
+                _viewModel.PhotoFolderPath = PathEdit.Text;
         }
     }
 }

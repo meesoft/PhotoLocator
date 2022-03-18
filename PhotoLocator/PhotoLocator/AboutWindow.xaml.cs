@@ -27,7 +27,6 @@ namespace PhotoLocator
                 text.AppendLine(versionInfo.FileDescription + " " + versionInfo.FileVersion);
                 text.AppendLine(versionInfo.LegalCopyright);
                 text.AppendLine(versionInfo.CompanyName);
-                text.AppendLine();
                 return text.ToString();
             }
         }

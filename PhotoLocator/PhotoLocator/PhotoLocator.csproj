@@ -7,8 +7,10 @@
     <UseWPF>true</UseWPF>
     <UseWindowsForms>true</UseWindowsForms>
     <ApplicationManifest>app.manifest</ApplicationManifest>
-	  <Copyright>(c) Michael Vinther</Copyright>
-	  <Company>MeeSoft</Company>
+	<Version>2022.3.18.0</Version>
+	<Copyright>(c) 2022 Michael Vinther</Copyright>
+	<Company>MeeSoft</Company>
+	<ApplicationIcon>Resources\PhotoLocator.ico</ApplicationIcon>
   </PropertyGroup>
 
   <ItemGroup>
@@ -20,12 +22,9 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Resources\" />
-  </ItemGroup>
-
-  <ItemGroup>
     <EmbeddedResource Include="..\..\LICENSE" Link="Resources\LICENSE" />
     <EmbeddedResource Include="..\..\XamlMapControlLicense" Link="Resources\XamlMapControlLicense" />
+	<Resource Include="Resources\PhotoLocator.ico" />
   </ItemGroup>
 
 </Project>

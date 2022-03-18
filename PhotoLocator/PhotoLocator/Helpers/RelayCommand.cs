@@ -22,7 +22,7 @@ namespace PhotoLocator.Helpers
 
         public bool CanExecute(object? parameter)
         {
-            return _canExecute is null ? true : _canExecute(parameter);
+            return _canExecute is null || _canExecute(parameter);
         }
 
         public void Execute(object? parameter)

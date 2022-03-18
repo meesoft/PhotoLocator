@@ -10,7 +10,7 @@
         Loaded="HandleWindowLoaded" Closed="HandleWindowClosed"
         WindowState="Maximized"
         Title="PhotoLocator" 
-        Height="450" Width="1024" 
+        Height="500" Width="1024" 
         Background="Black">
 
     <Window.Resources>
@@ -43,7 +43,7 @@
               ShowsPreview="True" Width="8"/>
 
         <Grid Grid.Column="0" Margin="0,0,10,4" >
-            <TextBox Text="{Binding PhotoFolderPath}" Margin="0,0,34,0" />
+            <TextBox Text="{Binding PhotoFolderPath}" Margin="0,0,34,0" PreviewKeyUp="PathEditPreviewKeyUp" Name="PathEdit" />
             <Button Content="1" FontFamily="Wingdings" FontSize="20" Width="32" HorizontalAlignment="Right"
                     Command="{Binding BrowseForPhotosCommand}" ToolTip="Browse for folder" />
         </Grid>
@@ -51,9 +51,9 @@
         <StackPanel Grid.Column="1" Orientation="Horizontal" Margin="0,0,0,4">
             <Button Content="Auto tag" Width="100" Command="{Binding AutoTagCommand}"
                     ToolTip="Auto assign tags to selected pictures (Ctrl+T)" />
-            <Button Content="Copy" Width="100" Command="{Binding CopyCommand}"
+            <Button Content="Save center" Width="100" Command="{Binding CopyCommand}"
                     ToolTip="Save location of current map center (Ctrl+C)" />
-            <Button Content="Paste" Width="100" Command="{Binding PasteCommand}"
+            <Button Content="Apply location" Width="100" Command="{Binding PasteCommand}"
                     ToolTip="Apply saved location to selected photos (Ctrl+V)" />
             <Button Content="Save changes" Width="100" Command="{Binding SaveCommand}"
                     ToolTip="Save changed geotags to photo files (Ctrl+S)" />
@@ -63,7 +63,7 @@
                     ToolTip="About" Width="32" />
         </StackPanel>
 
-        <ListBox Grid.Column="0" Grid.Row="1" Margin="0,0,10,0" ItemsSource="{Binding FolderPictures}" Name="PictureListBox"
+        <ListBox Grid.Column="0" Grid.Row="1" Margin="0,0,10,0" ItemsSource="{Binding Pictures}" Name="PictureListBox"
                  SelectionMode="Extended" SelectedItem="{Binding SelectedPicture}" SelectionChanged="HandlePictureListBoxSelectionChanged" >
             <ListBox.ItemsPanel>
                 <ItemsPanelTemplate>

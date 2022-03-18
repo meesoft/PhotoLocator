@@ -19,8 +19,7 @@ namespace PhotoLocator.Metadata
 
         public static GpsTrace DecodeGpxStream(Stream stream)
         {
-            var trace = new GpsTrace();
-            trace.Locations = new LocationCollection();
+            var trace = new GpsTrace { Locations = new LocationCollection() };
             var document = new XmlDocument();
             document.Load(stream);
             var gpx = document["gpx"] ?? throw new Exception("gpx node missing");

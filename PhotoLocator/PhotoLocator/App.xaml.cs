@@ -19,7 +19,7 @@ namespace PhotoLocator
 
         private void HandleDispatcherUnhandledException(object sender, DispatcherUnhandledExceptionEventArgs e)
         {
-            MessageBox.Show(e.Exception.ToString(), "Error");
+            MessageBox.Show(e.Exception.ToString(), "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             e.Handled = true;
         }
     }
