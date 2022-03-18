@@ -7,10 +7,10 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "PhotoLocator", "PhotoLocato
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{93BE1C07-D2CB-4256-ABE6-D7E992C3C6DD}"
 	ProjectSection(SolutionItems) = preProject
-		..\README.md = ..\README.md
+		README.md = README.md
 	EndProjectSection
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MapUiTools.WPF", "..\MapUiTools\WPF\MapUiTools.WPF.csproj", "{F3B40BD6-38BB-4F20-BC77-07C368CE0753}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MapUiTools.WPF", "MapUiTools\WPF\MapUiTools.WPF.csproj", "{F3B40BD6-38BB-4F20-BC77-07C368CE0753}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

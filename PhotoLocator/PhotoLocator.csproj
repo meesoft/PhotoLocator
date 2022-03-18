@@ -18,12 +18,12 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\MapUiTools\WPF\MapUiTools.WPF.csproj" />
+    <ProjectReference Include="..\MapUiTools\WPF\MapUiTools.WPF.csproj" />
   </ItemGroup>
 
   <ItemGroup>
-    <EmbeddedResource Include="..\..\LICENSE" Link="Resources\LICENSE" />
-    <EmbeddedResource Include="..\..\XamlMapControlLicense" Link="Resources\XamlMapControlLicense" />
+    <EmbeddedResource Include="..\LICENSE" Link="Resources\LICENSE" />
+    <EmbeddedResource Include="..\XamlMapControlLicense" Link="Resources\XamlMapControlLicense" />
 	<Resource Include="Resources\PhotoLocator.ico" />
   </ItemGroup>
 
