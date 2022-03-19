@@ -1,5 +1,6 @@
 ﻿using PhotoLocator.Helpers;
 using System;
+using System.IO;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -41,7 +42,7 @@ namespace PhotoLocator
         private void HandleWindowClosed(object sender, EventArgs e)
         {
             var settings = new RegistrySettings();
-            if (_viewModel.PhotoFolderPath != null)
+            if (!string.IsNullOrEmpty(_viewModel.PhotoFolderPath))
                 settings.PhotoFolderPath = _viewModel.PhotoFolderPath;
             if (_viewModel.SavedFilePostfix != null)
                 settings.SavedFilePostfix = _viewModel.SavedFilePostfix;
@@ -57,6 +58,15 @@ namespace PhotoLocator
         {
             if (e.Key == Key.Enter)
                 _viewModel.PhotoFolderPath = PathEdit.Text;
+        }
+
+        private void HandleDrop(object sender, DragEventArgs e)
+        {
+            if (!e.Data.GetDataPresent(DataFormats.FileDrop))
+                return;
+            var droppedEntries = e.Data.GetData(DataFormats.FileDrop) as string[];
+            if (droppedEntries != null && droppedEntries.Length > 0)
+                Dispatcher.BeginInvoke(() => _viewModel.HandleDroppedFilesAsync(droppedEntries).WithExceptionShowing());
         }
     }
 }

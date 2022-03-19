@@ -4,6 +4,7 @@ using PhotoLocator.Helpers;
 using PhotoLocator.Metadata;
 using SampleApplication;
 using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.IO;
@@ -27,20 +28,13 @@ namespace PhotoLocator
 
         public event PropertyChangedEventHandler? PropertyChanged;
 
-        void NotifyPropertyChanged([CallerMemberName] string? propertyName = null)
-        {
-            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
-        }
-
         protected bool SetProperty<T>(ref T field, T newValue, [CallerMemberName] string? propertyName = null)
         {
-            if (!Equals(field, newValue))
-            {
-                field = newValue;
-                PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
-                return true;
-            }
-            return false;
+            if (Equals(field, newValue))
+                return false;
+            field = newValue;
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+            return true;
         }
 
         public MainViewModel()
@@ -72,9 +66,10 @@ namespace PhotoLocator
             set
             {
                 if (SetProperty(ref _photoFolderPath, value))
-                    LoadFolderContentsAsync().WithExceptionLogging();
+                    LoadFolderContentsAsync().WithExceptionShowing();
             }
         }
+
         private string? _photoFolderPath;
 
         public ObservableCollection<PointItem> Points { get; } = new ObservableCollection<PointItem>();
@@ -135,6 +130,7 @@ namespace PhotoLocator
             autoTagWin.DataContext = autoTagViewModel;
             if (autoTagWin.ShowDialog() == true)
             {
+                MapCenter = SelectedPicture?.GeoTag;
                 UpdatePushpins();
                 PictureSelectionChanged();
             }
@@ -240,6 +236,19 @@ namespace PhotoLocator
 
         public ICommand RefreshFolderCommand => new RelayCommand(o => LoadFolderContentsAsync().WithExceptionLogging());
 
+        public async Task HandleDroppedFilesAsync(string[] droppedEntries)
+        {
+            PhotoFolderPath = null;
+            var fileNames = new List<string>(); 
+            foreach (var path in droppedEntries)
+                if (Directory.Exists(path))
+                    await AppendFilesAsync(Directory.EnumerateFiles(path));
+                else
+                    fileNames.Add(path);
+            await AppendFilesAsync(fileNames);
+            await LoadPicturesAsync();
+        }
+
         public ICommand DeleteSelectedCommand => new RelayCommand(o =>
         {
             if (MessageBox.Show("Delete selected files?", "Confirm", MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes)
@@ -262,22 +271,32 @@ namespace PhotoLocator
 
         private async Task LoadFolderContentsAsync()
         {
-            if (PhotoFolderPath is null)
+            if (string.IsNullOrEmpty(PhotoFolderPath))
                 return;
             Pictures.Clear();
             Polylines.Clear();
-            foreach (var fileName in Directory.EnumerateFiles(PhotoFolderPath, "*.jpg"))
-                Pictures.Add(new PictureItemViewModel(fileName));
-            var loadPicturesTask = LoadPicturesAsync();
-            foreach (var fileName in Directory.EnumerateFiles(PhotoFolderPath, "*.gpx"))
-            {
-                var trace = await Task.Run(() => GpsTrace.DecodeGpxFile(fileName));
-                if (trace.TimeStamps.Count > 0)
-                    Polylines.Add(trace);
-            }
+            await AppendFilesAsync(Directory.EnumerateFiles(PhotoFolderPath));
             if (Polylines.Count > 0)
                 MapCenter = Polylines[0].Center;
-            await loadPicturesTask;
+            await LoadPicturesAsync();
+        }
+
+        private async Task AppendFilesAsync(IEnumerable<string> fileNames)
+        {
+            foreach (var fileName in fileNames)
+            {
+                if (Pictures.Any(i => i.FullPath == fileName))
+                    continue;
+                var ext = Path.GetExtension(fileName).ToLowerInvariant();
+                if (ext == ".jpg")
+                    Pictures.Add(new PictureItemViewModel(fileName));
+                else if (ext == ".gpx")
+                {
+                    var trace = await Task.Run(() => GpsTrace.DecodeGpxFile(fileName));
+                    if (trace.TimeStamps.Count > 0)
+                        Polylines.Add(trace);
+                }
+            }
         }
 
         private async Task LoadPicturesAsync()

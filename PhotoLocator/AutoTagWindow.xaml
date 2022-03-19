@@ -6,6 +6,7 @@
         xmlns:local="clr-namespace:PhotoLocator"
         mc:Ignorable="d"
         d:DataContext="{d:DesignInstance Type=local:AutoTagViewModel, IsDesignTimeCreatable=False}"
+        IsEnabled="{Binding IsWindowEnabled}"
         Background="Black"
         Title="Auto tag" Width="300" SizeToContent="Height" ResizeMode="NoResize"
         WindowStartupLocation="CenterOwner" ShowInTaskbar="False">

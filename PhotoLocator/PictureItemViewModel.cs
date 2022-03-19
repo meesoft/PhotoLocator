@@ -45,13 +45,11 @@ namespace PhotoLocator
 
         protected bool SetProperty<T>(ref T field, T newValue, [CallerMemberName] string? propertyName = null)
         {
-            if (!Equals(field, newValue))
-            {
-                field = newValue;
-                PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
-                return true;
-            }
-            return false;
+            if (Equals(field, newValue))
+                return false;
+            field = newValue;
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+            return true;
         }
 
         public string? Name
@@ -129,7 +127,7 @@ namespace PhotoLocator
             {
                 await Task.Run(() =>
                 {
-                    using var file = File.Open(FullPath, FileMode.Open, FileAccess.Read, FileShare.Read);
+                    using var file = File.OpenRead(FullPath);
                     var decoder = BitmapDecoder.Create(file, BitmapCreateOptions.IgnoreColorProfile, BitmapCacheOption.None);
                     var metadata = decoder.Frames[0].Metadata as BitmapMetadata;
                     if (metadata == null)

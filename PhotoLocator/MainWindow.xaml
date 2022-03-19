@@ -8,6 +8,7 @@
         mc:Ignorable="d"
         d:DataContext="{d:DesignInstance Type=local:MainViewModel, IsDesignTimeCreatable=True}"
         Loaded="HandleWindowLoaded" Closed="HandleWindowClosed"
+        AllowDrop="True" Drop="HandleDrop" 
         IsEnabled="{Binding IsWindowEnabled}"
         WindowState="Maximized"
         Title="PhotoLocator" 
@@ -19,12 +20,12 @@
     </Window.Resources>
        
     <Window.InputBindings>
+        <KeyBinding Key="O" Modifiers="Ctrl" Command="{Binding BrowseForPhotosCommand}" />
         <KeyBinding Key="T" Modifiers="Ctrl" Command="{Binding AutoTagCommand}" />
         <KeyBinding Key="C" Modifiers="Ctrl" Command="{Binding CopyCommand}" />
         <KeyBinding Key="V" Modifiers="Ctrl" Command="{Binding PasteCommand}" />
         <KeyBinding Key="S" Modifiers="Ctrl" Command="{Binding SaveCommand}" />
         <KeyBinding Key="F1" Command="{Binding AboutCommand}" />
-        <KeyBinding Key="F3" Command="{Binding BrowseForPhotosCommand}" />
         <KeyBinding Key="F5" Command="{Binding RefreshFolderCommand}" />
         <KeyBinding Key="Delete" Command="{Binding DeleteSelectedCommand}" />
     </Window.InputBindings>
@@ -66,7 +67,7 @@
         <Grid Grid.Column="0" Margin="0,0,10,4" >
             <TextBox Text="{Binding PhotoFolderPath}" Margin="0,0,34,0" PreviewKeyUp="PathEditPreviewKeyUp" Name="PathEdit" />
             <Button Content="1" FontFamily="Wingdings" FontSize="20" Width="32" HorizontalAlignment="Right"
-                    Command="{Binding BrowseForPhotosCommand}" ToolTip="Browse for folder" />
+                    Command="{Binding BrowseForPhotosCommand}" ToolTip="Browse for folder (Ctrl+O)" />
         </Grid>
 
         <StackPanel Grid.Column="1" Orientation="Horizontal" Margin="0,0,0,4">

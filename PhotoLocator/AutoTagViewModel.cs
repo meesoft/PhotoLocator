@@ -25,6 +25,8 @@ namespace PhotoLocator
             _timestampOffset = (settings.Key.GetValue(nameof(TimestampOffset)) as int? ?? 0) / 3600.0;
         }
 
+        public event PropertyChangedEventHandler? PropertyChanged;
+      
         public IEnumerable<PictureItemViewModel> Pictures { get; }
 
         public IEnumerable<GpsTrace> GpsTraces { get; }
@@ -46,29 +48,33 @@ namespace PhotoLocator
 
         public Action CompletedAction { get; }
 
-        public event PropertyChangedEventHandler? PropertyChanged;
+        public bool IsWindowEnabled { get => _isWindowEnabled; set => SetProperty(ref _isWindowEnabled, value); }
+        private bool _isWindowEnabled = true;
 
         protected bool SetProperty<T>(ref T field, T newValue, [CallerMemberName] string? propertyName = null)
         {
-            if (!Equals(field, newValue))
-            {
-                field = newValue;
-                PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
-                return true;
-            }
-
-            return false;
+            if (Equals(field, newValue))
+                return false;
+            field = newValue;
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+            return true;
         }
 
         public ICommand OkCommand => new RelayCommand(o =>
         {
-            using (new CursorOverride())
+            IsWindowEnabled = false;
+            try
             {
+                using var _ = new CursorOverride();
                 var gpsTraces = LoadAdditionalGpsTraces();
                 var result = AutoTag(gpsTraces);
                 CompletedAction();
                 SaveSettings();
                 MessageBox.Show($"{result.Tagged} photos with timestamps were tagged, {result.NotTagged} were not.", "Auto tag", MessageBoxButton.OK, MessageBoxImage.Information);
+            }
+            finally
+            {
+                IsWindowEnabled = true; 
             }
         });
 
@@ -104,14 +110,17 @@ namespace PhotoLocator
         private (int Tagged, int NotTagged) AutoTag(IEnumerable<GpsTrace> gpsTraces)
         {
             int tagged = 0, notTagged = 0;
-            var sourceImages = Pictures.Where(i => i.GeoTag != null && i.TimeStamp.HasValue).ToArray();
-            foreach (var item in Pictures.Where(i => i.IsSelected && i.GeoTag is null && i.TimeStamp.HasValue))
+            var sourceImages = Pictures.Where(i => !i.IsSelected && i.GeoTag != null && i.TimeStamp.HasValue).ToArray();
+            foreach (var item in Pictures.Where(i => i.IsSelected && i.TimeStamp.HasValue))
             {
-                var bestFix = GetBestGeoFix(sourceImages, gpsTraces, item.TimeStamp!.Value);
-                if (bestFix != null)
+                var bestTag = GetBestGeoFix(sourceImages, gpsTraces, item.TimeStamp!.Value);
+                if (bestTag != null)
                 {
-                    item.GeoTag = bestFix;
-                    item.GeoTagSaved = false;
+                    if (!Equals(item.GeoTag, bestTag))
+                    {
+                        item.GeoTag = bestTag;
+                        item.GeoTagSaved = false;
+                    }
                     tagged++;
                 }
                 else

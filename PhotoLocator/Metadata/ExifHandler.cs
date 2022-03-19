@@ -99,7 +99,7 @@ namespace PhotoLocator.Metadata
 
         public static Location? GetGeotag(string sourceFileName)
         {
-            using var file = File.Open(sourceFileName, FileMode.Open, FileAccess.Read, FileShare.Read);
+            using var file = File.OpenRead(sourceFileName);
             var decoder = BitmapDecoder.Create(file, CreateOptions, BitmapCacheOption.OnDemand);
             var metadata = decoder.Frames[0].Metadata as BitmapMetadata;
             return GetGeotag(metadata);
