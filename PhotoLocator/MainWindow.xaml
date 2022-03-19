@@ -57,7 +57,7 @@
                     </LinearGradientBrush>
                 </Border.Background>
                 <Grid Height="20" Margin="5" >
-                    <ProgressBar Value="{Binding ProgressBarValue}" Maximum="1" />
+                    <ProgressBar Value="{Binding ProgressBarValue}" Maximum="1" IsIndeterminate="{Binding ProgressBarIsIndeterminate}" />
                     <TextBlock Margin="5,0" Text="{Binding ProgressBarText}"/>
                 </Grid>
             </Border>

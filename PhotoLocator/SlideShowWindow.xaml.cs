@@ -3,6 +3,7 @@ using PhotoLocator.Helpers;
 using System;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
+using System.IO;
 using System.Runtime.CompilerServices;
 using System.Windows;
 using System.Windows.Input;
@@ -30,6 +31,7 @@ namespace PhotoLocator
             InitializeComponent();
             DataContext = this;
             Map.DataContext = this;
+            Map.map.TargetZoomLevel = 7;
             UpdatePicture();
         }
 
@@ -56,12 +58,11 @@ namespace PhotoLocator
         public bool IsMapVisible { get => _isMapVisible; set => SetProperty(ref _isMapVisible, value); }
         private bool _isMapVisible;
 
-        public ImageSource? PictureSource
-        {
-            get => _pictureSource;
-            set => SetProperty(ref _pictureSource, value);
-        }
+        public ImageSource? PictureSource { get => _pictureSource; set => SetProperty(ref _pictureSource, value); }
         private ImageSource? _pictureSource;
+
+        public string? PictureName { get => _pictureName; set => SetProperty(ref _pictureName, value); }
+        private string? _pictureName;
 
         public PictureItemViewModel SelectedPicture { get; private set; }
 
@@ -69,6 +70,7 @@ namespace PhotoLocator
         {
             SelectedPicture = _pictures[_pictureIndex];
             PictureSource = new BitmapImage(new Uri(SelectedPicture.FullPath));
+            PictureName = Path.GetFileNameWithoutExtension(SelectedPicture.Name);
             if (SelectedPicture.GeoTag is null)
                 IsMapVisible = false;
             else

@@ -22,12 +22,12 @@ namespace SampleApplication
             //TileImageLoader.Cache = new SQLiteCache(TileImageLoader.DefaultCacheFolder);
             //TileImageLoader.Cache = null;
 
-            //var bingMapsApiKeyPath = Path.Combine(
-            //    Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), "MapControl", "BingMapsApiKey.txt");
-            //if (File.Exists(bingMapsApiKeyPath))
-            //{
-            //    BingMapsTileLayer.ApiKey = File.ReadAllText(bingMapsApiKeyPath)?.Trim();
-            //}
+            var bingMapsApiKeyPath = Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), "MapControl", "BingMapsApiKey.txt");
+            if (File.Exists(bingMapsApiKeyPath))
+            {
+                BingMapsTileLayer.ApiKey = File.ReadAllText(bingMapsApiKeyPath)?.Trim();
+            }
         }
 
         public MapView()

@@ -26,6 +26,9 @@ namespace PhotoLocator
         const bool _isInDesignMode = false;
 #endif
 
+        Task? _loadPicturesTask;
+        bool _cancelLoading;
+
         public event PropertyChangedEventHandler? PropertyChanged;
 
         protected bool SetProperty<T>(ref T field, T newValue, [CallerMemberName] string? propertyName = null)
@@ -51,6 +54,9 @@ namespace PhotoLocator
 
         public double ProgressBarValue { get => _progressBarValue; set => SetProperty(ref _progressBarValue, value); }
         private double _progressBarValue;
+
+        public bool ProgressBarIsIndeterminate { get => _progressBarIsIndeterminate; set => SetProperty(ref _progressBarIsIndeterminate, value); }
+        private bool _progressBarIsIndeterminate;
 
         public string? ProgressBarText { get => _progressBarText; set => SetProperty(ref _progressBarText, value); }
         private string? _progressBarText;
@@ -121,18 +127,20 @@ namespace PhotoLocator
                     Points.Add(new PointItem { Location = item.GeoTag, Name = item.Name });
         }
 
-        public ICommand AutoTagCommand => new RelayCommand(o =>
+        public ICommand AutoTagCommand => new RelayCommand(async o =>
         {
+            await WaitForPicturesLoadedAsync();
             if (SelectedPicture is null)
                 foreach (var item in Pictures)
-                    item.IsSelected = true;
+                    item.IsSelected = item.GeoTag is null;
             var autoTagWin = new AutoTagWindow();
             var autoTagViewModel = new AutoTagViewModel(Pictures, Polylines, () => { autoTagWin.DialogResult = true; });
             autoTagWin.Owner = App.Current.MainWindow;
             autoTagWin.DataContext = autoTagViewModel;
             if (autoTagWin.ShowDialog() == true)
             {
-                MapCenter = SelectedPicture?.GeoTag;
+                if (SelectedPicture != null)
+                    MapCenter = SelectedPicture.GeoTag;
                 UpdatePushpins();
                 PictureSelectionChanged();
             }
@@ -156,23 +164,22 @@ namespace PhotoLocator
             PictureSelectionChanged();
         });
 
-        private CancellationTokenSource? _cancellation;
-
-        async Task RunProcessWithProgressBarAsync(Func<Action<double>, Task> body, string? text = null)
+        async Task RunProcessWithProgressBarAsync(Func<Action<double>, Task> body, string text)
         {
             using (new CursorOverride())
             {
+                ProgressBarIsIndeterminate = false;
                 ProgressBarValue = 0;
                 TaskbarProgressState = TaskbarItemProgressState.Normal;
                 ProgressBarText = text;
                 IsProgressBarVisible = true;
-                _cancellation = new CancellationTokenSource();
                 IsWindowEnabled = false;
                 try
                 {
                     await body(progress =>
                     {
-                        _cancellation.Token.ThrowIfCancellationRequested();
+                        if (progress < 0)
+                            ProgressBarIsIndeterminate = true;
                         ProgressBarValue = progress;
                     });
                 }
@@ -186,8 +193,6 @@ namespace PhotoLocator
                     IsWindowEnabled = true;
                     IsProgressBarVisible = false;
                     TaskbarProgressState = TaskbarItemProgressState.None;
-                    _cancellation.Dispose();
-                    _cancellation = null;
                 }
             }
         }
@@ -252,6 +257,7 @@ namespace PhotoLocator
 
         public async Task HandleDroppedFilesAsync(string[] droppedEntries)
         {
+            await WaitForPicturesLoadedAsync();
             PhotoFolderPath = null;
             var fileNames = new List<string>(); 
             foreach (var path in droppedEntries)
@@ -260,7 +266,7 @@ namespace PhotoLocator
                 else
                     fileNames.Add(path);
             await AppendFilesAsync(fileNames);
-            await LoadPicturesAsync();
+            await (_loadPicturesTask = LoadPicturesAsync());
         }
 
         public ICommand DeleteSelectedCommand => new RelayCommand(o =>
@@ -285,6 +291,8 @@ namespace PhotoLocator
 
         private async Task LoadFolderContentsAsync()
         {
+            _cancelLoading = true;
+            await WaitForPicturesLoadedAsync();
             if (string.IsNullOrEmpty(PhotoFolderPath))
                 return;
             Pictures.Clear();
@@ -292,7 +300,7 @@ namespace PhotoLocator
             await AppendFilesAsync(Directory.EnumerateFiles(PhotoFolderPath));
             if (Polylines.Count > 0)
                 MapCenter = Polylines[0].Center;
-            await LoadPicturesAsync();
+            await (_loadPicturesTask = LoadPicturesAsync());
         }
 
         private async Task AppendFilesAsync(IEnumerable<string> fileNames)
@@ -315,8 +323,24 @@ namespace PhotoLocator
 
         private async Task LoadPicturesAsync()
         {
+            _cancelLoading = false;
             foreach (var item in Pictures.Where(i => i.PreviewImage is null).ToArray())
+            {
                 await item.LoadImageAsync();
+                if (_cancelLoading)
+                    break;
+            }
+            _loadPicturesTask = null;
+        }
+
+        private async Task WaitForPicturesLoadedAsync()
+        {
+            if (_loadPicturesTask != null)
+                await RunProcessWithProgressBarAsync(async progressUpdate =>
+                {
+                    progressUpdate(-1);
+                    await _loadPicturesTask;
+                }, "Loading");
         }
     }
 }
