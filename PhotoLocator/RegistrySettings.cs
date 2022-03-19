@@ -19,6 +19,12 @@ namespace PhotoLocator
             set => Key.SetValue(nameof(SavedFilePostfix), value);
         }
 
+        public int SlideShowInterval
+        {
+            get => Key.GetValue(nameof(SlideShowInterval)) as int? ?? 20;
+            set => Key.SetValue(nameof(SlideShowInterval), value);
+        }
+
         public int LeftColumnWidth
         {
             get => Key.GetValue(nameof(LeftColumnWidth)) as int? ?? -1;

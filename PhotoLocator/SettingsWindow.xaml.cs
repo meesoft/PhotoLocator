@@ -32,6 +32,13 @@ namespace PhotoLocator
         }
         string? _savedFilePostfix;
 
+        public int SlideShowInterval
+        {
+            get => _slideShowInterval;
+            set => SetProperty(ref _slideShowInterval, value);
+        }
+        int _slideShowInterval;
+
         private void HandleOkButtonClick(object sender, RoutedEventArgs e)
         {
             DialogResult = true;

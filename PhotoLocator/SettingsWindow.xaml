@@ -12,17 +12,22 @@
     <Grid Margin="10">
         <Grid.RowDefinitions>
             <RowDefinition Height="20"/>
-            <RowDefinition Height="22"/>
+            <RowDefinition Height="20"/>
+            <RowDefinition Height="20"/>
+            <RowDefinition Height="20"/>
             <RowDefinition Height="20"/>
             <RowDefinition Height="20"/>
         </Grid.RowDefinitions>
 
         <TextBlock Grid.Row="0" Foreground="#FFEEEEEE" VerticalAlignment="Bottom"
-                   Text="Saved file postfix (empty to overwrite)" />
-
+                   Text="Saved file postfix (empty to overwrite files)" />
         <TextBox Grid.Row="1" Text="{Binding SavedFilePostfix}"/>
 
-        <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Right">
+        <TextBlock Grid.Row="2" Foreground="#FFEEEEEE" VerticalAlignment="Bottom"
+                   Text="Slideshow interval in seconds" />
+        <TextBox Grid.Row="3" Text="{Binding SlideShowInterval}"/>
+
+        <StackPanel Grid.Row="5" Orientation="Horizontal" HorizontalAlignment="Right">
             <Button Content="OK" Width="80" Click="HandleOkButtonClick" IsDefault="True" />
             <Button Content="Cancel" Margin="10,0,0,0" Width="80" IsCancel="True" />
         </StackPanel>

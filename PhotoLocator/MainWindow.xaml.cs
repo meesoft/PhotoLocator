@@ -1,6 +1,5 @@
 ﻿using PhotoLocator.Helpers;
 using System;
-using System.IO;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -27,6 +26,7 @@ namespace PhotoLocator
             var settings = new RegistrySettings();
             _viewModel.PhotoFolderPath = settings.PhotoFolderPath;
             _viewModel.SavedFilePostfix = settings.SavedFilePostfix;
+            _viewModel.SlideShowInterval = settings.SlideShowInterval;
             var i = settings.LeftColumnWidth;
             if (i > 10 && i < Width)
                 LeftColumn.Width = new GridLength(i);
@@ -46,6 +46,7 @@ namespace PhotoLocator
                 settings.PhotoFolderPath = _viewModel.PhotoFolderPath;
             if (_viewModel.SavedFilePostfix != null)
                 settings.SavedFilePostfix = _viewModel.SavedFilePostfix;
+            settings.SlideShowInterval = _viewModel.SlideShowInterval;
             settings.LeftColumnWidth = (int)LeftColumn.Width.Value;
         }
 

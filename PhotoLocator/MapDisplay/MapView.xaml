@@ -129,7 +129,7 @@
                        local:HyperlinkText.InlinesSource="{Binding MapLayer.Description, ElementName=map}"/>
         </Border>
 
-        <StackPanel HorizontalAlignment="Left" VerticalAlignment="Top" Margin="6">
+        <StackPanel HorizontalAlignment="Left" VerticalAlignment="Top" Margin="6" Visibility="{Binding MapToolsVisibility}">
             <tools:MapLayersMenuButton x:Name="mapLayersMenuButton"
                 Margin="2" ToolTip="Map Layers and Overlays"
                 Map="{Binding ElementName=map}">

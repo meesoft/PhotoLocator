@@ -10,6 +10,9 @@
     <Compile Update="AutoTagWindow.xaml.cs">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Update="SlideShowWindow.xaml.cs">
+      <SubType>Code</SubType>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <Page Update="AboutWindow.xaml">
@@ -25,6 +28,9 @@
       <SubType>Designer</SubType>
     </Page>
     <Page Update="SettingsWindow.xaml">
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Update="SlideShowWindow.xaml">
       <SubType>Designer</SubType>
     </Page>
     <Page Update="Styles.xaml">

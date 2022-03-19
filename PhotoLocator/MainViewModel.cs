@@ -60,6 +60,8 @@ namespace PhotoLocator
         
         public string? SavedFilePostfix { get; set; }
 
+        public int SlideShowInterval { get; set; }
+
         public string? PhotoFolderPath
         {
             get => _isInDesignMode ? nameof(PhotoFolderPath) : _photoFolderPath;
@@ -207,15 +209,27 @@ namespace PhotoLocator
             }, "Saving...").WithExceptionLogging();
         });
 
+        public ICommand SlideShowCommand => new RelayCommand(o =>
+        {
+            if (Pictures.Count == 0)
+                return;
+            var slideShowWin = new SlideShowWindow(Pictures, SelectedPicture ?? Pictures.First(), SlideShowInterval);
+            slideShowWin.Owner = App.Current.MainWindow;
+            slideShowWin.ShowDialog();
+            SelectedPicture = slideShowWin.SelectedPicture;
+        });
+
         public ICommand SettingsCommand => new RelayCommand(o =>
         {
             var settingsWin = new SettingsWindow();
             settingsWin.Owner = App.Current.MainWindow;
             settingsWin.SavedFilePostfix = SavedFilePostfix;
+            settingsWin.SlideShowInterval= SlideShowInterval;
             settingsWin.DataContext = settingsWin;
             if (settingsWin.ShowDialog() == true)
             {
                 SavedFilePostfix = settingsWin.SavedFilePostfix;
+                SlideShowInterval = settingsWin.SlideShowInterval;
             }
         });
 
