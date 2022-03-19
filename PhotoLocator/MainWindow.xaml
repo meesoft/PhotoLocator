@@ -8,6 +8,7 @@
         mc:Ignorable="d"
         d:DataContext="{d:DesignInstance Type=local:MainViewModel, IsDesignTimeCreatable=True}"
         Loaded="HandleWindowLoaded" Closed="HandleWindowClosed"
+        IsEnabled="{Binding IsWindowEnabled}"
         WindowState="Maximized"
         Title="PhotoLocator" 
         Height="500" Width="1024" 
@@ -16,7 +17,7 @@
     <Window.Resources>
         <BooleanToVisibilityConverter x:Key="BooleanToVisibility" />
     </Window.Resources>
-
+       
     <Window.InputBindings>
         <KeyBinding Key="T" Modifiers="Ctrl" Command="{Binding AutoTagCommand}" />
         <KeyBinding Key="C" Modifiers="Ctrl" Command="{Binding CopyCommand}" />
@@ -28,6 +29,10 @@
         <KeyBinding Key="Delete" Command="{Binding DeleteSelectedCommand}" />
     </Window.InputBindings>
 
+    <Window.TaskbarItemInfo>
+        <TaskbarItemInfo ProgressValue="{Binding ProgressBarValue}" ProgressState="{Binding TaskbarProgressState}"/>
+    </Window.TaskbarItemInfo>
+
     <Grid Margin="10">
         <Grid.RowDefinitions>
             <RowDefinition Height="28"/>
@@ -37,6 +42,22 @@
             <ColumnDefinition Name="LeftColumn"/>
             <ColumnDefinition Name="RightColumn"/>
         </Grid.ColumnDefinitions>
+
+        <!-- Progress bar, fading out everything -->
+        <Grid Grid.RowSpan="2" Grid.ColumnSpan="2" Visibility="{Binding IsProgressBarVisible, Converter={StaticResource BooleanToVisibility}}" Background="#80000000" Name="ProgressGrid" >
+            <Border Height="30" Margin="150,0" BorderThickness="1" BorderBrush="Black" SnapsToDevicePixels="True">
+                <Border.Background>
+                    <LinearGradientBrush EndPoint="0.5,1" StartPoint="0.6,0">
+                        <GradientStop Color="#FF5F5D5E" Offset="0"/>
+                        <GradientStop Color="#FF3C3B3A" Offset="1"/>
+                    </LinearGradientBrush>
+                </Border.Background>
+                <Grid Height="20" Margin="5" >
+                    <ProgressBar Value="{Binding ProgressBarValue}" Maximum="1" />
+                    <TextBlock Margin="5,0" Text="{Binding ProgressBarText}"/>
+                </Grid>
+            </Border>
+        </Grid>
 
         <GridSplitter Grid.Column="0" Grid.RowSpan="2" Background="Black"
               HorizontalAlignment="Right" VerticalAlignment="Stretch"

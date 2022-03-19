@@ -158,11 +158,14 @@ namespace PhotoLocator
             }
         }
 
-        internal void SaveGeoTag(string? postfix)
+        internal async Task SaveGeoTagAsync(string? postfix)
         {
-            var newFileName = string.IsNullOrEmpty(postfix) ? FullPath :
-                Path.Combine(Path.GetDirectoryName(FullPath)!, Path.GetFileNameWithoutExtension(FullPath)) + postfix + Path.GetExtension(FullPath);
-            ExifHandler.SetGeotag(FullPath, newFileName, GeoTag ?? throw new InvalidOperationException(nameof(GeoTag) + " not set"));
+            await Task.Run(() =>
+            {
+                var newFileName = string.IsNullOrEmpty(postfix) ? FullPath :
+                    Path.Combine(Path.GetDirectoryName(FullPath)!, Path.GetFileNameWithoutExtension(FullPath)) + postfix + Path.GetExtension(FullPath);
+                ExifHandler.SetGeotag(FullPath, newFileName, GeoTag ?? throw new InvalidOperationException(nameof(GeoTag) + " not set"));
+            });
             GeoTagSaved = true;
         }
     }

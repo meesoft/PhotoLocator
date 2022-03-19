@@ -1,4 +1,5 @@
-﻿using System.Globalization;
+﻿using PhotoLocator.Helpers;
+using System.Globalization;
 using System.Windows;
 using System.Windows.Markup;
 using System.Windows.Threading;
@@ -19,7 +20,7 @@ namespace PhotoLocator
 
         private void HandleDispatcherUnhandledException(object sender, DispatcherUnhandledExceptionEventArgs e)
         {
-            MessageBox.Show(e.Exception.ToString(), "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            ExceptionHandler.ShowException(e.Exception);
             e.Handled = true;
         }
     }

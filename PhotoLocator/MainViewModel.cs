@@ -9,9 +9,11 @@ using System.ComponentModel;
 using System.IO;
 using System.Linq;
 using System.Runtime.CompilerServices;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
+using System.Windows.Shell;
 
 namespace PhotoLocator
 {
@@ -46,6 +48,23 @@ namespace PhotoLocator
             if (_isInDesignMode)
                 Pictures.Add(new PictureItemViewModel());
         }
+
+        public bool IsProgressBarVisible { get => _isProgressBarVisible; set => SetProperty(ref _isProgressBarVisible, value); }
+        private bool _isProgressBarVisible;
+
+        public TaskbarItemProgressState TaskbarProgressState { get => _taskbarProgressState; set => SetProperty(ref _taskbarProgressState, value); }
+        TaskbarItemProgressState _taskbarProgressState = TaskbarItemProgressState.None;
+
+        public double ProgressBarValue { get => _progressBarValue; set => SetProperty(ref _progressBarValue, value); }
+        private double _progressBarValue;
+
+        public string? ProgressBarText { get => _progressBarText; set => SetProperty(ref _progressBarText, value); }
+        private string? _progressBarText;
+
+        public bool IsWindowEnabled { get => _isWindowEnabled; set => SetProperty(ref _isWindowEnabled, value); }
+        private bool _isWindowEnabled = true;
+        
+        public string? SavedFilePostfix { get; set; }
 
         public string? PhotoFolderPath
         {
@@ -139,12 +158,57 @@ namespace PhotoLocator
             PictureSelectionChanged();
         });
 
-        public string? SavedFilePostfix { get; set; }
+        private CancellationTokenSource? _cancellation;
+
+        async Task RunProcessWithProgressBarAsync(Func<Action<double>, Task> body, string? text = null)
+        {
+            using (new CursorOverride())
+            {
+                ProgressBarValue = 0;
+                TaskbarProgressState = TaskbarItemProgressState.Normal;
+                ProgressBarText = text;
+                IsProgressBarVisible = true;
+                _cancellation = new CancellationTokenSource();
+                IsWindowEnabled = false;
+                try
+                {
+                    await body(progress =>
+                    {
+                        _cancellation.Token.ThrowIfCancellationRequested();
+                        ProgressBarValue = progress;
+                    });
+                }
+                catch (Exception ex)
+                {
+                    TaskbarProgressState = TaskbarItemProgressState.Error;
+                    ExceptionHandler.ShowException(ex);
+                }
+                finally
+                {
+                    IsWindowEnabled = true;
+                    IsProgressBarVisible = false;
+                    TaskbarProgressState = TaskbarItemProgressState.None;
+                    _cancellation.Dispose();
+                    _cancellation = null;
+                }
+            }
+        }
 
         public ICommand SaveCommand => new RelayCommand(o =>
         {
-            foreach (var item in Pictures.Where(i => i.GeoTagUpdated))
-                item.SaveGeoTag(SavedFilePostfix);
+            var updatedPictures = Pictures.Where(i => i.GeoTagUpdated).ToList();
+            if (updatedPictures.Count == 0)
+                return;
+            RunProcessWithProgressBarAsync(async progressCallback =>
+            {
+                int i = 0;
+                foreach (var item in updatedPictures)
+                {
+                    await item.SaveGeoTagAsync(SavedFilePostfix);
+                    progressCallback((double)(++i) / updatedPictures.Count);
+                }
+                await Task.Delay(10);
+            }, "Saving...").WithExceptionLogging();
         });
 
         public ICommand SettingsCommand => new RelayCommand(o =>

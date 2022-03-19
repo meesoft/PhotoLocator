@@ -16,6 +16,7 @@ namespace PhotoLocator
         public MainWindow()
         {
             InitializeComponent();
+            Panel.SetZIndex(ProgressGrid, 1000);
             DataContext = _viewModel = new MainViewModel();
             Map.DataContext = _viewModel;
         }

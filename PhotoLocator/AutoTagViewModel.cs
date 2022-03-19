@@ -62,13 +62,15 @@ namespace PhotoLocator
 
         public ICommand OkCommand => new RelayCommand(o =>
         {
-            var gpsTraces = LoadAdditionalGpsTraces();
-            var result = AutoTag(gpsTraces);
-            CompletedAction();
-            SaveSettings();
-            MessageBox.Show($"{result.Tagged} photos with timestamps were tagged, {result.NotTagged} were not.", "Auto tag", MessageBoxButton.OK, MessageBoxImage.Information);
+            using (new CursorOverride())
+            {
+                var gpsTraces = LoadAdditionalGpsTraces();
+                var result = AutoTag(gpsTraces);
+                CompletedAction();
+                SaveSettings();
+                MessageBox.Show($"{result.Tagged} photos with timestamps were tagged, {result.NotTagged} were not.", "Auto tag", MessageBoxButton.OK, MessageBoxImage.Information);
+            }
         });
-
 
         private Location? GetBestGeoFix(PictureItemViewModel[] sourceImages, IEnumerable<GpsTrace> gpsTraces, DateTime timeStamp)
         {
