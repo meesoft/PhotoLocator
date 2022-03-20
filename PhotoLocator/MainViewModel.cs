@@ -7,10 +7,11 @@ using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
+using System.Diagnostics;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Runtime.CompilerServices;
-using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
@@ -67,6 +68,8 @@ namespace PhotoLocator
         public string? SavedFilePostfix { get; set; }
 
         public int SlideShowInterval { get; set; }
+
+        public bool ShowMetadataInSlideShow { get; set; }
 
         public string? PhotoFolderPath
         {
@@ -218,7 +221,7 @@ namespace PhotoLocator
         {
             if (Pictures.Count == 0)
                 return;
-            var slideShowWin = new SlideShowWindow(Pictures, SelectedPicture ?? Pictures.First(), SlideShowInterval);
+            var slideShowWin = new SlideShowWindow(Pictures, SelectedPicture ?? Pictures.First(), SlideShowInterval, ShowMetadataInSlideShow);
             slideShowWin.Owner = App.Current.MainWindow;
             slideShowWin.ShowDialog();
             SelectedPicture = slideShowWin.SelectedPicture;
@@ -230,15 +233,17 @@ namespace PhotoLocator
             settingsWin.Owner = App.Current.MainWindow;
             settingsWin.SavedFilePostfix = SavedFilePostfix;
             settingsWin.SlideShowInterval= SlideShowInterval;
+            settingsWin.ShowMetadataInSlideShow = ShowMetadataInSlideShow;
             settingsWin.DataContext = settingsWin;
             if (settingsWin.ShowDialog() == true)
             {
                 SavedFilePostfix = settingsWin.SavedFilePostfix;
                 SlideShowInterval = settingsWin.SlideShowInterval;
+                ShowMetadataInSlideShow = settingsWin.ShowMetadataInSlideShow;
             }
         });
 
-        public ICommand AboutCommand => new RelayCommand(o =>
+        public static ICommand AboutCommand => new RelayCommand(o =>
         {
             var aboutWin = new AboutWindow();
             aboutWin.Owner = App.Current.MainWindow;
@@ -278,6 +283,25 @@ namespace PhotoLocator
                 FileSystem.DeleteFile(item.FullPath, UIOption.OnlyErrorDialogs, RecycleOption.SendToRecycleBin);
                 Pictures.Remove(item);
             }
+        });
+
+        public ICommand ExecuteSelectedCommand => new RelayCommand(o =>
+        {
+            if (SelectedPicture != null)
+                Process.Start(new ProcessStartInfo(SelectedPicture.FullPath) { UseShellExecute = true });
+        });
+
+        public ICommand OpenInMapsCommand => new RelayCommand(o =>
+        {
+            if (SelectedPicture?.GeoTag is null)
+            {
+                MessageBox.Show("Selected file has no map coordinates.", "Information", MessageBoxButton.OK, MessageBoxImage.Information);
+                return;
+            }
+            var url = "http://maps.google.com/maps?q=" +
+                SelectedPicture.GeoTag.Latitude.ToString(CultureInfo.InvariantCulture) + "," +
+                SelectedPicture.GeoTag.Longitude.ToString(CultureInfo.InvariantCulture) + "&t=h";
+            Process.Start(new ProcessStartInfo(url) { UseShellExecute = true });
         });
 
         private void UpdatePushpins()

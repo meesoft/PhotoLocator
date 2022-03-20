@@ -39,6 +39,13 @@ namespace PhotoLocator
         }
         int _slideShowInterval;
 
+        public bool ShowMetadataInSlideShow
+        {
+            get => _showMetadataInSlideShow;
+            set => SetProperty(ref _showMetadataInSlideShow, value);
+        }
+        bool _showMetadataInSlideShow;
+
         private void HandleOkButtonClick(object sender, RoutedEventArgs e)
         {
             DialogResult = true;

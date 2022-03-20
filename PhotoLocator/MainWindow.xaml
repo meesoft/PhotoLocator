@@ -30,6 +30,7 @@
         <KeyBinding Key="F3" Command="{Binding SlideShowCommand}" />
         <KeyBinding Key="F5" Command="{Binding RefreshFolderCommand}" />
         <KeyBinding Key="F11" Command="{Binding SlideShowCommand}" />
+        <KeyBinding Key="Enter" Command="{Binding ExecuteSelectedCommand}" />
         <KeyBinding Key="Delete" Command="{Binding DeleteSelectedCommand}" />
     </Window.InputBindings>
 
@@ -111,6 +112,8 @@
             </ListBox.ItemTemplate>
             <ListBox.ContextMenu>
                 <ContextMenu>
+                    <MenuItem Header="Open file" Command="{Binding ExecuteSelectedCommand}" />
+                    <MenuItem Header="Open in Google maps" Command="{Binding OpenInMapsCommand}" />
                     <MenuItem Header="Delete selected" Command="{Binding DeleteSelectedCommand}" />
                 </ContextMenu>
             </ListBox.ContextMenu>

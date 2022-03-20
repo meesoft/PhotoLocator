@@ -27,6 +27,11 @@ namespace PhotoLocator.Metadata
         {
         }
 
+        //form rational from an UInt64
+        public Rational(ulong bytes) : this(BitConverter.GetBytes(bytes))
+        {
+        }
+
         //form rational from an array of 8 bytes
         public Rational(byte[] bytes)
         {
@@ -42,6 +47,17 @@ namespace PhotoLocator.Metadata
         {
             //round the double value to 5 digits
             return Math.Round(Convert.ToDouble(Num) / Convert.ToDouble(Denom), 5);
+        }
+
+        public static Rational? Decode(object raw)
+        {
+            if (raw is ulong value2)
+                return new Rational(value2);
+            if (raw is long value1)
+                return new Rational(value1);
+            if (raw is byte[] bytes)
+                return new Rational(bytes);
+            return null;
         }
     }
 
@@ -106,6 +122,15 @@ namespace PhotoLocator.Metadata
             AngleInDegrees = Degrees.ToDouble() + Minutes.ToDouble() / 60.0 + Seconds.ToDouble() / 3600.0;
 
             Bytes = bytes;
+        }
+
+        public static GPSRational? Decode(object raw)
+        {
+            if (raw is long[] longs)
+                return new GPSRational(longs);
+            if (raw is byte[] bytes)
+                return new GPSRational(bytes);
+            return null;
         }
     }
 }

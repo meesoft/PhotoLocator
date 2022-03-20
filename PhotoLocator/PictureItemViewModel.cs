@@ -129,8 +129,7 @@ namespace PhotoLocator
                 {
                     using var file = File.OpenRead(FullPath);
                     var decoder = BitmapDecoder.Create(file, BitmapCreateOptions.IgnoreColorProfile, BitmapCacheOption.None);
-                    var metadata = decoder.Frames[0].Metadata as BitmapMetadata;
-                    if (metadata == null)
+                    if (decoder.Frames[0].Metadata is not BitmapMetadata metadata)
                         return;
                     _geoTag = ExifHandler.GetGeotag(metadata);
                     if (DateTime.TryParse(metadata.DateTaken, out var dateTaken))

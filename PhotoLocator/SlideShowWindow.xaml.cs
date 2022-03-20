@@ -1,5 +1,6 @@
 ﻿using MapControl;
 using PhotoLocator.Helpers;
+using PhotoLocator.Metadata;
 using System;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
@@ -19,20 +20,20 @@ namespace PhotoLocator
     public partial class SlideShowWindow : Window, INotifyPropertyChanged
     {
         readonly Collection<PictureItemViewModel> _pictures;
-        int _pictureIndex;
-        DispatcherTimer _timer;
+        readonly bool _showMetadataInSlideShow;
+        readonly DispatcherTimer _timer;
 
-        public SlideShowWindow(Collection<PictureItemViewModel> pictures, PictureItemViewModel selectedPicture, int slideShowInterval)
+        public SlideShowWindow(Collection<PictureItemViewModel> pictures, PictureItemViewModel selectedPicture, int slideShowInterval, bool showMetadataInSlideShow)
         {
             _pictures = pictures;
             SelectedPicture = selectedPicture;
-            _pictureIndex = Math.Max(0, pictures.IndexOf(selectedPicture));
+            _showMetadataInSlideShow = showMetadataInSlideShow;
             _timer = new DispatcherTimer(TimeSpan.FromSeconds(slideShowInterval), DispatcherPriority.Normal, HandleTimerEvent, Dispatcher);
             InitializeComponent();
             DataContext = this;
             Map.DataContext = this;
             Map.map.TargetZoomLevel = 7;
-            UpdatePicture();
+            PictureIndex = Math.Max(0, pictures.IndexOf(selectedPicture));
         }
 
         public event PropertyChangedEventHandler? PropertyChanged;
@@ -46,7 +47,7 @@ namespace PhotoLocator
             return true;
         }
 
-        public Visibility MapToolsVisibility => Visibility.Hidden;
+        public static Visibility MapToolsVisibility => Visibility.Hidden;
 
         public Location? MapCenter
         {
@@ -66,11 +67,34 @@ namespace PhotoLocator
 
         public PictureItemViewModel SelectedPicture { get; private set; }
 
+        public int PictureIndex 
+        { 
+            get => _pictureIndex;
+            set
+            {
+                if (SetProperty(ref _pictureIndex, Math.Max(0, Math.Min(_pictures.Count - 1, value))))
+                    UpdatePicture();
+            }
+        }
+        int _pictureIndex = -1;
+
         private void UpdatePicture()
         {
-            SelectedPicture = _pictures[_pictureIndex];
+            SelectedPicture = _pictures[PictureIndex];
             PictureSource = new BitmapImage(new Uri(SelectedPicture.FullPath));
-            PictureName = Path.GetFileNameWithoutExtension(SelectedPicture.Name);
+
+            var name = Path.GetFileNameWithoutExtension(SelectedPicture.Name)!;
+            var i = name.IndexOf('[');
+            if (i > 2)
+                name = name.Substring(0, i).TrimEnd();
+            if (_showMetadataInSlideShow)
+            {
+                var metadata = ExifHandler.GetMetataString(SelectedPicture.FullPath);
+                if (!string.IsNullOrEmpty(metadata))
+                    name = name + " [" + metadata + "]";
+            }
+            PictureName = name;
+
             if (SelectedPicture.GeoTag is null)
                 IsMapVisible = false;
             else
@@ -78,6 +102,7 @@ namespace PhotoLocator
                 MapCenter = SelectedPicture.GeoTag;
                 IsMapVisible = true;
             }
+
             _timer.Stop();
             _timer.Start();
             WinAPI.SetThreadExecutionState(WinAPI.EXECUTION_STATE.ES_DISPLAY_REQUIRED);
@@ -85,7 +110,7 @@ namespace PhotoLocator
 
         private void HandleTimerEvent(object? sender, EventArgs e)
         {
-            _pictureIndex = (_pictureIndex + 1) % _pictures.Count;
+            PictureIndex = (PictureIndex + 1) % _pictures.Count;
             UpdatePicture();
         }
 
@@ -93,26 +118,14 @@ namespace PhotoLocator
         {
             if (e.Key == Key.Escape)
                 Close();
-            else if (e.Key == Key.Up || e.Key == Key.PageUp)
-            {
-                _pictureIndex = Math.Max(0, _pictureIndex - 1);
-                UpdatePicture();
-            }
-            else if (e.Key == Key.Down || e.Key == Key.PageDown)
-            {
-                _pictureIndex = Math.Min(_pictures.Count - 1, _pictureIndex + 1);
-                UpdatePicture();
-            }
+            else if (e.Key == Key.Left || e.Key == Key.Up || e.Key == Key.PageUp)
+                PictureIndex--;
+            else if (e.Key == Key.Right || e.Key == Key.Down || e.Key == Key.PageDown)
+                PictureIndex++;
             else if (e.Key == Key.Home)
-            {
-                _pictureIndex = 0;
-                UpdatePicture();
-            }
+                PictureIndex = 0;
             else if (e.Key == Key.End)
-            {
-                _pictureIndex = _pictures.Count - 1;
-                UpdatePicture();
-            }
+                PictureIndex = _pictures.Count - 1;
         }
     }
 }

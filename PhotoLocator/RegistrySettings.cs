@@ -25,6 +25,12 @@ namespace PhotoLocator
             set => Key.SetValue(nameof(SlideShowInterval), value);
         }
 
+        public bool ShowMetadataInSlideShow
+        {
+            get => (Key.GetValue(nameof(ShowMetadataInSlideShow)) as int? ?? 0) != 0;
+            set => Key.SetValue(nameof(ShowMetadataInSlideShow), value ? 1 : 0);
+        }
+
         public int LeftColumnWidth
         {
             get => Key.GetValue(nameof(LeftColumnWidth)) as int? ?? -1;

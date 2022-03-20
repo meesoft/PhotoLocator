@@ -11,7 +11,7 @@ namespace PhotoLocator
     /// </summary>
     public partial class MainWindow : Window
     {
-        MainViewModel _viewModel;
+        readonly MainViewModel _viewModel;
 
         public MainWindow()
         {
@@ -27,6 +27,7 @@ namespace PhotoLocator
             _viewModel.PhotoFolderPath = settings.PhotoFolderPath;
             _viewModel.SavedFilePostfix = settings.SavedFilePostfix;
             _viewModel.SlideShowInterval = settings.SlideShowInterval;
+            _viewModel.ShowMetadataInSlideShow = settings.ShowMetadataInSlideShow;
             var i = settings.LeftColumnWidth;
             if (i > 10 && i < Width)
                 LeftColumn.Width = new GridLength(i);
@@ -34,7 +35,7 @@ namespace PhotoLocator
 
             if (settings.FirstLaunch < 1)
             {
-                _viewModel.AboutCommand.Execute(null);
+                MainViewModel.AboutCommand.Execute(null);
                 settings.FirstLaunch = 1;
             }
         }
@@ -47,6 +48,7 @@ namespace PhotoLocator
             if (_viewModel.SavedFilePostfix != null)
                 settings.SavedFilePostfix = _viewModel.SavedFilePostfix;
             settings.SlideShowInterval = _viewModel.SlideShowInterval;
+            settings.ShowMetadataInSlideShow = _viewModel.ShowMetadataInSlideShow;
             settings.LeftColumnWidth = (int)LeftColumn.Width.Value;
         }
 
@@ -65,8 +67,7 @@ namespace PhotoLocator
         {
             if (!e.Data.GetDataPresent(DataFormats.FileDrop))
                 return;
-            var droppedEntries = e.Data.GetData(DataFormats.FileDrop) as string[];
-            if (droppedEntries != null && droppedEntries.Length > 0)
+            if (e.Data.GetData(DataFormats.FileDrop) is string[] droppedEntries && droppedEntries.Length > 0)
                 Dispatcher.BeginInvoke(() => _viewModel.HandleDroppedFilesAsync(droppedEntries).WithExceptionShowing());
         }
     }

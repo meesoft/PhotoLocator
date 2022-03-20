@@ -2,6 +2,7 @@
 
 using MapControl;
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Windows.Media.Imaging;
 
@@ -9,6 +10,10 @@ namespace PhotoLocator.Metadata
 {
     class ExifHandler
     {
+        // See https://exiv2.org/tags.html
+        private const string ExposureTimeQuery = "/app1/ifd/exif/subifd:{uint=33434}"; // RATIONAL 1
+        private const string LensApertureQuery = "/app1/ifd/exif/subifd:{uint=33437}"; // RATIONAL 1
+        private const string IsoQuery = "/app1/ifd/exif/subifd:{uint=34855}"; // Short
         // North or South Latitude 
         private const string GpsLatitudeRefQuery = "/app1/ifd/gps/subifd:{ulong=1}"; // ASCII 2
         // Latitude        
@@ -110,37 +115,54 @@ namespace PhotoLocator.Metadata
             if (metadata is null)
                 return null;
 
-            var latitudeRef = (string)metadata.GetQuery(GpsLatitudeRefQuery);
-            if (latitudeRef is null)
+            if (metadata.GetQuery(GpsLatitudeRefQuery) is not string latitudeRef)
                 return null;
-            var latitude = metadata.GetQuery(GpsLatitudeQuery);
-            GPSRational latitudeRational;
-            if (latitude is byte[] latitudeBytes)
-                latitudeRational = new GPSRational(latitudeBytes);
-            else if (latitude is long[] latitude64)
-                latitudeRational = new GPSRational(latitude64);
-            else
+            var latitude = GPSRational.Decode(metadata.GetQuery(GpsLatitudeQuery));
+            if (latitude is null)
                 return null;
             if (latitudeRef == "S")
-                latitudeRational.AngleInDegrees = -latitudeRational.AngleInDegrees;
+                latitude.AngleInDegrees = -latitude.AngleInDegrees;
 
-            var longitudeRef = (string)metadata.GetQuery(GpsLongitudeRefQuery);
-            if (longitudeRef is null)
+            if (metadata.GetQuery(GpsLongitudeRefQuery) is not string longitudeRef)
                 return null;
-            GPSRational longitudeRational;
-            var longitude = metadata.GetQuery(GpsLongitudeQuery);
-            if (longitude is byte[] longitudeBytes)
-                longitudeRational = new GPSRational(longitudeBytes);
-            else if (longitude is long[] longitude64)
-                longitudeRational = new GPSRational(longitude64);
-            else
+            var longitude = GPSRational.Decode(metadata.GetQuery(GpsLongitudeQuery));
+            if (longitude is null)
                 return null;
             if (longitudeRef == "W")
-                longitudeRational.AngleInDegrees = -longitudeRational.AngleInDegrees;
+                longitude.AngleInDegrees = -longitude.AngleInDegrees;
 
             //byte[] altitude = (byte[])metadata.GetQuery(GpsAltitudeQuery);
 
-            return new Location(latitude: latitudeRational.AngleInDegrees, longitude: longitudeRational.AngleInDegrees);
+            return new Location(latitude: latitude.AngleInDegrees, longitude: longitude.AngleInDegrees);
+        }
+
+        public static string GetMetataString(string fileName)
+        {
+            using var file = File.OpenRead(fileName);
+            var decoder = BitmapDecoder.Create(file, CreateOptions, BitmapCacheOption.OnDemand);
+            if (decoder.Frames[0].Metadata is not BitmapMetadata metadata)
+                return string.Empty;
+            var metadataStrings = new List<string>();
+
+            if (!string.IsNullOrEmpty(metadata.CameraModel))
+                metadataStrings.Add(metadata.CameraModel);
+
+            var exposureTime = Rational.Decode(metadata.GetQuery(ExposureTimeQuery));
+            if (exposureTime != null)
+                metadataStrings.Add(exposureTime.ToDouble() + "s");
+
+            var lensAperture = Rational.Decode(metadata.GetQuery(LensApertureQuery));
+            if (lensAperture != null)
+                metadataStrings.Add("f/" + lensAperture.ToDouble());
+
+            var iso = metadata.GetQuery(IsoQuery);
+            if (iso != null)
+                metadataStrings.Add("ISO" + iso.ToString());
+
+            if (!string.IsNullOrEmpty(metadata.DateTaken))
+                metadataStrings.Add(metadata.DateTaken);
+
+            return string.Join(", ", metadataStrings);
         }
     }
 }
