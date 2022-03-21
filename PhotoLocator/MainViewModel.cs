@@ -276,7 +276,7 @@ namespace PhotoLocator
 
         public ICommand DeleteSelectedCommand => new RelayCommand(o =>
         {
-            if (MessageBox.Show("Delete selected files?", "Confirm", MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes)
+            if (MessageBox.Show("Delete selected files?", "Confirm", MessageBoxButton.OKCancel, MessageBoxImage.Question) != MessageBoxResult.OK)
                 return;
             foreach (var item in Pictures.Where(i => i.IsSelected).ToArray())
             {

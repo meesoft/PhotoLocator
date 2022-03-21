@@ -30,8 +30,6 @@
         <KeyBinding Key="F3" Command="{Binding SlideShowCommand}" />
         <KeyBinding Key="F5" Command="{Binding RefreshFolderCommand}" />
         <KeyBinding Key="F11" Command="{Binding SlideShowCommand}" />
-        <KeyBinding Key="Enter" Command="{Binding ExecuteSelectedCommand}" />
-        <KeyBinding Key="Delete" Command="{Binding DeleteSelectedCommand}" />
     </Window.InputBindings>
 
     <Window.TaskbarItemInfo>
@@ -93,6 +91,10 @@
 
         <ListBox Grid.Column="0" Grid.Row="1" Margin="0,0,10,0" ItemsSource="{Binding Pictures}" Name="PictureListBox"
                  SelectionMode="Extended" SelectedItem="{Binding SelectedPicture}" SelectionChanged="HandlePictureListBoxSelectionChanged" >
+            <ListBox.InputBindings>
+                <KeyBinding Key="Enter" Command="{Binding ExecuteSelectedCommand}" />
+                <KeyBinding Key="Delete" Command="{Binding DeleteSelectedCommand}" />
+            </ListBox.InputBindings>
             <ListBox.ItemsPanel>
                 <ItemsPanelTemplate>
                     <WrapPanel MaxWidth="{Binding ActualWidth, ElementName=PictureListBox}"/>
