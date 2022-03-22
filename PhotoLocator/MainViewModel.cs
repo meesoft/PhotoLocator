@@ -43,8 +43,13 @@ namespace PhotoLocator
 
         public MainViewModel()
         {
+#if DEBUG
             if (_isInDesignMode)
+            {
                 Pictures.Add(new PictureItemViewModel());
+                MapCenter = new Location(53.5, 8.2);
+            }
+#endif
         }
 
         public bool IsProgressBarVisible { get => _isProgressBarVisible; set => SetProperty(ref _isProgressBarVisible, value); }
@@ -86,6 +91,7 @@ namespace PhotoLocator
         public ObservableCollection<PointItem> Points { get; } = new ObservableCollection<PointItem>();
         public ObservableCollection<PointItem> Pushpins { get; } = new ObservableCollection<PointItem>();
         public ObservableCollection<GpsTrace> Polylines { get; } = new ObservableCollection<GpsTrace>();
+        public static Visibility MapToolsVisibility => Visibility.Visible;
 
         public Location? MapCenter
         {
@@ -276,9 +282,10 @@ namespace PhotoLocator
 
         public ICommand DeleteSelectedCommand => new RelayCommand(o =>
         {
-            if (MessageBox.Show("Delete selected files?", "Confirm", MessageBoxButton.OKCancel, MessageBoxImage.Question) != MessageBoxResult.OK)
+            var selected = Pictures.Where(i => i.IsSelected).ToArray();
+            if (MessageBox.Show($"Delete {selected.Length} selected file(s)?", "Confirm", MessageBoxButton.OKCancel, MessageBoxImage.Question) != MessageBoxResult.OK)
                 return;
-            foreach (var item in Pictures.Where(i => i.IsSelected).ToArray())
+            foreach (var item in selected)
             {
                 FileSystem.DeleteFile(item.FullPath, UIOption.OnlyErrorDialogs, RecycleOption.SendToRecycleBin);
                 Pictures.Remove(item);

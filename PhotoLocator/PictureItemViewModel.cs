@@ -25,11 +25,13 @@ namespace PhotoLocator
 
         public PictureItemViewModel()
         {
+#if DEBUG
             if (_isInDesignMode)
             {
                 Name = nameof(PictureItemViewModel);
                 GeoTagSaved = true;
             }
+#endif
         }
 
         public PictureItemViewModel(string fileName)

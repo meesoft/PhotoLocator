@@ -7,7 +7,7 @@
         mc:Ignorable="d"
         d:DataContext="{d:DesignInstance Type=local:SettingsWindow, IsDesignTimeCreatable=True}"
         Background="Black"
-        Title="Settings" Width="300" SizeToContent="Height" ResizeMode="NoResize"
+        Title="Settings" Width="400" SizeToContent="Height" ResizeMode="NoResize"
         WindowStartupLocation="CenterOwner" ShowInTaskbar="False">
     <Grid Margin="10">
         <Grid.RowDefinitions>
@@ -15,7 +15,7 @@
             <RowDefinition Height="20"/>
             <RowDefinition Height="20"/>
             <RowDefinition Height="20"/>
-            <RowDefinition Height="20"/>
+            <RowDefinition Height="30"/>
             <RowDefinition Height="20"/>
             <RowDefinition Height="20"/>
         </Grid.RowDefinitions>
@@ -28,7 +28,7 @@
                    Text="Slideshow interval in seconds" />
         <TextBox Grid.Row="3" Text="{Binding SlideShowInterval}"/>
 
-        <CheckBox Grid.Row="4" Content="Show EXIF metadata in slide show" IsChecked="{Binding ShowMetadataInSlideShow}" VerticalAlignment="Center" />
+        <CheckBox Grid.Row="4" Content="Show EXIF metadata in slide show" IsChecked="{Binding ShowMetadataInSlideShow}" VerticalAlignment="Bottom" />
 
         <StackPanel Grid.Row="6" Orientation="Horizontal" HorizontalAlignment="Right">
             <Button Content="OK" Width="80" Click="HandleOkButtonClick" IsDefault="True" />

@@ -13,6 +13,7 @@ namespace PhotoLocator.Metadata
         // See https://exiv2.org/tags.html
         private const string ExposureTimeQuery = "/app1/ifd/exif/subifd:{uint=33434}"; // RATIONAL 1
         private const string LensApertureQuery = "/app1/ifd/exif/subifd:{uint=33437}"; // RATIONAL 1
+        private const string FocalLengthQuery = "/app1/ifd/exif/subifd:{uint=37386}"; // RATIONAL 1
         private const string IsoQuery = "/app1/ifd/exif/subifd:{uint=34855}"; // Short
         // North or South Latitude 
         private const string GpsLatitudeRefQuery = "/app1/ifd/gps/subifd:{ulong=1}"; // ASCII 2
@@ -78,25 +79,18 @@ namespace PhotoLocator.Metadata
 
         public static void SetGeotag(BitmapMetadata metadata, Location location)
         {
-            const uint PaddingAmount = 2048;
-
-            //pad the metadata so that it can be expanded with new tags
-            metadata.SetQuery("/app1/ifd/PaddingSchema:Padding", PaddingAmount);
-            metadata.SetQuery("/app1/ifd/exif/PaddingSchema:Padding", PaddingAmount);
-            metadata.SetQuery("/xmp/PaddingSchema:Padding", PaddingAmount);
+            // Pad the metadata so that it can be expanded with new tags. Is this ever necessary?
+            //const uint PaddingAmount = 64;
+            //metadata.SetQuery("/app1/ifd/PaddingSchema:Padding", PaddingAmount);
+            //metadata.SetQuery("/app1/ifd/exif/PaddingSchema:Padding", PaddingAmount);
+            //metadata.SetQuery("/xmp/PaddingSchema:Padding", PaddingAmount);
 
             var latitudeRational = new GPSRational(location.Latitude);
             var longitudeRational = new GPSRational(location.Longitude);
             metadata.SetQuery(GpsLatitudeQuery, latitudeRational.Bytes);
             metadata.SetQuery(GpsLongitudeQuery, longitudeRational.Bytes);
-            if (location.Latitude >= 0)
-                metadata.SetQuery(GpsLatitudeRefQuery, "N");
-            else
-                metadata.SetQuery(GpsLatitudeRefQuery, "S");
-            if (location.Longitude >= 0)
-                metadata.SetQuery(GpsLongitudeRefQuery, "E");
-            else
-                metadata.SetQuery(GpsLongitudeRefQuery, "W");
+            metadata.SetQuery(GpsLatitudeRefQuery, location.Latitude >= 0 ? "N" : "S");
+            metadata.SetQuery(GpsLongitudeRefQuery, location.Longitude >= 0 ? "E" : "W");
 
             //Rational altitudeRational = new Rational((int)altitude, 1);  //denoninator = 1 for Rational
             //metadata.SetQuery(GpsAltitudeQuery, altitudeRational.bytes);
@@ -154,6 +148,10 @@ namespace PhotoLocator.Metadata
             var lensAperture = Rational.Decode(metadata.GetQuery(LensApertureQuery));
             if (lensAperture != null)
                 metadataStrings.Add("f/" + lensAperture.ToDouble());
+
+            var focalLength = Rational.Decode(metadata.GetQuery(FocalLengthQuery));
+            if (focalLength != null)
+                metadataStrings.Add(focalLength.ToDouble() + "mm");
 
             var iso = metadata.GetQuery(IsoQuery);
             if (iso != null)

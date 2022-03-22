@@ -13,11 +13,13 @@ namespace SampleApplication
 {
     public partial class MapView : UserControl
     {
+        public static readonly string TileCachePath = Path.Combine(Path.GetTempPath(), "PhotoLocator", "TileCache");
+
         static MapView()
         {
             ImageLoader.HttpClient.DefaultRequestHeaders.Add("User-Agent", "PhotoLocator");
 
-            TileImageLoader.Cache = new ImageFileCache(Path.Combine(Path.GetTempPath(), "PhotoLocator", "TileCache"));
+            TileImageLoader.Cache = new ImageFileCache(TileCachePath);
             //TileImageLoader.Cache = new FileDbCache(TileImageLoader.DefaultCacheFolder);
             //TileImageLoader.Cache = new SQLiteCache(TileImageLoader.DefaultCacheFolder);
             //TileImageLoader.Cache = null;

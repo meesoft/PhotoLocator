@@ -1,5 +1,8 @@
 ﻿using PhotoLocator.Helpers;
+using SampleApplication;
 using System;
+using System.IO;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -38,6 +41,16 @@ namespace PhotoLocator
                 MainViewModel.AboutCommand.Execute(null);
                 settings.FirstLaunch = 1;
             }
+
+            Task.Run(() => CleanupTileCache(MapView.TileCachePath)).WithExceptionLogging();
+        }
+
+        private void CleanupTileCache(string tileCachePath)
+        {
+            var timeThreshold = DateTime.Now - TimeSpan.FromDays(365);
+            foreach (var cacheFile in new DirectoryInfo(tileCachePath).EnumerateFiles("*.*", SearchOption.AllDirectories))
+                if (cacheFile.CreationTime < timeThreshold)
+                    cacheFile.Delete();
         }
 
         private void HandleWindowClosed(object sender, EventArgs e)

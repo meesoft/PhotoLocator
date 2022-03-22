@@ -20,7 +20,7 @@ namespace SampleApplication
         public List<PointItem> Points { get; } = new List<PointItem>();
         public List<PointItem> Pushpins { get; } = new List<PointItem>();
         public List<PolylineItem> Polylines { get; } = new List<PolylineItem>();
-        public Location MapCenter { get; set; } = new MapControl.Location(53.5, 8.2);
+        public Location MapCenter { get; set; } = new Location(53.5, 8.2);
 
         public MapViewModel()
         {
