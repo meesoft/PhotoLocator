@@ -2,6 +2,7 @@
 using SampleApplication;
 using System;
 using System.IO;
+using System.Linq;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
@@ -21,7 +22,6 @@ namespace PhotoLocator
             InitializeComponent();
             Panel.SetZIndex(ProgressGrid, 1000);
             DataContext = _viewModel = new MainViewModel();
-            Map.DataContext = _viewModel;
         }
 
         private void HandleWindowLoaded(object sender, RoutedEventArgs e)
@@ -34,13 +34,16 @@ namespace PhotoLocator
             var i = settings.LeftColumnWidth;
             if (i > 10 && i < Width)
                 LeftColumn.Width = new GridLength(i);
-            PictureListBox.Focus();
+            var selectedLayer = settings.SelectedLayer;
+            Map.mapLayersMenuButton.ContextMenu.Items.OfType<MenuItem>().FirstOrDefault(item => Equals(item.Header, selectedLayer))?.
+                RaiseEvent(new RoutedEventArgs(MenuItem.ClickEvent));
 
             if (settings.FirstLaunch < 1)
             {
                 MainViewModel.AboutCommand.Execute(null);
                 settings.FirstLaunch = 1;
             }
+            PictureListBox.Focus();
 
             Task.Run(() => CleanupTileCache(MapView.TileCachePath)).WithExceptionLogging();
         }
@@ -63,6 +66,9 @@ namespace PhotoLocator
             settings.SlideShowInterval = _viewModel.SlideShowInterval;
             settings.ShowMetadataInSlideShow = _viewModel.ShowMetadataInSlideShow;
             settings.LeftColumnWidth = (int)LeftColumn.Width.Value;
+            var checkedItem = Map.mapLayersMenuButton.ContextMenu.Items.Cast<MenuItem>().FirstOrDefault(i => i.IsChecked);
+            if (checkedItem != null)
+                settings.SelectedLayer = checkedItem.Header as string;
         }
 
         private void HandlePictureListBoxSelectionChanged(object sender, SelectionChangedEventArgs e)

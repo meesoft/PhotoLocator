@@ -13,6 +13,12 @@ namespace PhotoLocator
             set => Key.SetValue(nameof(PhotoFolderPath), value ?? throw new ArgumentException("Directory cannot be null"));
         }
 
+        public string? SelectedLayer
+        {
+            get => Key.GetValue(nameof(SelectedLayer)) as string;
+            set => Key.SetValue(nameof(SelectedLayer), value ?? String.Empty);
+        }
+
         public string SavedFilePostfix
         {
             get => Key.GetValue(nameof(SavedFilePostfix)) as string ?? "[geo]";

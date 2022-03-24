@@ -24,6 +24,7 @@ namespace SampleApplication
             //TileImageLoader.Cache = new SQLiteCache(TileImageLoader.DefaultCacheFolder);
             //TileImageLoader.Cache = null;
 
+            // See https://www.bingmapsportal.com/ (note that caching is not permitted with Bing maps)
             var bingMapsApiKeyPath = Path.Combine(
                 Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), "MapControl", "BingMapsApiKey.txt");
             if (File.Exists(bingMapsApiKeyPath))
