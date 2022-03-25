@@ -37,6 +37,7 @@ namespace PhotoLocator
             var selectedLayer = settings.SelectedLayer;
             Map.mapLayersMenuButton.ContextMenu.Items.OfType<MenuItem>().FirstOrDefault(item => Equals(item.Header, selectedLayer))?.
                 RaiseEvent(new RoutedEventArgs(MenuItem.ClickEvent));
+            _viewModel.GetSelectedMapLayerName = GetSelectedMapLayerName;
 
             if (settings.FirstLaunch < 1)
             {
@@ -50,6 +51,7 @@ namespace PhotoLocator
 
         private void CleanupTileCache(string tileCachePath)
         {
+            Task.Delay(4000).Wait();
             var timeThreshold = DateTime.Now - TimeSpan.FromDays(365);
             foreach (var cacheFile in new DirectoryInfo(tileCachePath).EnumerateFiles("*.*", SearchOption.AllDirectories))
                 if (cacheFile.CreationTime < timeThreshold)
@@ -66,9 +68,12 @@ namespace PhotoLocator
             settings.SlideShowInterval = _viewModel.SlideShowInterval;
             settings.ShowMetadataInSlideShow = _viewModel.ShowMetadataInSlideShow;
             settings.LeftColumnWidth = (int)LeftColumn.Width.Value;
-            var checkedItem = Map.mapLayersMenuButton.ContextMenu.Items.Cast<MenuItem>().FirstOrDefault(i => i.IsChecked);
-            if (checkedItem != null)
-                settings.SelectedLayer = checkedItem.Header as string;
+            settings.SelectedLayer = GetSelectedMapLayerName();
+        }
+
+        private string? GetSelectedMapLayerName()
+        {
+            return Map.mapLayersMenuButton.ContextMenu.Items.Cast<MenuItem>().FirstOrDefault(i => i.IsChecked)?.Header as string;
         }
 
         private void HandlePictureListBoxSelectionChanged(object sender, SelectionChangedEventArgs e)

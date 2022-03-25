@@ -1,12 +1,15 @@
 ﻿using MapControl;
 using PhotoLocator.Helpers;
 using PhotoLocator.Metadata;
+using SampleApplication;
 using System;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.IO;
+using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Windows;
+using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
@@ -23,7 +26,8 @@ namespace PhotoLocator
         readonly bool _showMetadataInSlideShow;
         readonly DispatcherTimer _timer;
 
-        public SlideShowWindow(Collection<PictureItemViewModel> pictures, PictureItemViewModel selectedPicture, int slideShowInterval, bool showMetadataInSlideShow)
+        public SlideShowWindow(Collection<PictureItemViewModel> pictures, PictureItemViewModel selectedPicture, int slideShowInterval, bool showMetadataInSlideShow, 
+            string? selectedMapLayerName)
         {
             _pictures = pictures;
             SelectedPicture = selectedPicture;
@@ -31,8 +35,10 @@ namespace PhotoLocator
             _timer = new DispatcherTimer(TimeSpan.FromSeconds(slideShowInterval), DispatcherPriority.Normal, HandleTimerEvent, Dispatcher);
             InitializeComponent();
             DataContext = this;
-            Map.DataContext = this;
             Map.map.TargetZoomLevel = 7;
+            Map.mapLayersMenuButton.ContextMenu.Items.OfType<MenuItem>().FirstOrDefault(item => Equals(item.Header, selectedMapLayerName))?.
+                RaiseEvent(new RoutedEventArgs(MenuItem.ClickEvent));
+            Map.DataContext = this;
             PictureIndex = Math.Max(0, pictures.IndexOf(selectedPicture));
         }
 
@@ -55,6 +61,8 @@ namespace PhotoLocator
             set => SetProperty(ref _mapCenter, value);
         }
         private Location? _mapCenter;
+        
+        public ObservableCollection<PointItem> Points { get; } = new ObservableCollection<PointItem>();
 
         public bool IsMapVisible { get => _isMapVisible; set => SetProperty(ref _isMapVisible, value); }
         private bool _isMapVisible;
@@ -100,7 +108,10 @@ namespace PhotoLocator
             else
             {
                 MapCenter = SelectedPicture.GeoTag;
+                Points.Clear();
+                Points.Add(new PointItem { Location = SelectedPicture.GeoTag });
                 IsMapVisible = true;
+
             }
 
             _timer.Stop();

@@ -223,11 +223,14 @@ namespace PhotoLocator
             }, "Saving...").WithExceptionLogging();
         });
 
+        public Func<string?>? GetSelectedMapLayerName { get; internal set; }
+
         public ICommand SlideShowCommand => new RelayCommand(o =>
         {
             if (Pictures.Count == 0)
                 return;
-            var slideShowWin = new SlideShowWindow(Pictures, SelectedPicture ?? Pictures.First(), SlideShowInterval, ShowMetadataInSlideShow);
+            var slideShowWin = new SlideShowWindow(Pictures, SelectedPicture ?? Pictures.First(), SlideShowInterval, ShowMetadataInSlideShow,
+                GetSelectedMapLayerName?.Invoke());
             slideShowWin.Owner = App.Current.MainWindow;
             slideShowWin.ShowDialog();
             SelectedPicture = slideShowWin.SelectedPicture;
