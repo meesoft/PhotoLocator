@@ -69,6 +69,7 @@ namespace PhotoLocator
             settings.ShowMetadataInSlideShow = _viewModel.ShowMetadataInSlideShow;
             settings.LeftColumnWidth = (int)LeftColumn.Width.Value;
             settings.SelectedLayer = GetSelectedMapLayerName();
+            _viewModel.Dispose();
         }
 
         private string? GetSelectedMapLayerName()

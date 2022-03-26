@@ -12,6 +12,7 @@ using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Runtime.CompilerServices;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
@@ -19,7 +20,7 @@ using System.Windows.Shell;
 
 namespace PhotoLocator
 {
-    internal class MainViewModel : INotifyPropertyChanged
+    internal sealed class MainViewModel : INotifyPropertyChanged, IDisposable
     {
 #if DEBUG
         static readonly bool _isInDesignMode = DesignerProperties.GetIsInDesignMode(new DependencyObject());
@@ -28,11 +29,11 @@ namespace PhotoLocator
 #endif
 
         Task? _loadPicturesTask;
-        bool _cancelLoading;
+        CancellationTokenSource? _loadCancellation;
 
         public event PropertyChangedEventHandler? PropertyChanged;
 
-        protected bool SetProperty<T>(ref T field, T newValue, [CallerMemberName] string? propertyName = null)
+        bool SetProperty<T>(ref T field, T newValue, [CallerMemberName] string? propertyName = null)
         {
             if (Equals(field, newValue))
                 return false;
@@ -189,7 +190,7 @@ namespace PhotoLocator
                     {
                         if (progress < 0)
                             ProgressBarIsIndeterminate = true;
-                        ProgressBarValue = progress;
+                        ProgressBarValue = Math.Max(ProgressBarValue, progress);
                     });
                 }
                 catch (Exception ex)
@@ -208,17 +209,17 @@ namespace PhotoLocator
 
         public ICommand SaveCommand => new RelayCommand(o =>
         {
-            var updatedPictures = Pictures.Where(i => i.GeoTagUpdated).ToList();
-            if (updatedPictures.Count == 0)
+            var updatedPictures = Pictures.Where(i => i.GeoTagUpdated).ToArray();
+            if (updatedPictures.Length == 0)
                 return;
             RunProcessWithProgressBarAsync(async progressCallback =>
             {
                 int i = 0;
-                foreach (var item in updatedPictures)
+                await Parallel.ForEachAsync(updatedPictures, new ParallelOptions { MaxDegreeOfParallelism = 2 }, async (item, ct) =>
                 {
                     await item.SaveGeoTagAsync(SavedFilePostfix);
-                    progressCallback((double)(++i) / updatedPictures.Count);
-                }
+                    progressCallback((double)Interlocked.Increment(ref i) / updatedPictures.Length);
+                });
                 await Task.Delay(10);
             }, "Saving...").WithExceptionLogging();
         });
@@ -280,7 +281,7 @@ namespace PhotoLocator
                 else
                     fileNames.Add(path);
             await AppendFilesAsync(fileNames);
-            await (_loadPicturesTask = LoadPicturesAsync());
+            await LoadPicturesAsync();
         }
 
         public ICommand DeleteSelectedCommand => new RelayCommand(o =>
@@ -325,7 +326,7 @@ namespace PhotoLocator
 
         private async Task LoadFolderContentsAsync()
         {
-            _cancelLoading = true;
+            _loadCancellation?.Cancel();
             await WaitForPicturesLoadedAsync();
             if (string.IsNullOrEmpty(PhotoFolderPath))
                 return;
@@ -334,7 +335,7 @@ namespace PhotoLocator
             await AppendFilesAsync(Directory.EnumerateFiles(PhotoFolderPath));
             if (Polylines.Count > 0)
                 MapCenter = Polylines[0].Center;
-            await (_loadPicturesTask = LoadPicturesAsync());
+            await LoadPicturesAsync();
         }
 
         private async Task AppendFilesAsync(IEnumerable<string> fileNames)
@@ -357,13 +358,12 @@ namespace PhotoLocator
 
         private async Task LoadPicturesAsync()
         {
-            _cancelLoading = false;
-            foreach (var item in Pictures.Where(i => i.PreviewImage is null).ToArray())
-            {
-                await item.LoadImageAsync();
-                if (_cancelLoading)
-                    break;
-            }
+            _loadCancellation?.Dispose();
+            _loadCancellation = new CancellationTokenSource();
+            _loadPicturesTask = Parallel.ForEachAsync(Pictures.Where(i => i.PreviewImage is null).ToArray(), 
+                new ParallelOptions { MaxDegreeOfParallelism = 2, CancellationToken = _loadCancellation.Token }, 
+                (item, ct) => item.LoadImageAsync(ct));
+            await _loadPicturesTask;
             _loadPicturesTask = null;
         }
 
@@ -375,6 +375,13 @@ namespace PhotoLocator
                     progressUpdate(-1);
                     await _loadPicturesTask;
                 }, "Loading");
+        }
+
+        public void Dispose()
+        {
+            _loadCancellation?.Cancel();
+            _loadCancellation?.Dispose();
+            _loadCancellation = null;
         }
     }
 }

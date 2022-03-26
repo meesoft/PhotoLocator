@@ -5,6 +5,7 @@ using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
 using System.Runtime.CompilerServices;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Media;
@@ -123,7 +124,7 @@ namespace PhotoLocator
         }
         private string? _errorMessage;
 
-        public async Task LoadImageAsync()
+        public async ValueTask LoadImageAsync(CancellationToken ct)
         {
             try
             {
@@ -136,7 +137,7 @@ namespace PhotoLocator
                     _geoTag = ExifHandler.GetGeotag(metadata);
                     if (DateTime.TryParse(metadata.DateTaken, out var dateTaken))
                         _timeStamp = dateTaken;
-                });
+                }, ct);
                 GeoTagSaved = GeoTag != null;
 
                 PreviewImage = await Task.Run(() =>
@@ -149,7 +150,7 @@ namespace PhotoLocator
                     thumbnail.EndInit();
                     thumbnail.Freeze();
                     return thumbnail;
-                });
+                }, ct);
             }
             catch (Exception ex)
             {
@@ -159,13 +160,20 @@ namespace PhotoLocator
 
         internal async Task SaveGeoTagAsync(string? postfix)
         {
-            await Task.Run(() =>
+            try
             {
-                var newFileName = string.IsNullOrEmpty(postfix) ? FullPath :
-                    Path.Combine(Path.GetDirectoryName(FullPath)!, Path.GetFileNameWithoutExtension(FullPath)) + postfix + Path.GetExtension(FullPath);
-                ExifHandler.SetGeotag(FullPath, newFileName, GeoTag ?? throw new InvalidOperationException(nameof(GeoTag) + " not set"));
-            });
-            GeoTagSaved = true;
+                await Task.Run(() =>
+                {
+                    var newFileName = string.IsNullOrEmpty(postfix) ? FullPath :
+                        Path.Combine(Path.GetDirectoryName(FullPath)!, Path.GetFileNameWithoutExtension(FullPath)) + postfix + Path.GetExtension(FullPath);
+                    ExifHandler.SetGeotag(FullPath, newFileName, GeoTag ?? throw new InvalidOperationException(nameof(GeoTag) + " not set"));
+                });
+                GeoTagSaved = true;
+            }
+            catch (Exception ex)
+            {
+                ErrorMessage = ex.ToString();
+            }
         }
     }
 }
