@@ -149,10 +149,12 @@ namespace PhotoLocator
             autoTagWin.DataContext = autoTagViewModel;
             if (autoTagWin.ShowDialog() == true)
             {
-                if (SelectedPicture != null)
-                    MapCenter = SelectedPicture.GeoTag;
                 UpdatePushpins();
                 PictureSelectionChanged();
+                if (SelectedPicture?.GeoTag != null)
+                    MapCenter = SelectedPicture.GeoTag;
+                else if (Points.Count > 0)
+                    MapCenter = Points[0].Location;
             }
         });
 
@@ -347,9 +349,9 @@ namespace PhotoLocator
                 var ext = Path.GetExtension(fileName).ToLowerInvariant();
                 if (ext == ".jpg")
                     Pictures.Add(new PictureItemViewModel(fileName));
-                else if (ext == ".gpx")
+                else if (ext == ".gpx" || ext == ".kml")
                 {
-                    var trace = await Task.Run(() => GpsTrace.DecodeGpxFile(fileName));
+                    var trace = await Task.Run(() => GpsTrace.DecodeGpsTraceFile(fileName, TimeSpan.FromMinutes(1)));
                     if (trace.TimeStamps.Count > 0)
                         Polylines.Add(trace);
                 }

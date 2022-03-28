@@ -66,11 +66,13 @@ namespace PhotoLocator
             try
             {
                 using var _ = new CursorOverride();
-                var gpsTraces = LoadAdditionalGpsTraces();
+                var gpsTraces = LoadAdditionalGpsTraces().ToArray();
                 var result = AutoTag(gpsTraces);
+                if (MessageBox.Show($"{result.Tagged} photos with timestamps were tagged, {result.NotTagged} were not.", "Auto tag", 
+                    MessageBoxButton.OKCancel, MessageBoxImage.Information) != MessageBoxResult.OK)
+                    return;
                 CompletedAction();
                 SaveSettings();
-                MessageBox.Show($"{result.Tagged} photos with timestamps were tagged, {result.NotTagged} were not.", "Auto tag", MessageBoxButton.OK, MessageBoxImage.Information);
             }
             finally
             {
@@ -133,10 +135,12 @@ namespace PhotoLocator
         {
             if (string.IsNullOrEmpty(TraceFilePath))
                 return GpsTraces;
+            var minDist = TimeSpan.FromMinutes(MaxTimestampDifference);
             if (File.Exists(TraceFilePath))
-                return GpsTraces.Append(GpsTrace.DecodeGpxFile(TraceFilePath));
-            return GpsTraces.Concat(
-                Directory.EnumerateFiles(TraceFilePath, "*.gpx").Select(fileName => GpsTrace.DecodeGpxFile(fileName)));
+                return GpsTraces.Append(GpsTrace.DecodeGpsTraceFile(TraceFilePath, minDist));
+            return GpsTraces.
+                Concat(Directory.EnumerateFiles(TraceFilePath, "*.gpx").Select(fileName => GpsTrace.DecodeGpsTraceFile(fileName, minDist))).
+                Concat(Directory.EnumerateFiles(TraceFilePath, "*.kml").Select(fileName => GpsTrace.DecodeGpsTraceFile(fileName, minDist)));
         }
 
         private void SaveSettings()

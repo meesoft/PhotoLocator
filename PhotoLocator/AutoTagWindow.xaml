@@ -24,18 +24,18 @@
 
         <TextBlock Grid.Row="0" Foreground="#FFEEEEEE" VerticalAlignment="Bottom"
                    Text="Additional GPS trace file path" />
-        <TextBox Grid.Row="1" Text="{Binding TraceFilePath}"/>
+        <TextBox Grid.Row="1" Text="{Binding TraceFilePath}" PreviewKeyDown="HandleTextBoxPreviewKeyUp"/>
 
         <TextBlock Grid.Row="2" Foreground="#FFEEEEEE" VerticalAlignment="Bottom"
                    Text="Maximum timestamp difference in minutes" />
-        <TextBox Grid.Row="3" Text="{Binding MaxTimestampDifference}"/>
+        <TextBox Grid.Row="3" Text="{Binding MaxTimestampDifference}" PreviewKeyDown="HandleTextBoxPreviewKeyUp"/>
 
         <TextBlock Grid.Row="4" Foreground="#FFEEEEEE" VerticalAlignment="Bottom"
                    Text="Photo timestamp offset in hours" />
-        <TextBox Grid.Row="5" Text="{Binding TimestampOffset}"/>
+        <TextBox Grid.Row="5" Text="{Binding TimestampOffset}" PreviewKeyDown="HandleTextBoxPreviewKeyUp"/>
 
         <StackPanel Grid.Row="7" Orientation="Horizontal" HorizontalAlignment="Right">
-            <Button Content="OK" Width="80" Command="{Binding OkCommand}" IsDefault="True" />
+            <Button Content="OK" Width="80" Command="{Binding OkCommand}" IsDefault="True" Name="OkButton" />
             <Button Content="Cancel" Margin="10,0,0,0" Width="80" IsCancel="True" />
         </StackPanel>
     </Grid>

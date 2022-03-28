@@ -24,7 +24,7 @@ namespace PhotoLocator.Metadata
             document.Load(stream);
             var gpx = document["gpx"] ?? throw new Exception("gpx node missing");
             var trk = gpx["trk"] ?? throw new Exception("trk node missing");
-            foreach(XmlNode trkseg in trk)
+            foreach (XmlNode trkseg in trk)
                 if (trkseg.Name == "trkseg")
                     foreach (XmlNode trkpt in trkseg)
                         if (trkpt.Name == "trkpt")
@@ -43,10 +43,81 @@ namespace PhotoLocator.Metadata
             return trace;
         }
 
-        public static GpsTrace DecodeGpxFile(string fileName)
+        class Placemark
         {
+            public string? Name;
+            public DateTime StartTime, EndTime;
+            public readonly List<Location> Coordinates = new();
+        }
+
+        static double Interpolate(double val1, double val2, double alpha)
+        {
+            return (val1 * (1 - alpha) + val2 * alpha);
+        }
+
+        static GpsTrace DecodeKmlStream(Stream stream, TimeSpan minimumInterval)
+        {
+            var document = new XmlDocument();
+            document.Load(stream);
+            var placemarks = new List<Placemark>();
+            var kml = document["kml"] ?? throw new Exception("kml node missing");
+            foreach (var node in kml.FirstChild!.ChildNodes.Cast<XmlElement>().Where(n => n.Name == "Placemark"))
+            {
+                var placemark = new Placemark();
+                placemark.Name = node["name"]?.InnerText;
+
+                var timeSpanNode = node["TimeSpan"] ?? throw new Exception("TimeSpan node missing");
+                placemark.StartTime = DateTime.Parse(timeSpanNode["begin"]!.InnerText);
+                placemark.EndTime = DateTime.Parse(timeSpanNode["end"]!.InnerText);
+
+                var coordContainerNode = node["LineString"] ?? node["Point"]!;
+                var coordsNode = coordContainerNode["coordinates"] ?? throw new Exception("coordinates node missing");
+                foreach (var coord in coordsNode.InnerText.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries))
+                {
+                    var coords = coord.Split(',');
+                    placemark.Coordinates.Add(new Location(
+                        double.Parse(coords[1], CultureInfo.InvariantCulture),
+                        double.Parse(coords[0], CultureInfo.InvariantCulture)));
+                }
+                placemarks.Add(placemark);
+            }
+
+            double minInterval = minimumInterval.TotalHours / 24;
+            var trace = new GpsTrace { Locations = new LocationCollection() };
+            foreach (var placemark in placemarks)
+            {
+                var startTime = placemark.StartTime.ToOADate();
+                var endTime = placemark.EndTime.ToOADate();
+                if (placemark.Coordinates.Count == 1)
+                {
+                    var coord = placemark.Coordinates[0];
+                    for (var time = startTime; time <= endTime; time += minInterval)
+                    {
+                        trace.Locations.Add(coord);
+                        trace.TimeStamps.Add(DateTime.FromOADate(time).ToUniversalTime());
+                    }
+                }
+                else
+                {
+                    for (int i = 0; i < placemark.Coordinates.Count; i++)
+                    {
+                        trace.Locations.Add(placemark.Coordinates[i]);
+                        trace.TimeStamps.Add(DateTime.FromOADate(Interpolate(startTime, endTime, (double)i / (placemark.Coordinates.Count - 1))).ToUniversalTime());
+                    }
+                }
+            };
+            return trace;
+        }
+
+        public static GpsTrace DecodeGpsTraceFile(string fileName, TimeSpan mininumInterval)
+        {
+            var ext = Path.GetExtension(fileName).ToLowerInvariant();
             using var file = File.OpenRead(fileName);
-            return DecodeGpxStream(file);
+            if (ext == ".gpx")
+                return DecodeGpxStream(file);
+            if (ext == ".kml")
+                return DecodeKmlStream(file, mininumInterval);
+            throw new Exception("Unsupported file format");
         }
     }
 }

@@ -23,5 +23,11 @@ namespace PhotoLocator
         {
             InitializeComponent();
         }
+
+        private void HandleTextBoxPreviewKeyUp(object sender, KeyEventArgs e)
+        {
+            if (e.Key == Key.Enter)
+                OkButton.Focus(); // Make sure we leave the edit box so that the value is updated
+        }
     }
 }
