@@ -15,11 +15,20 @@
         <Image Source="{Binding PreviewImage}" VerticalAlignment="Top"/>
 
         <Grid Margin="2" >
+            <TextBlock Text="ë" TextWrapping="Wrap" FontSize="25" FontWeight="ExtraBold" FontFamily="Webdings" 
+                       VerticalAlignment="Top" HorizontalAlignment="Right" Foreground="White" 
+                       Visibility="{Binding GeoTagPresent, Converter={StaticResource BooleanToVisibility}}" RenderTransformOrigin="0.5,0.5">
+                <TextBlock.RenderTransform>
+                    <TransformGroup>
+                        <TranslateTransform X="1.8" Y="-1.1"/>
+                    </TransformGroup>
+                </TextBlock.RenderTransform>
+            </TextBlock>
             <TextBlock Text="ë" TextWrapping="Wrap" FontSize="22" FontWeight="Bold" FontFamily="Webdings" 
                        VerticalAlignment="Top" HorizontalAlignment="Right" Foreground="Green" 
                        Visibility="{Binding GeoTagSaved, Converter={StaticResource BooleanToVisibility}}"/>
             <TextBlock Text="ë" TextWrapping="Wrap" FontSize="22" FontWeight="Bold" FontFamily="Webdings" 
-                       VerticalAlignment="Top"  HorizontalAlignment="Right" Foreground="Yellow" 
+                       VerticalAlignment="Top"  HorizontalAlignment="Right" Foreground="#FFFFDD00" 
                        Visibility="{Binding GeoTagUpdated, Converter={StaticResource BooleanToVisibility}}"/>
             
             <TextBlock Text="{Binding Name}" TextWrapping="Wrap" FontWeight="Bold" VerticalAlignment="Bottom" Foreground="#FFEEEEEE"/>

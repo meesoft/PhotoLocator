@@ -94,7 +94,7 @@ namespace PhotoLocator.Metadata
                     for (var time = startTime; time <= endTime; time += minInterval)
                     {
                         trace.Locations.Add(coord);
-                        trace.TimeStamps.Add(DateTime.FromOADate(time).ToUniversalTime());
+                        trace.TimeStamps.Add(DateTime.SpecifyKind(DateTime.FromOADate(time), placemark.StartTime.Kind));
                     }
                 }
                 else
@@ -102,7 +102,8 @@ namespace PhotoLocator.Metadata
                     for (int i = 0; i < placemark.Coordinates.Count; i++)
                     {
                         trace.Locations.Add(placemark.Coordinates[i]);
-                        trace.TimeStamps.Add(DateTime.FromOADate(Interpolate(startTime, endTime, (double)i / (placemark.Coordinates.Count - 1))).ToUniversalTime());
+                        trace.TimeStamps.Add(DateTime.SpecifyKind(DateTime.FromOADate(
+                            Interpolate(startTime, endTime, (double)i / (placemark.Coordinates.Count - 1))), placemark.StartTime.Kind));
                     }
                 }
             };

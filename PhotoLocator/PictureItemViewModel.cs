@@ -30,6 +30,7 @@ namespace PhotoLocator
             if (_isInDesignMode)
             {
                 Name = nameof(PictureItemViewModel);
+                GeoTag = new Location(0, 0);
                 GeoTagSaved = true;
             }
 #endif
@@ -92,13 +93,21 @@ namespace PhotoLocator
             get => GeoTag != null && !GeoTagSaved;
         }
 
+        public bool GeoTagPresent
+        {
+            get => GeoTag != null;
+        }
+
         public Location? GeoTag
         {
             get => _geoTag;
             set
             {
                 if (SetProperty(ref _geoTag, value))
+                {
                     NotifyPropertyChanged(nameof(GeoTagUpdated));
+                    NotifyPropertyChanged(nameof(GeoTagPresent));
+                }
             }
         }
         Location? _geoTag;
@@ -128,15 +137,15 @@ namespace PhotoLocator
         {
             try
             {
-                await Task.Run(() =>
+                GeoTag = await Task.Run(() =>
                 {
                     using var file = File.OpenRead(FullPath);
                     var decoder = BitmapDecoder.Create(file, BitmapCreateOptions.IgnoreColorProfile, BitmapCacheOption.None);
                     if (decoder.Frames[0].Metadata is not BitmapMetadata metadata)
-                        return;
-                    _geoTag = ExifHandler.GetGeotag(metadata);
+                        return null;
                     if (DateTime.TryParse(metadata.DateTaken, out var dateTaken))
-                        _timeStamp = dateTaken;
+                        _timeStamp = DateTime.SpecifyKind(dateTaken, DateTimeKind.Local);
+                    return ExifHandler.GetGeotag(metadata);
                 }, ct);
                 GeoTagSaved = GeoTag != null;
 
