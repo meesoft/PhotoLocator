@@ -1,6 +1,6 @@
 # PhotoLocator
 ## Photo geotagging and location browsing
-PhotoLocator can import GPS tags from GPX files and EXIF data from other JPEG files and apply to photos that were not geotagged.
+PhotoLocator can import GPS tags from GPX and KML files and EXIF data from other JPEG files and apply to photos that were not geotagged.
 
 ![Screenshot](./Screenshot.jpg)
 
