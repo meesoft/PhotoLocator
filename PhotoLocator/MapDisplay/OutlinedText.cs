@@ -5,7 +5,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
 
-namespace SampleApplication
+namespace PhotoLocator.MapDisplay
 {
     public class OutlinedText : FrameworkElement
     {
@@ -123,16 +123,12 @@ namespace SampleApplication
             if (text == null)
             {
                 if (string.IsNullOrEmpty(Text))
-                {
                     return false;
-                }
 
                 var typeface = new Typeface(FontFamily, FontStyle, FontWeight, FontStretch);
 
-                if (!typeface.TryGetGlyphTypeface(out GlyphTypeface glyphTypeface))
-                {
+                if (!typeface.TryGetGlyphTypeface(out var glyphTypeface))
                     return false;
-                }
 
                 text = new FormattedText(Text,
                     CultureInfo.InvariantCulture,

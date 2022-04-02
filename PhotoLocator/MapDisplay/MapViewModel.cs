@@ -1,7 +1,7 @@
 ﻿using MapControl;
 using System.Collections.Generic;
 
-namespace SampleApplication
+namespace PhotoLocator.MapDisplay
 {
     public class PointItem
     {

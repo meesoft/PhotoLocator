@@ -4,7 +4,7 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:PhotoLocator"
-        xmlns:mapDisplay="clr-namespace:SampleApplication"
+        xmlns:mapDisplay="clr-namespace:PhotoLocator.MapDisplay"
         mc:Ignorable="d"
         d:DataContext="{d:DesignInstance Type=local:SlideShowWindow, IsDesignTimeCreatable=False}"
         WindowState="Maximized"

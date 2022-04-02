@@ -22,7 +22,7 @@ using System.Windows.Controls;
 using System.Windows.Documents;
 #endif
 
-namespace SampleApplication
+namespace PhotoLocator.MapDisplay
 {
     public static class HyperlinkText
     {
@@ -42,7 +42,7 @@ namespace SampleApplication
 
                 if (match.Success &&
                     match.Groups.Count == 3 &&
-                    Uri.TryCreate(match.Groups[2].Value, UriKind.Absolute, out Uri uri))
+                    Uri.TryCreate(match.Groups[2].Value, UriKind.Absolute, out var uri))
                 {
                     inlines.Add(new Run { Text = text.Substring(0, match.Index) });
                     text = text.Substring(match.Index + match.Length);
@@ -94,9 +94,7 @@ namespace SampleApplication
             InlineCollection inlines = null;
 
             if (obj is TextBlock block)
-            {
                 inlines = block.Inlines;
-            }
             else if (obj is Paragraph paragraph)
             {
                 inlines = paragraph.Inlines;
@@ -106,7 +104,7 @@ namespace SampleApplication
             {
                 inlines.Clear();
 
-                foreach (var inline in TextToInlines((string)e.NewValue))
+                foreach (var inline in ((string)e.NewValue).TextToInlines())
                 {
                     inlines.Add(inline);
                 }

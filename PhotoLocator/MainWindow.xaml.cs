@@ -1,5 +1,5 @@
 ﻿using PhotoLocator.Helpers;
-using SampleApplication;
+using PhotoLocator.MapDisplay;
 using System;
 using System.IO;
 using System.Linq;

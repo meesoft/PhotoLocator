@@ -9,7 +9,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 
-namespace SampleApplication
+namespace PhotoLocator.MapDisplay
 {
     public partial class MapView : UserControl
     {

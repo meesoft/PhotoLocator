@@ -1,8 +1,8 @@
 ﻿using MapControl;
 using Microsoft.VisualBasic.FileIO;
 using PhotoLocator.Helpers;
+using PhotoLocator.MapDisplay;
 using PhotoLocator.Metadata;
-using SampleApplication;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;

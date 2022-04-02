@@ -11,7 +11,7 @@ using System.Windows;
 using System.Windows.Data;
 #endif
 
-namespace SampleApplication
+namespace PhotoLocator.MapDisplay
 {
     public class HeadingToVisibilityConverter : IValueConverter
     {

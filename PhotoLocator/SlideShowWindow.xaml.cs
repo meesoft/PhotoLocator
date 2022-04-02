@@ -1,7 +1,7 @@
 ﻿using MapControl;
 using PhotoLocator.Helpers;
+using PhotoLocator.MapDisplay;
 using PhotoLocator.Metadata;
-using SampleApplication;
 using System;
 using System.Collections.ObjectModel;
 using System.ComponentModel;

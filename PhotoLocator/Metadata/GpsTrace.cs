@@ -1,5 +1,5 @@
 ﻿using MapControl;
-using SampleApplication;
+using PhotoLocator.MapDisplay;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
