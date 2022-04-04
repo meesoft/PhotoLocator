@@ -32,4 +32,4 @@ The source code is available at https://github.com/meesoft/PhotoLocator
 Released binaries will be made available at http://meesoft.com
 
 ## License
-Ms-PL
+[Ms-PL](LICENSE)
