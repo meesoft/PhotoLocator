@@ -29,7 +29,7 @@ PhotoLocator is written in C# targeting .net6.0 for Windows.
 
 The source code is available at https://github.com/meesoft/PhotoLocator
 
-Released binaries will be made available at http://meesoft.com
+Released binaries will be made available at http://meesoft.com/PhotoLocator
 
 ## License
 [Ms-PL](LICENSE)
