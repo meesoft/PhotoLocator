@@ -22,9 +22,9 @@
         <Image Source="{Binding PictureSource}"/>
 
         <TextBlock VerticalAlignment="Bottom" HorizontalAlignment="Right" Margin="8" FontSize="20" FontWeight="Bold" Foreground="Black"
-                   TextWrapping="Wrap" Text="{Binding PictureName}"/>
-        <TextBlock VerticalAlignment="Bottom" HorizontalAlignment="Right" Margin="10" FontSize="20" FontWeight="Bold" Foreground="White" 
-                   TextWrapping="Wrap" Text="{Binding PictureName}"/>
+                   TextWrapping="Wrap" Text="{Binding PictureTitle}"/>
+        <TextBlock VerticalAlignment="Bottom" HorizontalAlignment="Right" Margin="10" FontSize="20" FontWeight="Bold" Foreground="White"
+                   TextWrapping="Wrap" Text="{Binding PictureTitle}"/>
 
         <mapDisplay:MapView x:Name="Map" Visibility="{Binding IsMapVisible, Converter={StaticResource BooleanToVisibility}}"
                             Width="160" Height="160" Margin="20" VerticalAlignment="Bottom" HorizontalAlignment="Left"/>

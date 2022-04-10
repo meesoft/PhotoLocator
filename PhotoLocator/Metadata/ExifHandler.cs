@@ -139,7 +139,7 @@ namespace PhotoLocator.Metadata
             var metadataStrings = new List<string>();
 
             if (!string.IsNullOrEmpty(metadata.CameraModel))
-                metadataStrings.Add(metadata.CameraModel);
+                metadataStrings.Add(metadata.CameraModel.Trim());
 
             var exposureTime = Rational.Decode(metadata.GetQuery(ExposureTimeQuery));
             if (exposureTime != null)

@@ -26,6 +26,7 @@
         <KeyBinding Key="C" Modifiers="Ctrl" Command="{Binding CopyCommand}" />
         <KeyBinding Key="V" Modifiers="Ctrl" Command="{Binding PasteCommand}" />
         <KeyBinding Key="S" Modifiers="Ctrl" Command="{Binding SaveCommand}" />
+        <KeyBinding Key="Q" Modifiers="Ctrl" Command="{Binding ViewModeCommand}" />
         <KeyBinding Key="F1" Command="{Binding AboutCommand}" />
         <KeyBinding Key="F3" Command="{Binding SlideShowCommand}" />
         <KeyBinding Key="F5" Command="{Binding RefreshFolderCommand}" />
@@ -63,16 +64,22 @@
         </Grid>
 
         <GridSplitter Grid.Column="0" Grid.RowSpan="2" Background="Black"
-              HorizontalAlignment="Right" VerticalAlignment="Stretch"
-              ShowsPreview="True" Width="8"/>
+                      HorizontalAlignment="Right" VerticalAlignment="Stretch"
+                      ShowsPreview="True" Width="8"/>
 
         <Grid Grid.Column="0" Margin="0,0,10,4" >
-            <TextBox Text="{Binding PhotoFolderPath}" Margin="0,0,34,0" PreviewKeyUp="PathEditPreviewKeyUp" Name="PathEdit" />
+            <TextBox Text="{Binding PhotoFolderPath}" Margin="0,0,34,0" PreviewKeyUp="HandlePathEditPreviewKeyUp" Name="PathEdit" />
             <Button Content="1" FontFamily="Wingdings" FontSize="20" Width="32" HorizontalAlignment="Right"
                     Command="{Binding BrowseForPhotosCommand}" ToolTip="Browse for folder (Ctrl+O)" />
         </Grid>
 
         <StackPanel Grid.Column="1" Orientation="Horizontal" Margin="0,0,0,4">
+            <ComboBox Width="100" ToolTip="View (Ctrl+Q)" SelectedItem="{Binding SelectedViewModeItem}" SelectionChanged="HandleViewModeSelectionChanged">
+                <ComboBoxItem Content="Map" Selector.IsSelected="True" Name="MapViewItem" Tag="{x:Static local:ViewMode.Map}"/>
+                <ComboBoxItem Content="Preview" Name="PreviewViewItem" Tag="{x:Static local:ViewMode.Preview}"/>
+                <ComboBoxItem Content="Split" Tag="{x:Static local:ViewMode.Split}"/>
+            </ComboBox>
+
             <Button Content="Auto tag" Width="100" Command="{Binding AutoTagCommand}"
                     ToolTip="Auto assign tags to selected pictures (Ctrl+T)" />
             <Button Content="Save center" Width="100" Command="{Binding CopyCommand}"
@@ -121,7 +128,23 @@
             </ListBox.ContextMenu>
         </ListBox>
 
-        <mapDisplay:MapView Grid.Column="1" Grid.Row="1" x:Name="Map" />
+        <Grid Grid.Column="1" Grid.Row="1">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="{Binding MapRowHeight}" Name="MapRow"/>
+                <RowDefinition Height="{Binding PreviewRowHeight}" Name="PreviewRow"/>
+            </Grid.RowDefinitions>
+            <GridSplitter Grid.Row="1" Visibility="{Binding InSplitViewMode, Converter={StaticResource BooleanToVisibility}}"
+                          Height="8" Background="Black" HorizontalAlignment="Stretch" VerticalAlignment="Top" ShowsPreview="True" />
 
+            <mapDisplay:MapView Grid.Row="0" x:Name="Map" Visibility="{Binding IsMapVisible, Converter={StaticResource BooleanToVisibility}}"/>
+
+            <Grid Grid.Row="1" Visibility="{Binding IsPreviewVisible, Converter={StaticResource BooleanToVisibility}}" Margin="0,4,0,0" >
+                <Image Source="{Binding PreviewPictureSource}" IsHitTestVisible="False"/>
+                <TextBlock VerticalAlignment="Bottom" HorizontalAlignment="Right" Margin="8" FontSize="18" FontWeight="Bold" Foreground="Black"
+                           TextWrapping="Wrap" Text="{Binding PreviewPictureTitle}"/>
+                <TextBlock VerticalAlignment="Bottom" HorizontalAlignment="Right" Margin="10" FontSize="18" FontWeight="Bold" Foreground="White"
+                           TextWrapping="Wrap" Text="{Binding PreviewPictureTitle}"/>
+            </Grid>
+        </Grid>
     </Grid>
 </Window>

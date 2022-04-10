@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
+using System.Windows.Media;
 
 namespace PhotoLocator
 {
@@ -21,13 +22,17 @@ namespace PhotoLocator
         {
             InitializeComponent();
             Panel.SetZIndex(ProgressGrid, 1000);
-            DataContext = _viewModel = new MainViewModel();
+            _viewModel = new MainViewModel();
+            _viewModel.GetSelectedMapLayerName = GetSelectedMapLayerName;
+            _viewModel.SelectedViewModeItem = MapViewItem;
+            _viewModel.ViewModeCommand = new RelayCommand(s =>
+                _viewModel.SelectedViewModeItem = _viewModel.SelectedViewModeItem == MapViewItem ? PreviewViewItem : MapViewItem);
+            DataContext = _viewModel;
         }
 
         private void HandleWindowLoaded(object sender, RoutedEventArgs e)
         {
             var settings = new RegistrySettings();
-            _viewModel.PhotoFolderPath = settings.PhotoFolderPath;
             _viewModel.SavedFilePostfix = settings.SavedFilePostfix;
             _viewModel.SlideShowInterval = settings.SlideShowInterval;
             _viewModel.ShowMetadataInSlideShow = settings.ShowMetadataInSlideShow;
@@ -37,7 +42,7 @@ namespace PhotoLocator
             var selectedLayer = settings.SelectedLayer;
             Map.mapLayersMenuButton.ContextMenu.Items.OfType<MenuItem>().FirstOrDefault(item => Equals(item.Header, selectedLayer))?.
                 RaiseEvent(new RoutedEventArgs(MenuItem.ClickEvent));
-            _viewModel.GetSelectedMapLayerName = GetSelectedMapLayerName;
+            Dispatcher.BeginInvoke(() => _viewModel.PhotoFolderPath = settings.PhotoFolderPath);
 
             if (settings.FirstLaunch < 1)
             {
@@ -82,7 +87,7 @@ namespace PhotoLocator
             _viewModel.PictureSelectionChanged();
         }
 
-        private void PathEditPreviewKeyUp(object sender, KeyEventArgs e)
+        private void HandlePathEditPreviewKeyUp(object sender, KeyEventArgs e)
         {
             if (e.Key == Key.Enter)
                 _viewModel.PhotoFolderPath = PathEdit.Text;
@@ -94,6 +99,27 @@ namespace PhotoLocator
                 return;
             if (e.Data.GetData(DataFormats.FileDrop) is string[] droppedEntries && droppedEntries.Length > 0)
                 Dispatcher.BeginInvoke(() => _viewModel.HandleDroppedFilesAsync(droppedEntries).WithExceptionShowing());
+        }
+
+        private void HandleViewModeSelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (_viewModel is null)
+                return;
+            if (_viewModel.InSplitViewMode) // For some reason this doesn't work when done on the bound properties
+            {
+                MapRow.Height = new GridLength(1, GridUnitType.Star);
+                PreviewRow.Height = new GridLength(1, GridUnitType.Star);
+            }
+            else if (_viewModel.IsMapVisible)
+            {
+                MapRow.Height = new GridLength(1, GridUnitType.Star);
+                PreviewRow.Height = new GridLength(0, GridUnitType.Star);
+            }
+            else if (_viewModel.IsPreviewVisible)
+            {
+                MapRow.Height = new GridLength(0, GridUnitType.Star);
+                PreviewRow.Height = new GridLength(1, GridUnitType.Star);
+            }
         }
     }
 }

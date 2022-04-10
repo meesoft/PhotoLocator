@@ -130,7 +130,7 @@
         </Border>
 
         <StackPanel HorizontalAlignment="Left" VerticalAlignment="Top" Margin="6" Visibility="{Binding MapToolsVisibility}">
-            <tools:MapLayersMenuButton x:Name="mapLayersMenuButton"
+            <tools:MapLayersMenuButton x:Name="mapLayersMenuButton" Style="{StaticResource RoundedButtonStyle}"
                 Margin="2" ToolTip="Map Layers and Overlays"
                 Map="{Binding ElementName=map}">
                 <tools:MapLayerItem Text="OpenStreetMap" Layer="{StaticResource OpenStreetMap}"/>
@@ -151,7 +151,7 @@
                 </tools:MapLayersMenuButton.MapOverlays>
             </tools:MapLayersMenuButton>
 
-            <tools:MapProjectionsMenuButton x:Name="mapProjectionsMenuButton"
+            <tools:MapProjectionsMenuButton x:Name="mapProjectionsMenuButton" Style="{StaticResource RoundedButtonStyle}"
                 Margin="2" ToolTip="Map Projections"
                 Map="{Binding ElementName=map}">
                 <tools:MapProjectionItem Text="Web Mercator" Projection="EPSG:3857"/>

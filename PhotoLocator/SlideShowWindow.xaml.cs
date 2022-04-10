@@ -70,8 +70,8 @@ namespace PhotoLocator
         public ImageSource? PictureSource { get => _pictureSource; set => SetProperty(ref _pictureSource, value); }
         private ImageSource? _pictureSource;
 
-        public string? PictureName { get => _pictureName; set => SetProperty(ref _pictureName, value); }
-        private string? _pictureName;
+        public string? PictureTitle { get => _pictureTitle; set => SetProperty(ref _pictureTitle, value); }
+        private string? _pictureTitle;
 
         public PictureItemViewModel SelectedPicture { get; private set; }
 
@@ -94,14 +94,14 @@ namespace PhotoLocator
             var name = Path.GetFileNameWithoutExtension(SelectedPicture.Name)!;
             var i = name.IndexOf('[');
             if (i > 2)
-                name = name.Substring(0, i).TrimEnd();
+                name = name[..i].TrimEnd();
             if (_showMetadataInSlideShow)
             {
                 var metadata = ExifHandler.GetMetataString(SelectedPicture.FullPath);
                 if (!string.IsNullOrEmpty(metadata))
                     name = name + " [" + metadata + "]";
             }
-            PictureName = name;
+            PictureTitle = name;
 
             if (SelectedPicture.GeoTag is null)
                 IsMapVisible = false;
@@ -111,7 +111,6 @@ namespace PhotoLocator
                 Points.Clear();
                 Points.Add(new PointItem { Location = SelectedPicture.GeoTag });
                 IsMapVisible = true;
-
             }
 
             _timer.Stop();

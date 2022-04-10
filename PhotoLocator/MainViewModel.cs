@@ -15,7 +15,10 @@ using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
+using System.Windows.Controls;
 using System.Windows.Input;
+using System.Windows.Media;
+using System.Windows.Media.Imaging;
 using System.Windows.Shell;
 
 namespace PhotoLocator
@@ -41,6 +44,10 @@ namespace PhotoLocator
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
             return true;
         }
+        void NotifyPropertyChanged([CallerMemberName] string? propertyName = null)
+        {
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+        }
 
         public MainViewModel()
         {
@@ -49,6 +56,7 @@ namespace PhotoLocator
             {
                 Pictures.Add(new PictureItemViewModel());
                 MapCenter = new Location(53.5, 8.2);
+                _previewPictureTitle = "Preview";
             }
 #endif
         }
@@ -112,6 +120,45 @@ namespace PhotoLocator
         }
         private Location? _SavedLocation;
 
+        public ComboBoxItem? SelectedViewModeItem 
+        { 
+            get => _selectedViewModeItem;
+            set
+            {
+                if (SetProperty(ref _selectedViewModeItem, value))
+                {
+                    NotifyPropertyChanged(nameof(IsMapVisible));
+                    NotifyPropertyChanged(nameof(IsPreviewVisible));
+                    NotifyPropertyChanged(nameof(InSplitViewMode));
+                    if (IsPreviewVisible)
+                        UpdatePreviewPicture();
+                    else
+                        PreviewPictureSource = null;
+                }
+            }
+        }
+        private ComboBoxItem? _selectedViewModeItem;
+
+        public ICommand? ViewModeCommand { get; internal set; }
+
+        public bool IsMapVisible => Equals(SelectedViewModeItem?.Tag, ViewMode.Map) || Equals(SelectedViewModeItem?.Tag, ViewMode.Split);
+
+        public bool IsPreviewVisible => Equals(SelectedViewModeItem?.Tag, ViewMode.Preview) || Equals(SelectedViewModeItem?.Tag, ViewMode.Split);
+
+        public bool InSplitViewMode => Equals(SelectedViewModeItem?.Tag, ViewMode.Split);
+
+        public GridLength MapRowHeight { get => _mapRowHeight; set => SetProperty(ref _mapRowHeight, value); }
+        private GridLength _mapRowHeight = new GridLength(1, GridUnitType.Star);
+
+        public GridLength PreviewRowHeight { get => _previewRowHeight; set => SetProperty(ref _previewRowHeight, value); }
+        private GridLength _previewRowHeight = new GridLength(0, GridUnitType.Star);
+
+        public ImageSource? PreviewPictureSource { get => _previewPictureSource; set => SetProperty(ref _previewPictureSource, value); }
+        private ImageSource? _previewPictureSource;
+
+        public string? PreviewPictureTitle { get => _previewPictureTitle; set => SetProperty(ref _previewPictureTitle, value); }
+        private string? _previewPictureTitle;
+
         public ObservableCollection<PictureItemViewModel> Pictures { get; } = new ObservableCollection<PictureItemViewModel>();
 
         public PictureItemViewModel? SelectedPicture
@@ -124,6 +171,8 @@ namespace PhotoLocator
                     if (value?.GeoTag != null)
                         MapCenter = value.GeoTag;
                     UpdatePushpins();
+                    if (IsPreviewVisible)
+                        UpdatePreviewPicture();
                 }
             }
         }
@@ -135,6 +184,24 @@ namespace PhotoLocator
             foreach(var item in Pictures)
                 if (item != SelectedPicture && item.IsSelected && item.GeoTag != null)
                     Points.Add(new PointItem { Location = item.GeoTag, Name = item.Name });
+        }
+
+        private void UpdatePreviewPicture()
+        {
+            if (SelectedPicture is null)
+                return;
+            PreviewPictureSource = new BitmapImage(new Uri(SelectedPicture.FullPath));
+            var name = Path.GetFileNameWithoutExtension(SelectedPicture.Name)!;
+            var i = name.IndexOf('[');
+            if (i > 2)
+                name = name[..i].TrimEnd();
+            if (ShowMetadataInSlideShow)
+            {
+                var metadata = ExifHandler.GetMetataString(SelectedPicture.FullPath);
+                if (!string.IsNullOrEmpty(metadata))
+                    name = name + " [" + metadata + "]";
+            }
+            PreviewPictureTitle = name;
         }
 
         public ICommand AutoTagCommand => new RelayCommand(async o =>
@@ -385,5 +452,10 @@ namespace PhotoLocator
             _loadCancellation?.Dispose();
             _loadCancellation = null;
         }
+    }
+
+    internal enum ViewMode
+    {
+        Map, Preview, Split
     }
 }
