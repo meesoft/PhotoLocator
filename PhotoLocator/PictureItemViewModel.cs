@@ -133,6 +133,8 @@ namespace PhotoLocator
         }
         private string? _errorMessage;
 
+        public bool CanSaveGeoTag => Path.GetExtension(Name)?.ToLowerInvariant() == ".jpg";
+
         public async ValueTask LoadImageAsync(CancellationToken ct)
         {
             try

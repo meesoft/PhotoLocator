@@ -7,7 +7,6 @@ using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
-using System.Windows.Media;
 
 namespace PhotoLocator
 {
@@ -33,6 +32,7 @@ namespace PhotoLocator
         private void HandleWindowLoaded(object sender, RoutedEventArgs e)
         {
             var settings = new RegistrySettings();
+            _viewModel.PhotoFileExtensions = settings.PhotoFileExtensions.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
             _viewModel.SavedFilePostfix = settings.SavedFilePostfix;
             _viewModel.SlideShowInterval = settings.SlideShowInterval;
             _viewModel.ShowMetadataInSlideShow = settings.ShowMetadataInSlideShow;
@@ -54,7 +54,7 @@ namespace PhotoLocator
             Task.Run(() => CleanupTileCache(MapView.TileCachePath)).WithExceptionLogging();
         }
 
-        private void CleanupTileCache(string tileCachePath)
+        private static void CleanupTileCache(string tileCachePath)
         {
             Task.Delay(4000).Wait();
             var timeThreshold = DateTime.Now - TimeSpan.FromDays(365);
@@ -68,6 +68,8 @@ namespace PhotoLocator
             var settings = new RegistrySettings();
             if (!string.IsNullOrEmpty(_viewModel.PhotoFolderPath))
                 settings.PhotoFolderPath = _viewModel.PhotoFolderPath;
+            if (_viewModel.PhotoFileExtensions != null)
+                settings.PhotoFileExtensions = String.Join(",", _viewModel.PhotoFileExtensions);
             if (_viewModel.SavedFilePostfix != null)
                 settings.SavedFilePostfix = _viewModel.SavedFilePostfix;
             settings.SlideShowInterval = _viewModel.SlideShowInterval;
@@ -95,10 +97,13 @@ namespace PhotoLocator
 
         private void HandleDrop(object sender, DragEventArgs e)
         {
-            if (!e.Data.GetDataPresent(DataFormats.FileDrop))
-                return;
-            if (e.Data.GetData(DataFormats.FileDrop) is string[] droppedEntries && droppedEntries.Length > 0)
-                Dispatcher.BeginInvoke(() => _viewModel.HandleDroppedFilesAsync(droppedEntries).WithExceptionShowing());
+            if (e.Data.GetDataPresent(DataFormats.FileDrop) && e.Data.GetData(DataFormats.FileDrop) is string[] droppedEntries && 
+                droppedEntries.Length > 0)
+                Dispatcher.BeginInvoke(async () => 
+                {
+                    await _viewModel.HandleDroppedFilesAsync(droppedEntries);
+                    PictureListBox.ScrollIntoView(PictureListBox.SelectedItem);
+                });
         }
 
         private void HandleViewModeSelectionChanged(object sender, SelectionChangedEventArgs e)

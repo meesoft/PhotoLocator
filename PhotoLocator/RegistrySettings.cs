@@ -5,7 +5,15 @@ namespace PhotoLocator
 {
     class RegistrySettings
     {
+        public const string DefaultPhotoFileExtensions = ".jpg";
+
         public RegistryKey Key = Registry.CurrentUser.CreateSubKey(@"SOFTWARE\MeeSoft\PhotoLocator");
+
+        public string PhotoFileExtensions
+        {
+            get => Key.GetValue(nameof(PhotoFileExtensions)) as string ?? DefaultPhotoFileExtensions;
+            set => Key.SetValue(nameof(PhotoFileExtensions), value ?? throw new ArgumentException("Filter cannot be null"));
+        }
 
         public string PhotoFolderPath
         {

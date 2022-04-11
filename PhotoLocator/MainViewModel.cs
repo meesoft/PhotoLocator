@@ -78,6 +78,8 @@ namespace PhotoLocator
 
         public bool IsWindowEnabled { get => _isWindowEnabled; set => SetProperty(ref _isWindowEnabled, value); }
         private bool _isWindowEnabled = true;
+
+        public IEnumerable<string> PhotoFileExtensions { get; set; } = Enumerable.Empty<string>();
         
         public string? SavedFilePostfix { get; set; }
 
@@ -171,8 +173,7 @@ namespace PhotoLocator
                     if (value?.GeoTag != null)
                         MapCenter = value.GeoTag;
                     UpdatePushpins();
-                    if (IsPreviewVisible)
-                        UpdatePreviewPicture();
+                    UpdatePreviewPicture();
                 }
             }
         }
@@ -188,20 +189,17 @@ namespace PhotoLocator
 
         private void UpdatePreviewPicture()
         {
-            if (SelectedPicture is null)
+            if (SelectedPicture is null || !IsPreviewVisible)
                 return;
             PreviewPictureSource = new BitmapImage(new Uri(SelectedPicture.FullPath));
-            var name = Path.GetFileNameWithoutExtension(SelectedPicture.Name)!;
-            var i = name.IndexOf('[');
-            if (i > 2)
-                name = name[..i].TrimEnd();
+            var title = SelectedPicture.Name;
             if (ShowMetadataInSlideShow)
             {
                 var metadata = ExifHandler.GetMetataString(SelectedPicture.FullPath);
                 if (!string.IsNullOrEmpty(metadata))
-                    name = name + " [" + metadata + "]";
+                    title += " [" + metadata + "]";
             }
-            PreviewPictureTitle = name;
+            PreviewPictureTitle = title;
         }
 
         public ICommand AutoTagCommand => new RelayCommand(async o =>
@@ -214,6 +212,7 @@ namespace PhotoLocator
             var autoTagViewModel = new AutoTagViewModel(Pictures, Polylines, () => { autoTagWin.DialogResult = true; });
             autoTagWin.Owner = App.Current.MainWindow;
             autoTagWin.DataContext = autoTagViewModel;
+            PreviewPictureSource = null;
             if (autoTagWin.ShowDialog() == true)
             {
                 UpdatePushpins();
@@ -223,6 +222,7 @@ namespace PhotoLocator
                 else if (Points.Count > 0)
                     MapCenter = Points[0].Location;
             }
+            UpdatePreviewPicture();
         });
 
         public ICommand CopyCommand => new RelayCommand(o =>
@@ -234,7 +234,7 @@ namespace PhotoLocator
         {
             if (SavedLocation is null)
                 return;
-            foreach (var item in Pictures.Where(i => i.IsSelected && !Equals(i.GeoTag, SavedLocation)))
+            foreach (var item in Pictures.Where(i => i.IsSelected && i.CanSaveGeoTag && !Equals(i.GeoTag, SavedLocation)))
             {
                 item.GeoTag = SavedLocation;
                 item.GeoTagSaved = false;
@@ -245,34 +245,32 @@ namespace PhotoLocator
 
         async Task RunProcessWithProgressBarAsync(Func<Action<double>, Task> body, string text)
         {
-            using (new CursorOverride())
+            using var cursor = new CursorOverride();
+            ProgressBarIsIndeterminate = false;
+            ProgressBarValue = 0;
+            TaskbarProgressState = TaskbarItemProgressState.Normal;
+            ProgressBarText = text;
+            IsProgressBarVisible = true;
+            IsWindowEnabled = false;
+            try
             {
-                ProgressBarIsIndeterminate = false;
-                ProgressBarValue = 0;
-                TaskbarProgressState = TaskbarItemProgressState.Normal;
-                ProgressBarText = text;
-                IsProgressBarVisible = true;
-                IsWindowEnabled = false;
-                try
+                await body(progress =>
                 {
-                    await body(progress =>
-                    {
-                        if (progress < 0)
-                            ProgressBarIsIndeterminate = true;
-                        ProgressBarValue = Math.Max(ProgressBarValue, progress);
-                    });
-                }
-                catch (Exception ex)
-                {
-                    TaskbarProgressState = TaskbarItemProgressState.Error;
-                    ExceptionHandler.ShowException(ex);
-                }
-                finally
-                {
-                    IsWindowEnabled = true;
-                    IsProgressBarVisible = false;
-                    TaskbarProgressState = TaskbarItemProgressState.None;
-                }
+                    if (progress < 0)
+                        ProgressBarIsIndeterminate = true;
+                    ProgressBarValue = Math.Max(ProgressBarValue, progress);
+                });
+            }
+            catch (Exception ex)
+            {
+                TaskbarProgressState = TaskbarItemProgressState.Error;
+                ExceptionHandler.ShowException(ex);
+            }
+            finally
+            {
+                IsWindowEnabled = true;
+                IsProgressBarVisible = false;
+                TaskbarProgressState = TaskbarItemProgressState.None;
             }
         }
 
@@ -308,14 +306,22 @@ namespace PhotoLocator
 
         public ICommand SettingsCommand => new RelayCommand(o =>
         {
+            var photoFileExtensions = string.Join(", ", PhotoFileExtensions);
             var settingsWin = new SettingsWindow();
             settingsWin.Owner = App.Current.MainWindow;
+            settingsWin.PhotoFileExtensions = photoFileExtensions;
             settingsWin.SavedFilePostfix = SavedFilePostfix;
             settingsWin.SlideShowInterval= SlideShowInterval;
             settingsWin.ShowMetadataInSlideShow = ShowMetadataInSlideShow;
             settingsWin.DataContext = settingsWin;
             if (settingsWin.ShowDialog() == true)
             {
+                if (settingsWin.PhotoFileExtensions != photoFileExtensions)
+                {
+                    PhotoFileExtensions = settingsWin.PhotoFileExtensions.Replace("*", "").Replace(" ", ",").Replace(";", ",").ToLowerInvariant().
+                        Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+                    RefreshFolderCommand.Execute(null);
+                }
                 SavedFilePostfix = settingsWin.SavedFilePostfix;
                 SlideShowInterval = settingsWin.SlideShowInterval;
                 ShowMetadataInSlideShow = settingsWin.ShowMetadataInSlideShow;
@@ -349,15 +355,24 @@ namespace PhotoLocator
                     await AppendFilesAsync(Directory.EnumerateFiles(path));
                 else
                     fileNames.Add(path);
-            await AppendFilesAsync(fileNames);
+            if (fileNames.Count > 0)
+            {
+                await AppendFilesAsync(fileNames);
+                var firstDropped = Pictures.FirstOrDefault(item => item.FullPath == fileNames[0]);
+                if (firstDropped != null)
+                    SelectedPicture = firstDropped;
+            }
             await LoadPicturesAsync();
         }
 
-        public ICommand DeleteSelectedCommand => new RelayCommand(o =>
+        public ICommand DeleteSelectedCommand => new RelayCommand(async o =>
         {
             var selected = Pictures.Where(i => i.IsSelected).ToArray();
             if (MessageBox.Show($"Delete {selected.Length} selected file(s)?", "Confirm", MessageBoxButton.OKCancel, MessageBoxImage.Question) != MessageBoxResult.OK)
                 return;
+            using var cursor = new CursorOverride();
+            PreviewPictureSource = null;
+            await Task.Delay(1);
             foreach (var item in selected)
             {
                 FileSystem.DeleteFile(item.FullPath, UIOption.OnlyErrorDialogs, RecycleOption.SendToRecycleBin);
@@ -371,6 +386,14 @@ namespace PhotoLocator
                 Process.Start(new ProcessStartInfo(SelectedPicture.FullPath) { UseShellExecute = true });
         });
 
+        public ICommand CopyMetadataCommand => new RelayCommand(o =>
+        {
+            if (SelectedPicture is null)
+                return;
+            using var cursor = new CursorOverride();
+            Clipboard.SetText(String.Join("\n", ExifHandler.EnumerateMetadata(SelectedPicture.FullPath)));
+        });
+
         public ICommand OpenInMapsCommand => new RelayCommand(o =>
         {
             if (SelectedPicture?.GeoTag is null)
@@ -378,6 +401,7 @@ namespace PhotoLocator
                 MessageBox.Show("Selected file has no map coordinates.", "Information", MessageBoxButton.OK, MessageBoxImage.Information);
                 return;
             }
+            using var cursor = new CursorOverride();
             var url = "http://maps.google.com/maps?q=" +
                 SelectedPicture.GeoTag.Latitude.ToString(CultureInfo.InvariantCulture) + "," +
                 SelectedPicture.GeoTag.Longitude.ToString(CultureInfo.InvariantCulture) + "&t=h";
@@ -414,7 +438,7 @@ namespace PhotoLocator
                 if (Pictures.Any(i => i.FullPath == fileName))
                     continue;
                 var ext = Path.GetExtension(fileName).ToLowerInvariant();
-                if (ext == ".jpg")
+                if (PhotoFileExtensions.Contains(ext))
                     Pictures.Add(new PictureItemViewModel(fileName));
                 else if (ext == ".gpx" || ext == ".kml")
                 {

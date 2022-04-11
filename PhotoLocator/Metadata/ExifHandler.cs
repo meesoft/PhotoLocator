@@ -4,6 +4,8 @@ using MapControl;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
+using System.Windows.Media;
 using System.Windows.Media.Imaging;
 
 namespace PhotoLocator.Metadata
@@ -11,10 +13,22 @@ namespace PhotoLocator.Metadata
     class ExifHandler
     {
         // See https://exiv2.org/tags.html
-        private const string ExposureTimeQuery = "/app1/ifd/exif/subifd:{uint=33434}"; // RATIONAL 1
-        private const string LensApertureQuery = "/app1/ifd/exif/subifd:{uint=33437}"; // RATIONAL 1
-        private const string FocalLengthQuery = "/app1/ifd/exif/subifd:{uint=37386}"; // RATIONAL 1
-        private const string IsoQuery = "/app1/ifd/exif/subifd:{uint=34855}"; // Short
+        private const string ExposureTimeQuery1 = "/app1/ifd/exif/subifd:{uint=33434}"; // RATIONAL 1
+        private const string ExposureTimeQuery2 = "/ifd/{ushort=34665}/{ushort=33434}"; // RATIONAL 1
+        //private const string ExposureTimeQuery3 = "/app1/{ushort=0}/{ushort=34665}/{ushort=33434}"; // RATIONAL 1
+
+        private const string LensApertureQuery1 = "/app1/ifd/exif/subifd:{uint=33437}"; // RATIONAL 1
+        private const string LensApertureQuery2 = "/ifd/{ushort=34665}/{ushort=33437}"; // RATIONAL 1
+        //private const string LensApertureQuery3 = "/app1/{ushort=0}/{ushort=34665}/{ushort=33437}"; // RATIONAL 1
+
+        private const string FocalLengthQuery1 = "/app1/ifd/exif/subifd:{uint=37386}"; // RATIONAL 1
+        private const string FocalLengthQuery2 = "/ifd/{ushort=34665}/{ushort=37386}"; // RATIONAL 1
+        private const string FocalLengthQuery3 = "/app1/{ushort=0}/{ushort=34665}/{ushort=37386}"; // RATIONAL 1
+
+        private const string IsoQuery1 = "/app1/ifd/exif/subifd:{uint=34855}"; // Short
+        private const string IsoQuery2 = "/ifd/{ushort=34665}/{ushort=34855}"; // Short
+        //private const string IsoQuery3 = "/app1/{ushort=0}/{ushort=34665}/{ushort=34855}"; // Short
+
         // North or South Latitude 
         private const string GpsLatitudeRefQuery = "/app1/ifd/gps/subifd:{ulong=1}"; // ASCII 2
         // Latitude        
@@ -130,6 +144,33 @@ namespace PhotoLocator.Metadata
             return new Location(latitude: latitude.AngleInDegrees, longitude: longitude.AngleInDegrees);
         }
 
+        public static IEnumerable<string> EnumerateMetadata(string fileName)
+        {
+            using var file = File.OpenRead(fileName);
+            var decoder = BitmapDecoder.Create(file, CreateOptions, BitmapCacheOption.OnDemand);
+            if (decoder.Frames[0].Metadata is not BitmapMetadata metadata)
+                return Enumerable.Empty<string>();
+            return EnumerateMetadata(metadata, string.Empty).ToArray();
+        }
+
+        public static IEnumerable<string> EnumerateMetadata(BitmapMetadata metadata, string query)
+        {
+            foreach (string relativeQuery in metadata)
+            {
+                string fullQuery = query + relativeQuery;
+                var metadataValue = metadata.GetQuery(relativeQuery);
+                if (metadataValue is BitmapMetadata innerBitmapMetadata)
+                    foreach (var inner in EnumerateMetadata(innerBitmapMetadata, fullQuery))
+                        yield return inner;
+                else if (metadataValue is ulong ulongValue)
+                    yield return fullQuery + $" = {ulongValue} ({Rational.Decode(metadataValue)?.ToDouble()})";
+                else if (metadataValue is Array arrayValue)
+                    yield return fullQuery + $" = {metadataValue.GetType().Name} with {arrayValue.Length} elements";
+                else if (metadataValue != null)
+                    yield return fullQuery + $" = {metadataValue} ({metadataValue.GetType().Name})";
+            }
+        }
+
         public static string GetMetataString(string fileName)
         {
             using var file = File.OpenRead(fileName);
@@ -141,19 +182,19 @@ namespace PhotoLocator.Metadata
             if (!string.IsNullOrEmpty(metadata.CameraModel))
                 metadataStrings.Add(metadata.CameraModel.Trim());
 
-            var exposureTime = Rational.Decode(metadata.GetQuery(ExposureTimeQuery));
+            var exposureTime = Rational.Decode(metadata.GetQuery(ExposureTimeQuery1) ?? metadata.GetQuery(ExposureTimeQuery2));
             if (exposureTime != null)
                 metadataStrings.Add(exposureTime.ToDouble() + "s");
 
-            var lensAperture = Rational.Decode(metadata.GetQuery(LensApertureQuery));
+            var lensAperture = Rational.Decode(metadata.GetQuery(LensApertureQuery1) ?? metadata.GetQuery(LensApertureQuery2));
             if (lensAperture != null)
                 metadataStrings.Add("f/" + lensAperture.ToDouble());
 
-            var focalLength = Rational.Decode(metadata.GetQuery(FocalLengthQuery));
+            var focalLength = Rational.Decode(metadata.GetQuery(FocalLengthQuery1) ?? metadata.GetQuery(FocalLengthQuery2));
             if (focalLength != null)
                 metadataStrings.Add(focalLength.ToDouble() + "mm");
 
-            var iso = metadata.GetQuery(IsoQuery);
+            var iso = metadata.GetQuery(IsoQuery1) ?? metadata.GetQuery(IsoQuery2);
             if (iso != null)
                 metadataStrings.Add("ISO" + iso.ToString());
 

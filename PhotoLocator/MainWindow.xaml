@@ -123,6 +123,7 @@
                 <ContextMenu>
                     <MenuItem Header="Open file" Command="{Binding ExecuteSelectedCommand}" />
                     <MenuItem Header="Open in Google maps" Command="{Binding OpenInMapsCommand}" />
+                    <MenuItem Header="Copy metadata to clipboard" Command="{Binding CopyMetadataCommand}" />
                     <MenuItem Header="Delete selected" Command="{Binding DeleteSelectedCommand}" />
                 </ContextMenu>
             </ListBox.ContextMenu>

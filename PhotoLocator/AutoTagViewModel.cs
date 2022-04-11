@@ -113,7 +113,7 @@ namespace PhotoLocator
         {
             int tagged = 0, notTagged = 0;
             var sourceImages = Pictures.Where(i => !i.IsSelected && i.GeoTag != null && i.TimeStamp.HasValue).ToArray();
-            foreach (var item in Pictures.Where(i => i.IsSelected && i.TimeStamp.HasValue))
+            foreach (var item in Pictures.Where(i => i.IsSelected && i.TimeStamp.HasValue && i.CanSaveGeoTag))
             {
                 var bestTag = GetBestGeoFix(sourceImages, gpsTraces, item.TimeStamp!.Value);
                 if (bestTag != null)

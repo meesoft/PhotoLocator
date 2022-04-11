@@ -25,6 +25,13 @@ namespace PhotoLocator
             return true;
         }
 
+        public string? PhotoFileExtensions 
+        { 
+            get => _photoFileExtensions; 
+            set => SetProperty(ref _photoFileExtensions, value ?? RegistrySettings.DefaultPhotoFileExtensions); 
+        }
+        private string? _photoFileExtensions;
+
         public string? SavedFilePostfix
         {
             get => _savedFilePostfix;
