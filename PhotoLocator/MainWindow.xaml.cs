@@ -24,6 +24,7 @@ namespace PhotoLocator
             _viewModel = new MainViewModel();
             _viewModel.GetSelectedMapLayerName = GetSelectedMapLayerName;
             _viewModel.SelectedViewModeItem = MapViewItem;
+            _viewModel.ScrollIntoView = PictureListBox.ScrollIntoView;
             _viewModel.ViewModeCommand = new RelayCommand(s =>
                 _viewModel.SelectedViewModeItem = _viewModel.SelectedViewModeItem == MapViewItem ? PreviewViewItem : MapViewItem);
             DataContext = _viewModel;
@@ -42,7 +43,16 @@ namespace PhotoLocator
             var selectedLayer = settings.SelectedLayer;
             Map.mapLayersMenuButton.ContextMenu.Items.OfType<MenuItem>().FirstOrDefault(item => Equals(item.Header, selectedLayer))?.
                 RaiseEvent(new RoutedEventArgs(MenuItem.ClickEvent));
-            Dispatcher.BeginInvoke(() => _viewModel.PhotoFolderPath = settings.PhotoFolderPath);
+
+            var args = Environment.GetCommandLineArgs();
+            if (args.Length > 1 && File.Exists(args[1]))
+                Dispatcher.BeginInvoke(() =>
+                {
+                    _viewModel.PhotoFolderPath = Path.GetDirectoryName(args[1]);
+                    _viewModel.HandleDroppedFilesAsync(args[1..]).WithExceptionShowing();
+                });
+            else
+                Dispatcher.BeginInvoke(() => _viewModel.PhotoFolderPath = settings.PhotoFolderPath);
 
             if (settings.FirstLaunch < 1)
             {
@@ -97,13 +107,8 @@ namespace PhotoLocator
 
         private void HandleDrop(object sender, DragEventArgs e)
         {
-            if (e.Data.GetDataPresent(DataFormats.FileDrop) && e.Data.GetData(DataFormats.FileDrop) is string[] droppedEntries && 
-                droppedEntries.Length > 0)
-                Dispatcher.BeginInvoke(async () => 
-                {
-                    await _viewModel.HandleDroppedFilesAsync(droppedEntries);
-                    PictureListBox.ScrollIntoView(PictureListBox.SelectedItem);
-                });
+            if (e.Data.GetDataPresent(DataFormats.FileDrop) && e.Data.GetData(DataFormats.FileDrop) is string[] droppedEntries && droppedEntries.Length > 0)
+                Dispatcher.BeginInvoke(() => _viewModel.HandleDroppedFilesAsync(droppedEntries).WithExceptionShowing());
         }
 
         private void HandleViewModeSelectionChanged(object sender, SelectionChangedEventArgs e)

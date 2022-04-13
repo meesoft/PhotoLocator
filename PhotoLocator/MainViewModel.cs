@@ -345,10 +345,13 @@ namespace PhotoLocator
 
         public ICommand RefreshFolderCommand => new RelayCommand(o => LoadFolderContentsAsync().WithExceptionLogging());
 
+        public Action<object>? ScrollIntoView { get; internal set; }
+
         public async Task HandleDroppedFilesAsync(string[] droppedEntries)
         {
             await WaitForPicturesLoadedAsync();
-            PhotoFolderPath = null;
+            if (droppedEntries.Any(f => Path.GetDirectoryName(f) != PhotoFolderPath))
+                PhotoFolderPath = null;
             var fileNames = new List<string>(); 
             foreach (var path in droppedEntries)
                 if (Directory.Exists(path))
@@ -360,7 +363,10 @@ namespace PhotoLocator
                 await AppendFilesAsync(fileNames);
                 var firstDropped = Pictures.FirstOrDefault(item => item.FullPath == fileNames[0]);
                 if (firstDropped != null)
+                {
                     SelectedPicture = firstDropped;
+                    ScrollIntoView?.Invoke(firstDropped);
+                }
             }
             await LoadPicturesAsync();
         }
