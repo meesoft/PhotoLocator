@@ -32,7 +32,7 @@ namespace PhotoLocator
 
         private void HandleWindowLoaded(object sender, RoutedEventArgs e)
         {
-            var settings = new RegistrySettings();
+            using var settings = new RegistrySettings();
             _viewModel.PhotoFileExtensions = settings.PhotoFileExtensions.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
             _viewModel.SavedFilePostfix = settings.SavedFilePostfix;
             _viewModel.SlideShowInterval = settings.SlideShowInterval;
@@ -52,7 +52,10 @@ namespace PhotoLocator
                     _viewModel.HandleDroppedFilesAsync(args[1..]).WithExceptionShowing();
                 });
             else
-                Dispatcher.BeginInvoke(() => _viewModel.PhotoFolderPath = settings.PhotoFolderPath);
+            {
+                var savedPhotoFolderPath = settings.PhotoFolderPath;
+                Dispatcher.BeginInvoke(() => _viewModel.PhotoFolderPath = savedPhotoFolderPath);
+            }
 
             if (settings.FirstLaunch < 1)
             {
@@ -75,7 +78,7 @@ namespace PhotoLocator
 
         private void HandleWindowClosed(object sender, EventArgs e)
         {
-            var settings = new RegistrySettings();
+            using var settings = new RegistrySettings();
             if (!string.IsNullOrEmpty(_viewModel.PhotoFolderPath))
                 settings.PhotoFolderPath = _viewModel.PhotoFolderPath;
             if (_viewModel.PhotoFileExtensions != null)

@@ -37,7 +37,7 @@
         <CheckBox Grid.Row="6" Content="Show EXIF metadata in slide show" IsChecked="{Binding ShowMetadataInSlideShow}" VerticalAlignment="Bottom" />
 
         <StackPanel Grid.Row="8" Orientation="Horizontal" HorizontalAlignment="Right">
-            <Button Content="OK" Width="80" Click="HandleOkButtonClick" IsDefault="True" />
+            <Button Content="Save" Width="80" Click="HandleOkButtonClick" IsDefault="True" />
             <Button Content="Cancel" Margin="10,0,0,0" Width="80" IsCancel="True" />
         </StackPanel>
     </Grid>

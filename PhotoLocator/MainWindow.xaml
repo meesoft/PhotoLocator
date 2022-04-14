@@ -28,6 +28,7 @@
         <KeyBinding Key="S" Modifiers="Ctrl" Command="{Binding SaveCommand}" />
         <KeyBinding Key="Q" Modifiers="Ctrl" Command="{Binding ViewModeCommand}" />
         <KeyBinding Key="F1" Command="{Binding AboutCommand}" />
+        <KeyBinding Key="F2" Command="{Binding RenameCommand}" />
         <KeyBinding Key="F3" Command="{Binding SlideShowCommand}" />
         <KeyBinding Key="F5" Command="{Binding RefreshFolderCommand}" />
         <KeyBinding Key="F11" Command="{Binding SlideShowCommand}" />
@@ -121,10 +122,11 @@
             </ListBox.ItemTemplate>
             <ListBox.ContextMenu>
                 <ContextMenu>
-                    <MenuItem Header="Open file" Command="{Binding ExecuteSelectedCommand}" />
+                    <MenuItem Header="Open file (Enter)" Command="{Binding ExecuteSelectedCommand}" />
                     <MenuItem Header="Open in Google maps" Command="{Binding OpenInMapsCommand}" />
+                    <MenuItem Header="Rename (F2)" Command="{Binding RenameCommand}" />
                     <MenuItem Header="Copy metadata to clipboard" Command="{Binding CopyMetadataCommand}" />
-                    <MenuItem Header="Delete selected" Command="{Binding DeleteSelectedCommand}" />
+                    <MenuItem Header="Delete selected (Del)" Command="{Binding DeleteSelectedCommand}" />
                 </ContextMenu>
             </ListBox.ContextMenu>
         </ListBox>

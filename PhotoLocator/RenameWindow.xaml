@@ -1,0 +1,68 @@
+﻿<Window x:Class="PhotoLocator.RenameWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:PhotoLocator" xmlns:uitools="clr-namespace:MapControl.UiTools;assembly=MapUiTools.WPF"
+        mc:Ignorable="d"
+        d:DataContext="{d:DesignInstance Type=local:RenameWindow, IsDesignTimeCreatable=False}"
+        Background="Black"
+        Title="Rename" Width="480" SizeToContent="Height" ResizeMode="NoResize"
+        WindowStartupLocation="CenterOwner" ShowInTaskbar="False">
+
+    <Window.Resources>
+        <BooleanToVisibilityConverter x:Key="BooleanToVisibility" />
+    </Window.Resources>
+
+    <Grid Margin="10">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="20"/>
+            <RowDefinition Height="20"/>
+            <RowDefinition Height="30"/>
+            <RowDefinition Height="20"/>
+            <RowDefinition Height="30"/>
+            <RowDefinition Height="20"/>
+            <RowDefinition Height="20"/>
+            <RowDefinition Height="20"/>
+            <RowDefinition Height="20"/>
+            <RowDefinition Height="20"/>
+            <RowDefinition Height="20"/>
+        </Grid.RowDefinitions>
+
+        <TextBlock Grid.Row="0" Foreground="#FFEEEEEE" VerticalAlignment="Bottom"
+                   Text="Rename mask" />
+        <TextBox Grid.Row="1" Text="{Binding RenameMask, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,25,0"/>
+        <Button Name="MaskMenuButton" FontFamily="Wingdings 2" FontSize="18" Content="-" Grid.Row="1" Width="22" HorizontalAlignment="Right" FontWeight="Bold"
+                Click="MaskMenuButtonClick"/>
+
+        <TextBlock Grid.Row="2" Text="Example name:" VerticalAlignment="Bottom" Margin="0,4" Foreground="#FFEEEEEE"/>
+        <TextBlock Grid.Row="3" Text="{Binding ExampleName}" VerticalAlignment="Bottom" Margin="0,4" Foreground="#FFEEEEEE"/>
+
+        <TextBlock Grid.Row="4" Text="Tags:" VerticalAlignment="Bottom" Margin="0,4" Foreground="#FFEEEEEE"/>
+
+        <StackPanel Grid.Row="5" Orientation="Horizontal" >
+            <TextBlock Text="|ext| File extension including dot." MouseUp="HandleEscapeCodeTextBlockMouseUp" Foreground="#FFEEEEEE" Margin="0,0,5,0" Cursor="Hand"/>
+            <TextBlock Text="|*| Source file name without extension." MouseUp="HandleEscapeCodeTextBlockMouseUp" Foreground="#FFEEEEEE" Margin="0,0,5,0" Cursor="Hand"/>
+        </StackPanel>
+        <StackPanel Grid.Row="6" Orientation="Horizontal" >
+            <TextBlock Text="|_????| 4 characters following a _ in the source file name." MouseUp="HandleEscapeCodeTextBlockMouseUp" Foreground="#FFEEEEEE" Cursor="Hand"/>
+        </StackPanel>
+        <StackPanel Grid.Row="7" Orientation="Horizontal" >
+            <TextBlock Text="|width:4|" MouseUp="HandleEscapeCodeTextBlockMouseUp" Foreground="#FFEEEEEE" Margin="0,0,5,0" Cursor="Hand"/>
+            <TextBlock Text="|height:4| 4 digit photo dimension." MouseUp="HandleEscapeCodeTextBlockMouseUp" Foreground="#FFEEEEEE" Margin="0,0,5,0" Cursor="Hand"/>
+            <TextBlock Text="|w/h| width/height." MouseUp="HandleEscapeCodeTextBlockMouseUp" Foreground="#FFEEEEEE" Cursor="Hand"/>
+        </StackPanel>
+        <StackPanel Grid.Row="8" Orientation="Horizontal" >
+            <TextBlock Text="|D|" MouseUp="HandleEscapeCodeTextBlockMouseUp" Foreground="#FFEEEEEE" Margin="0,0,5,0" Cursor="Hand"/>
+            <TextBlock Text="|T|" MouseUp="HandleEscapeCodeTextBlockMouseUp" Foreground="#FFEEEEEE" Margin="0,0,5,0" Cursor="Hand"/>
+            <TextBlock Text="|DT| Date and time." MouseUp="HandleEscapeCodeTextBlockMouseUp" Foreground="#FFEEEEEE" Cursor="Hand"/>
+        </StackPanel>
+
+        <StackPanel Grid.Row="10" Orientation="Horizontal" HorizontalAlignment="Right">
+            <TextBlock Text="Mask error" Foreground="#FFAE4040" ToolTip="{Binding ErrorMessage}" Margin="10,0"
+                       Visibility="{Binding IsErrorVisible, Converter={StaticResource BooleanToVisibility}}"/>
+            <Button Content="Rename" Width="80" Click="HandleRenameButtonClick" IsDefault="True" IsEnabled="{Binding IsMaskValid}" />
+            <Button Content="Cancel" Margin="10,0,0,0" Width="80" IsCancel="True" />
+        </StackPanel>
+    </Grid>
+</Window>

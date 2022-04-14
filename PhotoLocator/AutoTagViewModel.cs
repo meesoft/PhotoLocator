@@ -19,7 +19,7 @@ namespace PhotoLocator
             Pictures = pictures;
             GpsTraces = polylines;
             CompletedAction = completedAction;
-            var settings = new RegistrySettings();
+            using var settings = new RegistrySettings();
             _traceFilePath = settings.Key.GetValue(nameof(TraceFilePath)) as string;
             _maxTimestampDifference = (settings.Key.GetValue(nameof(MaxTimestampDifference)) as int? ?? 15 * 60) / 60.0;
             _timestampOffset = (settings.Key.GetValue(nameof(TimestampOffset)) as int? ?? 0) / 3600.0;
@@ -145,7 +145,7 @@ namespace PhotoLocator
 
         private void SaveSettings()
         {
-            var settings = new RegistrySettings();
+            using var settings = new RegistrySettings();
             settings.Key.SetValue(nameof(TraceFilePath), TraceFilePath ?? String.Empty);
             settings.Key.SetValue(nameof(MaxTimestampDifference), IntMath.Round(MaxTimestampDifference * 60));
             settings.Key.SetValue(nameof(TimestampOffset), IntMath.Round(TimestampOffset * 3600));

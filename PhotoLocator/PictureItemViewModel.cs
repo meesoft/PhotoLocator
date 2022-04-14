@@ -26,19 +26,19 @@ namespace PhotoLocator
 
         public PictureItemViewModel()
         {
+            _name = nameof(PictureItemViewModel);
 #if DEBUG
             if (_isInDesignMode)
             {
-                Name = nameof(PictureItemViewModel);
-                GeoTag = new Location(0, 0);
-                GeoTagSaved = true;
+                _geoTag = new Location(0, 0);
+                _geoTagSaved = true;
             }
 #endif
         }
 
         public PictureItemViewModel(string fileName)
         {
-            Name = Path.GetFileName(fileName);
+            _name = Path.GetFileName(fileName);
             FullPath = fileName;
         }
 
@@ -56,12 +56,12 @@ namespace PhotoLocator
             return true;
         }
 
-        public string? Name
+        public string Name
         {
-            get => _name ?? (_isInDesignMode ? nameof(Name) : null);
+            get => _name;
             set => SetProperty(ref _name, value);
         }
-        string? _name;
+        string _name;
 
         public string FullPath
         {

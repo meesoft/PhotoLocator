@@ -3,7 +3,7 @@ using System;
 
 namespace PhotoLocator
 {
-    class RegistrySettings
+    sealed class RegistrySettings : IDisposable
     {
         public const string DefaultPhotoFileExtensions = ".jpg";
 
@@ -55,6 +55,16 @@ namespace PhotoLocator
         {
             get => Key.GetValue(nameof(FirstLaunch)) as int? ?? 0;
             set => Key.SetValue(nameof(FirstLaunch), value);
+        }
+        public string RenameMasks
+        {
+            get => Key.GetValue(nameof(RenameMasks)) as string ?? String.Empty;
+            set => Key.SetValue(nameof(RenameMasks), value);
+        }
+
+        public void Dispose()
+        {
+            Key.Dispose();
         }
     }
 }

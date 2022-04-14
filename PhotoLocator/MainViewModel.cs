@@ -44,6 +44,7 @@ namespace PhotoLocator
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
             return true;
         }
+
         void NotifyPropertyChanged([CallerMemberName] string? propertyName = null)
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
@@ -96,7 +97,6 @@ namespace PhotoLocator
                     LoadFolderContentsAsync().WithExceptionShowing();
             }
         }
-
         private string? _photoFolderPath;
 
         public ObservableCollection<PointItem> Points { get; } = new ObservableCollection<PointItem>();
@@ -289,6 +289,24 @@ namespace PhotoLocator
                 });
                 await Task.Delay(10);
             }, "Saving...").WithExceptionLogging();
+        });
+
+        public ICommand RenameCommand => new RelayCommand(async o =>
+        {
+            if (SelectedPicture is null)
+                return;
+            if (Pictures.Any(i => i.IsSelected && i.PreviewImage is null))
+                await WaitForPicturesLoadedAsync();
+            var renameWin = new RenameWindow(Pictures.Where(item => item.IsSelected).ToList());
+            renameWin.Owner = App.Current.MainWindow;
+            renameWin.DataContext = renameWin;
+            PreviewPictureSource = null;
+            if (renameWin.ShowDialog() == true)
+            {
+                UpdatePushpins();
+                PictureSelectionChanged();
+            }
+            UpdatePreviewPicture();
         });
 
         public Func<string?>? GetSelectedMapLayerName { get; internal set; }

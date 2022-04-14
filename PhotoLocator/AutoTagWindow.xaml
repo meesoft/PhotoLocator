@@ -35,7 +35,7 @@
         <TextBox Grid.Row="5" Text="{Binding TimestampOffset}" PreviewKeyDown="HandleTextBoxPreviewKeyUp"/>
 
         <StackPanel Grid.Row="7" Orientation="Horizontal" HorizontalAlignment="Right">
-            <Button Content="OK" Width="80" Command="{Binding OkCommand}" IsDefault="True" Name="OkButton" />
+            <Button Content="Geotag" Width="80" Command="{Binding OkCommand}" IsDefault="True" Name="OkButton" />
             <Button Content="Cancel" Margin="10,0,0,0" Width="80" IsCancel="True" />
         </StackPanel>
     </Grid>
