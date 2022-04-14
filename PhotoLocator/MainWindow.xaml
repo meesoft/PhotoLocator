@@ -70,7 +70,7 @@
 
         <Grid Grid.Column="0" Margin="0,0,10,4" >
             <TextBox Text="{Binding PhotoFolderPath}" Margin="0,0,34,0" PreviewKeyUp="HandlePathEditPreviewKeyUp" Name="PathEdit" />
-            <Button Content="1" FontFamily="Wingdings" FontSize="20" Width="32" HorizontalAlignment="Right"
+            <Button Content="1" FontFamily="Wingdings" FontSize="20" FontWeight="Bold" Width="32" HorizontalAlignment="Right"
                     Command="{Binding BrowseForPhotosCommand}" ToolTip="Browse for folder (Ctrl+O)" />
         </Grid>
 
@@ -91,7 +91,7 @@
                     ToolTip="Save changed geotags to photo files (Ctrl+S)" />
             <Button Content="Slide show" Width="100" Command="{Binding SlideShowCommand}"
                     ToolTip="Full screen slide show with map display (F3)" />
-            <Button Content="¼" FontFamily="Webdings" FontSize="18" Command="{Binding SettingsCommand}"
+            <Button Content="¼" FontFamily="Webdings" FontSize="19" Command="{Binding SettingsCommand}"
                     ToolTip="Settings" Width="32" />
             <Button Content="i" FontFamily="Webdings" FontSize="20" Command="{Binding AboutCommand}"
                     ToolTip="About" Width="32" />

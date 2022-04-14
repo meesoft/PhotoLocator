@@ -142,6 +142,13 @@ namespace PhotoLocator
 
         private static string GetFileName(PictureItemViewModel file, string mask)
         {
+            DateTime GetTimestamp()
+            {
+                if (file.TimeStamp.HasValue)
+                    return file.TimeStamp.Value;
+                return File.GetCreationTimeUtc(file.FullPath);
+            }
+
             var result = new StringBuilder();
             for (int i = 0; i < mask.Length; i++)
             {
@@ -153,6 +160,24 @@ namespace PhotoLocator
                     var tag = mask[(i + 1)..iEnd];
                     if (tag == "ext")
                         result.Append(Path.GetExtension(file.Name));
+                    else if (tag == "*")
+                        result.Append(Path.GetFileNameWithoutExtension(file.Name));
+                    else if (tag == "D")
+                        result.Append(GetTimestamp().ToString("yyyy-MM-dd"));
+                    else if (tag == "T")
+                        result.Append(GetTimestamp().ToString("HH.mm.ss"));
+                    else if (tag == "DT")
+                        result.Append(GetTimestamp().ToString("yyyy-MM-dd HH.mm.ss"));
+                    else if (tag.EndsWith('?'))
+                    {
+                        var iFirstWildcard = tag.IndexOf('?');
+                        var nChars = tag.Length - iFirstWildcard;
+                        var prefix = tag[0..iFirstWildcard];
+                        var iPrefix = file.Name.IndexOf(prefix);
+                        if (iPrefix < 0)
+                            throw new ArgumentException($"Search string '{prefix}' not found in name '{file.Name}'");
+                        result.Append(file.Name.AsSpan(iPrefix + prefix.Length, nChars));
+                    }
                     else
                         throw new ArgumentException($"Unsupported tag |{tag}|");
                     i = iEnd;

@@ -58,7 +58,7 @@ namespace PhotoLocator
         }
         public string RenameMasks
         {
-            get => Key.GetValue(nameof(RenameMasks)) as string ?? String.Empty;
+            get => Key.GetValue(nameof(RenameMasks)) as string ?? "|DT| [|_????|]|ext|";
             set => Key.SetValue(nameof(RenameMasks), value);
         }
 
