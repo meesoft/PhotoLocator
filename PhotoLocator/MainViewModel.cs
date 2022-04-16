@@ -150,10 +150,10 @@ namespace PhotoLocator
         public bool InSplitViewMode => Equals(SelectedViewModeItem?.Tag, ViewMode.Split);
 
         public GridLength MapRowHeight { get => _mapRowHeight; set => SetProperty(ref _mapRowHeight, value); }
-        private GridLength _mapRowHeight = new GridLength(1, GridUnitType.Star);
+        private GridLength _mapRowHeight = new(1, GridUnitType.Star);
 
         public GridLength PreviewRowHeight { get => _previewRowHeight; set => SetProperty(ref _previewRowHeight, value); }
-        private GridLength _previewRowHeight = new GridLength(0, GridUnitType.Star);
+        private GridLength _previewRowHeight = new(0, GridUnitType.Star);
 
         public ImageSource? PreviewPictureSource { get => _previewPictureSource; set => SetProperty(ref _previewPictureSource, value); }
         private ImageSource? _previewPictureSource;

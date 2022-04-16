@@ -1,10 +1,10 @@
-﻿using System;
+﻿using PhotoLocator.Metadata;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.IO;
 using System.Linq;
 using System.Runtime.CompilerServices;
-using System.Text;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -18,6 +18,7 @@ namespace PhotoLocator
     {
         readonly IList<PictureItemViewModel> _selectedPictures;
         readonly string[] _previousMasks;
+        MaskBasedNaming? _exampleNamer;
 
         public RenameWindow(IList<PictureItemViewModel> selectedPictures)
         {
@@ -66,7 +67,9 @@ namespace PhotoLocator
                 {
                     try
                     {
-                        ExampleName = GetFileName(_selectedPictures[0], RenameMask);
+                        if (_exampleNamer is null)
+                            _exampleNamer = new MaskBasedNaming(_selectedPictures[0]);
+                        ExampleName = _exampleNamer.GetFileName(RenameMask);
                         ErrorMessage = null;
                     }
                     catch(Exception ex)
@@ -124,9 +127,13 @@ namespace PhotoLocator
         {
             if (_selectedPictures.Count > 1 && !RenameMask.Contains('|'))
                 throw new Exception("Multiple files cannot be renamed to the same");
+            _exampleNamer?.Dispose();
+            _exampleNamer = null;
             foreach (var item in _selectedPictures)
             {
-                var newName = GetFileName(item, RenameMask);
+                string newName;
+                using (var namer = new MaskBasedNaming(item))
+                    newName = namer.GetFileName(RenameMask);
                 var newFullPath = Path.Combine(Path.GetDirectoryName(item.FullPath)!, newName);
                 File.Move(item.FullPath, newFullPath);
                 item.Name = newName;
@@ -135,57 +142,9 @@ namespace PhotoLocator
             if (RenameMask.Contains('|'))
             {
                 using var settings = new RegistrySettings();
-                settings.RenameMasks = String.Join('\\', (new[] { RenameMask }).Concat(_previousMasks).Distinct().Take(10));
+                settings.RenameMasks = string.Join('\\', (new[] { RenameMask }).Concat(_previousMasks).Distinct().Take(10));
             }
             DialogResult = true;
-        }
-
-        private static string GetFileName(PictureItemViewModel file, string mask)
-        {
-            DateTime GetTimestamp()
-            {
-                if (file.TimeStamp.HasValue)
-                    return file.TimeStamp.Value;
-                return File.GetCreationTimeUtc(file.FullPath);
-            }
-
-            var result = new StringBuilder();
-            for (int i = 0; i < mask.Length; i++)
-            {
-                if (mask[i] == '|')
-                {
-                    int iEnd = mask.IndexOf('|', i + 1);
-                    if (iEnd < 0)
-                        throw new ArgumentException($"Tag at {i} not closed");
-                    var tag = mask[(i + 1)..iEnd];
-                    if (tag == "ext")
-                        result.Append(Path.GetExtension(file.Name));
-                    else if (tag == "*")
-                        result.Append(Path.GetFileNameWithoutExtension(file.Name));
-                    else if (tag == "D")
-                        result.Append(GetTimestamp().ToString("yyyy-MM-dd"));
-                    else if (tag == "T")
-                        result.Append(GetTimestamp().ToString("HH.mm.ss"));
-                    else if (tag == "DT")
-                        result.Append(GetTimestamp().ToString("yyyy-MM-dd HH.mm.ss"));
-                    else if (tag.EndsWith('?'))
-                    {
-                        var iFirstWildcard = tag.IndexOf('?');
-                        var nChars = tag.Length - iFirstWildcard;
-                        var prefix = tag[0..iFirstWildcard];
-                        var iPrefix = file.Name.IndexOf(prefix);
-                        if (iPrefix < 0)
-                            throw new ArgumentException($"Search string '{prefix}' not found in name '{file.Name}'");
-                        result.Append(file.Name.AsSpan(iPrefix + prefix.Length, nChars));
-                    }
-                    else
-                        throw new ArgumentException($"Unsupported tag |{tag}|");
-                    i = iEnd;
-                }
-                else
-                    result.Append(mask[i]);
-            }
-            return result.ToString();
-        }
+        }       
     }
 }

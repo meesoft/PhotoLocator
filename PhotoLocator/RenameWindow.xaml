@@ -27,6 +27,7 @@
             <RowDefinition Height="20"/>
             <RowDefinition Height="20"/>
             <RowDefinition Height="20"/>
+            <RowDefinition Height="20"/>
         </Grid.RowDefinitions>
 
         <TextBlock Grid.Row="0" Foreground="#FFEEEEEE" VerticalAlignment="Bottom"
@@ -58,8 +59,14 @@
             <TextBlock Text="|T|" MouseUp="HandleEscapeCodeTextBlockMouseUp" Foreground="#FFEEEEEE" Margin="0,0,5,0" Cursor="Hand"/>
             <TextBlock Text="|DT| Date and time." MouseUp="HandleEscapeCodeTextBlockMouseUp" Foreground="#FFEEEEEE" Cursor="Hand"/>
         </StackPanel>
+        <StackPanel Grid.Row="9" Orientation="Horizontal" >
+            <TextBlock Text="|a| Aperture." MouseUp="HandleEscapeCodeTextBlockMouseUp" Foreground="#FFEEEEEE" Margin="0,0,5,0" Cursor="Hand"/>
+            <TextBlock Text="|t| Exp. time." MouseUp="HandleEscapeCodeTextBlockMouseUp" Foreground="#FFEEEEEE" Margin="0,0,5,0" Cursor="Hand"/>
+            <TextBlock Text="|f| Focan length." MouseUp="HandleEscapeCodeTextBlockMouseUp" Foreground="#FFEEEEEE" Margin="0,0,5,0" Cursor="Hand"/>
+            <TextBlock Text="|iso| ISO." MouseUp="HandleEscapeCodeTextBlockMouseUp" Foreground="#FFEEEEEE" Margin="0,0,5,0" Cursor="Hand"/>
+        </StackPanel>
 
-        <StackPanel Grid.Row="10" Orientation="Horizontal" HorizontalAlignment="Right">
+        <StackPanel Grid.Row="11" Orientation="Horizontal" HorizontalAlignment="Right">
             <TextBlock Text="Mask error" Foreground="#FFAE4040" ToolTip="{Binding ErrorMessage}" Margin="10,0"
                        Visibility="{Binding IsErrorVisible, Converter={StaticResource BooleanToVisibility}}"/>
             <Button Content="Rename" Width="80" Click="HandleRenameButtonClick" IsDefault="True" IsEnabled="{Binding IsMaskValid}" />

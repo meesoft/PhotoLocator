@@ -49,7 +49,7 @@ namespace PhotoLocator.Metadata
             return Math.Round(Convert.ToDouble(Num) / Convert.ToDouble(Denom), 5);
         }
 
-        public static Rational? Decode(object raw)
+        public static Rational? Decode(object? raw)
         {
             if (raw is ulong value2)
                 return new Rational(value2);
