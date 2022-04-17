@@ -20,6 +20,15 @@ namespace PhotoLocator
         readonly string[] _previousMasks;
         MaskBasedNaming? _exampleNamer;
 
+#if DEBUG
+        public RenameWindow() : this(new List<PictureItemViewModel>())
+        {
+            RenameMask = nameof(RenameMask);
+            ExampleName = nameof(ExampleName);
+            IsExtensionWarningVisible = true;
+        }
+#endif
+
         public RenameWindow(IList<PictureItemViewModel> selectedPictures)
         {
             InitializeComponent();
@@ -71,9 +80,12 @@ namespace PhotoLocator
                             _exampleNamer = new MaskBasedNaming(_selectedPictures[0]);
                         ExampleName = _exampleNamer.GetFileName(RenameMask);
                         ErrorMessage = null;
+                        IsExtensionWarningVisible = !Path.GetExtension(ExampleName).Equals(
+                            Path.GetExtension(_exampleNamer.OriginalFileName), StringComparison.InvariantCultureIgnoreCase);
                     }
-                    catch(Exception ex)
+                    catch (Exception ex)
                     {
+                        IsExtensionWarningVisible = false;
                         ExampleName = null;
                         ErrorMessage = ex.Message;
                     }
@@ -107,6 +119,13 @@ namespace PhotoLocator
 
         public bool IsErrorVisible => !IsMaskValid;
 
+        public bool IsExtensionWarningVisible
+        {
+            get => _isExtensionWarningVisible;
+            set => SetProperty(ref _isExtensionWarningVisible, value);
+        }
+        private bool _isExtensionWarningVisible;
+
         private void MaskMenuButtonClick(object sender, RoutedEventArgs e)
         {
             MaskMenuButton.ContextMenu.IsOpen = true;
@@ -119,8 +138,10 @@ namespace PhotoLocator
 
         private void HandleEscapeCodeTextBlockMouseUp(object sender, MouseButtonEventArgs e)
         {
-            var text = ((TextBlock)sender).Text;
-            RenameMask += text[0..(text.IndexOf('|', 1) + 1)];
+            var tag = ((TextBlock)sender).Text;
+            tag = tag[0..(tag.IndexOf('|', 1) + 1)];
+            MaskTextBox.Text = MaskTextBox.Text.Insert(MaskTextBox.CaretIndex, tag);
+            MaskTextBox.CaretIndex += tag.Length;
         }
 
         private void HandleRenameButtonClick(object sender, RoutedEventArgs e)

@@ -25,6 +25,8 @@ namespace PhotoLocator.Metadata
             _fileStream = null;
         }
 
+        public string OriginalFileName => _file.Name;
+
         DateTime GetTimestamp()
         {
             if (_file.TimeStamp.HasValue)
@@ -50,6 +52,53 @@ namespace PhotoLocator.Metadata
             return _metadata;
         }
 
+        static bool TagIs(string tag, string value, out int iColon)
+        {
+            iColon = -1;
+            if (tag.StartsWith(value))
+            {
+                if (tag.Length == value.Length)
+                    return true;
+                if (tag[value.Length] == ':')
+                {
+                    iColon = value.Length;
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        private static void AppendInt(StringBuilder result, int iColon, string tag, int value)
+        {
+            if (iColon < 0)
+                result.Append(value);
+            else
+                result.Append(value.ToString("D" + tag[(iColon + 1)..]));
+        }
+
+        private void AppendMetadataRational(StringBuilder result, int iColon, string tag, string query1, string query2)
+        {
+            var metadata = GetMetadata();
+            var value = Rational.Decode(metadata?.GetQuery(query1) ?? metadata?.GetQuery(query2));
+            if (value != null)
+            {
+                if (iColon < 0)
+                    result.Append(value.ToDouble());
+                else
+                    result.Append(value.ToDouble().ToString("F" + tag[(iColon + 1)..]));
+            }
+        }
+
+        private void AppendMetadataInt(StringBuilder result, int iColon, string tag, string query1, string query2)
+        {
+            var metadata = GetMetadata();
+            var value = metadata?.GetQuery(query1) ?? metadata?.GetQuery(query2);
+            if (iColon < 0)
+                result.Append(value);
+            else
+                result.Append(Convert.ToInt32(value).ToString("D" + tag[(iColon + 1)..]));
+        }
+
         public string GetFileName(string mask)
         {
             var result = new StringBuilder();
@@ -57,14 +106,15 @@ namespace PhotoLocator.Metadata
             {
                 if (mask[i] == '|')
                 {
+                    int iColon;
                     int iEnd = mask.IndexOf('|', i + 1);
                     if (iEnd < 0)
                         throw new ArgumentException($"Tag at {i} not closed");
                     var tag = mask[(i + 1)..iEnd];
                     if (tag == "ext")
-                        result.Append(Path.GetExtension(_file.Name));
+                        result.Append(Path.GetExtension(OriginalFileName));
                     else if (tag == "*")
-                        result.Append(Path.GetFileNameWithoutExtension(_file.Name));
+                        result.Append(Path.GetFileNameWithoutExtension(OriginalFileName));
                     else if (tag == "D")
                         result.Append(GetTimestamp().ToString("yyyy-MM-dd"));
                     else if (tag == "T")
@@ -81,80 +131,35 @@ namespace PhotoLocator.Metadata
                             throw new ArgumentException($"Search string '{prefix}' not found in name '{_file.Name}'");
                         result.Append(_file.Name.AsSpan(iPrefix + prefix.Length, nChars));
                     }
-                    else if (tag.StartsWith("width"))
+                    else if (TagIs(tag, "width", out iColon))
                     {
-                        int iDigits = tag.IndexOf(':');
-                        if (iDigits < 0)
-                            result.Append(GetFrame().PixelWidth);
-                        else
-                            result.Append(GetFrame().PixelWidth.ToString("D" + tag[(iDigits + 1)..]));
+                        AppendInt(result, iColon, tag, GetFrame().PixelWidth);
                     }
-                    else if (tag.StartsWith("height"))
+                    else if (TagIs(tag, "height", out iColon))
                     {
-                        int iDigits = tag.IndexOf(':');
-                        if (iDigits < 0)
-                            result.Append(GetFrame().PixelHeight);
-                        else
-                            result.Append(GetFrame().PixelHeight.ToString("D" + tag[(iDigits + 1)..]));
+                        AppendInt(result, iColon, tag, GetFrame().PixelHeight);
                     }
-                    else if (tag.StartsWith("w/h"))
+                    else if (TagIs(tag, "w/h", out iColon))
                     {
                         var frame = GetFrame();
                         var whr = (double)frame.PixelWidth / frame.PixelHeight;
-                        int iDigits = tag.IndexOf(':');
-                        if (iDigits < 0)
-                            result.Append(whr.ToString("F2"));
-                        else
-                            result.Append(whr.ToString("F" + tag[(iDigits + 1)..]));
+                        result.Append(whr.ToString(iColon < 0 ? "F2" : "F" + tag[(iColon + 1)..]));
                     }
-                    else if (tag.StartsWith("a"))
+                    else if (TagIs(tag, "a", out iColon))
                     {
-                        var metadata = GetMetadata();
-                        var aperture = Rational.Decode(metadata?.GetQuery(ExifHandler.LensApertureQuery1) ?? metadata?.GetQuery(ExifHandler.LensApertureQuery2));
-                        if (aperture != null)
-                        {
-                            int iDigits = tag.IndexOf(':');
-                            if (iDigits < 0)
-                                result.Append(aperture.ToDouble());
-                            else
-                                result.Append(aperture.ToDouble().ToString("F" + tag[(iDigits + 1)..]));
-                        }
+                        AppendMetadataRational(result, iColon, tag, ExifHandler.LensApertureQuery1, ExifHandler.LensApertureQuery2);
                     }
-                    else if (tag.StartsWith("t"))
+                    else if (TagIs(tag, "t", out iColon))
                     {
-                        var metadata = GetMetadata();
-                        var exposureTime = Rational.Decode(metadata?.GetQuery(ExifHandler.ExposureTimeQuery1) ?? metadata?.GetQuery(ExifHandler.ExposureTimeQuery2));
-                        if (exposureTime != null)
-                        {
-                            int iDigits = tag.IndexOf(':');
-                            if (iDigits < 0)
-                                result.Append(exposureTime.ToDouble());
-                            else
-                                result.Append(exposureTime.ToDouble().ToString("F" + tag[(iDigits + 1)..]));
-                        }
+                        AppendMetadataRational(result, iColon, tag, ExifHandler.ExposureTimeQuery1, ExifHandler.ExposureTimeQuery2);
                     }
-                    else if (tag.StartsWith("f"))
+                    else if (TagIs(tag, "f", out iColon))
                     {
-                        var metadata = GetMetadata();
-                        var focalLength = Rational.Decode(metadata?.GetQuery(ExifHandler.FocalLengthQuery1) ?? metadata?.GetQuery(ExifHandler.FocalLengthQuery2));
-                        if (focalLength != null)
-                        {
-                            int iDigits = tag.IndexOf(':');
-                            if (iDigits < 0)
-                                result.Append(focalLength.ToDouble());
-                            else
-                                result.Append(focalLength.ToDouble().ToString("F" + tag[(iDigits + 1)..]));
-                        }
+                        AppendMetadataRational(result, iColon, tag, ExifHandler.FocalLengthQuery1, ExifHandler.FocalLengthQuery2);
                     }
-                    else if (tag.StartsWith("iso"))
+                    else if (TagIs(tag, "iso", out iColon))
                     {
-                        var metadata = GetMetadata();
-                        var iso = metadata?.GetQuery(ExifHandler.IsoQuery1) ?? metadata?.GetQuery(ExifHandler.IsoQuery2);
-                        int iDigits = tag.IndexOf(':');
-                        if (iDigits < 0)
-                            result.Append(iso);
-                        else
-                            result.Append(Convert.ToInt32(iso).ToString("D" + tag[(iDigits + 1)..]));
+                        AppendMetadataInt(result, iColon, tag, ExifHandler.IsoQuery1, ExifHandler.IsoQuery2);
                     }
                     else
                         throw new ArgumentException($"Unsupported tag |{tag}|");

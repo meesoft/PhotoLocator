@@ -5,9 +5,9 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:PhotoLocator" xmlns:uitools="clr-namespace:MapControl.UiTools;assembly=MapUiTools.WPF"
         mc:Ignorable="d"
-        d:DataContext="{d:DesignInstance Type=local:RenameWindow, IsDesignTimeCreatable=False}"
+        d:DataContext="{d:DesignInstance Type=local:RenameWindow, IsDesignTimeCreatable=True}"
         Background="Black"
-        Title="Rename" Width="480" SizeToContent="Height" ResizeMode="NoResize"
+        Title="Rename" Width="500" SizeToContent="Height" ResizeMode="NoResize"
         WindowStartupLocation="CenterOwner" ShowInTaskbar="False">
 
     <Window.Resources>
@@ -32,9 +32,11 @@
 
         <TextBlock Grid.Row="0" Foreground="#FFEEEEEE" VerticalAlignment="Bottom"
                    Text="Rename mask:" />
-        <TextBox Grid.Row="1" Text="{Binding RenameMask, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,22,0"/>
+        <TextBox Grid.Row="1" Text="{Binding RenameMask, UpdateSourceTrigger=PropertyChanged}" FontFamily="Lucida Console"
+                 Margin="0,0,22,0" Name="MaskTextBox" VerticalContentAlignment="Center" />
+        
         <Button Name="MaskMenuButton" Grid.Row="1" Width="22" HorizontalAlignment="Right" ToolTip="History" Click="MaskMenuButtonClick" >
-            <TextBlock FontFamily="Wingdings 2" FontSize="22" FontWeight="Bold" Text="-" Margin="0,-4,0,0" />
+            <TextBlock FontSize="16" FontWeight="Bold" Text="☰" Margin="0,-4,0,0" />
         </Button>
 
         <TextBlock Grid.Row="2" Text="Example name:" VerticalAlignment="Bottom" Margin="0,4" Foreground="#FFEEEEEE"/>
@@ -69,6 +71,8 @@
         <StackPanel Grid.Row="11" Orientation="Horizontal" HorizontalAlignment="Right">
             <TextBlock Text="Mask error" Foreground="#FFAE4040" ToolTip="{Binding ErrorMessage}" Margin="10,0"
                        Visibility="{Binding IsErrorVisible, Converter={StaticResource BooleanToVisibility}}"/>
+            <TextBlock Text="File extension was changed" Foreground="#FFD4AA28" Margin="10,0"
+                       Visibility="{Binding IsExtensionWarningVisible, Converter={StaticResource BooleanToVisibility}}"/>
             <Button Content="Rename" Width="80" Click="HandleRenameButtonClick" IsDefault="True" IsEnabled="{Binding IsMaskValid}" />
             <Button Content="Cancel" Margin="10,0,0,0" Width="80" IsCancel="True" />
         </StackPanel>

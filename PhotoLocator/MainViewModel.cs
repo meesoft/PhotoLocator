@@ -336,8 +336,7 @@ namespace PhotoLocator
             {
                 if (settingsWin.PhotoFileExtensions != photoFileExtensions)
                 {
-                    PhotoFileExtensions = settingsWin.PhotoFileExtensions.Replace("*", "").Replace(" ", ",").Replace(";", ",").ToLowerInvariant().
-                        Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+                    PhotoFileExtensions = settingsWin.CleanPhotoFileExtensions();
                     RefreshFolderCommand.Execute(null);
                 }
                 SavedFilePostfix = settingsWin.SavedFilePostfix;
@@ -396,6 +395,7 @@ namespace PhotoLocator
                 return;
             using var cursor = new CursorOverride();
             PreviewPictureSource = null;
+            PreviewPictureTitle = null;
             await Task.Delay(1);
             foreach (var item in selected)
             {

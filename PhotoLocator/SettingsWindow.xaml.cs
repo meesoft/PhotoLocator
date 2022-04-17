@@ -1,4 +1,5 @@
-﻿using System.ComponentModel;
+﻿using System;
+using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using System.Windows;
 
@@ -56,6 +57,16 @@ namespace PhotoLocator
         private void HandleOkButtonClick(object sender, RoutedEventArgs e)
         {
             DialogResult = true;
+        }
+
+        public string[] CleanPhotoFileExtensions()
+        {
+            var extensions = PhotoFileExtensions!.Replace("*", "").Replace(" ", ",").Replace(";", ",").ToLowerInvariant().
+                Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+            for (int i = 0; i < extensions.Length; i++)
+                if (!extensions[i].StartsWith('.'))
+                    extensions[i] = '.' + extensions[i];
+            return extensions;
         }
     }
 }
