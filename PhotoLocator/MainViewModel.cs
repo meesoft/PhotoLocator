@@ -133,7 +133,7 @@ namespace PhotoLocator
                     NotifyPropertyChanged(nameof(IsPreviewVisible));
                     NotifyPropertyChanged(nameof(InSplitViewMode));
                     if (IsPreviewVisible)
-                        UpdatePreviewPicture();
+                        UpdatePreviewPictureAsync().WithExceptionLogging();
                     else
                         PreviewPictureSource = null;
                 }
@@ -173,7 +173,7 @@ namespace PhotoLocator
                     if (value?.GeoTag != null)
                         MapCenter = value.GeoTag;
                     UpdatePushpins();
-                    UpdatePreviewPicture();
+                    UpdatePreviewPictureAsync().WithExceptionLogging();
                 }
             }
         }
@@ -187,19 +187,30 @@ namespace PhotoLocator
                     Points.Add(new PointItem { Location = item.GeoTag, Name = item.Name });
         }
 
-        private void UpdatePreviewPicture()
+        private async Task UpdatePreviewPictureAsync()
         {
             if (SelectedPicture is null || !IsPreviewVisible)
                 return;
-            PreviewPictureSource = new BitmapImage(new Uri(SelectedPicture.FullPath));
-            var title = SelectedPicture.Name;
-            if (ShowMetadataInSlideShow)
+            var textTask = Task.Run(() =>
             {
-                var metadata = ExifHandler.GetMetataString(SelectedPicture.FullPath);
-                if (!string.IsNullOrEmpty(metadata))
-                    title += " [" + metadata + "]";
-            }
-            PreviewPictureTitle = title;
+                var title = SelectedPicture.Name;
+                if (ShowMetadataInSlideShow)
+                {
+                    try
+                    {
+                        var metadata = ExifHandler.GetMetataString(SelectedPicture.FullPath);
+                        if (!string.IsNullOrEmpty(metadata))
+                            title += " [" + metadata + "]";
+                    }
+                    catch 
+                    { 
+                    }
+                }
+                return title;
+            });
+            var maxWidth = App.Current.MainWindow.ActualWidth;
+            PreviewPictureSource = await Task.Run(() => SelectedPicture.LoadPreview((int)maxWidth));
+            PreviewPictureTitle = await textTask;
         }
 
         public ICommand AutoTagCommand => new RelayCommand(async o =>
@@ -222,7 +233,7 @@ namespace PhotoLocator
                 else if (Points.Count > 0)
                     MapCenter = Points[0].Location;
             }
-            UpdatePreviewPicture();
+            UpdatePreviewPictureAsync().WithExceptionLogging();
         });
 
         public ICommand CopyCommand => new RelayCommand(o =>
@@ -306,7 +317,7 @@ namespace PhotoLocator
                 UpdatePushpins();
                 PictureSelectionChanged();
             }
-            UpdatePreviewPicture();
+            UpdatePreviewPictureAsync().WithExceptionLogging();
         });
 
         public Func<string?>? GetSelectedMapLayerName { get; internal set; }

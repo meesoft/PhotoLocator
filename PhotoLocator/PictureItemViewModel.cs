@@ -151,21 +151,31 @@ namespace PhotoLocator
                 }, ct);
                 GeoTagSaved = GeoTag != null;
 
-                PreviewImage = await Task.Run(() =>
-                {
-                    var thumbnail = new BitmapImage();
-                    thumbnail.BeginInit();
-                    thumbnail.UriSource = new Uri(FullPath);
-                    thumbnail.DecodePixelWidth = 200;
-                    thumbnail.CacheOption = BitmapCacheOption.OnLoad;
-                    thumbnail.EndInit();
-                    thumbnail.Freeze();
-                    return thumbnail;
-                }, ct);
+                PreviewImage = await Task.Run(() => LoadPreview(200), ct);
             }
             catch (Exception ex)
             {
                 ErrorMessage = ex.ToString();
+            }
+        }
+
+        public BitmapSource? LoadPreview(int maxWidth)
+        {
+            try
+            {
+                var thumbnail = new BitmapImage();
+                thumbnail.BeginInit();
+                thumbnail.UriSource = new Uri(FullPath);
+                thumbnail.DecodePixelWidth = maxWidth;
+                thumbnail.CacheOption = BitmapCacheOption.OnLoad;
+                thumbnail.EndInit();
+                thumbnail.Freeze();
+                return thumbnail;
+            }
+            catch (Exception ex)
+            {
+                ErrorMessage = ex.ToString();
+                return null;
             }
         }
 
