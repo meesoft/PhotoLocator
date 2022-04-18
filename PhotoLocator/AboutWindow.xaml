@@ -9,7 +9,7 @@
         Background="Black"
         Title="About" 
         Width="600" Height="400" 
-        ResizeMode="NoResize" WindowStartupLocation="CenterOwner" ShowInTaskbar="False">
+        WindowStartupLocation="CenterOwner" ShowInTaskbar="False" >
 
     <Grid>
         <Grid.RowDefinitions>

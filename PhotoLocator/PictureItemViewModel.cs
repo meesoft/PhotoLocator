@@ -1,4 +1,5 @@
 ﻿using MapControl;
+using Microsoft.WindowsAPICodePack.Shell;
 using PhotoLocator.Metadata;
 using System;
 using System.ComponentModel;
@@ -168,9 +169,11 @@ namespace PhotoLocator
             }
             PreviewImage = await Task.Run(() => LoadPreview(200), ct);
         }
-
-        public BitmapImage? LoadPreview(int maxWidth)
+       
+        public BitmapSource? LoadPreview(int maxWidth)
         {
+            if (maxWidth <= 256)
+                return LoadShellThumbnail(large: false);
             try
             {
                 var bitmap = new BitmapImage();
@@ -183,11 +186,18 @@ namespace PhotoLocator
                 bitmap.Freeze();
                 return bitmap;
             }
-            catch (Exception ex)
+            catch
             {
-                ErrorMessage = ex.ToString();
-                return null;
+                return LoadShellThumbnail(large: true);
             }
+        }
+
+        private BitmapSource LoadShellThumbnail(bool large)
+        {
+            using var shellFile = ShellFile.FromFilePath(FullPath);
+            var thumbnail = large ? shellFile.Thumbnail.ExtraLargeBitmapSource : shellFile.Thumbnail.BitmapSource;
+            thumbnail.Freeze();
+            return thumbnail;
         }
 
         internal async Task SaveGeoTagAsync(string? postfix)

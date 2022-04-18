@@ -42,10 +42,15 @@ namespace PhotoLocator
                 text.AppendLine();
                 text.AppendLine("Third party open source licenses:");
                 text.AppendLine();
-                text.AppendLine("----");
+                text.AppendLine("____");
                 using var mapLicenseStream = new StreamReader(typeof(AboutWindow).Assembly.GetManifestResourceStream(
                     "PhotoLocator.Resources.XamlMapControlLicense")!);
                 text.AppendLine(mapLicenseStream.ReadToEnd());
+                text.AppendLine();
+                text.AppendLine("____");
+                using var apiLicenseStream = new StreamReader(typeof(AboutWindow).Assembly.GetManifestResourceStream(
+                    "PhotoLocator.Resources.Windows-API-Code-PackLicense")!);
+                text.AppendLine(apiLicenseStream.ReadToEnd());
 
                 return text.ToString();
             }

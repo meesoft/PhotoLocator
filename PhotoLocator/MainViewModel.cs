@@ -399,10 +399,13 @@ namespace PhotoLocator
 
         public ICommand DeleteSelectedCommand => new RelayCommand(o =>
         {
+            if (SelectedPicture is null)
+                return;
             var selected = Pictures.Where(i => i.IsSelected).ToArray();
             if (MessageBox.Show($"Delete {selected.Length} selected file(s)?", "Confirm", MessageBoxButton.OKCancel, MessageBoxImage.Question) != MessageBoxResult.OK)
                 return;
             using var cursor = new CursorOverride();
+            var selectedIndex = Pictures.IndexOf(SelectedPicture);
             PreviewPictureSource = null;
             PreviewPictureTitle = null;
             foreach (var item in selected)
@@ -410,6 +413,8 @@ namespace PhotoLocator
                 FileSystem.DeleteFile(item.FullPath, UIOption.OnlyErrorDialogs, RecycleOption.SendToRecycleBin);
                 Pictures.Remove(item);
             }
+            if (Pictures.Count > 0)
+                SelectedPicture = Pictures[Math.Min(selectedIndex, Pictures.Count-1)];
         });
 
         public ICommand ExecuteSelectedCommand => new RelayCommand(o =>
