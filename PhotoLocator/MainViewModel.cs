@@ -191,25 +191,23 @@ namespace PhotoLocator
         {
             if (SelectedPicture is null || !IsPreviewVisible)
                 return;
+            var selected = SelectedPicture;
             var textTask = Task.Run(() =>
             {
-                var title = SelectedPicture.Name;
-                if (ShowMetadataInSlideShow)
+                var title = selected.Name;
+                try
                 {
-                    try
-                    {
-                        var metadata = ExifHandler.GetMetataString(SelectedPicture.FullPath);
-                        if (!string.IsNullOrEmpty(metadata))
-                            title += " [" + metadata + "]";
-                    }
-                    catch 
-                    { 
-                    }
+                    var metadata = ExifHandler.GetMetataString(selected.FullPath);
+                    if (!string.IsNullOrEmpty(metadata))
+                        title += " [" + metadata + "]";
+                }
+                catch 
+                { 
                 }
                 return title;
             });
             var maxWidth = App.Current.MainWindow.ActualWidth;
-            PreviewPictureSource = await Task.Run(() => SelectedPicture.LoadPreview((int)maxWidth));
+            PreviewPictureSource = await Task.Run(() => selected.LoadPreview((int)maxWidth));
             PreviewPictureTitle = await textTask;
         }
 
@@ -399,7 +397,7 @@ namespace PhotoLocator
             await LoadPicturesAsync();
         }
 
-        public ICommand DeleteSelectedCommand => new RelayCommand(async o =>
+        public ICommand DeleteSelectedCommand => new RelayCommand(o =>
         {
             var selected = Pictures.Where(i => i.IsSelected).ToArray();
             if (MessageBox.Show($"Delete {selected.Length} selected file(s)?", "Confirm", MessageBoxButton.OKCancel, MessageBoxImage.Question) != MessageBoxResult.OK)
@@ -407,7 +405,6 @@ namespace PhotoLocator
             using var cursor = new CursorOverride();
             PreviewPictureSource = null;
             PreviewPictureTitle = null;
-            await Task.Delay(1);
             foreach (var item in selected)
             {
                 FileSystem.DeleteFile(item.FullPath, UIOption.OnlyErrorDialogs, RecycleOption.SendToRecycleBin);

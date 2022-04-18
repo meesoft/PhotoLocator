@@ -135,6 +135,9 @@ namespace PhotoLocator
 
         public bool CanSaveGeoTag => Path.GetExtension(Name)?.ToLowerInvariant() == ".jpg";
 
+        public Rotation Rotation { get => _rotation; set => _rotation = value; }
+        Rotation _rotation;
+
         public async ValueTask LoadImageAsync(CancellationToken ct)
         {
             try
@@ -145,32 +148,40 @@ namespace PhotoLocator
                     var decoder = BitmapDecoder.Create(file, BitmapCreateOptions.IgnoreColorProfile, BitmapCacheOption.None);
                     if (decoder.Frames[0].Metadata is not BitmapMetadata metadata)
                         return null;
+                    var orientation = metadata.GetQuery(ExifHandler.OrientationQuery1) as ushort? ?? metadata.GetQuery(ExifHandler.OrientationQuery2) as ushort? ?? 0;
+                    Rotation = orientation switch
+                    {
+                        3 => Rotation.Rotate180,
+                        6 => Rotation.Rotate90,
+                        8 => Rotation.Rotate270,
+                        _ => Rotation.Rotate0
+                    };
                     if (DateTime.TryParse(metadata.DateTaken, out var dateTaken))
                         _timeStamp = DateTime.SpecifyKind(dateTaken, DateTimeKind.Local);
                     return ExifHandler.GetGeotag(metadata);
                 }, ct);
                 GeoTagSaved = GeoTag != null;
-
-                PreviewImage = await Task.Run(() => LoadPreview(200), ct);
             }
             catch (Exception ex)
             {
                 ErrorMessage = ex.ToString();
             }
+            PreviewImage = await Task.Run(() => LoadPreview(200), ct);
         }
 
-        public BitmapSource? LoadPreview(int maxWidth)
+        public BitmapImage? LoadPreview(int maxWidth)
         {
             try
             {
-                var thumbnail = new BitmapImage();
-                thumbnail.BeginInit();
-                thumbnail.UriSource = new Uri(FullPath);
-                thumbnail.DecodePixelWidth = maxWidth;
-                thumbnail.CacheOption = BitmapCacheOption.OnLoad;
-                thumbnail.EndInit();
-                thumbnail.Freeze();
-                return thumbnail;
+                var bitmap = new BitmapImage();
+                bitmap.BeginInit();
+                bitmap.UriSource = new Uri(FullPath);
+                bitmap.DecodePixelWidth = maxWidth;
+                bitmap.CacheOption = BitmapCacheOption.OnLoad;
+                bitmap.Rotation = Rotation;
+                bitmap.EndInit();
+                bitmap.Freeze();
+                return bitmap;
             }
             catch (Exception ex)
             {

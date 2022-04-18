@@ -102,6 +102,12 @@ namespace PhotoLocator
             _viewModel.PictureSelectionChanged();
         }
 
+        private void HandlePictureListBoxPreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+        {
+            if (e.ClickCount == 2)
+                _viewModel.ExecuteSelectedCommand.Execute(null);
+        }
+
         private void HandlePathEditPreviewKeyUp(object sender, KeyEventArgs e)
         {
             if (e.Key == Key.Enter)

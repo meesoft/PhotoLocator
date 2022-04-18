@@ -31,7 +31,7 @@ namespace PhotoLocator.Metadata
         {
             if (_file.TimeStamp.HasValue)
                 return _file.TimeStamp.Value;
-            return File.GetCreationTimeUtc(_file.FullPath);
+            return File.GetLastWriteTime(_file.FullPath);
         }
 
         BitmapFrame GetFrame()

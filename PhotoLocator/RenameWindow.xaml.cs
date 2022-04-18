@@ -49,6 +49,7 @@ namespace PhotoLocator
                 RenameMask = selectedPictures[0].Name;
             else
                 RenameMask = _previousMasks[0];
+            MaskTextBox.Focus();
         }
 
         public event PropertyChangedEventHandler? PropertyChanged;

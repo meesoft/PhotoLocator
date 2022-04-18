@@ -89,7 +89,7 @@ namespace PhotoLocator
         private void UpdatePicture()
         {
             SelectedPicture = _pictures[PictureIndex];
-            PictureSource = new BitmapImage(new Uri(SelectedPicture.FullPath));
+            PictureSource = SelectedPicture.LoadPreview(0);
 
             var name = Path.GetFileNameWithoutExtension(SelectedPicture.Name)!;
             var i = name.IndexOf('[');

@@ -98,7 +98,8 @@
         </StackPanel>
 
         <ListBox Grid.Column="0" Grid.Row="1" Margin="0,0,10,0" ItemsSource="{Binding Pictures}" Name="PictureListBox"
-                 SelectionMode="Extended" SelectedItem="{Binding SelectedPicture}" SelectionChanged="HandlePictureListBoxSelectionChanged" >
+                 SelectionMode="Extended" SelectedItem="{Binding SelectedPicture}" SelectionChanged="HandlePictureListBoxSelectionChanged" 
+                 PreviewMouseLeftButtonDown="HandlePictureListBoxPreviewMouseLeftButtonDown" >
             <ListBox.InputBindings>
                 <KeyBinding Key="Enter" Command="{Binding ExecuteSelectedCommand}" />
                 <KeyBinding Key="Delete" Command="{Binding DeleteSelectedCommand}" />
