@@ -9,6 +9,14 @@ KML files can be obtained directly from the Google maps location history. GPX fi
 
 ![Screenshot](./Screenshot.jpg)
 
+## JPEG and raw file preview
+PhotoLocator can also preview JPEG, raw and video files (first frame only) and you can delete unwanted files.
+
+![Screenshot](./SplitViewScreenshot.jpg)
+
+## Mask based automatic renaming
+Selected files can be automatically renamed based on timestamp, dimensions and other metadata tags.
+
 ## Slideshow with location map
 There is also a full screen slideshow feature with a small location map display. You can drag/drop in files and folders to do a 
 slideshow across multiple folders. 
@@ -23,6 +31,9 @@ If PhotoLocator cannot start, you need to install the .NET 6 Desktop Runtime.
 ## Why PhotoLocator?
 I have been using GeoSetter for many years but it has not been maintained for a long time and then it completely stopped working 
 for me. Since I was unable to find a suitable replacement I decided to make a new geotagging application and make it open source.
+
+## Version history
+https://github.com/meesoft/PhotoLocator/releases
 
 ## Source code
 PhotoLocator is written in C# targeting .net6.0 for Windows.
