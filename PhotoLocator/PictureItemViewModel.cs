@@ -179,7 +179,8 @@ namespace PhotoLocator
                 var bitmap = new BitmapImage();
                 bitmap.BeginInit();
                 bitmap.UriSource = new Uri(FullPath);
-                bitmap.DecodePixelWidth = maxWidth;
+                if (maxWidth < int.MaxValue)
+                    bitmap.DecodePixelWidth = maxWidth;
                 bitmap.CacheOption = BitmapCacheOption.OnLoad;
                 bitmap.Rotation = Rotation;
                 bitmap.EndInit();

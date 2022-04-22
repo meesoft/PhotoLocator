@@ -216,7 +216,7 @@ namespace PhotoLocator
             await WaitForPicturesLoadedAsync();
             if (SelectedPicture is null)
                 foreach (var item in Pictures)
-                    item.IsSelected = item.GeoTag is null;
+                    item.IsSelected = item.GeoTag is null && item.TimeStamp.HasValue && item.CanSaveGeoTag;
             var autoTagWin = new AutoTagWindow();
             var autoTagViewModel = new AutoTagViewModel(Pictures, Polylines, () => { autoTagWin.DialogResult = true; });
             autoTagWin.Owner = App.Current.MainWindow;
