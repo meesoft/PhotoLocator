@@ -206,8 +206,7 @@ namespace PhotoLocator
                 }
                 return title;
             });
-            var maxWidth = App.Current.MainWindow.ActualWidth;
-            PreviewPictureSource = await Task.Run(() => selected.LoadPreview((int)maxWidth));
+            PreviewPictureSource = await Task.Run(() => selected.LoadPreview());
             PreviewPictureTitle = await textTask;
         }
 

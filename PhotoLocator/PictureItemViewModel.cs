@@ -1,6 +1,7 @@
 ﻿using MapControl;
 using Microsoft.WindowsAPICodePack.Shell;
 using PhotoLocator.Metadata;
+using PhotoLocator.PictureFileFormats;
 using System;
 using System.ComponentModel;
 using System.Diagnostics;
@@ -167,18 +168,36 @@ namespace PhotoLocator
             {
                 ErrorMessage = ex.ToString();
             }
-            PreviewImage = await Task.Run(() => LoadPreview(200), ct);
+            PreviewImage = await Task.Run(() => LoadPreview(256), ct);
         }
        
-        public BitmapSource? LoadPreview(int maxWidth)
+        public BitmapSource? LoadPreview(int maxWidth = int.MaxValue)
         {
             if (maxWidth <= 256)
                 return LoadShellThumbnail(large: false);
             try
             {
+                using var fileStream = File.OpenRead(FullPath);
+
+                var ext = Path.GetExtension(Name).ToLowerInvariant();
+                if (CR3FileFormatHandler.CanLoad(ext))
+                {
+                    try
+                    {
+                        var preview = CR3FileFormatHandler.TryLoadFromStream(fileStream, Rotation, maxWidth);
+                        if (preview != null)
+                            return preview;
+                    }
+                    catch
+                    {
+                        // Fallback to default reader
+                        fileStream.Position = 0;
+                    }
+                }
+
                 var bitmap = new BitmapImage();
                 bitmap.BeginInit();
-                bitmap.UriSource = new Uri(FullPath);
+                bitmap.StreamSource = fileStream;
                 if (maxWidth < int.MaxValue)
                     bitmap.DecodePixelWidth = maxWidth;
                 bitmap.CacheOption = BitmapCacheOption.OnLoad;
