@@ -121,26 +121,26 @@ namespace PhotoLocator
         }
         DateTime? _timeStamp;
 
-        public ImageSource? PreviewImage 
+        public ImageSource? ThumbnailImage 
         { 
-            get => _previewImage; 
-            set => SetProperty(ref _previewImage, value);
+            get => _thumbnailImage; 
+            set => SetProperty(ref _thumbnailImage, value);
         }
-        private ImageSource? _previewImage;
+        ImageSource? _thumbnailImage;
 
         public string? ErrorMessage 
         { 
             get => _errorMessage; 
             set => SetProperty(ref _errorMessage, value); 
         }
-        private string? _errorMessage;
+        string? _errorMessage;
 
         public bool CanSaveGeoTag => Path.GetExtension(Name)?.ToLowerInvariant() == ".jpg";
 
         public Rotation Rotation { get => _rotation; set => _rotation = value; }
         Rotation _rotation;
 
-        public async ValueTask LoadImageAsync(CancellationToken ct)
+        public async ValueTask LoadPictureAsync(CancellationToken ct)
         {
             try
             {
@@ -168,7 +168,7 @@ namespace PhotoLocator
             {
                 ErrorMessage = ex.ToString();
             }
-            PreviewImage = await Task.Run(() => LoadPreview(256), ct);
+            ThumbnailImage = await Task.Run(() => LoadPreview(256), ct);
         }
        
         public BitmapSource? LoadPreview(int maxWidth = int.MaxValue)
@@ -178,33 +178,21 @@ namespace PhotoLocator
             try
             {
                 using var fileStream = File.OpenRead(FullPath);
-
-                var ext = Path.GetExtension(Name).ToLowerInvariant();
-                if (CR3FileFormatHandler.CanLoad(ext))
+                try
                 {
-                    try
-                    {
-                        var preview = CR3FileFormatHandler.TryLoadFromStream(fileStream, Rotation, maxWidth);
-                        if (preview != null)
-                            return preview;
-                    }
-                    catch
-                    {
-                        // Fallback to default reader
-                        fileStream.Position = 0;
-                    }
+                    var ext = Path.GetExtension(Name).ToLowerInvariant();
+                    BitmapSource? result = null;
+                    if (CR2FileFormatHandler.CanLoad(ext) && (result = CR2FileFormatHandler.TryLoadFromStream(fileStream, Rotation, maxWidth)) != null)
+                        return result;
+                    if (CR3FileFormatHandler.CanLoad(ext) && (result = CR3FileFormatHandler.TryLoadFromStream(fileStream, Rotation, maxWidth)) != null)
+                        return result;
                 }
-
-                var bitmap = new BitmapImage();
-                bitmap.BeginInit();
-                bitmap.StreamSource = fileStream;
-                if (maxWidth < int.MaxValue)
-                    bitmap.DecodePixelWidth = maxWidth;
-                bitmap.CacheOption = BitmapCacheOption.OnLoad;
-                bitmap.Rotation = Rotation;
-                bitmap.EndInit();
-                bitmap.Freeze();
-                return bitmap;
+                catch
+                {
+                    // Fallback to default reader
+                    fileStream.Position = 0;
+                }
+                return GeneralFileFormatHandler.TryLoadFromStream(fileStream, Rotation, maxWidth);
             }
             catch
             {

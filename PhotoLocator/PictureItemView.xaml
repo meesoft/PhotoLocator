@@ -12,7 +12,7 @@
         <BooleanToVisibilityConverter x:Key="BooleanToVisibility" />
     </UserControl.Resources>
     <Grid>
-        <Image Source="{Binding PreviewImage}" VerticalAlignment="Top"/>
+        <Image Source="{Binding ThumbnailImage}" VerticalAlignment="Top"/>
 
         <Grid Margin="2" >
             <TextBlock Text="ë" TextWrapping="Wrap" FontSize="25" FontWeight="ExtraBold" FontFamily="Webdings" 

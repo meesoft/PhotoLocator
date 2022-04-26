@@ -303,7 +303,7 @@ namespace PhotoLocator
         {
             if (SelectedPicture is null)
                 return;
-            if (Pictures.Any(i => i.IsSelected && i.PreviewImage is null))
+            if (Pictures.Any(i => i.IsSelected && i.ThumbnailImage is null))
                 await WaitForPicturesLoadedAsync();
             var renameWin = new RenameWindow(Pictures.Where(item => item.IsSelected).ToList());
             renameWin.Owner = App.Current.MainWindow;
@@ -489,9 +489,9 @@ namespace PhotoLocator
         {
             _loadCancellation?.Dispose();
             _loadCancellation = new CancellationTokenSource();
-            _loadPicturesTask = Parallel.ForEachAsync(Pictures.Where(i => i.PreviewImage is null).ToArray(), 
+            _loadPicturesTask = Parallel.ForEachAsync(Pictures.Where(i => i.ThumbnailImage is null).ToArray(), 
                 new ParallelOptions { MaxDegreeOfParallelism = 2, CancellationToken = _loadCancellation.Token }, 
-                (item, ct) => item.LoadImageAsync(ct));
+                (item, ct) => item.LoadPictureAsync(ct));
             await _loadPicturesTask;
             _loadPicturesTask = null;
         }
