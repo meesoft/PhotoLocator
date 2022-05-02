@@ -1,12 +1,14 @@
 ﻿using PhotoLocator.Helpers;
 using PhotoLocator.MapDisplay;
 using System;
+using System.ComponentModel;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
+using System.Windows.Media;
 
 namespace PhotoLocator
 {
@@ -16,10 +18,12 @@ namespace PhotoLocator
     public partial class MainWindow : Window
     {
         readonly MainViewModel _viewModel;
+        private Point _previousMousePosision;
 
         public MainWindow()
         {
             InitializeComponent();
+            Panel.SetZIndex(RightPanelGrid, -1000);
             Panel.SetZIndex(ProgressGrid, 1000);
             _viewModel = new MainViewModel();
             _viewModel.GetSelectedMapLayerName = GetSelectedMapLayerName;
@@ -28,6 +32,7 @@ namespace PhotoLocator
             _viewModel.ViewModeCommand = new RelayCommand(s =>
                 _viewModel.SelectedViewModeItem = _viewModel.SelectedViewModeItem == MapViewItem ? PreviewViewItem : MapViewItem);
             DataContext = _viewModel;
+            _viewModel.PropertyChanged += HandleViewModelPropertyChanged;
         }
 
         private void HandleWindowLoaded(object sender, RoutedEventArgs e)
@@ -120,6 +125,14 @@ namespace PhotoLocator
                 Dispatcher.BeginInvoke(() => _viewModel.HandleDroppedFilesAsync(droppedEntries).WithExceptionShowing());
         }
 
+        private void HandleViewModelPropertyChanged(object? sender, PropertyChangedEventArgs e)
+        {
+            if (e.PropertyName == nameof(_viewModel.PreviewPictureSource))
+                InitializePreviewRenderTransform();
+            else if (e.PropertyName == nameof(_viewModel.PreviewZoom))
+                UpdatePreviewZoom();
+        }
+
         private void HandleViewModeSelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             if (_viewModel is null)
@@ -128,6 +141,7 @@ namespace PhotoLocator
             {
                 MapRow.Height = new GridLength(1, GridUnitType.Star);
                 PreviewRow.Height = new GridLength(1, GridUnitType.Star);
+                UpdatePreviewZoom();
             }
             else if (_viewModel.IsMapVisible)
             {
@@ -138,7 +152,62 @@ namespace PhotoLocator
             {
                 MapRow.Height = new GridLength(0, GridUnitType.Star);
                 PreviewRow.Height = new GridLength(1, GridUnitType.Star);
+                UpdatePreviewZoom();
             }
+        }
+
+        private void HandlePreviewImageMouseDown(object sender, MouseButtonEventArgs e)
+        {
+            if (e.ChangedButton == MouseButton.Left || e.ChangedButton == MouseButton.Middle)
+                _previousMousePosision = e.GetPosition(this);
+        }
+
+        private void HandlePreviewImageMouseMove(object sender, MouseEventArgs e)
+        {
+            if ((e.LeftButton != MouseButtonState.Released || e.MiddleButton != MouseButtonState.Released) && _viewModel.PreviewZoom != 0 &&
+                PreviewImage.RenderTransform is MatrixTransform transform)
+            {
+                var pt = e.GetPosition(this);
+                PreviewImage.RenderTransform = new MatrixTransform(
+                    transform.Matrix.M11, transform.Matrix.M12,
+                    transform.Matrix.M21, transform.Matrix.M22,
+                    transform.Matrix.OffsetX + pt.X - _previousMousePosision.X,
+                    transform.Matrix.OffsetY + pt.Y - _previousMousePosision.Y);
+                _previousMousePosision = pt;
+            }
+        }
+
+        private void UpdatePreviewZoom()
+        {
+            ZoomToFitItem.IsChecked = _viewModel.PreviewZoom == 0;
+            Zoom100Item.IsChecked = _viewModel.PreviewZoom == 1;
+            Zoom200Item.IsChecked = _viewModel.PreviewZoom == 2;
+            Zoom400Item.IsChecked = _viewModel.PreviewZoom == 4;
+            if (_viewModel.PreviewZoom == 0)
+            {
+                PreviewImage.Stretch = Stretch.Uniform;
+                PreviewImage.RenderTransform = null;
+                RenderOptions.SetBitmapScalingMode(PreviewImage, BitmapScalingMode.HighQuality);
+            }
+            else
+            {
+                PreviewImage.Stretch = Stretch.None;
+                InitializePreviewRenderTransform();
+                RenderOptions.SetBitmapScalingMode(PreviewImage, BitmapScalingMode.NearestNeighbor);
+            }
+        }
+
+        private void InitializePreviewRenderTransform()
+        {
+            if (_viewModel.PreviewPictureSource is null || _viewModel.PreviewZoom == 0)
+                return;
+            var screenDpi = VisualTreeHelper.GetDpi(this);
+            var sx = _viewModel.PreviewPictureSource.DpiX / screenDpi.PixelsPerInchX * _viewModel.PreviewZoom;
+            var sy = _viewModel.PreviewPictureSource.DpiY / screenDpi.PixelsPerInchY * _viewModel.PreviewZoom;
+            PreviewImage.RenderTransform = new MatrixTransform(
+                 sx, 0,
+                 0, sy,
+                 0, 0);
         }
     }
 }

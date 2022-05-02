@@ -27,6 +27,11 @@
         <KeyBinding Key="V" Modifiers="Ctrl" Command="{Binding PasteCommand}" />
         <KeyBinding Key="S" Modifiers="Ctrl" Command="{Binding SaveCommand}" />
         <KeyBinding Key="Q" Modifiers="Ctrl" Command="{Binding ViewModeCommand}" />
+        <KeyBinding Key="A" Modifiers="Alt" Command="{Binding ToggleZoomCommand}" />
+        <KeyBinding Key="D1" Modifiers="Ctrl" Command="{Binding ZoomToFitCommand}" />
+        <KeyBinding Key="D2" Modifiers="Ctrl" Command="{Binding Zoom100Command}" />
+        <KeyBinding Key="D3" Modifiers="Ctrl" Command="{Binding Zoom200Command}" />
+        <KeyBinding Key="D4" Modifiers="Ctrl" Command="{Binding Zoom400Command}" />
         <KeyBinding Key="F1" Command="{Binding AboutCommand}" />
         <KeyBinding Key="F2" Command="{Binding RenameCommand}" />
         <KeyBinding Key="F3" Command="{Binding SlideShowCommand}" />
@@ -132,23 +137,33 @@
             </ListBox.ContextMenu>
         </ListBox>
 
-        <Grid Grid.Column="1" Grid.Row="1">
+        <Grid Grid.Column="1" Grid.Row="1" Name="RightPanelGrid">
             <Grid.RowDefinitions>
                 <RowDefinition Height="{Binding MapRowHeight}" Name="MapRow"/>
                 <RowDefinition Height="{Binding PreviewRowHeight}" Name="PreviewRow"/>
             </Grid.RowDefinitions>
-            <GridSplitter Grid.Row="1" Visibility="{Binding InSplitViewMode, Converter={StaticResource BooleanToVisibility}}"
-                          Height="8" Background="Black" HorizontalAlignment="Stretch" VerticalAlignment="Top" ShowsPreview="True" />
 
-            <mapDisplay:MapView Grid.Row="0" x:Name="Map" Visibility="{Binding IsMapVisible, Converter={StaticResource BooleanToVisibility}}"/>
-
-            <Grid Grid.Row="1" Visibility="{Binding IsPreviewVisible, Converter={StaticResource BooleanToVisibility}}" Margin="0,4,0,0" >
-                <Image Source="{Binding PreviewPictureSource}" IsHitTestVisible="False"/>
+            <Grid Grid.Row="1" Visibility="{Binding IsPreviewVisible, Converter={StaticResource BooleanToVisibility}}" Margin="0,4,0,0" 
+                  PreviewMouseDown="HandlePreviewImageMouseDown" PreviewMouseMove="HandlePreviewImageMouseMove">
+                <Image Source="{Binding PreviewPictureSource}" SnapsToDevicePixels="True" Name="PreviewImage" RenderTransformOrigin="0.5,0.5" />
                 <TextBlock VerticalAlignment="Bottom" HorizontalAlignment="Right" Margin="8" FontSize="18" FontWeight="Bold" Foreground="Black"
                            TextWrapping="Wrap" Text="{Binding PreviewPictureTitle}"/>
                 <TextBlock VerticalAlignment="Bottom" HorizontalAlignment="Right" Margin="10" FontSize="18" FontWeight="Bold" Foreground="White"
                            TextWrapping="Wrap" Text="{Binding PreviewPictureTitle}"/>
+                <Grid.ContextMenu>
+                    <ContextMenu>
+                        <MenuItem Header="Zoom to fit (Ctrl+1)" IsCheckable="True" IsChecked="True" Name="ZoomToFitItem" Command="{Binding ZoomToFitCommand}" />
+                        <MenuItem Header="100% (Ctrl+2)" IsCheckable="True" Name="Zoom100Item" Command="{Binding Zoom100Command}"/>
+                        <MenuItem Header="200% (Ctrl+3)" IsCheckable="True" Name="Zoom200Item" Command="{Binding Zoom200Command}" />
+                        <MenuItem Header="400% (Ctrl+4)" IsCheckable="True" Name="Zoom400Item" Command="{Binding Zoom400Command}"  />
+                    </ContextMenu>
+                </Grid.ContextMenu>
             </Grid>
+            
+            <GridSplitter Grid.Row="1" Visibility="{Binding InSplitViewMode, Converter={StaticResource BooleanToVisibility}}"
+                          Height="4" Background="Black" HorizontalAlignment="Stretch" VerticalAlignment="Top" ShowsPreview="True" />
+
+            <mapDisplay:MapView Grid.Row="0" x:Name="Map" Visibility="{Binding IsMapVisible, Converter={StaticResource BooleanToVisibility}}"/>
         </Grid>
     </Grid>
 </Window>

@@ -17,7 +17,6 @@ using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
-using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Shell;
 
@@ -149,17 +148,26 @@ namespace PhotoLocator
 
         public bool InSplitViewMode => Equals(SelectedViewModeItem?.Tag, ViewMode.Split);
 
+        public ICommand? ToggleZoomCommand => new RelayCommand(o => PreviewZoom = PreviewZoom > 0 ? 0 : 1);
+        public ICommand? ZoomToFitCommand => new RelayCommand(o => PreviewZoom = 0);
+        public ICommand? Zoom100Command => new RelayCommand(o => PreviewZoom = 1);
+        public ICommand? Zoom200Command => new RelayCommand(o => PreviewZoom = 2);
+        public ICommand? Zoom400Command => new RelayCommand(o => PreviewZoom = 4);
+
         public GridLength MapRowHeight { get => _mapRowHeight; set => SetProperty(ref _mapRowHeight, value); }
         private GridLength _mapRowHeight = new(1, GridUnitType.Star);
 
         public GridLength PreviewRowHeight { get => _previewRowHeight; set => SetProperty(ref _previewRowHeight, value); }
         private GridLength _previewRowHeight = new(0, GridUnitType.Star);
 
-        public ImageSource? PreviewPictureSource { get => _previewPictureSource; set => SetProperty(ref _previewPictureSource, value); }
-        private ImageSource? _previewPictureSource;
+        public BitmapSource? PreviewPictureSource { get => _previewPictureSource; set => SetProperty(ref _previewPictureSource, value); }
+        private BitmapSource? _previewPictureSource;
 
         public string? PreviewPictureTitle { get => _previewPictureTitle; set => SetProperty(ref _previewPictureTitle, value); }
         private string? _previewPictureTitle;
+
+        public int PreviewZoom { get => _previewZoom; set => SetProperty(ref _previewZoom, value); }
+        private int _previewZoom;
 
         public ObservableCollection<PictureItemViewModel> Pictures { get; } = new ObservableCollection<PictureItemViewModel>();
 
@@ -214,8 +222,17 @@ namespace PhotoLocator
         {
             await WaitForPicturesLoadedAsync();
             if (SelectedPicture is null)
+            {
                 foreach (var item in Pictures)
                     item.IsSelected = item.GeoTag is null && item.TimeStamp.HasValue && item.CanSaveGeoTag;
+                if (SelectedPicture is null)
+                {
+                    MessageBox.Show("No pictures with timestamp and missing geotag found", "Information", MessageBoxButton.OK, MessageBoxImage.Information);
+                    return;
+                }
+                else
+                    ScrollIntoView?.Invoke(SelectedPicture);
+            }
             var autoTagWin = new AutoTagWindow();
             var autoTagViewModel = new AutoTagViewModel(Pictures, Polylines, () => { autoTagWin.DialogResult = true; });
             autoTagWin.Owner = App.Current.MainWindow;
