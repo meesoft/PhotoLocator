@@ -113,6 +113,18 @@ namespace PhotoLocator
                 _viewModel.ExecuteSelectedCommand.Execute(null);
         }
 
+        private void HandlePictureListBoxMouseMove(object sender, MouseEventArgs e)
+        {
+            if (PictureListBox.SelectedItem != null &&
+                (e.LeftButton == MouseButtonState.Pressed || e.RightButton == MouseButtonState.Pressed))
+            {
+                var files = PictureListBox.SelectedItems.Cast<PictureItemViewModel>().Select(i => i.FullPath).ToArray();
+                var data = new DataObject(DataFormats.FileDrop, files);
+                data.SetData(DataFormats.Text, files[0]);
+                DragDrop.DoDragDrop(this, data, DragDropEffects.All);
+            }
+        }
+
         private void HandlePathEditPreviewKeyUp(object sender, KeyEventArgs e)
         {
             if (e.Key == Key.Enter)

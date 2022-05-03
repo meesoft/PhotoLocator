@@ -391,6 +391,8 @@ namespace PhotoLocator
 
         public async Task HandleDroppedFilesAsync(string[] droppedEntries)
         {
+            if (droppedEntries.All(f => Pictures.Any(i => i.FullPath == f)))
+                return;
             await WaitForPicturesLoadedAsync();
             if (droppedEntries.Any(f => Path.GetDirectoryName(f) != PhotoFolderPath))
                 PhotoFolderPath = null;
