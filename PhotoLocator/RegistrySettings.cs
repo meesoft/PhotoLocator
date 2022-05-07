@@ -9,6 +9,12 @@ namespace PhotoLocator
 
         public RegistryKey Key = Registry.CurrentUser.CreateSubKey(@"SOFTWARE\MeeSoft\PhotoLocator");
 
+        public int FirstLaunch
+        {
+            get => Key.GetValue(nameof(FirstLaunch)) as int? ?? 0;
+            set => Key.SetValue(nameof(FirstLaunch), value);
+        }
+
         public string PhotoFileExtensions
         {
             get => Key.GetValue(nameof(PhotoFileExtensions)) as string ?? DefaultPhotoFileExtensions;
@@ -25,6 +31,12 @@ namespace PhotoLocator
         {
             get => Key.GetValue(nameof(SelectedLayer)) as string;
             set => Key.SetValue(nameof(SelectedLayer), value ?? String.Empty);
+        }
+
+        public ViewMode ViewMode
+        {
+            get => (ViewMode)(Key.GetValue(nameof(ViewMode)) as int? ?? 0);
+            set => Key.SetValue(nameof(ViewMode), (int)value);
         }
 
         public string SavedFilePostfix
@@ -51,11 +63,6 @@ namespace PhotoLocator
             set => Key.SetValue(nameof(LeftColumnWidth), value);
         }
 
-        public int FirstLaunch
-        {
-            get => Key.GetValue(nameof(FirstLaunch)) as int? ?? 0;
-            set => Key.SetValue(nameof(FirstLaunch), value);
-        }
         public string RenameMasks
         {
             get => Key.GetValue(nameof(RenameMasks)) as string ?? "|DT| [|_????|]|ext|";

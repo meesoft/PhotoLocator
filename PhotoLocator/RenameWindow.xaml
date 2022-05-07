@@ -49,23 +49,24 @@
             <TextBlock Text="|*| Source file name without extension." MouseUp="HandleEscapeCodeTextBlockMouseUp" Foreground="#FFEEEEEE" Margin="0,0,5,0" Cursor="Hand"/>
         </StackPanel>
         <StackPanel Grid.Row="6" Orientation="Horizontal" >
-            <TextBlock Text="|_????| 4 characters following a _ in the source file name." MouseUp="HandleEscapeCodeTextBlockMouseUp" Foreground="#FFEEEEEE" Cursor="Hand"/>
+            <TextBlock Text="|_????| 4 characters following a _ in the source file name." MouseUp="HandleEscapeCodeTextBlockMouseUp" Foreground="#FFEEEEEE" Margin="0,0,5,0" Cursor="Hand"/>
+            <TextBlock Text="|#:4| 4 digit counter." MouseUp="HandleEscapeCodeTextBlockMouseUp" Foreground="#FFEEEEEE" Cursor="Hand"/>
         </StackPanel>
         <StackPanel Grid.Row="7" Orientation="Horizontal" >
-            <TextBlock Text="|width:4|" MouseUp="HandleEscapeCodeTextBlockMouseUp" Foreground="#FFEEEEEE" Margin="0,0,5,0" Cursor="Hand"/>
-            <TextBlock Text="|height:4| 4 digit photo dimension." MouseUp="HandleEscapeCodeTextBlockMouseUp" Foreground="#FFEEEEEE" Margin="0,0,5,0" Cursor="Hand"/>
-            <TextBlock Text="|w/h| width/height." MouseUp="HandleEscapeCodeTextBlockMouseUp" Foreground="#FFEEEEEE" Cursor="Hand"/>
-        </StackPanel>
-        <StackPanel Grid.Row="8" Orientation="Horizontal" >
             <TextBlock Text="|D|" MouseUp="HandleEscapeCodeTextBlockMouseUp" Foreground="#FFEEEEEE" Margin="0,0,5,0" Cursor="Hand"/>
             <TextBlock Text="|T|" MouseUp="HandleEscapeCodeTextBlockMouseUp" Foreground="#FFEEEEEE" Margin="0,0,5,0" Cursor="Hand"/>
-            <TextBlock Text="|DT| Date and time." MouseUp="HandleEscapeCodeTextBlockMouseUp" Foreground="#FFEEEEEE" Cursor="Hand"/>
+            <TextBlock Text="|DT| Date and time." MouseUp="HandleEscapeCodeTextBlockMouseUp" Foreground="#FFEEEEEE" Margin="0,0,5,0" Cursor="Hand"/>
         </StackPanel>
-        <StackPanel Grid.Row="9" Orientation="Horizontal" >
+        <StackPanel Grid.Row="8" Orientation="Horizontal" >
             <TextBlock Text="|a| Aperture." MouseUp="HandleEscapeCodeTextBlockMouseUp" Foreground="#FFEEEEEE" Margin="0,0,5,0" Cursor="Hand"/>
             <TextBlock Text="|t| Exp. time." MouseUp="HandleEscapeCodeTextBlockMouseUp" Foreground="#FFEEEEEE" Margin="0,0,5,0" Cursor="Hand"/>
             <TextBlock Text="|f| Focan length." MouseUp="HandleEscapeCodeTextBlockMouseUp" Foreground="#FFEEEEEE" Margin="0,0,5,0" Cursor="Hand"/>
             <TextBlock Text="|iso| ISO." MouseUp="HandleEscapeCodeTextBlockMouseUp" Foreground="#FFEEEEEE" Margin="0,0,5,0" Cursor="Hand"/>
+        </StackPanel>
+        <StackPanel Grid.Row="9" Orientation="Horizontal" >
+            <TextBlock Text="|width:4|" MouseUp="HandleEscapeCodeTextBlockMouseUp" Foreground="#FFEEEEEE" Margin="0,0,5,0" Cursor="Hand"/>
+            <TextBlock Text="|height:4| 4 digit photo dimension." MouseUp="HandleEscapeCodeTextBlockMouseUp" Foreground="#FFEEEEEE" Margin="0,0,5,0" Cursor="Hand"/>
+            <TextBlock Text="|w/h| width/height." MouseUp="HandleEscapeCodeTextBlockMouseUp" Foreground="#FFEEEEEE" Cursor="Hand"/>
         </StackPanel>
 
         <StackPanel Grid.Row="11" Orientation="Horizontal" HorizontalAlignment="Right">

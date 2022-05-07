@@ -1,5 +1,4 @@
 ﻿using MapControl;
-using Microsoft.VisualBasic.FileIO;
 using PhotoLocator.Helpers;
 using PhotoLocator.MapDisplay;
 using PhotoLocator.Metadata;
@@ -200,6 +199,12 @@ namespace PhotoLocator
             if (SelectedPicture is null || !IsPreviewVisible)
                 return;
             var selected = SelectedPicture;
+            if (selected.IsDirectory)
+            {
+                PreviewPictureSource = null;
+                PreviewPictureTitle = selected.Name;
+                return;
+            }
             var textTask = Task.Run(() =>
             {
                 var title = selected.Name;
@@ -225,13 +230,13 @@ namespace PhotoLocator
             {
                 foreach (var item in Pictures)
                     item.IsSelected = item.GeoTag is null && item.TimeStamp.HasValue && item.CanSaveGeoTag;
-                if (SelectedPicture is null)
-                {
-                    MessageBox.Show("No pictures with timestamp and missing geotag found", "Information", MessageBoxButton.OK, MessageBoxImage.Information);
-                    return;
-                }
-                else
+                if (SelectedPicture != null)
                     ScrollIntoView?.Invoke(SelectedPicture);
+            }
+            if (!Pictures.Any(item => item.IsSelected && item.CanSaveGeoTag))
+            {
+                MessageBox.Show("No pictures with timestamp and missing geotag found", "Information", MessageBoxButton.OK, MessageBoxImage.Information);
+                return;
             }
             var autoTagWin = new AutoTagWindow();
             var autoTagViewModel = new AutoTagViewModel(Pictures, Polylines, () => { autoTagWin.DialogResult = true; });
@@ -338,13 +343,15 @@ namespace PhotoLocator
 
         public ICommand SlideShowCommand => new RelayCommand(o =>
         {
-            if (Pictures.Count == 0)
+            var pictures = Pictures.Where(item => item.IsFile).ToList();
+            if (pictures.Count == 0)
                 return;
-            var slideShowWin = new SlideShowWindow(Pictures, SelectedPicture ?? Pictures.First(), SlideShowInterval, ShowMetadataInSlideShow,
-                GetSelectedMapLayerName?.Invoke());
+            var slideShowWin = new SlideShowWindow(pictures, SelectedPicture?.IsFile == true ? SelectedPicture : Pictures.First(), 
+                SlideShowInterval, ShowMetadataInSlideShow, GetSelectedMapLayerName?.Invoke());
             slideShowWin.Owner = App.Current.MainWindow;
             slideShowWin.ShowDialog();
             SelectedPicture = slideShowWin.SelectedPicture;
+            ScrollIntoView?.Invoke(SelectedPicture);
         });
 
         public ICommand SettingsCommand => new RelayCommand(o =>
@@ -420,7 +427,7 @@ namespace PhotoLocator
             if (SelectedPicture is null)
                 return;
             var selected = Pictures.Where(i => i.IsSelected).ToArray();
-            if (MessageBox.Show($"Delete {selected.Length} selected file(s)?", "Confirm", MessageBoxButton.OKCancel, MessageBoxImage.Question) != MessageBoxResult.OK)
+            if (MessageBox.Show($"Delete {selected.Length} selected items(s)?", "Confirm", MessageBoxButton.OKCancel, MessageBoxImage.Question) != MessageBoxResult.OK)
                 return;
             using var cursor = new CursorOverride();
             var selectedIndex = Pictures.IndexOf(SelectedPicture);
@@ -428,17 +435,37 @@ namespace PhotoLocator
             PreviewPictureTitle = null;
             foreach (var item in selected)
             {
-                FileSystem.DeleteFile(item.FullPath, UIOption.OnlyErrorDialogs, RecycleOption.SendToRecycleBin);
+                item.Recycle();
                 Pictures.Remove(item);
             }
             if (Pictures.Count > 0)
-                SelectedPicture = Pictures[Math.Min(selectedIndex, Pictures.Count-1)];
+            {
+                SelectedPicture = Pictures[Math.Min(selectedIndex, Pictures.Count - 1)];
+                ScrollIntoView?.Invoke(SelectedPicture);
+            }
         });
 
         public ICommand ExecuteSelectedCommand => new RelayCommand(o =>
         {
-            if (SelectedPicture != null)
+            if (SelectedPicture is null)
+                return;
+            if (SelectedPicture.IsDirectory)
+                PhotoFolderPath = SelectedPicture.FullPath;
+            else
                 Process.Start(new ProcessStartInfo(SelectedPicture.FullPath) { UseShellExecute = true });
+        });
+
+        public ICommand ParentFolderCommand => new RelayCommand(o =>
+        {
+            var currentPath = PhotoFolderPath?.TrimEnd('\\');
+            var parent = Path.GetDirectoryName(currentPath);
+            if (parent != null)
+            {
+                PhotoFolderPath = parent;
+                var select = Pictures.FirstOrDefault(item => item.FullPath.Equals(currentPath, StringComparison.CurrentCultureIgnoreCase));
+                if (select != null)
+                    SelectedPicture = select;
+            }
         });
 
         public ICommand CopyMetadataCommand => new RelayCommand(o =>
@@ -480,6 +507,8 @@ namespace PhotoLocator
                 return;
             Pictures.Clear();
             Polylines.Clear();
+            foreach (var dir in Directory.EnumerateDirectories(PhotoFolderPath))
+                Pictures.Add(new PictureItemViewModel(dir, true));
             await AppendFilesAsync(Directory.EnumerateFiles(PhotoFolderPath));
             if (Polylines.Count > 0)
                 MapCenter = Polylines[0].Center;
@@ -494,7 +523,7 @@ namespace PhotoLocator
                     continue;
                 var ext = Path.GetExtension(fileName).ToLowerInvariant();
                 if (PhotoFileExtensions.Contains(ext))
-                    Pictures.Add(new PictureItemViewModel(fileName));
+                    Pictures.Add(new PictureItemViewModel(fileName, false));
                 else if (ext == ".gpx" || ext == ".kml")
                 {
                     var trace = await Task.Run(() => GpsTrace.DecodeGpsTraceFile(fileName, TimeSpan.FromMinutes(1)));
