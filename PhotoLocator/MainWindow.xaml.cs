@@ -27,7 +27,6 @@ namespace PhotoLocator
             Panel.SetZIndex(ProgressGrid, 1000);
             _viewModel = new MainViewModel();
             _viewModel.GetSelectedMapLayerName = GetSelectedMapLayerName;
-            _viewModel.SelectedViewModeItem = MapViewItem;
             _viewModel.ScrollIntoView = PictureListBox.ScrollIntoView;
             _viewModel.ViewModeCommand = new RelayCommand(s =>
                 _viewModel.SelectedViewModeItem = _viewModel.SelectedViewModeItem == MapViewItem ? PreviewViewItem : MapViewItem);
@@ -48,6 +47,12 @@ namespace PhotoLocator
             var selectedLayer = settings.SelectedLayer;
             Map.mapLayersMenuButton.ContextMenu.Items.OfType<MenuItem>().FirstOrDefault(item => Equals(item.Header, selectedLayer))?.
                 RaiseEvent(new RoutedEventArgs(MenuItem.ClickEvent));
+            _viewModel.SelectedViewModeItem = settings.ViewMode switch
+            {
+                ViewMode.Preview =>  PreviewViewItem,
+                ViewMode.Split =>  SplitViewItem,
+                _ => MapViewItem
+            };
 
             var args = Environment.GetCommandLineArgs();
             if (args.Length > 1 && File.Exists(args[1]))
@@ -90,6 +95,7 @@ namespace PhotoLocator
                 settings.PhotoFileExtensions = String.Join(",", _viewModel.PhotoFileExtensions);
             if (_viewModel.SavedFilePostfix != null)
                 settings.SavedFilePostfix = _viewModel.SavedFilePostfix;
+            settings.ViewMode = _viewModel.SelectedViewModeItem?.Tag as ViewMode? ?? ViewMode.Map;
             settings.SlideShowInterval = _viewModel.SlideShowInterval;
             settings.ShowMetadataInSlideShow = _viewModel.ShowMetadataInSlideShow;
             settings.LeftColumnWidth = (int)LeftColumn.Width.Value;
@@ -107,16 +113,32 @@ namespace PhotoLocator
             _viewModel.PictureSelectionChanged();
         }
 
-        private void HandlePictureListBoxPreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+        private void HandlePictureListBoxMouseButtonDown(object sender, MouseButtonEventArgs e)
         {
-            if (e.ClickCount == 2)
+            if (e.ChangedButton == MouseButton.Left && e.ClickCount == 2)
+            {
                 _viewModel.ExecuteSelectedCommand.Execute(null);
+                e.Handled = true;
+            }
+            else if (e.ChangedButton == MouseButton.XButton2 && _viewModel.SelectedPicture != null && _viewModel.SelectedPicture.IsDirectory)
+            {
+                _viewModel.ExecuteSelectedCommand.Execute(null);
+                e.Handled = true;
+            }
+            else if (e.ChangedButton == MouseButton.XButton1)
+            {
+                _viewModel.ParentFolderCommand.Execute(null);
+                e.Handled = true;
+            }
+            else
+                _previousMousePosision = e.GetPosition(this);
         }
 
         private void HandlePictureListBoxMouseMove(object sender, MouseEventArgs e)
         {
             if (PictureListBox.SelectedItem != null &&
-                (e.LeftButton == MouseButtonState.Pressed || e.RightButton == MouseButtonState.Pressed))
+                (e.LeftButton == MouseButtonState.Pressed || e.RightButton == MouseButtonState.Pressed) &&
+                (e.GetPosition(this) - _previousMousePosision).Length > 10)
             {
                 var files = PictureListBox.SelectedItems.Cast<PictureItemViewModel>().Select(i => i.FullPath).ToArray();
                 var data = new DataObject(DataFormats.FileDrop, files);

@@ -25,12 +25,16 @@ namespace PhotoLocator.MapDisplay
             //TileImageLoader.Cache = null;
 
             // See https://www.bingmapsportal.com/ (note that caching is not permitted with Bing maps)
-            var bingMapsApiKeyPath = Path.Combine(
-                Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), "MapControl", "BingMapsApiKey.txt");
-            if (File.Exists(bingMapsApiKeyPath))
-            {
-                BingMapsTileLayer.ApiKey = File.ReadAllText(bingMapsApiKeyPath)?.Trim();
-            }
+            if (!TryLoadBingMapsApiKey(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), "MapControl", "BingMapsApiKey.txt")))
+                TryLoadBingMapsApiKey(Path.Combine(Path.GetDirectoryName(typeof(MapView).Assembly.Location)!, "BingMapsApiKey.txt"));
+        }
+
+        private static bool TryLoadBingMapsApiKey(string bingMapsApiKeyPath)
+        {
+            if (!File.Exists(bingMapsApiKeyPath))
+                return false;
+            BingMapsTileLayer.ApiKey = File.ReadAllText(bingMapsApiKeyPath).Trim();
+            return true;
         }
 
         public MapView()

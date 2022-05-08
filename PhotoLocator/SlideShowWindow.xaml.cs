@@ -3,6 +3,7 @@ using PhotoLocator.Helpers;
 using PhotoLocator.MapDisplay;
 using PhotoLocator.Metadata;
 using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.IO;
@@ -22,11 +23,11 @@ namespace PhotoLocator
     /// </summary>
     public partial class SlideShowWindow : Window, INotifyPropertyChanged
     {
-        readonly Collection<PictureItemViewModel> _pictures;
+        readonly IList<PictureItemViewModel> _pictures;
         readonly bool _showMetadataInSlideShow;
         readonly DispatcherTimer _timer;
 
-        public SlideShowWindow(Collection<PictureItemViewModel> pictures, PictureItemViewModel selectedPicture, int slideShowInterval, bool showMetadataInSlideShow, 
+        public SlideShowWindow(IList<PictureItemViewModel> pictures, PictureItemViewModel selectedPicture, int slideShowInterval, bool showMetadataInSlideShow, 
             string? selectedMapLayerName)
         {
             _pictures = pictures;

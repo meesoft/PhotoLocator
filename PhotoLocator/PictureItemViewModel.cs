@@ -1,4 +1,5 @@
 ﻿using MapControl;
+using Microsoft.VisualBasic.FileIO;
 using Microsoft.WindowsAPICodePack.Shell;
 using PhotoLocator.Metadata;
 using PhotoLocator.PictureFileFormats;
@@ -38,10 +39,11 @@ namespace PhotoLocator
 #endif
         }
 
-        public PictureItemViewModel(string fileName)
+        public PictureItemViewModel(string fileName, bool isDirectory)
         {
             _name = Path.GetFileName(fileName);
             FullPath = fileName;
+            IsDirectory = isDirectory;
         }
 
         void NotifyPropertyChanged([CallerMemberName] string? propertyName = null)
@@ -71,6 +73,10 @@ namespace PhotoLocator
             set => SetProperty(ref _fullPath, value);
         }
         string _fullPath = String.Empty;
+
+        public bool IsDirectory { get; }
+
+        public bool IsFile => !IsDirectory;
 
         public bool IsSelected
         {
@@ -135,12 +141,19 @@ namespace PhotoLocator
         }
         string? _errorMessage;
 
-        public bool CanSaveGeoTag => Path.GetExtension(Name)?.ToLowerInvariant() == ".jpg";
+        public bool CanSaveGeoTag => IsFile && Path.GetExtension(Name)?.ToLowerInvariant() == ".jpg";
 
         public Rotation Rotation { get => _rotation; set => _rotation = value; }
         Rotation _rotation;
 
         public async ValueTask LoadPictureAsync(CancellationToken ct)
+        {
+            if (IsFile)
+                await LoadMetadata(ct);
+            ThumbnailImage = await Task.Run(() => LoadPreview(256), ct);
+        }
+
+        private async Task LoadMetadata(CancellationToken ct)
         {
             try
             {
@@ -168,9 +181,8 @@ namespace PhotoLocator
             {
                 ErrorMessage = ex.ToString();
             }
-            ThumbnailImage = await Task.Run(() => LoadPreview(256), ct);
         }
-       
+
         public BitmapSource? LoadPreview(int maxWidth = int.MaxValue)
         {
             if (maxWidth <= 256)
@@ -202,7 +214,7 @@ namespace PhotoLocator
 
         private BitmapSource LoadShellThumbnail(bool large)
         {
-            using var shellFile = ShellFile.FromFilePath(FullPath);
+            using var shellFile = IsDirectory ? ShellFolder.FromParsingName(FullPath) : ShellFile.FromFilePath(FullPath);
             var thumbnail = large ? shellFile.Thumbnail.ExtraLargeBitmapSource : shellFile.Thumbnail.BitmapSource;
             thumbnail.Freeze();
             return thumbnail;
@@ -224,6 +236,24 @@ namespace PhotoLocator
             {
                 ErrorMessage = ex.ToString();
             }
+        }
+
+        public void Rename(string newName, string newFullPath)
+        {
+            if (IsDirectory)
+                Directory.Move(FullPath, newFullPath);
+            else
+                File.Move(FullPath, newFullPath);
+            Name = newName;
+            FullPath = newFullPath;
+        }
+
+        public void Recycle()
+        {
+            if (IsDirectory)
+                FileSystem.DeleteDirectory(FullPath, UIOption.OnlyErrorDialogs, RecycleOption.SendToRecycleBin);
+            else
+                FileSystem.DeleteFile(FullPath, UIOption.OnlyErrorDialogs, RecycleOption.SendToRecycleBin);
         }
     }
 }

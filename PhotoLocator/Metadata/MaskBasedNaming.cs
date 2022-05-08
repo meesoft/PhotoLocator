@@ -8,13 +8,15 @@ namespace PhotoLocator.Metadata
     sealed class MaskBasedNaming : IDisposable
     {
         readonly PictureItemViewModel _file;
+        readonly int _counter;
         FileStream? _fileStream;
         BitmapFrame? _frame;
         BitmapMetadata? _metadata;
 
-        public MaskBasedNaming(PictureItemViewModel file)
+        public MaskBasedNaming(PictureItemViewModel file, int counter)
         {
             _file = file;
+            _counter = counter;
         }
 
         public void Dispose()
@@ -130,6 +132,10 @@ namespace PhotoLocator.Metadata
                         if (iPrefix < 0)
                             throw new ArgumentException($"Search string '{prefix}' not found in name '{_file.Name}'");
                         result.Append(_file.Name.AsSpan(iPrefix + prefix.Length, nChars));
+                    }
+                    else if (TagIs(tag, "#", out iColon))
+                    {
+                        AppendInt(result, iColon, tag, _counter);
                     }
                     else if (TagIs(tag, "width", out iColon))
                     {

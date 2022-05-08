@@ -78,7 +78,7 @@ namespace PhotoLocator
                     try
                     {
                         if (_exampleNamer is null)
-                            _exampleNamer = new MaskBasedNaming(_selectedPictures[0]);
+                            _exampleNamer = new MaskBasedNaming(_selectedPictures[0], 0);
                         ExampleName = _exampleNamer.GetFileName(RenameMask);
                         ErrorMessage = null;
                         IsExtensionWarningVisible = !Path.GetExtension(ExampleName).Equals(
@@ -151,15 +151,14 @@ namespace PhotoLocator
                 throw new Exception("Multiple files cannot be renamed to the same");
             _exampleNamer?.Dispose();
             _exampleNamer = null;
+            int counter = 0;
             foreach (var item in _selectedPictures)
             {
                 string newName;
-                using (var namer = new MaskBasedNaming(item))
+                using (var namer = new MaskBasedNaming(item, counter++))
                     newName = namer.GetFileName(RenameMask);
                 var newFullPath = Path.Combine(Path.GetDirectoryName(item.FullPath)!, newName);
-                File.Move(item.FullPath, newFullPath);
-                item.Name = newName;
-                item.FullPath = newFullPath;
+                item.Rename(newName, newFullPath);
             }
             if (RenameMask.Contains('|'))
             {
@@ -167,6 +166,6 @@ namespace PhotoLocator
                 settings.RenameMasks = string.Join('\\', (new[] { RenameMask }).Concat(_previousMasks).Distinct().Take(10));
             }
             DialogResult = true;
-        }       
+        }
     }
 }

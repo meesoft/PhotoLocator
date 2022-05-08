@@ -83,7 +83,7 @@
             <ComboBox Width="100" ToolTip="View (Ctrl+Q)" SelectedItem="{Binding SelectedViewModeItem}" SelectionChanged="HandleViewModeSelectionChanged">
                 <ComboBoxItem Content="Map" Selector.IsSelected="True" Name="MapViewItem" Tag="{x:Static local:ViewMode.Map}"/>
                 <ComboBoxItem Content="Preview" Name="PreviewViewItem" Tag="{x:Static local:ViewMode.Preview}"/>
-                <ComboBoxItem Content="Split" Tag="{x:Static local:ViewMode.Split}"/>
+                <ComboBoxItem Content="Split" Name="SplitViewItem" Tag="{x:Static local:ViewMode.Split}"/>
             </ComboBox>
 
             <Button Content="Auto tag" Width="100" Command="{Binding AutoTagCommand}"
@@ -104,11 +104,11 @@
 
         <ListBox Grid.Column="0" Grid.Row="1" Margin="0,0,10,0" ItemsSource="{Binding Pictures}" Name="PictureListBox"
                  SelectionMode="Extended" SelectedItem="{Binding SelectedPicture}" SelectionChanged="HandlePictureListBoxSelectionChanged" 
-                 PreviewMouseLeftButtonDown="HandlePictureListBoxPreviewMouseLeftButtonDown"
-                 MouseMove="HandlePictureListBoxMouseMove">
+                 PreviewMouseDown="HandlePictureListBoxMouseButtonDown" MouseMove="HandlePictureListBoxMouseMove" >
             <ListBox.InputBindings>
                 <KeyBinding Key="Enter" Command="{Binding ExecuteSelectedCommand}" />
                 <KeyBinding Key="Delete" Command="{Binding DeleteSelectedCommand}" />
+                <KeyBinding Key="Backspace" Command="{Binding ParentFolderCommand}" />
             </ListBox.InputBindings>
             <ListBox.ItemsPanel>
                 <ItemsPanelTemplate>
