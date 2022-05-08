@@ -43,7 +43,7 @@
         <TaskbarItemInfo ProgressValue="{Binding ProgressBarValue}" ProgressState="{Binding TaskbarProgressState}"/>
     </Window.TaskbarItemInfo>
 
-    <Grid Margin="10">
+    <Grid Margin="4">
         <Grid.RowDefinitions>
             <RowDefinition Height="28"/>
             <RowDefinition/>
