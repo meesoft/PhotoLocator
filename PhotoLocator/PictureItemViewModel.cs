@@ -201,8 +201,7 @@ namespace PhotoLocator
                 }
                 catch
                 {
-                    // Fallback to default reader
-                    fileStream.Position = 0;
+                    fileStream.Position = 0; // Fallback to default reader
                 }
                 return GeneralFileFormatHandler.TryLoadFromStream(fileStream, Rotation, maxWidth);
             }
@@ -212,12 +211,20 @@ namespace PhotoLocator
             }
         }
 
-        private BitmapSource LoadShellThumbnail(bool large)
+        private BitmapSource? LoadShellThumbnail(bool large)
         {
-            using var shellFile = IsDirectory ? ShellFolder.FromParsingName(FullPath) : ShellFile.FromFilePath(FullPath);
-            var thumbnail = large ? shellFile.Thumbnail.ExtraLargeBitmapSource : shellFile.Thumbnail.BitmapSource;
-            thumbnail.Freeze();
-            return thumbnail;
+            try
+            {
+                using var shellFile = IsDirectory ? ShellFolder.FromParsingName(FullPath) : ShellFile.FromFilePath(FullPath);
+                var thumbnail = large ? shellFile.Thumbnail.ExtraLargeBitmapSource : shellFile.Thumbnail.BitmapSource;
+                thumbnail.Freeze();
+                return thumbnail;
+            }
+            catch (Exception ex)
+            {
+                ErrorMessage = ex.ToString();
+                return null;
+            }
         }
 
         internal async Task SaveGeoTagAsync(string? postfix)

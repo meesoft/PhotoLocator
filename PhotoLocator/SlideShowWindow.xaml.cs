@@ -116,7 +116,7 @@ namespace PhotoLocator
 
             _timer.Stop();
             _timer.Start();
-            WinAPI.SetThreadExecutionState(WinAPI.EXECUTION_STATE.ES_DISPLAY_REQUIRED);
+            WinAPI.KeepDisplayAlive();
         }
 
         private void HandleTimerEvent(object? sender, EventArgs e)

@@ -113,7 +113,7 @@ namespace PhotoLocator
             _viewModel.PictureSelectionChanged();
         }
 
-        private void HandlePictureListBoxMouseButtonDown(object sender, MouseButtonEventArgs e)
+        private void HandlePreviewPictureListBoxMouseButtonDown(object sender, MouseButtonEventArgs e)
         {
             if (e.ChangedButton == MouseButton.Left && e.ClickCount == 2)
             {
@@ -144,6 +144,7 @@ namespace PhotoLocator
                 var data = new DataObject(DataFormats.FileDrop, files);
                 data.SetData(DataFormats.Text, files[0]);
                 DragDrop.DoDragDrop(this, data, DragDropEffects.All);
+                e.Handled = true;
             }
         }
 
@@ -193,7 +194,10 @@ namespace PhotoLocator
         private void HandlePreviewImageMouseDown(object sender, MouseButtonEventArgs e)
         {
             if (e.ChangedButton == MouseButton.Left || e.ChangedButton == MouseButton.Middle)
+            {
                 _previousMousePosision = e.GetPosition(this);
+                e.Handled = true;
+            }
         }
 
         private void HandlePreviewImageMouseMove(object sender, MouseEventArgs e)
@@ -208,6 +212,7 @@ namespace PhotoLocator
                     transform.Matrix.OffsetX + pt.X - _previousMousePosision.X,
                     transform.Matrix.OffsetY + pt.Y - _previousMousePosision.Y);
                 _previousMousePosision = pt;
+                e.Handled = true;
             }
         }
 

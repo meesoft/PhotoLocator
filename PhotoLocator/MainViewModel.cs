@@ -1,4 +1,5 @@
 ﻿using MapControl;
+using Microsoft.WindowsAPICodePack.Shell;
 using PhotoLocator.Helpers;
 using PhotoLocator.MapDisplay;
 using PhotoLocator.Metadata;
@@ -350,8 +351,7 @@ namespace PhotoLocator
                 SlideShowInterval, ShowMetadataInSlideShow, GetSelectedMapLayerName?.Invoke());
             slideShowWin.Owner = App.Current.MainWindow;
             slideShowWin.ShowDialog();
-            SelectedPicture = slideShowWin.SelectedPicture;
-            ScrollIntoView?.Invoke(SelectedPicture);
+            SelectFile(slideShowWin.SelectedPicture);
         });
 
         public ICommand SettingsCommand => new RelayCommand(o =>
@@ -414,10 +414,7 @@ namespace PhotoLocator
                 await AppendFilesAsync(fileNames);
                 var firstDropped = Pictures.FirstOrDefault(item => item.FullPath == fileNames[0]);
                 if (firstDropped != null)
-                {
-                    SelectedPicture = firstDropped;
-                    ScrollIntoView?.Invoke(firstDropped);
-                }
+                    SelectFile(firstDropped);
             }
             await LoadPicturesAsync();
         }
@@ -439,10 +436,7 @@ namespace PhotoLocator
                 Pictures.Remove(item);
             }
             if (Pictures.Count > 0)
-            {
-                SelectedPicture = Pictures[Math.Min(selectedIndex, Pictures.Count - 1)];
-                ScrollIntoView?.Invoke(SelectedPicture);
-            }
+                SelectFile(Pictures[Math.Min(selectedIndex, Pictures.Count - 1)]);
         });
 
         public ICommand ExecuteSelectedCommand => new RelayCommand(o =>
@@ -455,6 +449,12 @@ namespace PhotoLocator
                 Process.Start(new ProcessStartInfo(SelectedPicture.FullPath) { UseShellExecute = true });
         });
 
+        public ICommand FilePropertiesCommand => new RelayCommand(o =>
+        {
+            if (SelectedPicture != null)
+                WinAPI.ShowFileProperties(SelectedPicture.FullPath);
+        });
+
         public ICommand ParentFolderCommand => new RelayCommand(o =>
         {
             var currentPath = PhotoFolderPath?.TrimEnd('\\');
@@ -464,9 +464,15 @@ namespace PhotoLocator
                 PhotoFolderPath = parent;
                 var select = Pictures.FirstOrDefault(item => item.FullPath.Equals(currentPath, StringComparison.CurrentCultureIgnoreCase));
                 if (select != null)
-                    SelectedPicture = select;
+                    SelectFile(select);
             }
         });
+
+        private void SelectFile(PictureItemViewModel select)
+        {
+            SelectedPicture = select;
+            ScrollIntoView?.Invoke(select);
+        }
 
         public ICommand CopyMetadataCommand => new RelayCommand(o =>
         {
