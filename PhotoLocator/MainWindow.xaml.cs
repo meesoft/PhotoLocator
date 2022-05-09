@@ -113,7 +113,7 @@ namespace PhotoLocator
             _viewModel.PictureSelectionChanged();
         }
 
-        private void HandlePreviewPictureListBoxMouseButtonDown(object sender, MouseButtonEventArgs e)
+        private void HandlePictureListBoxPreviewMouseButtonDown(object sender, MouseButtonEventArgs e)
         {
             if (e.ChangedButton == MouseButton.Left && e.ClickCount == 2)
             {
@@ -130,11 +130,14 @@ namespace PhotoLocator
                 _viewModel.ParentFolderCommand.Execute(null);
                 e.Handled = true;
             }
-            else
-                _previousMousePosision = e.GetPosition(this);
         }
 
-        private void HandlePictureListBoxMouseMove(object sender, MouseEventArgs e)
+        private void HandleFileItemPreviewMouseDown(object sender, MouseButtonEventArgs e)
+        {
+            _previousMousePosision = e.GetPosition(this);
+        }
+
+        private void HandleFileItemMouseMove(object sender, MouseEventArgs e)
         {
             if (PictureListBox.SelectedItem != null &&
                 (e.LeftButton == MouseButtonState.Pressed || e.RightButton == MouseButtonState.Pressed) &&
@@ -148,10 +151,25 @@ namespace PhotoLocator
             }
         }
 
+        private void HandlePictureListBoxPreviewTextInput(object sender, TextCompositionEventArgs e)
+        {
+            if (_viewModel.SelectedPicture != null && _viewModel.SelectedPicture.Name.StartsWith(e.Text, StringComparison.CurrentCultureIgnoreCase))
+                return;
+            var item = _viewModel.Pictures.FirstOrDefault(item => item.Name.StartsWith(e.Text, StringComparison.CurrentCultureIgnoreCase));
+            if (item != null)
+            {
+                _viewModel.SelectFile(item);
+                e.Handled = true;
+            }
+        }
+
         private void HandlePathEditPreviewKeyUp(object sender, KeyEventArgs e)
         {
             if (e.Key == Key.Enter)
+            {
                 _viewModel.PhotoFolderPath = PathEdit.Text;
+                e.Handled = true;
+            }
         }
 
         private void HandleDrop(object sender, DragEventArgs e)

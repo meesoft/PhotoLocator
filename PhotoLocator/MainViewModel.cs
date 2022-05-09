@@ -468,7 +468,7 @@ namespace PhotoLocator
             }
         });
 
-        private void SelectFile(PictureItemViewModel select)
+        public void SelectFile(PictureItemViewModel select)
         {
             SelectedPicture = select;
             ScrollIntoView?.Invoke(select);

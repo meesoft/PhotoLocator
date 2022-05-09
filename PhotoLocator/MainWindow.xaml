@@ -19,7 +19,7 @@
     <Window.Resources>
         <BooleanToVisibilityConverter x:Key="BooleanToVisibility" />
     </Window.Resources>
-       
+
     <Window.InputBindings>
         <KeyBinding Key="O" Modifiers="Ctrl" Command="{Binding BrowseForPhotosCommand}" />
         <KeyBinding Key="T" Modifiers="Ctrl" Command="{Binding AutoTagCommand}" />
@@ -104,7 +104,7 @@
 
         <ListBox Grid.Column="0" Grid.Row="1" Margin="0,0,10,0" ItemsSource="{Binding Pictures}" Name="PictureListBox"
                  SelectionMode="Extended" SelectedItem="{Binding SelectedPicture}" SelectionChanged="HandlePictureListBoxSelectionChanged" 
-                 PreviewMouseDown="HandlePreviewPictureListBoxMouseButtonDown" MouseMove="HandlePictureListBoxMouseMove" >
+                 PreviewMouseDown="HandlePictureListBoxPreviewMouseButtonDown" PreviewTextInput="HandlePictureListBoxPreviewTextInput" >
             <ListBox.InputBindings>
                 <KeyBinding Key="Enter" Command="{Binding ExecuteSelectedCommand}" />
                 <KeyBinding Key="Delete" Command="{Binding DeleteSelectedCommand}" />
@@ -123,7 +123,7 @@
             </ListBox.ItemContainerStyle>
             <ListBox.ItemTemplate >
                 <DataTemplate>
-                    <Grid>
+                    <Grid PreviewMouseDown="HandleFileItemPreviewMouseDown" MouseMove="HandleFileItemMouseMove">
                         <local:PictureItemView/>
                     </Grid>
                 </DataTemplate>
@@ -162,7 +162,7 @@
                     </ContextMenu>
                 </Grid.ContextMenu>
             </Grid>
-            
+
             <GridSplitter Grid.Row="1" Visibility="{Binding InSplitViewMode, Converter={StaticResource BooleanToVisibility}}"
                           Height="4" Background="Black" HorizontalAlignment="Stretch" VerticalAlignment="Top" ShowsPreview="True" />
 
