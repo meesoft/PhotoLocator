@@ -27,7 +27,7 @@ namespace PhotoLocator
             Panel.SetZIndex(ProgressGrid, 1000);
             _viewModel = new MainViewModel();
             _viewModel.GetSelectedMapLayerName = GetSelectedMapLayerName;
-            _viewModel.ScrollIntoView = PictureListBox.ScrollIntoView;
+            _viewModel.FocusListBoxItem = FocusListBoxItem;
             _viewModel.ViewModeCommand = new RelayCommand(s =>
                 _viewModel.SelectedViewModeItem = _viewModel.SelectedViewModeItem == MapViewItem ? PreviewViewItem : MapViewItem);
             DataContext = _viewModel;
@@ -108,6 +108,13 @@ namespace PhotoLocator
             return Map.mapLayersMenuButton.ContextMenu.Items.Cast<MenuItem>().FirstOrDefault(i => i.IsChecked)?.Header as string;
         }
 
+        private void FocusListBoxItem(object item)
+        {
+            PictureListBox.ScrollIntoView(item);
+            var listBoxItem = (ListBoxItem)PictureListBox.ItemContainerGenerator.ContainerFromItem(PictureListBox.SelectedItem);
+            listBoxItem.Focus();
+        }
+
         private void HandlePictureListBoxSelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             _viewModel.PictureSelectionChanged();
@@ -158,7 +165,7 @@ namespace PhotoLocator
             var item = _viewModel.Pictures.FirstOrDefault(item => item.Name.StartsWith(e.Text, StringComparison.CurrentCultureIgnoreCase));
             if (item != null)
             {
-                _viewModel.SelectFile(item);
+                _viewModel.SelectItem(item);
                 e.Handled = true;
             }
         }
