@@ -21,6 +21,12 @@ namespace PhotoLocator
             set => Key.SetValue(nameof(PhotoFileExtensions), value ?? throw new ArgumentException("Filter cannot be null"));
         }
 
+        public bool ShowFolders
+        {
+            get => (Key.GetValue(nameof(ShowFolders)) as int? ?? 1) != 0;
+            set => Key.SetValue(nameof(ShowFolders), value ? 1 : 0);
+        }
+
         public string PhotoFolderPath
         {
             get => Key.GetValue(nameof(PhotoFolderPath)) as string ?? Environment.GetFolderPath(Environment.SpecialFolder.MyPictures);

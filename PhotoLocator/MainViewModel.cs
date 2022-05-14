@@ -83,6 +83,8 @@ namespace PhotoLocator
         
         public string? SavedFilePostfix { get; set; }
 
+        public bool ShowFolders { get; set; }
+     
         public int SlideShowInterval { get; set; }
 
         public bool ShowMetadataInSlideShow { get; set; }
@@ -360,20 +362,29 @@ namespace PhotoLocator
             var settingsWin = new SettingsWindow();
             settingsWin.Owner = App.Current.MainWindow;
             settingsWin.PhotoFileExtensions = photoFileExtensions;
+            settingsWin.ShowFolders = ShowFolders;
             settingsWin.SavedFilePostfix = SavedFilePostfix;
             settingsWin.SlideShowInterval= SlideShowInterval;
             settingsWin.ShowMetadataInSlideShow = ShowMetadataInSlideShow;
             settingsWin.DataContext = settingsWin;
             if (settingsWin.ShowDialog() == true)
             {
+                bool refresh = false;
                 if (settingsWin.PhotoFileExtensions != photoFileExtensions)
                 {
                     PhotoFileExtensions = settingsWin.CleanPhotoFileExtensions();
-                    RefreshFolderCommand.Execute(null);
+                    refresh = true;
+                }
+                if (settingsWin.ShowFolders != ShowFolders)
+                {
+                    ShowFolders = settingsWin.ShowFolders;
+                    refresh = true;
                 }
                 SavedFilePostfix = settingsWin.SavedFilePostfix;
                 SlideShowInterval = settingsWin.SlideShowInterval;
                 ShowMetadataInSlideShow = settingsWin.ShowMetadataInSlideShow;
+                if (refresh)
+                    RefreshFolderCommand.Execute(null);
             }
         });
 
@@ -513,8 +524,9 @@ namespace PhotoLocator
                 return;
             Pictures.Clear();
             Polylines.Clear();
-            foreach (var dir in Directory.EnumerateDirectories(PhotoFolderPath))
-                Pictures.Add(new PictureItemViewModel(dir, true));
+            if (ShowFolders)
+                foreach (var dir in Directory.EnumerateDirectories(PhotoFolderPath))
+                    Pictures.Add(new PictureItemViewModel(dir, true));
             await AppendFilesAsync(Directory.EnumerateFiles(PhotoFolderPath));
             if (Polylines.Count > 0)
                 MapCenter = Polylines[0].Center;

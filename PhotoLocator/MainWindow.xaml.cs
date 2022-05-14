@@ -38,6 +38,7 @@ namespace PhotoLocator
         {
             using var settings = new RegistrySettings();
             _viewModel.PhotoFileExtensions = settings.PhotoFileExtensions.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+            _viewModel.ShowFolders = settings.ShowFolders;
             _viewModel.SavedFilePostfix = settings.SavedFilePostfix;
             _viewModel.SlideShowInterval = settings.SlideShowInterval;
             _viewModel.ShowMetadataInSlideShow = settings.ShowMetadataInSlideShow;
@@ -91,6 +92,7 @@ namespace PhotoLocator
             using var settings = new RegistrySettings();
             if (!string.IsNullOrEmpty(_viewModel.PhotoFolderPath))
                 settings.PhotoFolderPath = _viewModel.PhotoFolderPath;
+            settings.ShowFolders = _viewModel.ShowFolders;
             if (_viewModel.PhotoFileExtensions != null)
                 settings.PhotoFileExtensions = String.Join(",", _viewModel.PhotoFileExtensions);
             if (_viewModel.SavedFilePostfix != null)

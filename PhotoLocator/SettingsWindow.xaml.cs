@@ -33,6 +33,13 @@ namespace PhotoLocator
         }
         private string? _photoFileExtensions;
 
+        public bool ShowFolders
+        {
+            get => _showFolders;
+            set => SetProperty(ref _showFolders, value);
+        }
+        bool _showFolders;
+
         public string? SavedFilePostfix
         {
             get => _savedFilePostfix;
