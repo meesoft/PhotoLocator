@@ -1,8 +1,9 @@
-﻿using System.Diagnostics;
-using System.Globalization;
+﻿using PhotoLocator.Helpers;
+using System.Diagnostics;
 using System.IO;
 using System.Text;
 using System.Windows;
+using System.Windows.Input;
 
 namespace PhotoLocator
 {
@@ -55,5 +56,13 @@ namespace PhotoLocator
                 return text.ToString();
             }
         }
+
+        public ICommand CheckForUpdatesCommand => new RelayCommand(o =>
+        {
+            using var cursor = new CursorOverride();
+            var version = GetType().Assembly.GetName().Version!;
+            var url = $"http://meesoft.com/PhotoLocator/CheckForUpdates.php?Version={version.Major:D3}{version.Minor:D3}{version.Build:D3}";
+            Process.Start(new ProcessStartInfo(url) { UseShellExecute = true });
+        });
     }
 }
