@@ -70,6 +70,22 @@ namespace PhotoLocator.Metadata
             return false;
         }
 
+        static bool TagWithOffsetIs(string tag, string value, out double offset)
+        {
+            offset = 0;
+            if (tag.StartsWith(value))
+            {
+                if (tag.Length == value.Length)
+                    return true;
+                if (tag[value.Length] == '+' || tag[value.Length] == '-')
+                {
+                    offset = double.Parse(tag[value.Length..]);
+                    return true;
+                }
+            }
+            return false;
+        }
+
         private static void AppendInt(StringBuilder result, int iColon, string tag, int value)
         {
             if (iColon < 0)
@@ -109,6 +125,7 @@ namespace PhotoLocator.Metadata
                 if (mask[i] == '|')
                 {
                     int iColon;
+                    double offset;
                     int iEnd = mask.IndexOf('|', i + 1);
                     if (iEnd < 0)
                         throw new ArgumentException($"Tag at {i} not closed");
@@ -117,12 +134,12 @@ namespace PhotoLocator.Metadata
                         result.Append(Path.GetExtension(OriginalFileName));
                     else if (tag == "*")
                         result.Append(Path.GetFileNameWithoutExtension(OriginalFileName));
-                    else if (tag == "D")
-                        result.Append(GetTimestamp().ToString("yyyy-MM-dd"));
-                    else if (tag == "T")
-                        result.Append(GetTimestamp().ToString("HH.mm.ss"));
-                    else if (tag == "DT")
-                        result.Append(GetTimestamp().ToString("yyyy-MM-dd HH.mm.ss"));
+                    else if (TagWithOffsetIs(tag, "DT", out offset))
+                        result.Append(GetTimestamp().AddHours(offset).ToString("yyyy-MM-dd HH.mm.ss"));
+                    else if (TagWithOffsetIs(tag, "D", out offset))
+                        result.Append(GetTimestamp().AddHours(offset).ToString("yyyy-MM-dd"));
+                    else if (TagWithOffsetIs(tag, "T", out offset))
+                        result.Append(GetTimestamp().AddHours(offset).ToString("HH.mm.ss"));
                     else if (tag.EndsWith('?'))
                     {
                         var iFirstWildcard = tag.IndexOf('?');

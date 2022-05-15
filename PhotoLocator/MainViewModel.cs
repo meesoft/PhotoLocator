@@ -95,7 +95,7 @@ namespace PhotoLocator
             set
             {
                 if (SetProperty(ref _photoFolderPath, value))
-                    LoadFolderContentsAsync().WithExceptionShowing();
+                    LoadFolderContentsAsync(false).WithExceptionShowing();
             }
         }
         private string? _photoFolderPath;
@@ -403,7 +403,7 @@ namespace PhotoLocator
                 PhotoFolderPath = browser.SelectedPath;
         });
 
-        public ICommand RefreshFolderCommand => new RelayCommand(o => LoadFolderContentsAsync().WithExceptionLogging());
+        public ICommand RefreshFolderCommand => new RelayCommand(o => LoadFolderContentsAsync(true).WithExceptionLogging());
 
         public Action<object>? FocusListBoxItem { get; internal set; }
 
@@ -516,8 +516,9 @@ namespace PhotoLocator
                 Pushpins.Add(new PointItem { Location = SavedLocation, Name = "Saved location" });
         }
 
-        private async Task LoadFolderContentsAsync()
+        private async Task LoadFolderContentsAsync(bool keepSelection)
         {
+            var selectedName = SelectedPicture?.Name;
             _loadCancellation?.Cancel();
             await WaitForPicturesLoadedAsync();
             if (string.IsNullOrEmpty(PhotoFolderPath))
@@ -530,6 +531,12 @@ namespace PhotoLocator
             await AppendFilesAsync(Directory.EnumerateFiles(PhotoFolderPath));
             if (Polylines.Count > 0)
                 MapCenter = Polylines[0].Center;
+            if (keepSelection && selectedName != null)
+            {
+                var previousSelection = Pictures.FirstOrDefault(item => item.Name == selectedName);
+                if (previousSelection != null)
+                    SelectItem(previousSelection);
+            }
             await LoadPicturesAsync();
         }
 
