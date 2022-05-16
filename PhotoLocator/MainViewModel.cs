@@ -435,7 +435,7 @@ namespace PhotoLocator
             if (SelectedPicture is null)
                 return;
             var selected = Pictures.Where(i => i.IsSelected).ToArray();
-            if (MessageBox.Show($"Delete {selected.Length} selected items(s)?", "Confirm", MessageBoxButton.OKCancel, MessageBoxImage.Question) != MessageBoxResult.OK)
+            if (MessageBox.Show($"Delete {selected.Length} selected item(s)?", "Confirm", MessageBoxButton.OKCancel, MessageBoxImage.Question) != MessageBoxResult.OK)
                 return;
             using var cursor = new CursorOverride();
             var selectedIndex = Pictures.IndexOf(SelectedPicture);
