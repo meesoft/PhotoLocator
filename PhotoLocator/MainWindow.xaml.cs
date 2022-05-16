@@ -18,12 +18,11 @@ namespace PhotoLocator
     public partial class MainWindow : Window
     {
         readonly MainViewModel _viewModel;
-        private Point _previousMousePosision;
+        private Point _previousMousePosition;
 
         public MainWindow()
         {
             InitializeComponent();
-            Panel.SetZIndex(RightPanelGrid, -1000);
             Panel.SetZIndex(ProgressGrid, 1000);
             _viewModel = new MainViewModel();
             _viewModel.GetSelectedMapLayerName = GetSelectedMapLayerName;
@@ -143,14 +142,14 @@ namespace PhotoLocator
 
         private void HandleFileItemPreviewMouseDown(object sender, MouseButtonEventArgs e)
         {
-            _previousMousePosision = e.GetPosition(this);
+            _previousMousePosition = e.GetPosition(this);
         }
 
         private void HandleFileItemMouseMove(object sender, MouseEventArgs e)
         {
             if (PictureListBox.SelectedItem != null &&
                 (e.LeftButton == MouseButtonState.Pressed || e.RightButton == MouseButtonState.Pressed) &&
-                (e.GetPosition(this) - _previousMousePosision).Length > 10)
+                (e.GetPosition(this) - _previousMousePosition).Length > 10)
             {
                 var files = PictureListBox.SelectedItems.Cast<PictureItemViewModel>().Select(i => i.FullPath).ToArray();
                 var data = new DataObject(DataFormats.FileDrop, files);
@@ -222,7 +221,7 @@ namespace PhotoLocator
         {
             if (e.ChangedButton == MouseButton.Left || e.ChangedButton == MouseButton.Middle)
             {
-                _previousMousePosision = e.GetPosition(this);
+                _previousMousePosition = e.GetPosition(this);
                 e.Handled = true;
             }
         }
@@ -230,15 +229,15 @@ namespace PhotoLocator
         private void HandlePreviewImageMouseMove(object sender, MouseEventArgs e)
         {
             if ((e.LeftButton != MouseButtonState.Released || e.MiddleButton != MouseButtonState.Released) && _viewModel.PreviewZoom != 0 &&
-                PreviewImage.RenderTransform is MatrixTransform transform)
+                ZoomedPreviewImage.RenderTransform is MatrixTransform transform)
             {
                 var pt = e.GetPosition(this);
-                PreviewImage.RenderTransform = new MatrixTransform(
+                ZoomedPreviewImage.RenderTransform = new MatrixTransform(
                     transform.Matrix.M11, transform.Matrix.M12,
                     transform.Matrix.M21, transform.Matrix.M22,
-                    transform.Matrix.OffsetX + pt.X - _previousMousePosision.X,
-                    transform.Matrix.OffsetY + pt.Y - _previousMousePosision.Y);
-                _previousMousePosision = pt;
+                    transform.Matrix.OffsetX + pt.X - _previousMousePosition.X,
+                    transform.Matrix.OffsetY + pt.Y - _previousMousePosition.Y);
+                _previousMousePosition = pt;
                 e.Handled = true;
             }
         }
@@ -251,15 +250,15 @@ namespace PhotoLocator
             Zoom400Item.IsChecked = _viewModel.PreviewZoom == 4;
             if (_viewModel.PreviewZoom == 0)
             {
-                PreviewImage.Stretch = Stretch.Uniform;
-                PreviewImage.RenderTransform = null;
-                RenderOptions.SetBitmapScalingMode(PreviewImage, BitmapScalingMode.HighQuality);
+                FullPreviewImage.Visibility = Visibility.Visible;
+                ZoomedPreviewCanvas.Visibility = Visibility.Collapsed;
             }
             else
             {
-                PreviewImage.Stretch = Stretch.None;
+                FullPreviewImage.Visibility = Visibility.Collapsed;
+                ZoomedPreviewCanvas.Visibility = Visibility.Visible;
+                UpdateLayout();
                 InitializePreviewRenderTransform();
-                RenderOptions.SetBitmapScalingMode(PreviewImage, BitmapScalingMode.NearestNeighbor);
             }
         }
 
@@ -268,12 +267,12 @@ namespace PhotoLocator
             if (_viewModel.PreviewPictureSource is null || _viewModel.PreviewZoom == 0)
                 return;
             var screenDpi = VisualTreeHelper.GetDpi(this);
-            var sx = _viewModel.PreviewPictureSource.DpiX / screenDpi.PixelsPerInchX * _viewModel.PreviewZoom;
-            var sy = _viewModel.PreviewPictureSource.DpiY / screenDpi.PixelsPerInchY * _viewModel.PreviewZoom;
-            PreviewImage.RenderTransform = new MatrixTransform(
-                 sx, 0,
-                 0, sy,
-                 0, 0);
+            var zoom = _viewModel.PreviewZoom;
+            ZoomedPreviewImage.RenderTransform = new MatrixTransform(
+                _viewModel.PreviewPictureSource.DpiX / screenDpi.PixelsPerInchX * zoom, 0,
+                0, _viewModel.PreviewPictureSource.DpiY / screenDpi.PixelsPerInchY * zoom,
+                IntMath.Round((ZoomedPreviewCanvas.ActualWidth - _viewModel.PreviewPictureSource.PixelWidth * zoom / screenDpi.PixelsPerInchX * 96) / 2),
+                IntMath.Round((ZoomedPreviewCanvas.ActualHeight - _viewModel.PreviewPictureSource.PixelHeight * zoom / screenDpi.PixelsPerInchY * 96) / 2));
         }
     }
 }

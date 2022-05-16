@@ -141,8 +141,9 @@ namespace PhotoLocator
         {
             var tag = ((TextBlock)sender).Text;
             tag = tag[0..(tag.IndexOf('|', 1) + 1)];
-            MaskTextBox.Text = MaskTextBox.Text.Insert(MaskTextBox.CaretIndex, tag);
-            MaskTextBox.CaretIndex += tag.Length;
+            var carretIndex = MaskTextBox.CaretIndex;
+            MaskTextBox.Text = MaskTextBox.Text.Insert(carretIndex, tag);
+            MaskTextBox.CaretIndex = carretIndex + tag.Length;
         }
 
         private void HandleRenameButtonClick(object sender, RoutedEventArgs e)
