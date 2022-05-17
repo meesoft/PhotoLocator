@@ -439,6 +439,7 @@ namespace PhotoLocator
                 return;
             using var cursor = new CursorOverride();
             var selectedIndex = Pictures.IndexOf(SelectedPicture);
+            SelectedPicture = null;
             PreviewPictureSource = null;
             PreviewPictureTitle = null;
             foreach (var item in selected)
