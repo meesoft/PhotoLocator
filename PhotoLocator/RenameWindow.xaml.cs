@@ -1,4 +1,5 @@
-﻿using PhotoLocator.Metadata;
+﻿using PhotoLocator.Helpers;
+using PhotoLocator.Metadata;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -149,17 +150,26 @@ namespace PhotoLocator
         private void HandleRenameButtonClick(object sender, RoutedEventArgs e)
         {
             if (_selectedPictures.Count > 1 && !RenameMask.Contains('|'))
-                throw new Exception("Multiple files cannot be renamed to the same");
+                throw new UserMessageException("Multiple files cannot be renamed to the same name.");
+            RenameMask = RenameMask.Trim();
             _exampleNamer?.Dispose();
             _exampleNamer = null;
-            int counter = 0;
-            foreach (var item in _selectedPictures)
+            try
             {
-                string newName;
-                using (var namer = new MaskBasedNaming(item, counter++))
-                    newName = namer.GetFileName(RenameMask);
-                var newFullPath = Path.Combine(Path.GetDirectoryName(item.FullPath)!, newName);
-                item.Rename(newName, newFullPath);
+                int counter = 0;
+                foreach (var item in _selectedPictures)
+                {
+                    string newName;
+                    using (var namer = new MaskBasedNaming(item, counter++))
+                        newName = namer.GetFileName(RenameMask);
+                    var newFullPath = Path.Combine(Path.GetDirectoryName(item.FullPath)!, newName);
+                    item.Rename(newName, newFullPath);
+                }
+            }
+            catch (IOException ex)
+            {
+                MessageBox.Show(ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                return;
             }
             if (RenameMask.Contains('|'))
             {

@@ -27,6 +27,7 @@
         <KeyBinding Key="V" Modifiers="Ctrl" Command="{Binding PasteCommand}" />
         <KeyBinding Key="S" Modifiers="Ctrl" Command="{Binding SaveCommand}" />
         <KeyBinding Key="Q" Modifiers="Ctrl" Command="{Binding ViewModeCommand}" />
+        <KeyBinding Key="E" Modifiers="Ctrl" Command="{Binding ExploreCommand}" />
         <KeyBinding Key="A" Modifiers="Alt" Command="{Binding ToggleZoomCommand}" />
         <KeyBinding Key="D1" Modifiers="Ctrl" Command="{Binding ZoomToFitCommand}" />
         <KeyBinding Key="D2" Modifiers="Ctrl" Command="{Binding Zoom100Command}" />
@@ -111,6 +112,17 @@
                 <KeyBinding Key="Backspace" Command="{Binding ParentFolderCommand}" />
                 <KeyBinding Key="Enter" Modifiers="Alt" Command="{Binding FilePropertiesCommand}" />
             </ListBox.InputBindings>
+            <ListBox.ContextMenu>
+                <ContextMenu>
+                    <MenuItem Header="Open file (Enter)" Command="{Binding ExecuteSelectedCommand}" />
+                    <MenuItem Header="Open in Google maps" Command="{Binding OpenInMapsCommand}" />
+                    <MenuItem Header="Open Explorer (Ctrl+E)" Command="{Binding ExploreCommand}" />
+                    <MenuItem Header="Rename (F2)" Command="{Binding RenameCommand}" />
+                    <MenuItem Header="Copy metadata to clipboard" Command="{Binding CopyMetadataCommand}" />
+                    <MenuItem Header="Properties (Alt-Enter)" Command="{Binding FilePropertiesCommand}" />
+                    <MenuItem Header="Delete selected (Del)" Command="{Binding DeleteSelectedCommand}" />
+                </ContextMenu>
+            </ListBox.ContextMenu>
             <ListBox.ItemsPanel>
                 <ItemsPanelTemplate>
                     <WrapPanel MaxWidth="{Binding ActualWidth, ElementName=PictureListBox}"/>
@@ -128,16 +140,6 @@
                     </Grid>
                 </DataTemplate>
             </ListBox.ItemTemplate>
-            <ListBox.ContextMenu>
-                <ContextMenu>
-                    <MenuItem Header="Open file (Enter)" Command="{Binding ExecuteSelectedCommand}" />
-                    <MenuItem Header="Open in Google maps" Command="{Binding OpenInMapsCommand}" />
-                    <MenuItem Header="Rename (F2)" Command="{Binding RenameCommand}" />
-                    <MenuItem Header="Copy metadata to clipboard" Command="{Binding CopyMetadataCommand}" />
-                    <MenuItem Header="Properties (Alt-Enter)" Command="{Binding FilePropertiesCommand}" />
-                    <MenuItem Header="Delete selected (Del)" Command="{Binding DeleteSelectedCommand}" />
-                </ContextMenu>
-            </ListBox.ContextMenu>
         </ListBox>
 
         <Grid Grid.Column="1" Grid.Row="1" Name="RightPanelGrid">

@@ -11,7 +11,10 @@ namespace PhotoLocator.Helpers
         {
             if (exception is TaskCanceledException || exception is OperationCanceledException)
                 return;
-            MessageBox.Show(exception.ToString(), "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            if (exception is UserMessageException)
+                MessageBox.Show(exception.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            else
+                MessageBox.Show(exception.ToString(), "Error", MessageBoxButton.OK, MessageBoxImage.Error);
         }
 
         public static void LogException(Exception exception)

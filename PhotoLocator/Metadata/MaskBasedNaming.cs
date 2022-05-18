@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using System.IO;
 using System.Text;
 using System.Windows.Media.Imaging;
@@ -7,6 +8,7 @@ namespace PhotoLocator.Metadata
 {
     sealed class MaskBasedNaming : IDisposable
     {
+        static readonly char[] InvalidFileNameChars = Path.GetInvalidFileNameChars();
         readonly PictureItemViewModel _file;
         readonly int _counter;
         FileStream? _fileStream;
@@ -189,7 +191,11 @@ namespace PhotoLocator.Metadata
                     i = iEnd;
                 }
                 else
+                {
+                    if (InvalidFileNameChars.Contains(mask[i]))
+                        throw new ArgumentException($"Invalid character in name '{mask[i]}'");
                     result.Append(mask[i]);
+                }
             }
             return result.ToString();
         }

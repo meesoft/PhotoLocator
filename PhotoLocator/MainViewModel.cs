@@ -461,6 +461,14 @@ namespace PhotoLocator
                 Process.Start(new ProcessStartInfo(SelectedPicture.FullPath) { UseShellExecute = true });
         });
 
+        public ICommand ExploreCommand => new RelayCommand(o =>
+        {
+            if (SelectedPicture is not null)
+                Process.Start(new ProcessStartInfo("explorer.exe", $"/select, \"{SelectedPicture.FullPath}\"") { UseShellExecute = true });
+            else if (!string.IsNullOrEmpty(PhotoFolderPath))
+                Process.Start(new ProcessStartInfo("explorer.exe", PhotoFolderPath) { UseShellExecute = true });
+        });
+
         public ICommand FilePropertiesCommand => new RelayCommand(o =>
         {
             if (SelectedPicture != null)
