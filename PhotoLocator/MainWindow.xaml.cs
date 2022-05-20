@@ -189,7 +189,7 @@ namespace PhotoLocator
         private void HandleViewModelPropertyChanged(object? sender, PropertyChangedEventArgs e)
         {
             if (e.PropertyName == nameof(_viewModel.PreviewPictureSource))
-                InitializePreviewRenderTransform();
+                InitializePreviewRenderTransform(false);
             else if (e.PropertyName == nameof(_viewModel.PreviewZoom))
                 UpdatePreviewZoom();
         }
@@ -208,6 +208,7 @@ namespace PhotoLocator
             {
                 MapRow.Height = new GridLength(1, GridUnitType.Star);
                 PreviewRow.Height = new GridLength(0, GridUnitType.Star);
+                ZoomedPreviewImage.RenderTransform = null;
             }
             else if (_viewModel.IsPreviewVisible)
             {
@@ -232,11 +233,16 @@ namespace PhotoLocator
                 ZoomedPreviewImage.RenderTransform is MatrixTransform transform)
             {
                 var pt = e.GetPosition(this);
+                var tx = transform.Matrix.OffsetX + pt.X - _previousMousePosition.X;
+                var ty = transform.Matrix.OffsetY + pt.Y - _previousMousePosition.Y;
+                if (tx > 0)
+                    tx = transform.Matrix.OffsetX > 0 ? transform.Matrix.OffsetX : 0;
+                if (ty > 0)
+                    ty = transform.Matrix.OffsetY > 0 ? transform.Matrix.OffsetY : 0;
                 ZoomedPreviewImage.RenderTransform = new MatrixTransform(
                     transform.Matrix.M11, transform.Matrix.M12,
                     transform.Matrix.M21, transform.Matrix.M22,
-                    transform.Matrix.OffsetX + pt.X - _previousMousePosition.X,
-                    transform.Matrix.OffsetY + pt.Y - _previousMousePosition.Y);
+                    tx, ty);
                 _previousMousePosition = pt;
                 e.Handled = true;
             }
@@ -258,21 +264,27 @@ namespace PhotoLocator
                 FullPreviewImage.Visibility = Visibility.Collapsed;
                 ZoomedPreviewCanvas.Visibility = Visibility.Visible;
                 UpdateLayout();
-                InitializePreviewRenderTransform();
+                InitializePreviewRenderTransform(true);
             }
         }
 
-        private void InitializePreviewRenderTransform()
+        private void InitializePreviewRenderTransform(bool forceReset)
         {
             if (_viewModel.PreviewPictureSource is null || _viewModel.PreviewZoom == 0)
                 return;
             var screenDpi = VisualTreeHelper.GetDpi(this);
             var zoom = _viewModel.PreviewZoom;
+            var sx = _viewModel.PreviewPictureSource.DpiX / screenDpi.PixelsPerInchX * zoom;
+            var sy = _viewModel.PreviewPictureSource.DpiY / screenDpi.PixelsPerInchY * zoom;
+            if (!forceReset && ZoomedPreviewImage.RenderTransform is MatrixTransform m && 
+                m.Matrix.M11 == sx && m.Matrix.M22 == sy && m.Matrix.OffsetX <= 0 && m.Matrix.OffsetY <= 0)
+                return;
+            var tx = IntMath.Round((ZoomedPreviewCanvas.ActualWidth - _viewModel.PreviewPictureSource.PixelWidth * zoom / screenDpi.PixelsPerInchX * 96) / 2);
+            var ty = IntMath.Round((ZoomedPreviewCanvas.ActualHeight - _viewModel.PreviewPictureSource.PixelHeight * zoom / screenDpi.PixelsPerInchY * 96) / 2);
             ZoomedPreviewImage.RenderTransform = new MatrixTransform(
-                _viewModel.PreviewPictureSource.DpiX / screenDpi.PixelsPerInchX * zoom, 0,
-                0, _viewModel.PreviewPictureSource.DpiY / screenDpi.PixelsPerInchY * zoom,
-                IntMath.Round((ZoomedPreviewCanvas.ActualWidth - _viewModel.PreviewPictureSource.PixelWidth * zoom / screenDpi.PixelsPerInchX * 96) / 2),
-                IntMath.Round((ZoomedPreviewCanvas.ActualHeight - _viewModel.PreviewPictureSource.PixelHeight * zoom / screenDpi.PixelsPerInchY * 96) / 2));
+                sx, 0,
+                0, sy,
+                tx, ty);
         }
     }
 }
