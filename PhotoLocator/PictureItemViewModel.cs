@@ -85,6 +85,13 @@ namespace PhotoLocator
         }
         bool _isSelected;
 
+        public bool IsChecked
+        {
+            get => _isChecked;
+            set => SetProperty(ref _isChecked, value);
+        }
+        bool _isChecked;
+
         public bool GeoTagSaved
         {
             get => _geoTagSaved;

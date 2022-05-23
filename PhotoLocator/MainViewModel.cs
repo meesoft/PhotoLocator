@@ -189,11 +189,28 @@ namespace PhotoLocator
         }
         private PictureItemViewModel? _selectedPicture;
 
+        public IEnumerable<PictureItemViewModel> GetSelectedItems()
+        {
+            PictureItemViewModel? firstChecked = SelectedPicture != null && SelectedPicture.IsChecked ? SelectedPicture : null;
+            foreach (var item in Pictures)
+                if (item.IsChecked)
+                {
+                    if (firstChecked is null)
+                    {
+                        firstChecked = item;
+                        SelectItem(item);
+                    }
+                    yield return item;
+                }
+            if (firstChecked is null && SelectedPicture != null)
+                yield return SelectedPicture;
+        }
+
         internal void PictureSelectionChanged()
         {
             Points.Clear();
             foreach(var item in Pictures)
-                if (item != SelectedPicture && item.IsSelected && item.GeoTag != null)
+                if (item != SelectedPicture && item.IsChecked && item.GeoTag != null)
                     Points.Add(new PointItem { Location = item.GeoTag, Name = item.Name });
         }
 
@@ -229,20 +246,19 @@ namespace PhotoLocator
         public ICommand AutoTagCommand => new RelayCommand(async o =>
         {
             await WaitForPicturesLoadedAsync();
-            if (SelectedPicture is null)
+            var selectedItems = GetSelectedItems().ToArray();
+            if (selectedItems.Length == 0)
             {
-                foreach (var item in Pictures)
-                    item.IsSelected = item.GeoTag is null && item.TimeStamp.HasValue && item.CanSaveGeoTag;
-                if (SelectedPicture != null)
-                    FocusListBoxItem?.Invoke(SelectedPicture);
+                SelectCandidatesCommand.Execute(null);
+                selectedItems = GetSelectedItems().ToArray();
             }
-            if (!Pictures.Any(item => item.IsSelected && item.CanSaveGeoTag))
+            if (!selectedItems.Any(item => item.TimeStamp.HasValue && item.CanSaveGeoTag))
             {
-                MessageBox.Show("No pictures with timestamp and missing geotag found", "Information", MessageBoxButton.OK, MessageBoxImage.Information);
+                MessageBox.Show("No supported pictures with timestamp and missing geotag found", "Information", MessageBoxButton.OK, MessageBoxImage.Information);
                 return;
             }
             var autoTagWin = new AutoTagWindow();
-            var autoTagViewModel = new AutoTagViewModel(Pictures, Polylines, () => { autoTagWin.DialogResult = true; });
+            var autoTagViewModel = new AutoTagViewModel(Pictures, selectedItems, Polylines, () => { autoTagWin.DialogResult = true; });
             autoTagWin.Owner = App.Current.MainWindow;
             autoTagWin.DataContext = autoTagViewModel;
             PreviewPictureSource = null;
@@ -267,7 +283,7 @@ namespace PhotoLocator
         {
             if (SavedLocation is null)
                 return;
-            foreach (var item in Pictures.Where(i => i.IsSelected && i.CanSaveGeoTag && !Equals(i.GeoTag, SavedLocation)))
+            foreach (var item in GetSelectedItems().Where(i => i.CanSaveGeoTag && !Equals(i.GeoTag, SavedLocation)))
             {
                 item.GeoTag = SavedLocation;
                 item.GeoTagSaved = false;
@@ -326,11 +342,12 @@ namespace PhotoLocator
 
         public ICommand RenameCommand => new RelayCommand(async o =>
         {
-            if (SelectedPicture is null)
+            var selectedItems = GetSelectedItems().ToList();
+            if (selectedItems.Count == 0)
                 return;
-            if (Pictures.Any(i => i.IsSelected && i.ThumbnailImage is null))
+            if (selectedItems.Any(i => i.ThumbnailImage is null))
                 await WaitForPicturesLoadedAsync();
-            var renameWin = new RenameWindow(Pictures.Where(item => item.IsSelected).ToList());
+            var renameWin = new RenameWindow(selectedItems);
             renameWin.Owner = App.Current.MainWindow;
             renameWin.DataContext = renameWin;
             PreviewPictureSource = null;
@@ -430,11 +447,30 @@ namespace PhotoLocator
             await LoadPicturesAsync();
         }
 
+        public ICommand SelectAllCommand => new RelayCommand(o =>
+        {
+            foreach (var item in Pictures)
+                item.IsChecked = true;
+        });
+
+        public ICommand SelectCandidatesCommand => new RelayCommand(o =>
+        {
+            foreach (var item in Pictures)
+                item.IsChecked = item.GeoTag is null && item.TimeStamp.HasValue && item.CanSaveGeoTag;
+            GetSelectedItems().FirstOrDefault();
+        });
+
+        public ICommand DeselectAllCommand => new RelayCommand(o =>
+        {
+            foreach (var item in Pictures)
+                item.IsChecked = false;
+        });
+
         public ICommand DeleteSelectedCommand => new RelayCommand(o =>
         {
             if (SelectedPicture is null)
                 return;
-            var selected = Pictures.Where(i => i.IsSelected).ToArray();
+            var selected = GetSelectedItems().ToArray();
             if (MessageBox.Show($"Delete {selected.Length} selected item(s)?", "Confirm", MessageBoxButton.OKCancel, MessageBoxImage.Question) != MessageBoxResult.OK)
                 return;
             using var cursor = new CursorOverride();

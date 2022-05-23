@@ -123,12 +123,7 @@ namespace PhotoLocator
 
         private void HandlePictureListBoxPreviewMouseButtonDown(object sender, MouseButtonEventArgs e)
         {
-            if (e.ChangedButton == MouseButton.Left && e.ClickCount == 2)
-            {
-                _viewModel.ExecuteSelectedCommand.Execute(null);
-                e.Handled = true;
-            }
-            else if (e.ChangedButton == MouseButton.XButton2 && _viewModel.SelectedPicture != null && _viewModel.SelectedPicture.IsDirectory)
+            if (e.ChangedButton == MouseButton.XButton2 && _viewModel.SelectedPicture != null && _viewModel.SelectedPicture.IsDirectory)
             {
                 _viewModel.ExecuteSelectedCommand.Execute(null);
                 e.Handled = true;
@@ -136,25 +131,6 @@ namespace PhotoLocator
             else if (e.ChangedButton == MouseButton.XButton1)
             {
                 _viewModel.ParentFolderCommand.Execute(null);
-                e.Handled = true;
-            }
-        }
-
-        private void HandleFileItemPreviewMouseDown(object sender, MouseButtonEventArgs e)
-        {
-            _previousMousePosition = e.GetPosition(this);
-        }
-
-        private void HandleFileItemMouseMove(object sender, MouseEventArgs e)
-        {
-            if (PictureListBox.SelectedItem != null &&
-                (e.LeftButton == MouseButtonState.Pressed || e.RightButton == MouseButtonState.Pressed) &&
-                (e.GetPosition(this) - _previousMousePosition).Length > 10)
-            {
-                var files = PictureListBox.SelectedItems.Cast<PictureItemViewModel>().Select(i => i.FullPath).ToArray();
-                var data = new DataObject(DataFormats.FileDrop, files);
-                data.SetData(DataFormats.Text, files[0]);
-                DragDrop.DoDragDrop(this, data, DragDropEffects.All);
                 e.Handled = true;
             }
         }
@@ -167,6 +143,78 @@ namespace PhotoLocator
             if (item != null)
             {
                 _viewModel.SelectItem(item);
+                e.Handled = true;
+            }
+        }
+
+        private void HandlePictureListBoxPreviewKeyDown(object sender, KeyEventArgs e)
+        {
+            var selecteditem = _viewModel.SelectedPicture;
+            if (selecteditem is null)
+                return;
+            if (e.Key == Key.Space)
+            {
+                selecteditem.IsChecked = !selecteditem.IsChecked;
+                e.Handled = true;
+            }
+            else if (e.Key == Key.Insert)
+            {
+                if (!(e.KeyboardDevice.IsKeyDown(Key.LeftShift) || e.KeyboardDevice.IsKeyDown(Key.RightShift)))
+                    selecteditem.IsChecked = !selecteditem.IsChecked;
+                if (PictureListBox.SelectedIndex < PictureListBox.Items.Count - 1)
+                {
+                    PictureListBox.SelectedItem = PictureListBox.Items[PictureListBox.SelectedIndex + 1];
+                    FocusListBoxItem(PictureListBox.SelectedItem);
+                }
+                e.Handled = true;
+            }
+            else if (e.Key == Key.Home && (e.KeyboardDevice.IsKeyDown(Key.LeftShift) || e.KeyboardDevice.IsKeyDown(Key.RightShift)))
+            {
+                for (int i = 0; i <= PictureListBox.SelectedIndex; i++)
+                    ((PictureItemViewModel)PictureListBox.Items[i]).IsChecked = true;
+            }
+            else if (e.Key == Key.End && (e.KeyboardDevice.IsKeyDown(Key.LeftShift) || e.KeyboardDevice.IsKeyDown(Key.RightShift)))
+            {
+                for (int i = PictureListBox.SelectedIndex; i < PictureListBox.Items.Count; i++)
+                    ((PictureItemViewModel)PictureListBox.Items[i]).IsChecked = true;
+            }
+        }
+
+        private void HandleFileItemPreviewMouseDown(object sender, MouseButtonEventArgs e)
+        {
+            if (e.ChangedButton == MouseButton.Left && sender is PictureItemView itemView && itemView.DataContext is PictureItemViewModel item)
+            {
+                if (Keyboard.IsKeyDown(Key.LeftShift) || Keyboard.IsKeyDown(Key.RightShift))
+                {
+                    var clickedIndex = PictureListBox.Items.IndexOf(item);
+                    var selectedIndex = Math.Max(PictureListBox.SelectedIndex, 0);
+                    var last = Math.Max(clickedIndex, selectedIndex);
+                    for (int i = Math.Min(clickedIndex, selectedIndex); i <= last; i++)
+                        ((PictureItemViewModel)PictureListBox.Items[i]).IsChecked = true;
+                }
+                else if (Keyboard.IsKeyDown(Key.LeftCtrl) || Keyboard.IsKeyDown(Key.RightCtrl))
+                {
+                    item.IsChecked = !item.IsChecked;
+                }
+                else if (e.ClickCount == 2)
+                {
+                    _viewModel.ExecuteSelectedCommand.Execute(null);
+                    e.Handled = true;
+                }
+            }
+            _previousMousePosition = e.GetPosition(this);
+        }
+
+        private void HandleFileItemMouseMove(object sender, MouseEventArgs e)
+        {
+            if (PictureListBox.SelectedItem != null &&
+                (e.LeftButton == MouseButtonState.Pressed || e.RightButton == MouseButtonState.Pressed) &&
+                (e.GetPosition(this) - _previousMousePosition).Length > 10)
+            {
+                var files = _viewModel.GetSelectedItems().Select(i => i.FullPath).ToArray();
+                var data = new DataObject(DataFormats.FileDrop, files);
+                data.SetData(DataFormats.Text, files[0]);
+                DragDrop.DoDragDrop(this, data, DragDropEffects.All);
                 e.Handled = true;
             }
         }

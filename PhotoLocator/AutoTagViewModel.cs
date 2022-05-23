@@ -14,9 +14,11 @@ namespace PhotoLocator
 {
     class AutoTagViewModel : INotifyPropertyChanged
     {
-        public AutoTagViewModel(IEnumerable<PictureItemViewModel> pictures, IEnumerable<GpsTrace> polylines, Action completedAction)
+        public AutoTagViewModel(IEnumerable<PictureItemViewModel> allItems, IEnumerable<PictureItemViewModel> selectedItems, IEnumerable<GpsTrace> polylines, 
+            Action completedAction)
         {
-            Pictures = pictures;
+            _allItems = allItems;
+            _selectedItems = selectedItems;
             GpsTraces = polylines;
             CompletedAction = completedAction;
             using var settings = new RegistrySettings();
@@ -26,8 +28,9 @@ namespace PhotoLocator
         }
 
         public event PropertyChangedEventHandler? PropertyChanged;
-      
-        public IEnumerable<PictureItemViewModel> Pictures { get; }
+
+        readonly IEnumerable<PictureItemViewModel> _allItems;
+        readonly IEnumerable<PictureItemViewModel> _selectedItems;
 
         public IEnumerable<GpsTrace> GpsTraces { get; }
 
@@ -112,8 +115,8 @@ namespace PhotoLocator
         private (int Tagged, int NotTagged) AutoTag(IEnumerable<GpsTrace> gpsTraces)
         {
             int tagged = 0, notTagged = 0;
-            var sourceImages = Pictures.Where(i => !i.IsSelected && i.GeoTag != null && i.TimeStamp.HasValue).ToArray();
-            foreach (var item in Pictures.Where(i => i.IsSelected && i.TimeStamp.HasValue && i.CanSaveGeoTag))
+            var sourceImages = _allItems.Where(item => item.GeoTag != null && item.TimeStamp.HasValue && !_selectedItems.Contains(item)).ToArray();
+            foreach (var item in _selectedItems.Where(item => item.TimeStamp.HasValue && item.CanSaveGeoTag))
             {
                 var bestTag = GetBestGeoFix(sourceImages, gpsTraces, item.TimeStamp!.Value);
                 if (bestTag != null)

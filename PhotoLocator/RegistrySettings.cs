@@ -41,7 +41,7 @@ namespace PhotoLocator
 
         public ViewMode ViewMode
         {
-            get => (ViewMode)(Key.GetValue(nameof(ViewMode)) as int? ?? 0);
+            get => (ViewMode)(Key.GetValue(nameof(ViewMode)) as int? ?? (int)ViewMode.Split);
             set => Key.SetValue(nameof(ViewMode), (int)value);
         }
 
