@@ -455,8 +455,9 @@ namespace PhotoLocator
                 item.IsChecked = true;
         });
 
-        public ICommand SelectCandidatesCommand => new RelayCommand(o =>
+        public ICommand SelectCandidatesCommand => new RelayCommand(async o =>
         {
+            await WaitForPicturesLoadedAsync();
             foreach (var item in Pictures)
                 item.IsChecked = item.GeoTag is null && item.TimeStamp.HasValue && item.CanSaveGeoTag;
             GetSelectedItems().FirstOrDefault();
