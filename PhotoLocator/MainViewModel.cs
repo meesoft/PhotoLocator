@@ -19,6 +19,7 @@ using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media.Imaging;
 using System.Windows.Shell;
+using System.Windows.Threading;
 
 namespace PhotoLocator
 {
@@ -32,6 +33,7 @@ namespace PhotoLocator
 
         Task? _loadPicturesTask;
         CancellationTokenSource? _loadCancellation;
+        FileSystemWatcher? _fileSystemWatcher;
 
         public event PropertyChangedEventHandler? PropertyChanged;
 
@@ -563,6 +565,8 @@ namespace PhotoLocator
 
         private async Task LoadFolderContentsAsync(bool keepSelection)
         {
+            _fileSystemWatcher?.Dispose();
+            _fileSystemWatcher = null;
             var selectedName = SelectedPicture?.Name;
             _loadCancellation?.Cancel();
             await WaitForPicturesLoadedAsync();
@@ -570,6 +574,7 @@ namespace PhotoLocator
                 return;
             Pictures.Clear();
             Polylines.Clear();
+            SetupFileSystemWatcher();
             if (ShowFolders)
                 foreach (var dir in Directory.EnumerateDirectories(PhotoFolderPath))
                     Pictures.Add(new PictureItemViewModel(dir, true));
@@ -583,6 +588,91 @@ namespace PhotoLocator
                     SelectItem(previousSelection);
             }
             await LoadPicturesAsync();
+        }
+
+        private void SetupFileSystemWatcher()
+        {
+            _fileSystemWatcher = new FileSystemWatcher(PhotoFolderPath!);
+            _fileSystemWatcher.Changed += HandleFileSystemWatcherChange;
+            _fileSystemWatcher.Created += HandleFileSystemWatcherChange;
+            _fileSystemWatcher.Deleted += HandleFileSystemWatcherChange;
+            _fileSystemWatcher.Renamed += HandleFileSystemWatcherRename;
+            _fileSystemWatcher.NotifyFilter = NotifyFilters.LastWrite | NotifyFilters.FileName | NotifyFilters.DirectoryName;
+            _fileSystemWatcher.EnableRaisingEvents = true;
+        }
+
+        private void HandleFileSystemWatcherRename(object sender, RenamedEventArgs e)
+        {
+            Application.Current.Dispatcher.BeginInvoke(() =>
+            {
+                var renamed = Pictures.FirstOrDefault(item => item.FullPath == e.OldFullPath);
+                if (renamed != null)
+                    renamed.Renamed(e.FullPath);
+                else
+                    HandleFileSystemWatcherChange(this, e);
+            });
+        }
+
+        private void HandleFileSystemWatcherChange(object sender, FileSystemEventArgs e)
+        {
+            Application.Current.Dispatcher.BeginInvoke(async () =>
+            {
+                if (e.ChangeType == WatcherChangeTypes.Deleted)
+                {
+                    var removed = Pictures.FirstOrDefault(item => item.FullPath == e.FullPath);
+                    if (removed != null)
+                        Pictures.Remove(removed);
+                }
+                else if (e.ChangeType == WatcherChangeTypes.Created || e.ChangeType == WatcherChangeTypes.Renamed)
+                {
+                    await Task.Delay(1000);
+                    var name = Path.GetFileName(e.FullPath);
+                    var ext = Path.GetExtension(name).ToLowerInvariant();
+                    if (File.Exists(e.FullPath) && PhotoFileExtensions.Contains(ext))
+                    {
+                        var list = Pictures.ToList();
+                        var firstFileIndex = list.FindIndex(item => item.IsFile);
+                        var newItem = new PictureItemViewModel(e.FullPath, false);
+                        var newIndex = ~list.BinarySearch(firstFileIndex, list.Count - firstFileIndex, newItem,
+                            new SelectorComparer<PictureItemViewModel>(item => item.Name));
+                        if (newIndex < 0)
+                            return;
+                        Pictures.Insert(newIndex, newItem);
+                    }
+                    else if (Directory.Exists(e.FullPath))
+                    {
+                        var list = Pictures.Where(item => item.IsDirectory).ToList();
+                        var newItem = new PictureItemViewModel(e.FullPath, true);
+                        var newIndex = ~list.BinarySearch(newItem, new SelectorComparer<PictureItemViewModel>(item => item.Name));
+                        if (newIndex < 0)
+                            return;
+                        Pictures.Insert(newIndex, newItem);
+                    }
+                    else
+                        return;
+                    if (_loadPicturesTask != null)
+                        _loadPicturesTask.ContinueWith(_ => Application.Current.Dispatcher.BeginInvoke(LoadPicturesAsync)).WithExceptionLogging();
+                    else
+                        LoadPicturesAsync().WithExceptionLogging();
+                }
+                else if (e.ChangeType == WatcherChangeTypes.Changed)
+                {
+                    await Task.Delay(1000);
+                    var changed = Pictures.FirstOrDefault(item => item.FullPath == e.FullPath);
+                    if (changed == null)
+                        return;
+                    if (changed.IsSelected)
+                        UpdatePreviewPictureAsync().WithExceptionLogging();
+                    if (changed.ThumbnailImage != null)
+                    {
+                        changed.ThumbnailImage = null;
+                        if (_loadPicturesTask != null)
+                            _loadPicturesTask.ContinueWith(_ => Application.Current.Dispatcher.BeginInvoke(LoadPicturesAsync)).WithExceptionLogging();
+                        else
+                            LoadPicturesAsync().WithExceptionLogging();
+                    }
+                }
+            });
         }
 
         private async Task AppendFilesAsync(IEnumerable<string> fileNames)
@@ -629,6 +719,8 @@ namespace PhotoLocator
             _loadCancellation?.Cancel();
             _loadCancellation?.Dispose();
             _loadCancellation = null;
+            _fileSystemWatcher?.Dispose();
+            _fileSystemWatcher = null;
         }
     }
 

@@ -269,5 +269,11 @@ namespace PhotoLocator
             else
                 FileSystem.DeleteFile(FullPath, UIOption.OnlyErrorDialogs, RecycleOption.SendToRecycleBin);
         }
+
+        internal void Renamed(string newFullPath)
+        {
+            FullPath = newFullPath;
+            Name = Path.GetFileName(Name);
+        }
     }
 }
