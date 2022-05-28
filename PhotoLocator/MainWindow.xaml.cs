@@ -19,6 +19,7 @@ namespace PhotoLocator
     {
         readonly MainViewModel _viewModel;
         private Point _previousMousePosition;
+        private int _selectStartIndex;
 
         public MainWindow()
         {
@@ -168,14 +169,19 @@ namespace PhotoLocator
                 }
                 e.Handled = true;
             }
-            else if (e.Key == Key.Home && (e.KeyboardDevice.IsKeyDown(Key.LeftShift) || e.KeyboardDevice.IsKeyDown(Key.RightShift)))
+            else if (e.Key == Key.LeftShift || e.Key == Key.RightShift)
             {
-                for (int i = 0; i <= PictureListBox.SelectedIndex; i++)
-                    ((PictureItemViewModel)PictureListBox.Items[i]).IsChecked = true;
+                _selectStartIndex = Math.Max(0, PictureListBox.SelectedIndex);
             }
-            else if (e.Key == Key.End && (e.KeyboardDevice.IsKeyDown(Key.LeftShift) || e.KeyboardDevice.IsKeyDown(Key.RightShift)))
+        }
+
+        private void HandlePictureListBoxPreviewKeyUp(object sender, KeyEventArgs e)
+        {
+            if ((e.Key == Key.Home || e.Key == Key.End || e.Key == Key.Down || e.Key == Key.Up || e.Key == Key.Left || e.Key == Key.Right ) && 
+                (e.KeyboardDevice.IsKeyDown(Key.LeftShift) || e.KeyboardDevice.IsKeyDown(Key.RightShift)) && PictureListBox.SelectedIndex >= 0)
             {
-                for (int i = PictureListBox.SelectedIndex; i < PictureListBox.Items.Count; i++)
+                var last = Math.Max(_selectStartIndex, PictureListBox.SelectedIndex);
+                for (int i = Math.Min(_selectStartIndex, PictureListBox.SelectedIndex); i <= last; i++)
                     ((PictureItemViewModel)PictureListBox.Items[i]).IsChecked = true;
             }
         }
@@ -187,7 +193,7 @@ namespace PhotoLocator
                 if (Keyboard.IsKeyDown(Key.LeftShift) || Keyboard.IsKeyDown(Key.RightShift))
                 {
                     var clickedIndex = PictureListBox.Items.IndexOf(item);
-                    var selectedIndex = Math.Max(PictureListBox.SelectedIndex, 0);
+                    var selectedIndex = Math.Max(0, PictureListBox.SelectedIndex);
                     var last = Math.Max(clickedIndex, selectedIndex);
                     for (int i = Math.Min(clickedIndex, selectedIndex); i <= last; i++)
                         ((PictureItemViewModel)PictureListBox.Items[i]).IsChecked = true;

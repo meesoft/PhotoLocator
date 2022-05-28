@@ -1,5 +1,5 @@
 ﻿using MapControl;
-using Microsoft.WindowsAPICodePack.Shell;
+using Microsoft.VisualBasic;
 using PhotoLocator.Helpers;
 using PhotoLocator.MapDisplay;
 using PhotoLocator.Metadata;
@@ -19,7 +19,6 @@ using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media.Imaging;
 using System.Windows.Shell;
-using System.Windows.Threading;
 
 namespace PhotoLocator
 {
@@ -116,14 +115,14 @@ namespace PhotoLocator
 
         public Location? SavedLocation
         {
-            get => _SavedLocation;
+            get => _savedLocation;
             set
             {
-                if (SetProperty(ref _SavedLocation, value))
+                if (SetProperty(ref _savedLocation, value))
                     UpdatePushpins();
             }
         }
-        private Location? _SavedLocation;
+        private Location? _savedLocation;
 
         public ComboBoxItem? SelectedViewModeItem 
         { 
@@ -353,11 +352,15 @@ namespace PhotoLocator
             renameWin.Owner = App.Current.MainWindow;
             renameWin.DataContext = renameWin;
             PreviewPictureSource = null;
+            if (_fileSystemWatcher != null)
+                _fileSystemWatcher.EnableRaisingEvents = false;
             if (renameWin.ShowDialog() == true)
             {
                 UpdatePushpins();
                 PictureSelectionChanged();
             }
+            if (_fileSystemWatcher != null)
+                _fileSystemWatcher.EnableRaisingEvents = true;
             UpdatePreviewPictureAsync().WithExceptionLogging();
         });
 
@@ -449,6 +452,16 @@ namespace PhotoLocator
             await LoadPicturesAsync();
         }
 
+        public ICommand QuickSearchCommand => new RelayCommand(o =>
+        {
+            var query = Interaction.InputBox("Enter part of the file name (without wildcards):", "Search");
+            if (string.IsNullOrEmpty(query))
+                return;
+            var result = Pictures.FirstOrDefault(item => item.Name.Contains(query, StringComparison.CurrentCultureIgnoreCase));
+            if (result != null)
+                SelectItem(result);
+        });
+
         public ICommand SelectAllCommand => new RelayCommand(o =>
         {
             foreach (var item in Pictures)
@@ -460,7 +473,7 @@ namespace PhotoLocator
             await WaitForPicturesLoadedAsync();
             foreach (var item in Pictures)
                 item.IsChecked = item.GeoTag is null && item.TimeStamp.HasValue && item.CanSaveGeoTag;
-            GetSelectedItems().FirstOrDefault();
+            _ = GetSelectedItems().FirstOrDefault();
         });
 
         public ICommand DeselectAllCommand => new RelayCommand(o =>
@@ -471,19 +484,42 @@ namespace PhotoLocator
 
         public ICommand DeleteSelectedCommand => new RelayCommand(o =>
         {
-            if (SelectedPicture is null)
-                return;
             var selected = GetSelectedItems().ToArray();
+            if (selected.Length == 0)
+                return;
             if (MessageBox.Show($"Delete {selected.Length} selected item(s)?", "Confirm", MessageBoxButton.OKCancel, MessageBoxImage.Question) != MessageBoxResult.OK)
                 return;
             using var cursor = new CursorOverride();
-            var selectedIndex = Pictures.IndexOf(SelectedPicture);
+            var selectedIndex = Pictures.IndexOf(SelectedPicture!);
             SelectedPicture = null;
             PreviewPictureSource = null;
             PreviewPictureTitle = null;
             foreach (var item in selected)
             {
                 item.Recycle();
+                Pictures.Remove(item);
+            }
+            if (Pictures.Count > 0)
+                SelectItem(Pictures[Math.Min(selectedIndex, Pictures.Count - 1)]);
+        });
+
+        public ICommand MoveSelectedCommand => new RelayCommand(o =>
+        {
+            var selected = GetSelectedItems().ToArray();
+            if (selected.Length == 0)
+                return;
+            var destination = Interaction.InputBox("Destination:", $"Move {selected.Length} items(s)", (PhotoFolderPath ?? string.Empty).Trim('\\'));
+            if (string.IsNullOrEmpty(destination) || destination == PhotoFolderPath || destination == ".")
+                return;
+            using var cursor = new CursorOverride();
+            var selectedIndex = Pictures.IndexOf(SelectedPicture!);
+            SelectedPicture = null;
+            PreviewPictureSource = null;
+            PreviewPictureTitle = null;
+            Directory.SetCurrentDirectory(Path.GetDirectoryName(selected[0].FullPath)!);
+            foreach (var item in selected)
+            {
+                item.MoveTo(Path.Combine(destination, item.Name));
                 Pictures.Remove(item);
             }
             if (Pictures.Count > 0)

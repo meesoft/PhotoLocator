@@ -262,18 +262,26 @@ namespace PhotoLocator
             FullPath = newFullPath;
         }
 
+        internal void Renamed(string newFullPath)
+        {
+            FullPath = newFullPath;
+            Name = Path.GetFileName(newFullPath);
+        }
+
+        internal void MoveTo(string destination)
+        {
+            if (IsDirectory)
+                Directory.Move(FullPath, destination);
+            else
+                File.Move(FullPath, destination);
+        }
+
         public void Recycle()
         {
             if (IsDirectory)
                 FileSystem.DeleteDirectory(FullPath, UIOption.OnlyErrorDialogs, RecycleOption.SendToRecycleBin);
             else
                 FileSystem.DeleteFile(FullPath, UIOption.OnlyErrorDialogs, RecycleOption.SendToRecycleBin);
-        }
-
-        internal void Renamed(string newFullPath)
-        {
-            FullPath = newFullPath;
-            Name = Path.GetFileName(Name);
         }
     }
 }
