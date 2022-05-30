@@ -62,6 +62,8 @@ namespace PhotoLocator
 #endif
         }
 
+        public string WindowTitle => "PhotoLocator" + (string.IsNullOrEmpty(PhotoFolderPath) ? null : " - " + PhotoFolderPath);
+
         public bool IsProgressBarVisible { get => _isProgressBarVisible; set => SetProperty(ref _isProgressBarVisible, value); }
         private bool _isProgressBarVisible;
 
@@ -96,7 +98,10 @@ namespace PhotoLocator
             set
             {
                 if (SetProperty(ref _photoFolderPath, value))
+                {
+                    NotifyPropertyChanged(nameof(WindowTitle));
                     LoadFolderContentsAsync(false).WithExceptionShowing();
+                }
             }
         }
         private string? _photoFolderPath;
@@ -184,6 +189,7 @@ namespace PhotoLocator
                     if (value?.GeoTag != null)
                         MapCenter = value.GeoTag;
                     UpdatePushpins();
+                    UpdatePoints();
                     UpdatePreviewPictureAsync().WithExceptionLogging();
                 }
             }
@@ -207,12 +213,16 @@ namespace PhotoLocator
                 yield return SelectedPicture;
         }
 
-        internal void PictureSelectionChanged()
+        internal void UpdatePoints()
         {
-            Points.Clear();
-            foreach(var item in Pictures)
-                if (item != SelectedPicture && item.IsChecked && item.GeoTag != null)
-                    Points.Add(new PointItem { Location = item.GeoTag, Name = item.Name });
+            var newPoints = Pictures.Where(item => item.IsChecked && item.GeoTag != null && item != SelectedPicture).ToDictionary(p => p.Name);
+            for (int i = Points.Count - 1; i >= 0; i--)
+                if (newPoints.ContainsKey(Points[i].Name!))
+                    newPoints.Remove(Points[i].Name!);
+                else
+                    Points.RemoveAt(i);
+            foreach (var item in newPoints.Values)
+                Points.Add(new PointItem { Location = item.GeoTag, Name = item.Name });
         }
 
         private async Task UpdatePreviewPictureAsync()
@@ -266,7 +276,7 @@ namespace PhotoLocator
             if (autoTagWin.ShowDialog() == true)
             {
                 UpdatePushpins();
-                PictureSelectionChanged();
+                UpdatePoints();
                 if (SelectedPicture?.GeoTag != null)
                     MapCenter = SelectedPicture.GeoTag;
                 else if (Points.Count > 0)
@@ -290,7 +300,7 @@ namespace PhotoLocator
                 item.GeoTagSaved = false;
             }
             UpdatePushpins();
-            PictureSelectionChanged();
+            UpdatePoints();
         });
 
         async Task RunProcessWithProgressBarAsync(Func<Action<double>, Task> body, string text)
@@ -356,8 +366,8 @@ namespace PhotoLocator
                 _fileSystemWatcher.EnableRaisingEvents = false;
             if (renameWin.ShowDialog() == true)
             {
+                DeselectAllCommand.Execute(null);
                 UpdatePushpins();
-                PictureSelectionChanged();
             }
             if (_fileSystemWatcher != null)
                 _fileSystemWatcher.EnableRaisingEvents = true;
@@ -466,6 +476,7 @@ namespace PhotoLocator
         {
             foreach (var item in Pictures)
                 item.IsChecked = true;
+            UpdatePoints();
         });
 
         public ICommand SelectCandidatesCommand => new RelayCommand(async o =>
@@ -474,12 +485,14 @@ namespace PhotoLocator
             foreach (var item in Pictures)
                 item.IsChecked = item.GeoTag is null && item.TimeStamp.HasValue && item.CanSaveGeoTag;
             _ = GetSelectedItems().FirstOrDefault();
+            UpdatePoints();
         });
 
         public ICommand DeselectAllCommand => new RelayCommand(o =>
         {
             foreach (var item in Pictures)
                 item.IsChecked = false;
+            UpdatePoints();
         });
 
         public ICommand DeleteSelectedCommand => new RelayCommand(o =>

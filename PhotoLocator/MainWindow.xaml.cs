@@ -117,11 +117,6 @@ namespace PhotoLocator
             listBoxItem.Focus();
         }
 
-        private void HandlePictureListBoxSelectionChanged(object sender, SelectionChangedEventArgs e)
-        {
-            _viewModel.PictureSelectionChanged();
-        }
-
         private void HandlePictureListBoxPreviewMouseButtonDown(object sender, MouseButtonEventArgs e)
         {
             if (e.ChangedButton == MouseButton.XButton2 && _viewModel.SelectedPicture != null && _viewModel.SelectedPicture.IsDirectory)
@@ -183,6 +178,7 @@ namespace PhotoLocator
                 var last = Math.Max(_selectStartIndex, PictureListBox.SelectedIndex);
                 for (int i = Math.Min(_selectStartIndex, PictureListBox.SelectedIndex); i <= last; i++)
                     ((PictureItemViewModel)PictureListBox.Items[i]).IsChecked = true;
+                _viewModel.UpdatePoints();
             }
         }
 

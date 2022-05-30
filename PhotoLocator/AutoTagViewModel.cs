@@ -125,6 +125,7 @@ namespace PhotoLocator
                     {
                         item.GeoTag = bestTag;
                         item.GeoTagSaved = false;
+                        item.IsChecked = false;
                     }
                     tagged++;
                 }
