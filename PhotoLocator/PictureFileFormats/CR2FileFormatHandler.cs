@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Threading;
 using System.Windows.Media.Imaging;
 
 namespace PhotoLocator.PictureFileFormats
@@ -14,7 +15,7 @@ namespace PhotoLocator.PictureFileFormats
             return extension == ".cr2";
         }
 
-        public static BitmapSource? TryLoadFromStream(Stream stream, Rotation rotation, int maxWidth)
+        public static BitmapSource? TryLoadFromStream(Stream stream, Rotation rotation, int maxWidth, CancellationToken ct)
         {
             using var reader = new BinaryReader(stream);
             if (reader.ReadByte() == (byte)'I' && reader.ReadByte() == (byte)'I' && reader.ReadInt16() == 42)
@@ -63,6 +64,7 @@ namespace PhotoLocator.PictureFileFormats
                                 break;
                         }
                     }
+                    ct.ThrowIfCancellationRequested();
                     if (imageSize > 0 && imageOffset > 0 && width > 0 && height > 0 && compression >= 0)
                     {
                         if (compression == 6) // JPEG preview image
@@ -70,11 +72,11 @@ namespace PhotoLocator.PictureFileFormats
                             stream.Position = imageOffset;
                             var buf = new byte[imageSize];
                             stream.Read(buf, 0, imageSize);
-                            return GeneralFileFormatHandler.TryLoadFromStream(new MemoryStream(buf, false), rotation, maxWidth);
+                            return GeneralFileFormatHandler.TryLoadFromStream(new MemoryStream(buf, false), rotation, maxWidth, ct);
                         }
                         // Unknown compression, try general reader on whole file
                         stream.Position = 0;
-                        return GeneralFileFormatHandler.TryLoadFromStream(stream, rotation, maxWidth);
+                        return GeneralFileFormatHandler.TryLoadFromStream(stream, rotation, maxWidth, ct);
                     }
                     ifdOffset = reader.ReadInt32(); // Get next IFD offset
                 }

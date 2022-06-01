@@ -32,6 +32,7 @@ namespace PhotoLocator
 
         Task? _loadPicturesTask;
         CancellationTokenSource? _loadCancellation;
+        CancellationTokenSource? _previewCancellation;
         FileSystemWatcher? _fileSystemWatcher;
 
         public event PropertyChangedEventHandler? PropertyChanged;
@@ -227,6 +228,9 @@ namespace PhotoLocator
 
         private async Task UpdatePreviewPictureAsync()
         {
+            _previewCancellation?.Cancel();
+            _previewCancellation?.Dispose();
+            _previewCancellation = null;
             if (SelectedPicture is null || !IsPreviewVisible)
                 return;
             var selected = SelectedPicture;
@@ -236,6 +240,8 @@ namespace PhotoLocator
                 PreviewPictureTitle = selected.Name;
                 return;
             }
+            _previewCancellation = new CancellationTokenSource();
+            var ct = _previewCancellation.Token;
             var textTask = Task.Run(() =>
             {
                 var title = selected.Name;
@@ -248,9 +254,10 @@ namespace PhotoLocator
                 catch 
                 { 
                 }
+                ct.ThrowIfCancellationRequested();
                 return title;
-            });
-            PreviewPictureSource = await Task.Run(() => selected.LoadPreview());
+            }, ct);
+            PreviewPictureSource = await Task.Run(() => selected.LoadPreview(ct), ct);
             PreviewPictureTitle = await textTask;
         }
 
@@ -769,6 +776,9 @@ namespace PhotoLocator
             _loadCancellation?.Cancel();
             _loadCancellation?.Dispose();
             _loadCancellation = null;
+            _previewCancellation?.Cancel();
+            _previewCancellation?.Dispose();
+            _previewCancellation = null;
             _fileSystemWatcher?.Dispose();
             _fileSystemWatcher = null;
         }

@@ -157,7 +157,7 @@ namespace PhotoLocator
         {
             if (IsFile)
                 await LoadMetadata(ct);
-            ThumbnailImage = await Task.Run(() => LoadPreview(256), ct);
+            ThumbnailImage = await Task.Run(() => LoadPreview(ct, 256), ct);
         }
 
         private async Task LoadMetadata(CancellationToken ct)
@@ -190,10 +190,10 @@ namespace PhotoLocator
             }
         }
 
-        public BitmapSource? LoadPreview(int maxWidth = int.MaxValue)
+        public BitmapSource? LoadPreview(CancellationToken ct, int maxWidth = int.MaxValue)
         {
             if (maxWidth <= 256)
-                return LoadShellThumbnail(large: false);
+                return LoadShellThumbnail(large: false, ct);
             try
             {
                 using var fileStream = File.OpenRead(FullPath);
@@ -201,34 +201,41 @@ namespace PhotoLocator
                 {
                     var ext = Path.GetExtension(Name).ToLowerInvariant();
                     BitmapSource? result = null;
-                    if (CR2FileFormatHandler.CanLoad(ext) && (result = CR2FileFormatHandler.TryLoadFromStream(fileStream, Rotation, maxWidth)) != null)
+                    if (CR2FileFormatHandler.CanLoad(ext) && (result = CR2FileFormatHandler.TryLoadFromStream(fileStream, Rotation, maxWidth, ct)) != null)
                         return result;
-                    if (CR3FileFormatHandler.CanLoad(ext) && (result = CR3FileFormatHandler.TryLoadFromStream(fileStream, Rotation, maxWidth)) != null)
+                    if (CR3FileFormatHandler.CanLoad(ext) && (result = CR3FileFormatHandler.TryLoadFromStream(fileStream, Rotation, maxWidth, ct)) != null)
                         return result;
                 }
                 catch
                 {
                     fileStream.Position = 0; // Fallback to default reader
                 }
-                return GeneralFileFormatHandler.TryLoadFromStream(fileStream, Rotation, maxWidth);
+                ct.ThrowIfCancellationRequested();
+                return GeneralFileFormatHandler.TryLoadFromStream(fileStream, Rotation, maxWidth, ct);
             }
-            catch
+            catch (Exception ex)
             {
-                return LoadShellThumbnail(large: true);
+                if (ex is OperationCanceledException)
+                    throw;
+                return LoadShellThumbnail(large: true, ct);
             }
         }
 
-        private BitmapSource? LoadShellThumbnail(bool large)
+        private BitmapSource? LoadShellThumbnail(bool large, CancellationToken ct)
         {
             try
             {
                 using var shellFile = IsDirectory ? ShellFolder.FromParsingName(FullPath) : ShellFile.FromFilePath(FullPath);
                 var thumbnail = large ? shellFile.Thumbnail.ExtraLargeBitmapSource : shellFile.Thumbnail.BitmapSource;
+                ct.ThrowIfCancellationRequested();
                 thumbnail.Freeze();
+                ct.ThrowIfCancellationRequested();
                 return thumbnail;
             }
             catch (Exception ex)
             {
+                if (ex is OperationCanceledException)
+                    throw;
                 ErrorMessage = ex.ToString();
                 return null;
             }

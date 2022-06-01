@@ -1,11 +1,12 @@
 ﻿using System.IO;
+using System.Threading;
 using System.Windows.Media.Imaging;
 
 namespace PhotoLocator.PictureFileFormats
 {
     static class GeneralFileFormatHandler
     {
-        public static BitmapSource? TryLoadFromStream(Stream source, Rotation rotation, int maxWidth)
+        public static BitmapSource? TryLoadFromStream(Stream source, Rotation rotation, int maxWidth, CancellationToken ct)
         {
             var bitmap = new BitmapImage();
             bitmap.BeginInit();
@@ -15,7 +16,9 @@ namespace PhotoLocator.PictureFileFormats
             bitmap.CacheOption = BitmapCacheOption.OnLoad;
             bitmap.Rotation = rotation;
             bitmap.EndInit();
+            ct.ThrowIfCancellationRequested();
             bitmap.Freeze();
+            ct.ThrowIfCancellationRequested();
             return bitmap;
         }
     }

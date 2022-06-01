@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using System.Text;
+using System.Threading;
 using System.Windows.Media.Imaging;
 
 namespace PhotoLocator.PictureFileFormats
@@ -18,7 +19,7 @@ namespace PhotoLocator.PictureFileFormats
         static readonly byte[] _previewHeader = Encoding.ASCII.GetBytes("mdat");
         static readonly byte[] _jpegHeader = new byte[] { 0xff, 0xd8, 0xff };
 
-        public static BitmapSource? TryLoadFromStream(Stream stream, Rotation rotation, int maxWidth)
+        public static BitmapSource? TryLoadFromStream(Stream stream, Rotation rotation, int maxWidth, CancellationToken ct)
         {
             var buffer = new byte[65536];
             while (true)
@@ -26,6 +27,7 @@ namespace PhotoLocator.PictureFileFormats
                 var length = stream.Read(buffer, 0, buffer.Length);
                 if (length < 10)
                     break;
+                ct.ThrowIfCancellationRequested();
 
                 //TODO: There is a risk that the headers cross buffer block boundaries in which case we currently fail to find them
                 var index = buffer.AsSpan(0, length).IndexOf(_previewHeader);
@@ -36,7 +38,7 @@ namespace PhotoLocator.PictureFileFormats
                     continue;
                 stream.Position += index + index2 - length;
 
-                return GeneralFileFormatHandler.TryLoadFromStream(new OffsetStreamReader(stream), rotation, maxWidth);
+                return GeneralFileFormatHandler.TryLoadFromStream(new OffsetStreamReader(stream), rotation, maxWidth, ct);
             }
             return null;
         }
