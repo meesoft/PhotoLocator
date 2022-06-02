@@ -754,7 +754,14 @@ namespace PhotoLocator
         {
             _loadCancellation?.Dispose();
             _loadCancellation = new CancellationTokenSource();
-            _loadPicturesTask = Parallel.ForEachAsync(Pictures.Where(i => i.ThumbnailImage is null).ToArray(), 
+            
+            var candidates = Pictures.Where(item => item.ThumbnailImage is null).ToArray();
+            var reordered = new PictureItemViewModel[candidates.Length];
+            int iStart = 0;
+            int iEnd = candidates.Length;
+            for (int i = 0; i < candidates.Length; i++)
+                reordered[i] = (i & 1) == 0 ? candidates[iStart++] : candidates[--iEnd];
+            _loadPicturesTask = Parallel.ForEachAsync(reordered,
                 new ParallelOptions { MaxDegreeOfParallelism = 2, CancellationToken = _loadCancellation.Token }, 
                 (item, ct) => item.LoadPictureAsync(ct));
             await _loadPicturesTask;
