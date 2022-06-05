@@ -644,6 +644,8 @@ namespace PhotoLocator
                 if (previousSelection != null)
                     SelectItem(previousSelection);
             }
+            if (SelectedPicture is null && Pictures.Count > 0)
+                SelectItem(Pictures.FirstOrDefault(item => item.IsFile) ?? Pictures[0]);
             await LoadPicturesAsync();
         }
 
