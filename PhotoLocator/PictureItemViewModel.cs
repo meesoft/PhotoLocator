@@ -24,6 +24,7 @@ namespace PhotoLocator
 #else
         const bool _isInDesignMode = false;
 #endif
+        private bool _updateThumbnail;
 
         public event PropertyChangedEventHandler? PropertyChanged;
 
@@ -153,11 +154,20 @@ namespace PhotoLocator
         public Rotation Rotation { get => _rotation; set => _rotation = value; }
         Rotation _rotation;
 
-        public async ValueTask LoadPictureAsync(CancellationToken ct)
+        public async ValueTask LoadMetadataAndThumbnailAsync(CancellationToken ct)
         {
             if (IsFile)
                 await LoadMetadata(ct);
-            ThumbnailImage = await Task.Run(() => LoadPreview(ct, 256), ct);
+            if (ThumbnailImage != null)
+                return;
+            ThumbnailImage = await Task.Run(() =>
+            {
+                var thumbnail = LoadShellThumbnail(large: false, thumbnailOnly: IsFile, ct);
+                _updateThumbnail = thumbnail is null;
+                if (_updateThumbnail)
+                    return LoadShellThumbnail(large: false, thumbnailOnly: false, ct);
+                return thumbnail;
+            }, ct);
         }
 
         private async Task LoadMetadata(CancellationToken ct)
@@ -192,40 +202,59 @@ namespace PhotoLocator
 
         public BitmapSource? LoadPreview(CancellationToken ct, int maxWidth = int.MaxValue)
         {
-            if (maxWidth <= 256)
-                return LoadShellThumbnail(large: false, ct);
             try
             {
-                using var fileStream = File.OpenRead(FullPath);
-                try
+                var preview = LoadPreviewInternal(maxWidth, ct);
+                if (preview is not null && (_updateThumbnail || ThumbnailImage is null))
                 {
-                    var ext = Path.GetExtension(Name).ToLowerInvariant();
-                    BitmapSource? result = null;
-                    if (CR2FileFormatHandler.CanLoad(ext) && (result = CR2FileFormatHandler.TryLoadFromStream(fileStream, Rotation, maxWidth, ct)) != null)
-                        return result;
-                    if (CR3FileFormatHandler.CanLoad(ext) && (result = CR3FileFormatHandler.TryLoadFromStream(fileStream, Rotation, maxWidth, ct)) != null)
-                        return result;
+                    _updateThumbnail = false;
+                    if (preview.PixelWidth > 256 || preview.PixelHeight > 256)
+                    {
+                        var scale = Math.Min(256.0 / preview.PixelWidth, 256.0 / preview.PixelHeight);
+                        var thumbnail = new TransformedBitmap(preview, new ScaleTransform(scale, scale));
+                        thumbnail.Freeze();
+                        ThumbnailImage = thumbnail;
+                    }
+                    else
+                        ThumbnailImage = preview;
                 }
-                catch
-                {
-                    fileStream.Position = 0; // Fallback to default reader
-                }
-                ct.ThrowIfCancellationRequested();
-                return GeneralFileFormatHandler.TryLoadFromStream(fileStream, Rotation, maxWidth, ct);
+                return preview;
             }
             catch (Exception ex)
             {
                 if (ex is OperationCanceledException)
                     throw;
-                return LoadShellThumbnail(large: true, ct);
+                return LoadShellThumbnail(large: true, thumbnailOnly: false, ct);
             }
         }
 
-        private BitmapSource? LoadShellThumbnail(bool large, CancellationToken ct)
+        private BitmapSource? LoadPreviewInternal(int maxWidth, CancellationToken ct)
+        {
+            using var fileStream = File.OpenRead(FullPath);
+            try
+            {
+                var ext = Path.GetExtension(Name).ToLowerInvariant();
+                BitmapSource? result = null;
+                if (CR2FileFormatHandler.CanLoad(ext) && (result = CR2FileFormatHandler.TryLoadFromStream(fileStream, Rotation, maxWidth, ct)) != null)
+                    return result;
+                if (CR3FileFormatHandler.CanLoad(ext) && (result = CR3FileFormatHandler.TryLoadFromStream(fileStream, Rotation, maxWidth, ct)) != null)
+                    return result;
+            }
+            catch
+            {
+                fileStream.Position = 0; // Fallback to default reader
+            }
+            ct.ThrowIfCancellationRequested();
+            return GeneralFileFormatHandler.TryLoadFromStream(fileStream, Rotation, maxWidth, ct);
+        }
+
+        private BitmapSource? LoadShellThumbnail(bool large, bool thumbnailOnly, CancellationToken ct)
         {
             try
             {
                 using var shellFile = IsDirectory ? ShellFolder.FromParsingName(FullPath) : ShellFile.FromFilePath(FullPath);
+                if (thumbnailOnly)
+                    shellFile.Thumbnail.FormatOption = ShellThumbnailFormatOption.ThumbnailOnly;
                 var thumbnail = large ? shellFile.Thumbnail.ExtraLargeBitmapSource : shellFile.Thumbnail.BitmapSource;
                 ct.ThrowIfCancellationRequested();
                 thumbnail.Freeze();
@@ -236,7 +265,8 @@ namespace PhotoLocator
             {
                 if (ex is OperationCanceledException)
                     throw;
-                ErrorMessage = ex.ToString();
+                if (!thumbnailOnly)
+                    ErrorMessage = ex.ToString();
                 return null;
             }
         }

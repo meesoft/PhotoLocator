@@ -765,7 +765,7 @@ namespace PhotoLocator
                 reordered[i] = (i & 1) == 0 ? candidates[iStart++] : candidates[--iEnd];
             _loadPicturesTask = Parallel.ForEachAsync(reordered,
                 new ParallelOptions { MaxDegreeOfParallelism = 2, CancellationToken = _loadCancellation.Token }, 
-                (item, ct) => item.LoadPictureAsync(ct));
+                (item, ct) => item.LoadMetadataAndThumbnailAsync(ct));
             await _loadPicturesTask;
             _loadPicturesTask = null;
         }
