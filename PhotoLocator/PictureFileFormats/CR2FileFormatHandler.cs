@@ -15,7 +15,7 @@ namespace PhotoLocator.PictureFileFormats
             return extension == ".cr2";
         }
 
-        public static BitmapSource? TryLoadFromStream(Stream stream, Rotation rotation, int maxWidth, CancellationToken ct)
+        public static BitmapSource LoadFromStream(Stream stream, Rotation rotation, int maxWidth, CancellationToken ct)
         {
             using var reader = new BinaryReader(stream);
             if (reader.ReadByte() == (byte)'I' && reader.ReadByte() == (byte)'I' && reader.ReadInt16() == 42)
@@ -72,16 +72,16 @@ namespace PhotoLocator.PictureFileFormats
                             stream.Position = imageOffset;
                             var buf = new byte[imageSize];
                             stream.Read(buf, 0, imageSize);
-                            return GeneralFileFormatHandler.TryLoadFromStream(new MemoryStream(buf, false), rotation, maxWidth, ct);
+                            return GeneralFileFormatHandler.LoadFromStream(new MemoryStream(buf, false), rotation, maxWidth, ct);
                         }
                         // Unknown compression, try general reader on whole file
                         stream.Position = 0;
-                        return GeneralFileFormatHandler.TryLoadFromStream(stream, rotation, maxWidth, ct);
+                        return GeneralFileFormatHandler.LoadFromStream(stream, rotation, maxWidth, ct);
                     }
                     ifdOffset = reader.ReadInt32(); // Get next IFD offset
                 }
             }
-            return null;
+            throw new FormatException();
         }
     }
 }

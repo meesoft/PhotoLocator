@@ -6,7 +6,7 @@ namespace PhotoLocator.PictureFileFormats
 {
     static class GeneralFileFormatHandler
     {
-        public static BitmapSource? TryLoadFromStream(Stream source, Rotation rotation, int maxWidth, CancellationToken ct)
+        public static BitmapSource LoadFromStream(Stream source, Rotation rotation, int maxWidth, CancellationToken ct)
         {
             var bitmap = new BitmapImage();
             bitmap.BeginInit();
