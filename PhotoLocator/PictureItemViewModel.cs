@@ -162,10 +162,10 @@ namespace PhotoLocator
                 return;
             ThumbnailImage = await Task.Run(() =>
             {
-                var thumbnail = LoadShellThumbnail(large: false, thumbnailOnly: IsFile, ct);
+                var thumbnail = LoadShellThumbnail(large: false, IsFile ? ShellThumbnailFormatOption.ThumbnailOnly : ShellThumbnailFormatOption.Default, ct);
                 _updateThumbnail = thumbnail is null;
                 if (_updateThumbnail)
-                    return LoadShellThumbnail(large: false, thumbnailOnly: false, ct);
+                    return LoadShellThumbnail(large: false, ShellThumbnailFormatOption.IconOnly, ct);
                 return thumbnail;
             }, ct);
         }
@@ -224,7 +224,7 @@ namespace PhotoLocator
             {
                 if (ex is OperationCanceledException)
                     throw;
-                return LoadShellThumbnail(large: true, thumbnailOnly: false, ct);
+                return LoadShellThumbnail(large: true, ShellThumbnailFormatOption.Default, ct);
             }
         }
 
@@ -248,13 +248,12 @@ namespace PhotoLocator
             return GeneralFileFormatHandler.TryLoadFromStream(fileStream, Rotation, maxWidth, ct);
         }
 
-        private BitmapSource? LoadShellThumbnail(bool large, bool thumbnailOnly, CancellationToken ct)
+        private BitmapSource? LoadShellThumbnail(bool large, ShellThumbnailFormatOption formatOption, CancellationToken ct)
         {
             try
             {
                 using var shellFile = IsDirectory ? ShellFolder.FromParsingName(FullPath) : ShellFile.FromFilePath(FullPath);
-                if (thumbnailOnly)
-                    shellFile.Thumbnail.FormatOption = ShellThumbnailFormatOption.ThumbnailOnly;
+                shellFile.Thumbnail.FormatOption = formatOption;
                 var thumbnail = large ? shellFile.Thumbnail.ExtraLargeBitmapSource : shellFile.Thumbnail.BitmapSource;
                 ct.ThrowIfCancellationRequested();
                 thumbnail.Freeze();
@@ -265,7 +264,7 @@ namespace PhotoLocator
             {
                 if (ex is OperationCanceledException)
                     throw;
-                if (!thumbnailOnly)
+                if (formatOption != ShellThumbnailFormatOption.ThumbnailOnly)
                     ErrorMessage = ex.ToString();
                 return null;
             }
