@@ -570,12 +570,13 @@ namespace PhotoLocator
                 WinAPI.ShowFileProperties(SelectedPicture.FullPath);
         });
 
-        public ICommand ParentFolderCommand => new RelayCommand(o =>
+        public ICommand ParentFolderCommand => new RelayCommand(async o =>
         {
             var currentPath = PhotoFolderPath?.TrimEnd('\\');
             var parent = Path.GetDirectoryName(currentPath);
             if (parent != null)
             {
+                await CancelPictureLoading();
                 PhotoFolderPath = parent;
                 var select = Pictures.FirstOrDefault(item => item.FullPath.Equals(currentPath, StringComparison.CurrentCultureIgnoreCase));
                 if (select != null)
@@ -625,8 +626,7 @@ namespace PhotoLocator
             _fileSystemWatcher?.Dispose();
             _fileSystemWatcher = null;
             var selectedName = SelectedPicture?.Name;
-            _loadCancellation?.Cancel();
-            await WaitForPicturesLoadedAsync();
+            await CancelPictureLoading();
             if (string.IsNullOrEmpty(PhotoFolderPath))
                 return;
             Pictures.Clear();
@@ -648,7 +648,7 @@ namespace PhotoLocator
                 SelectItem(Pictures.FirstOrDefault(item => item.IsFile) ?? Pictures[0]);
             await LoadPicturesAsync();
         }
-
+     
         private void SetupFileSystemWatcher()
         {
             _fileSystemWatcher = new FileSystemWatcher(PhotoFolderPath!);
@@ -758,6 +758,7 @@ namespace PhotoLocator
             _loadCancellation = new CancellationTokenSource();
             
             var candidates = Pictures.Where(item => item.ThumbnailImage is null).ToArray();
+            // Reorder so that we take alternately one from the top and one from the bottom
             var reordered = new PictureItemViewModel[candidates.Length];
             int iStart = 0;
             int iEnd = candidates.Length;
@@ -776,8 +777,16 @@ namespace PhotoLocator
                 await RunProcessWithProgressBarAsync(async progressUpdate =>
                 {
                     progressUpdate(-1);
-                    await _loadPicturesTask;
+                    if (_loadPicturesTask != null)
+                        await _loadPicturesTask;
+                    _loadPicturesTask = null;
                 }, "Loading");
+        }
+
+        private async Task CancelPictureLoading()
+        {
+            _loadCancellation?.Cancel();
+            await WaitForPicturesLoadedAsync();
         }
 
         public void Dispose()
