@@ -2,6 +2,7 @@
 using PhotoLocator.MapDisplay;
 using System;
 using System.ComponentModel;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
@@ -18,8 +19,9 @@ namespace PhotoLocator
     public partial class MainWindow : Window
     {
         readonly MainViewModel _viewModel;
-        private Point _previousMousePosition;
-        private int _selectStartIndex;
+        Point _previousMousePosition;
+        bool _isDraggingPreview, _isStartingFileItemDrag;
+        int _selectStartIndex;
 
         public MainWindow()
         {
@@ -203,22 +205,31 @@ namespace PhotoLocator
                     _viewModel.ExecuteSelectedCommand.Execute(null);
                     e.Handled = true;
                 }
+                else
+                    _isStartingFileItemDrag = true;
             }
+            else
+                _isStartingFileItemDrag = true;
             _previousMousePosition = e.GetPosition(this);
         }
 
         private void HandleFileItemMouseMove(object sender, MouseEventArgs e)
         {
             if (PictureListBox.SelectedItem != null &&
-                (e.LeftButton == MouseButtonState.Pressed || e.RightButton == MouseButtonState.Pressed) &&
-                (e.GetPosition(this) - _previousMousePosition).Length > 10)
+                (e.LeftButton == MouseButtonState.Pressed || e.RightButton == MouseButtonState.Pressed))
             {
-                var files = _viewModel.GetSelectedItems().Select(i => i.FullPath).ToArray();
-                var data = new DataObject(DataFormats.FileDrop, files);
-                data.SetData(DataFormats.Text, files[0]);
-                DragDrop.DoDragDrop(this, data, DragDropEffects.All);
-                e.Handled = true;
+                if (_isStartingFileItemDrag && (e.GetPosition(this) - _previousMousePosition).Length > 10)
+                {
+                    var files = _viewModel.GetSelectedItems().Select(i => i.FullPath).ToArray();
+                    var data = new DataObject(DataFormats.FileDrop, files);
+                    data.SetData(DataFormats.Text, files[0]);
+                    DragDrop.DoDragDrop(this, data, DragDropEffects.All);
+                    e.Handled = true;
+                    _isStartingFileItemDrag = false;
+                }
             }
+            else
+                _isStartingFileItemDrag = false;
         }
 
         private void HandlePathEditPreviewKeyUp(object sender, KeyEventArgs e)
@@ -273,16 +284,20 @@ namespace PhotoLocator
             if (e.ChangedButton == MouseButton.Left || e.ChangedButton == MouseButton.Middle)
             {
                 _previousMousePosition = e.GetPosition(this);
+                _isDraggingPreview = _viewModel.PreviewZoom != 0;
                 e.Handled = true;
             }
         }
 
         private void HandlePreviewImageMouseMove(object sender, MouseEventArgs e)
         {
-            if ((e.LeftButton != MouseButtonState.Released || e.MiddleButton != MouseButtonState.Released) && _viewModel.PreviewZoom != 0 &&
-                ZoomedPreviewImage.RenderTransform is MatrixTransform transform)
+            if ((e.LeftButton == MouseButtonState.Pressed || e.MiddleButton == MouseButtonState.Pressed) &&
+                _isDraggingPreview && ZoomedPreviewImage.RenderTransform is MatrixTransform transform)
             {
+                e.Handled = true;
                 var pt = e.GetPosition(this);
+                if (pt.Equals(_previousMousePosition))
+                    return;
                 var tx = transform.Matrix.OffsetX + pt.X - _previousMousePosition.X;
                 var ty = transform.Matrix.OffsetY + pt.Y - _previousMousePosition.Y;
                 if (tx > 0)
@@ -294,8 +309,9 @@ namespace PhotoLocator
                     transform.Matrix.M21, transform.Matrix.M22,
                     tx, ty);
                 _previousMousePosition = pt;
-                e.Handled = true;
             }
+            else
+                _isDraggingPreview = false;
         }
 
         private void UpdatePreviewZoom()
