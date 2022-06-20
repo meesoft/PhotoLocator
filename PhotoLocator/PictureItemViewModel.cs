@@ -204,8 +204,7 @@ namespace PhotoLocator
                         8 => Rotation.Rotate270,
                         _ => Rotation.Rotate0
                     };
-                    if (DateTime.TryParse(metadata.DateTaken, out var dateTaken))
-                        _timeStamp = DateTime.SpecifyKind(dateTaken, DateTimeKind.Local);
+                    _timeStamp = ExifHandler.GetTimeStamp(metadata);
                     return ExifHandler.GetGeotag(metadata);
                 }, ct);
                 GeoTagSaved = GeoTag != null;

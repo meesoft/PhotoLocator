@@ -3,9 +3,9 @@
 using MapControl;
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Linq;
-using System.Windows.Media;
 using System.Windows.Media.Imaging;
 
 namespace PhotoLocator.Metadata
@@ -13,6 +13,10 @@ namespace PhotoLocator.Metadata
     class ExifHandler
     {
         // See https://exiv2.org/tags.html
+
+        public const string FileTimeStampQuery1 = "/app1/{ushort=0}/{ushort=306}"; // String in "yyyy:MM:dd HH:mm:ss" format
+        public const string FileTimeStampQuery2 = "/ifd/{ushort=306}";
+
         public const string ExposureTimeQuery1 = "/app1/ifd/exif/subifd:{uint=33434}"; // RATIONAL 1
         public const string ExposureTimeQuery2 = "/ifd/{ushort=34665}/{ushort=33434}"; // RATIONAL 1
         //private const string ExposureTimeQuery3 = "/app1/{ushort=0}/{ushort=34665}/{ushort=33434}"; // RATIONAL 1
@@ -147,6 +151,21 @@ namespace PhotoLocator.Metadata
             return new Location(latitude: latitude.AngleInDegrees, longitude: longitude.AngleInDegrees);
         }
 
+        public static DateTime? GetTimeStamp(BitmapMetadata metadata)
+        {
+            if (metadata.CameraManufacturer == "DJI") // Fix for DNG and JPG version of the same picture having different metadata.DateTaken
+            {
+                var timestampStr = (metadata.GetQuery(FileTimeStampQuery1) ?? metadata.GetQuery(FileTimeStampQuery2)) as string;
+                if (DateTime.TryParseExact(timestampStr, "yyyy:MM:dd HH:mm:ss", CultureInfo.InvariantCulture, DateTimeStyles.AssumeLocal, out var timestamp))
+                    return timestamp;
+            }
+
+            if (DateTime.TryParse(metadata.DateTaken, out var dateTaken))
+                return DateTime.SpecifyKind(dateTaken, DateTimeKind.Local);
+
+            return null;
+        }
+
         public static IEnumerable<string> EnumerateMetadata(string fileName)
         {
             using var file = File.OpenRead(fileName);
@@ -161,7 +180,15 @@ namespace PhotoLocator.Metadata
             foreach (string relativeQuery in metadata)
             {
                 string fullQuery = query + relativeQuery;
-                var metadataValue = metadata.GetQuery(relativeQuery);
+                object? metadataValue;
+                try
+                {
+                    metadataValue = metadata.GetQuery(relativeQuery);
+                }
+                catch (NotSupportedException)
+                {
+                    continue;
+                }
                 if (metadataValue is BitmapMetadata innerBitmapMetadata)
                     foreach (var inner in EnumerateMetadata(innerBitmapMetadata, fullQuery))
                         yield return inner;
@@ -201,8 +228,9 @@ namespace PhotoLocator.Metadata
             if (iso != null)
                 metadataStrings.Add("ISO" + iso.ToString());
 
-            if (!string.IsNullOrEmpty(metadata.DateTaken))
-                metadataStrings.Add(metadata.DateTaken);
+            var timestamp = GetTimeStamp(metadata);
+            if (timestamp.HasValue)
+                metadataStrings.Add(timestamp.Value.ToString("G"));
 
             return string.Join(", ", metadataStrings);
         }

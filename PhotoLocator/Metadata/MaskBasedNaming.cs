@@ -133,15 +133,30 @@ namespace PhotoLocator.Metadata
                         throw new ArgumentException($"Tag at {i} not closed");
                     var tag = mask[(i + 1)..iEnd];
                     if (tag == "ext")
+                    {
                         result.Append(Path.GetExtension(OriginalFileName));
+                    }
                     else if (tag == "*")
+                    {
                         result.Append(Path.GetFileNameWithoutExtension(OriginalFileName));
+                    }
+                    else if (TagIs(tag, "*", out iColon))
+                    {
+                        var startIndex = int.Parse(tag[(iColon + 1)..]);
+                        result.Append(Path.GetFileNameWithoutExtension(OriginalFileName[startIndex..]));
+                    }
                     else if (TagWithOffsetIs(tag, "DT", out offset))
+                    {
                         result.Append(GetTimestamp().AddHours(offset).ToString("yyyy-MM-dd HH.mm.ss"));
+                    }
                     else if (TagWithOffsetIs(tag, "D", out offset))
+                    {
                         result.Append(GetTimestamp().AddHours(offset).ToString("yyyy-MM-dd"));
+                    }
                     else if (TagWithOffsetIs(tag, "T", out offset))
+                    {
                         result.Append(GetTimestamp().AddHours(offset).ToString("HH.mm.ss"));
+                    }
                     else if (tag.EndsWith('?'))
                     {
                         var iFirstWildcard = tag.IndexOf('?');
