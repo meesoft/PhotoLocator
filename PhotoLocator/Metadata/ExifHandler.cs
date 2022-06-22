@@ -156,7 +156,8 @@ namespace PhotoLocator.Metadata
             if (metadata.CameraManufacturer == "DJI") // Fix for DNG and JPG version of the same picture having different metadata.DateTaken
             {
                 var timestampStr = (metadata.GetQuery(FileTimeStampQuery1) ?? metadata.GetQuery(FileTimeStampQuery2)) as string;
-                if (DateTime.TryParseExact(timestampStr, "yyyy:MM:dd HH:mm:ss", CultureInfo.InvariantCulture, DateTimeStyles.AssumeLocal, out var timestamp))
+                if (timestampStr is not null && !timestampStr.EndsWith("00:00:00") && // Fix for but in CaptureOne that resets the time part in HDR merge
+                    DateTime.TryParseExact(timestampStr, "yyyy:MM:dd HH:mm:ss", CultureInfo.InvariantCulture, DateTimeStyles.AssumeLocal, out var timestamp))
                     return timestamp;
             }
 
