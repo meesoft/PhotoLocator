@@ -10,7 +10,8 @@ KML files can be obtained directly from the Google maps location history. GPX fi
 ![Screenshot](./Screenshot.jpg)
 
 ## JPEG and raw file preview
-PhotoLocator can also preview JPEG, raw and video files (first frame only) and you can delete unwanted files.
+PhotoLocator can also preview JPEG, raw and video files (first frame only) and you can delete unwanted files. Note that to be able to preview 
+some raw image formats you need to install the Raw Image Extension from the Microsoft Store.
 
 ![Screenshot](./SplitViewScreenshot.jpg)
 
