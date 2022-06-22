@@ -46,7 +46,8 @@
 
         <StackPanel Grid.Row="5" Orientation="Horizontal" >
             <TextBlock Text="|ext| File extension including dot." MouseUp="HandleEscapeCodeTextBlockMouseUp" Foreground="#FFEEEEEE" Margin="0,0,5,0" Cursor="Hand"/>
-            <TextBlock Text="|*| Source file name without extension." MouseUp="HandleEscapeCodeTextBlockMouseUp" Foreground="#FFEEEEEE" Margin="0,0,5,0" Cursor="Hand"/>
+            <TextBlock Text="|*| Source name without extension." MouseUp="HandleEscapeCodeTextBlockMouseUp" Foreground="#FFEEEEEE" Margin="0,0,5,0" Cursor="Hand"/>
+            <TextBlock Text="|*:3| Skip first 3." MouseUp="HandleEscapeCodeTextBlockMouseUp" Foreground="#FFEEEEEE" Margin="0,0,5,0" Cursor="Hand"/>
         </StackPanel>
         <StackPanel Grid.Row="6" Orientation="Horizontal" >
             <TextBlock Text="|_????| 4 characters following a _ in the source file name." MouseUp="HandleEscapeCodeTextBlockMouseUp" Foreground="#FFEEEEEE" Margin="0,0,5,0" Cursor="Hand"/>
