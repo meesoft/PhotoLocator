@@ -8,6 +8,7 @@
         d:DataContext="{d:DesignInstance Type=local:RenameWindow, IsDesignTimeCreatable=True}"
         Background="Black"
         Title="Rename" Width="500" SizeToContent="Height" ResizeMode="NoResize"
+        Loaded="HandleWindowLoaded"
         WindowStartupLocation="CenterOwner" ShowInTaskbar="False">
 
     <Window.Resources>

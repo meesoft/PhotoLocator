@@ -1,7 +1,9 @@
-﻿using PhotoLocator.Helpers;
+﻿using Microsoft.VisualBasic.FileIO;
+using PhotoLocator.Helpers;
 using PhotoLocator.Metadata;
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.IO;
 using System.Linq;
@@ -18,11 +20,12 @@ namespace PhotoLocator
     public sealed partial class RenameWindow : Window, INotifyPropertyChanged
     {
         readonly IList<PictureItemViewModel> _selectedPictures;
+        readonly ObservableCollection<PictureItemViewModel> _allPictures;
         readonly string[] _previousMasks;
         MaskBasedNaming? _exampleNamer;
 
 #if DEBUG
-        public RenameWindow() : this(new List<PictureItemViewModel>())
+        public RenameWindow() : this(new List<PictureItemViewModel>(), new ObservableCollection<PictureItemViewModel>())
         {
             RenameMask = nameof(RenameMask);
             ExampleName = nameof(ExampleName);
@@ -30,11 +33,12 @@ namespace PhotoLocator
         }
 #endif
 
-        public RenameWindow(IList<PictureItemViewModel> selectedPictures)
+        public RenameWindow(IList<PictureItemViewModel> selectedPictures, ObservableCollection<PictureItemViewModel> allPictures)
         {
             InitializeComponent();
             Title = $"Rename {selectedPictures.Count} file(s)";
             _selectedPictures = selectedPictures;
+            _allPictures = allPictures;
             _renameMask = string.Empty;
 
             using var settings = new RegistrySettings();
@@ -50,6 +54,11 @@ namespace PhotoLocator
                 RenameMask = selectedPictures[0].Name;
             else
                 RenameMask = _previousMasks[0];
+        }
+
+        private void HandleWindowLoaded(object sender, RoutedEventArgs e)
+        {
+            MaskTextBox.CaretIndex = RenameMask.Length;
             MaskTextBox.Focus();
         }
 
@@ -162,8 +171,20 @@ namespace PhotoLocator
                     string newName;
                     using (var namer = new MaskBasedNaming(item, counter++))
                         newName = namer.GetFileName(RenameMask);
-                    var newFullPath = Path.Combine(Path.GetDirectoryName(item.FullPath)!, newName);
-                    item.Rename(newName, newFullPath);
+
+                    // Allow overwriting when renaming single picture
+                    if (_selectedPictures.Count == 1 && item.IsFile)
+                    {
+                        var overwritingFile = _allPictures.FirstOrDefault(f => f != item && f.IsFile && f.Name.Equals(newName, StringComparison.CurrentCultureIgnoreCase));
+                        if (overwritingFile != null &&
+                            MessageBox.Show($"The file {newName} already exists, do you want to overwrite it?", "Rename", MessageBoxButton.OKCancel, MessageBoxImage.Question) == MessageBoxResult.OK)
+                            {
+                                overwritingFile.Recycle();
+                                _allPictures.Remove(overwritingFile);
+                            }
+                    }
+
+                    item.Rename(newName, Path.Combine(Path.GetDirectoryName(item.FullPath)!, newName));
                 }
             }
             catch (IOException ex)

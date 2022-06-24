@@ -365,7 +365,7 @@ namespace PhotoLocator
                 return;
             if (selectedItems.Any(i => i.ThumbnailImage is null))
                 await WaitForPicturesLoadedAsync();
-            var renameWin = new RenameWindow(selectedItems);
+            var renameWin = new RenameWindow(selectedItems, Pictures);
             renameWin.Owner = App.Current.MainWindow;
             renameWin.DataContext = renameWin;
             PreviewPictureSource = null;
@@ -662,14 +662,11 @@ namespace PhotoLocator
 
         private void HandleFileSystemWatcherRename(object sender, RenamedEventArgs e)
         {
-            Application.Current.Dispatcher.BeginInvoke(() =>
-            {
-                var renamed = Pictures.FirstOrDefault(item => item.FullPath == e.OldFullPath);
-                if (renamed != null)
-                    renamed.Renamed(e.FullPath);
-                else
-                    HandleFileSystemWatcherChange(this, e);
-            });
+            var renamed = Pictures.FirstOrDefault(item => item.FullPath == e.OldFullPath);
+            if (renamed != null)
+                Application.Current.Dispatcher.BeginInvoke(() => renamed.Renamed(e.FullPath));
+            else
+                HandleFileSystemWatcherChange(this, e);
         }
 
         private void HandleFileSystemWatcherChange(object sender, FileSystemEventArgs e)
