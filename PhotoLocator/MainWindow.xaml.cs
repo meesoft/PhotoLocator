@@ -10,6 +10,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
+using System.Windows.Threading;
 
 namespace PhotoLocator
 {
@@ -166,6 +167,12 @@ namespace PhotoLocator
                 }
                 e.Handled = true;
             }
+            else if (e.Key == Key.End) // Compensate for strange bug in WPF that End sometimes doesn't go to the last item
+            {
+                PictureListBox.SelectedItem = PictureListBox.Items[^1];
+                FocusListBoxItem(PictureListBox.SelectedItem);
+                e.Handled = true;
+            }
             else if (e.Key == Key.LeftShift || e.Key == Key.RightShift)
             {
                 _selectStartIndex = Math.Max(0, PictureListBox.SelectedIndex);
@@ -180,7 +187,7 @@ namespace PhotoLocator
                 var last = Math.Max(_selectStartIndex, PictureListBox.SelectedIndex);
                 for (int i = Math.Min(_selectStartIndex, PictureListBox.SelectedIndex); i <= last; i++)
                     ((PictureItemViewModel)PictureListBox.Items[i]).IsChecked = true;
-                _viewModel.UpdatePoints();
+                Dispatcher.BeginInvoke(() => _viewModel.UpdatePoints(), DispatcherPriority.ApplicationIdle); // This can take some time
             }
         }
 
