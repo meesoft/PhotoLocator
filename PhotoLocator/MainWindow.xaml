@@ -129,7 +129,7 @@
                     <MenuItem Header="Open file (Enter)" Command="{Binding ExecuteSelectedCommand}" />
                     <MenuItem Header="Open in Google maps" Command="{Binding OpenInMapsCommand}" />
                     <MenuItem Header="Open Explorer (Ctrl+E)" Command="{Binding ExploreCommand}" />
-                    <MenuItem Header="Copy metadata to clipboard" Command="{Binding CopyMetadataCommand}" />
+                    <MenuItem Header="Show metadata" Command="{Binding ShowMetadataCommand}" />
                     <MenuItem Header="Rename (F2)" Command="{Binding RenameCommand}" />
                     <MenuItem Header="Move selected (F6)" Command="{Binding MoveSelectedCommand}" />
                     <MenuItem Header="Delete selected (Del)" Command="{Binding DeleteSelectedCommand}" />

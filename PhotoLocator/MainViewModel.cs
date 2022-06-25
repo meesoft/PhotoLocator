@@ -590,12 +590,21 @@ namespace PhotoLocator
             FocusListBoxItem?.Invoke(select);
         }
 
-        public ICommand CopyMetadataCommand => new RelayCommand(o =>
+        public ICommand ShowMetadataCommand => new RelayCommand(o =>
         {
-            if (SelectedPicture is null)
+            if (SelectedPicture is null || SelectedPicture.IsDirectory)
                 return;
-            using var cursor = new CursorOverride();
-            Clipboard.SetText(String.Join("\n", ExifHandler.EnumerateMetadata(SelectedPicture.FullPath)));
+            var settingsWin = new MetadataWindow();
+            using (new CursorOverride())
+            {
+                settingsWin.Owner = App.Current.MainWindow;
+                settingsWin.Title = SelectedPicture.Name;
+                settingsWin.Metadata = String.Join("\n", ExifHandler.EnumerateMetadata(SelectedPicture.FullPath));
+            }
+            if (string.IsNullOrEmpty(settingsWin.Metadata))
+                throw new UserMessageException("Unable to list metadata for file");
+            settingsWin.DataContext = settingsWin;
+            settingsWin.ShowDialog();
         });
 
         public ICommand OpenInMapsCommand => new RelayCommand(o =>
