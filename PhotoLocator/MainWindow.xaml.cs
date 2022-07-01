@@ -177,6 +177,8 @@ namespace PhotoLocator
             {
                 _selectStartIndex = Math.Max(0, PictureListBox.SelectedIndex);
             }
+            if (e.Key == Key.Escape) // Prevent Escape from navigating to the first item
+                e.Handled = true;
         }
 
         private void HandlePictureListBoxPreviewKeyUp(object sender, KeyEventArgs e)
