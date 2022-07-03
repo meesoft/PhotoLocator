@@ -117,7 +117,7 @@ namespace PhotoLocator
         {
             PictureListBox.ScrollIntoView(item);
             var listBoxItem = (ListBoxItem)PictureListBox.ItemContainerGenerator.ContainerFromItem(item);
-            listBoxItem.Focus();
+            listBoxItem?.Focus();
         }
 
         private void HandlePictureListBoxPreviewMouseButtonDown(object sender, MouseButtonEventArgs e)

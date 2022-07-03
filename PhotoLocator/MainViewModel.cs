@@ -502,48 +502,67 @@ namespace PhotoLocator
             UpdatePoints();
         });
 
+        private PictureItemViewModel? GetNearestUnchecked(PictureItemViewModel? focusedItem, PictureItemViewModel[] allSelected)
+        {
+            if (allSelected.Contains(focusedItem))
+            {
+                var focusedIndex = Pictures.IndexOf(focusedItem!);
+                focusedItem = null;
+                for (int i = focusedIndex + 1; i < Pictures.Count; i++)
+                    if (!Pictures[i].IsChecked)
+                        return Pictures[i];
+                for (int i = focusedIndex - 1; i >= 0; i--)
+                    if (!Pictures[i].IsChecked)
+                        return Pictures[i];
+            }
+            return focusedItem;
+        }
+
         public ICommand DeleteSelectedCommand => new RelayCommand(o =>
         {
-            var selected = GetSelectedItems().ToArray();
-            if (selected.Length == 0)
+            var focusedItem = SelectedPicture;
+            var allSelected = GetSelectedItems().ToArray();
+            if (allSelected.Length == 0)
                 return;
-            if (MessageBox.Show($"Delete {selected.Length} selected item(s)?", "Confirm", MessageBoxButton.OKCancel, MessageBoxImage.Question) != MessageBoxResult.OK)
+            focusedItem = GetNearestUnchecked(focusedItem, allSelected);
+            if (MessageBox.Show($"Delete {allSelected.Length} selected item(s)?", "Confirm", MessageBoxButton.OKCancel, MessageBoxImage.Question) != MessageBoxResult.OK)
                 return;
             using var cursor = new CursorOverride();
             var selectedIndex = Pictures.IndexOf(SelectedPicture!);
             SelectedPicture = null;
             PreviewPictureSource = null;
             PreviewPictureTitle = null;
-            foreach (var item in selected)
+            foreach (var item in allSelected)
             {
                 item.Recycle();
                 Pictures.Remove(item);
             }
-            if (Pictures.Count > 0)
-                SelectItem(Pictures[Math.Min(selectedIndex, Pictures.Count - 1)]);
+            if (focusedItem != null)
+                SelectItem(focusedItem);
         });
 
         public ICommand MoveSelectedCommand => new RelayCommand(o =>
         {
-            var selected = GetSelectedItems().ToArray();
-            if (selected.Length == 0)
+            var focusedItem = SelectedPicture;
+            var allSelected = GetSelectedItems().ToArray();
+            if (allSelected.Length == 0)
                 return;
-            var destination = Interaction.InputBox("Destination:", $"Move {selected.Length} items(s)", (PhotoFolderPath ?? string.Empty).Trim('\\'));
+            focusedItem = GetNearestUnchecked(focusedItem, allSelected);
+            var destination = Interaction.InputBox("Destination:", $"Move {allSelected.Length} items(s)", (PhotoFolderPath ?? string.Empty).Trim('\\'));
             if (string.IsNullOrEmpty(destination) || destination == PhotoFolderPath || destination == ".")
                 return;
             using var cursor = new CursorOverride();
-            var selectedIndex = Pictures.IndexOf(SelectedPicture!);
             SelectedPicture = null;
             PreviewPictureSource = null;
             PreviewPictureTitle = null;
-            Directory.SetCurrentDirectory(Path.GetDirectoryName(selected[0].FullPath)!);
-            foreach (var item in selected)
+            Directory.SetCurrentDirectory(Path.GetDirectoryName(allSelected[0].FullPath)!);
+            foreach (var item in allSelected)
             {
                 item.MoveTo(Path.Combine(destination, item.Name));
                 Pictures.Remove(item);
             }
-            if (Pictures.Count > 0)
-                SelectItem(Pictures[Math.Min(selectedIndex, Pictures.Count - 1)]);
+            if (focusedItem != null)
+                SelectItem(focusedItem);
         });
 
         public ICommand ExecuteSelectedCommand => new RelayCommand(o =>
