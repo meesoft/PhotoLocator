@@ -3,6 +3,7 @@ using System.Linq;
 using System.IO;
 using System.Text;
 using System.Windows.Media.Imaging;
+using System.Globalization;
 
 namespace PhotoLocator.Metadata
 {
@@ -184,6 +185,13 @@ namespace PhotoLocator.Metadata
                         var frame = GetFrame();
                         var whr = (double)frame.PixelWidth / frame.PixelHeight;
                         result.Append(whr.ToString(iColon < 0 ? "F2" : "F" + tag[(iColon + 1)..]));
+                    }
+                    else if (TagIs(tag, "alt", out iColon))
+                    {
+                        var metadata = GetMetadata() ?? throw new ArgumentException("Metadata not available");
+                        var altitudeString = (metadata.GetQuery(ExifHandler.DjiRelativeAltitude1) ?? metadata.GetQuery(ExifHandler.DjiRelativeAltitude2)) as string;
+                        if (double.TryParse(altitudeString, NumberStyles.Number, CultureInfo.InvariantCulture, out var altitude))
+                            result.Append(altitude.ToString(iColon < 0 ? "F1" : "F" + tag[(iColon + 1)..]));
                     }
                     else if (TagIs(tag, "a", out iColon))
                     {

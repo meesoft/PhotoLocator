@@ -49,6 +49,10 @@ namespace PhotoLocator.Metadata
         // Altitude 
         private const string GpsAltitudeQuery = "/app1/ifd/gps/subifd:{ulong=6}"; // RATIONAL 1
 
+        // Relative altitude
+        public const string DjiRelativeAltitude1 = @"/xmp/http\:\/\/www.dji.com\/drone-dji\/1.0\/:RelativeAltitude"; // Decimal string
+        public const string DjiRelativeAltitude2 = @"/ifd/{ushort=700}/http\:\/\/www.dji.com\/drone-dji\/1.0\/:RelativeAltitude";
+
         const BitmapCreateOptions CreateOptions = BitmapCreateOptions.PreservePixelFormat | BitmapCreateOptions.IgnoreColorProfile;
 
         public static void SetGeotag(string sourceFileName, string targetFileName, Location location)
@@ -212,6 +216,10 @@ namespace PhotoLocator.Metadata
 
             if (!string.IsNullOrEmpty(metadata.CameraModel))
                 metadataStrings.Add(metadata.CameraModel.Trim());
+
+            var altitudeString = (metadata.GetQuery(DjiRelativeAltitude1) ?? metadata.GetQuery(DjiRelativeAltitude2)) as string;
+            if (double.TryParse(altitudeString, NumberStyles.Number, CultureInfo.InvariantCulture, out var altitude))
+                metadataStrings.Add(altitude.ToString("0.0") + 'm');
 
             var exposureTime = Rational.Decode(metadata.GetQuery(ExposureTimeQuery1) ?? metadata.GetQuery(ExposureTimeQuery2));
             if (exposureTime != null)
