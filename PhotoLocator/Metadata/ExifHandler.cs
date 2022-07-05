@@ -2,10 +2,12 @@
 
 using MapControl;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Linq;
+using System.Text;
 using System.Windows.Media.Imaging;
 
 namespace PhotoLocator.Metadata
@@ -37,13 +39,17 @@ namespace PhotoLocator.Metadata
         public const string OrientationQuery2 = "/ifd/{ushort=274}"; // Short
 
         // North or South Latitude 
-        private const string GpsLatitudeRefQuery = "/app1/ifd/gps/subifd:{ulong=1}"; // ASCII 2
+        private const string GpsLatitudeRefQuery1 = "/app1/ifd/gps/subifd:{ulong=1}"; // ASCII 2
+        private const string GpsLatitudeRefQuery2 = "/ifd/{ushort=34853}/{ushort=1}"; // ASCII 2
         // Latitude        
-        private const string GpsLatitudeQuery = "/app1/ifd/gps/subifd:{ulong=2}"; // RATIONAL 3
+        private const string GpsLatitudeQuery1 = "/app1/ifd/gps/subifd:{ulong=2}"; // RATIONAL 3
+        private const string GpsLatitudeQuery2 = "/ifd/{ushort=34853}/{ushort=2}"; // RATIONAL 3
         // East or West Longitude 
-        private const string GpsLongitudeRefQuery = "/app1/ifd/gps/subifd:{ulong=3}"; // ASCII 2
+        private const string GpsLongitudeRefQuery1 = "/app1/ifd/gps/subifd:{ulong=3}"; // ASCII 2
+        private const string GpsLongitudeRefQuery2 = "/ifd/{ushort=34853}/{ushort=3}"; // ASCII 2
         // Longitude 
-        private const string GpsLongitudeQuery = "/app1/ifd/gps/subifd:{ulong=4}"; // RATIONAL 3
+        private const string GpsLongitudeQuery1 = "/app1/ifd/gps/subifd:{ulong=4}"; // RATIONAL 3
+        private const string GpsLongitudeQuery2 = "/ifd/{ushort=34853}/{ushort=4}"; // RATIONAL 3
         // Altitude reference 
         private const string GpsAltitudeRefQuery = "/app1/ifd/gps/subifd:{ulong=5}"; // BYTE 1
         // Altitude 
@@ -112,10 +118,10 @@ namespace PhotoLocator.Metadata
 
             var latitudeRational = new GPSRational(location.Latitude);
             var longitudeRational = new GPSRational(location.Longitude);
-            metadata.SetQuery(GpsLatitudeQuery, latitudeRational.Bytes);
-            metadata.SetQuery(GpsLongitudeQuery, longitudeRational.Bytes);
-            metadata.SetQuery(GpsLatitudeRefQuery, location.Latitude >= 0 ? "N" : "S");
-            metadata.SetQuery(GpsLongitudeRefQuery, location.Longitude >= 0 ? "E" : "W");
+            metadata.SetQuery(GpsLatitudeQuery1, latitudeRational.Bytes);
+            metadata.SetQuery(GpsLongitudeQuery1, longitudeRational.Bytes);
+            metadata.SetQuery(GpsLatitudeRefQuery1, location.Latitude >= 0 ? "N" : "S");
+            metadata.SetQuery(GpsLongitudeRefQuery1, location.Longitude >= 0 ? "E" : "W");
 
             //Rational altitudeRational = new Rational((int)altitude, 1);  //denoninator = 1 for Rational
             //metadata.SetQuery(GpsAltitudeQuery, altitudeRational.bytes);
@@ -134,17 +140,17 @@ namespace PhotoLocator.Metadata
             if (metadata is null)
                 return null;
 
-            if (metadata.GetQuery(GpsLatitudeRefQuery) is not string latitudeRef)
+            if ((metadata.GetQuery(GpsLatitudeRefQuery1) ?? metadata.GetQuery(GpsLatitudeRefQuery2)) is not string latitudeRef)
                 return null;
-            var latitude = GPSRational.Decode(metadata.GetQuery(GpsLatitudeQuery));
+            var latitude = GPSRational.Decode(metadata.GetQuery(GpsLatitudeQuery1) ?? metadata.GetQuery(GpsLatitudeQuery2));
             if (latitude is null)
                 return null;
             if (latitudeRef == "S")
                 latitude.AngleInDegrees = -latitude.AngleInDegrees;
 
-            if (metadata.GetQuery(GpsLongitudeRefQuery) is not string longitudeRef)
+            if ((metadata.GetQuery(GpsLongitudeRefQuery1) ?? metadata.GetQuery(GpsLongitudeRefQuery2)) is not string longitudeRef)
                 return null;
-            var longitude = GPSRational.Decode(metadata.GetQuery(GpsLongitudeQuery));
+            var longitude = GPSRational.Decode(metadata.GetQuery(GpsLongitudeQuery1) ?? metadata.GetQuery(GpsLongitudeQuery2));
             if (longitude is null)
                 return null;
             if (longitudeRef == "W")
@@ -200,7 +206,17 @@ namespace PhotoLocator.Metadata
                 else if (metadataValue is ulong ulongValue)
                     yield return fullQuery + $" = {ulongValue} ({Rational.Decode(metadataValue)?.ToDouble()})";
                 else if (metadataValue is Array arrayValue)
-                    yield return fullQuery + $" = {metadataValue.GetType().Name} with {arrayValue.Length} elements";
+                {
+                    if (arrayValue.Length <= 4)
+                    {
+                        var str = new StringBuilder();
+                        foreach (var element in arrayValue)
+                            str.Append(element.ToString() + ' ');
+                        yield return fullQuery + $" = {str}({metadataValue.GetType().Name})";
+                    }
+                    else
+                        yield return fullQuery + $" = {metadataValue.GetType().Name} with {arrayValue.Length} elements";
+                }
                 else if (metadataValue != null)
                     yield return fullQuery + $" = {metadataValue} ({metadataValue.GetType().Name})";
             }
