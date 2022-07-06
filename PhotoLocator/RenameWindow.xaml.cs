@@ -46,7 +46,7 @@ namespace PhotoLocator
             MaskMenuButton.ContextMenu = new ContextMenu();
             foreach (var mask in _previousMasks)
             {
-                var menuItem = new MenuItem { Header = mask };
+                var menuItem = new MenuItem { Header = mask.Replace("_", "__"), Tag = mask };
                 menuItem.Click += HandleMaskItemClick;
                 MaskMenuButton.ContextMenu.Items.Add(menuItem);
             }
@@ -144,7 +144,7 @@ namespace PhotoLocator
 
         private void HandleMaskItemClick(object sender, RoutedEventArgs e)
         {
-            RenameMask = (string)((MenuItem)sender).Header;
+            RenameMask = (string)((MenuItem)sender).Tag;
         }
 
         private void HandleEscapeCodeTextBlockMouseUp(object sender, MouseButtonEventArgs e)

@@ -548,7 +548,7 @@ namespace PhotoLocator
             if (allSelected.Length == 0)
                 return;
             focusedItem = GetNearestUnchecked(focusedItem, allSelected);
-            var destination = Interaction.InputBox("Destination:", $"Move {allSelected.Length} items(s)", (PhotoFolderPath ?? string.Empty).Trim('\\'));
+            var destination = Interaction.InputBox($"Move {allSelected.Length} selected item(s).\n\nDestination:", "Confirm", (PhotoFolderPath ?? string.Empty).Trim('\\'));
             if (string.IsNullOrEmpty(destination) || destination == PhotoFolderPath || destination == ".")
                 return;
             using var cursor = new CursorOverride();
