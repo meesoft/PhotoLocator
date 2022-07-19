@@ -177,6 +177,25 @@ namespace PhotoLocator.Metadata
             return null;
         }
 
+        public static double? GetRelativeAltitude(BitmapMetadata metadata)
+        {
+            var altitudeString = (metadata.GetQuery(DjiRelativeAltitude1) ?? metadata.GetQuery(DjiRelativeAltitude2)) as string;
+            if (double.TryParse(altitudeString, NumberStyles.Number, CultureInfo.InvariantCulture, out var altitude))
+                return altitude;
+            return null;
+        }
+
+        public static double? GetGpsAltitude(BitmapMetadata metadata)
+        {
+            var altitudeRef = metadata.GetQuery(GpsAltitudeRefQuery) as byte?;
+            if (altitudeRef is null)
+                return null;
+            var altitude = Rational.Decode(metadata.GetQuery(GpsAltitudeQuery));
+            if (altitude is null)
+                return null;
+            return altitudeRef == 1 ? -altitude.ToDouble() : altitude.ToDouble();
+        }
+
         public static IEnumerable<string> EnumerateMetadata(string fileName)
         {
             using var file = File.OpenRead(fileName);
@@ -233,9 +252,9 @@ namespace PhotoLocator.Metadata
             if (!string.IsNullOrEmpty(metadata.CameraModel))
                 metadataStrings.Add(metadata.CameraModel.Trim());
 
-            var altitudeString = (metadata.GetQuery(DjiRelativeAltitude1) ?? metadata.GetQuery(DjiRelativeAltitude2)) as string;
-            if (double.TryParse(altitudeString, NumberStyles.Number, CultureInfo.InvariantCulture, out var altitude))
-                metadataStrings.Add(altitude.ToString("0.0") + 'm');
+            var altitude = GetRelativeAltitude(metadata);
+            if (altitude.HasValue)
+                metadataStrings.Add(altitude.Value.ToString("0.0") + 'm');
 
             var exposureTime = Rational.Decode(metadata.GetQuery(ExposureTimeQuery1) ?? metadata.GetQuery(ExposureTimeQuery2));
             if (exposureTime != null)

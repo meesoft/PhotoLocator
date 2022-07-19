@@ -65,11 +65,12 @@
             <TextBlock Text="|t| Exposure time." MouseUp="HandleEscapeCodeTextBlockMouseUp" Foreground="#FFEEEEEE" Margin="0,0,5,0" Cursor="Hand"/>
             <TextBlock Text="|f| Focan length." MouseUp="HandleEscapeCodeTextBlockMouseUp" Foreground="#FFEEEEEE" Margin="0,0,5,0" Cursor="Hand"/>
             <TextBlock Text="|iso| ISO." MouseUp="HandleEscapeCodeTextBlockMouseUp" Foreground="#FFEEEEEE" Margin="0,0,5,0" Cursor="Hand"/>
+            <TextBlock Text="|alt:0| Altitude integer." MouseUp="HandleEscapeCodeTextBlockMouseUp" Foreground="#FFEEEEEE" Margin="0,0,5,0" Cursor="Hand"/>
         </StackPanel>
         <StackPanel Grid.Row="9" Orientation="Horizontal" >
             <TextBlock Text="|width:4|" MouseUp="HandleEscapeCodeTextBlockMouseUp" Foreground="#FFEEEEEE" Margin="0,0,5,0" Cursor="Hand"/>
             <TextBlock Text="|height:4| 4 digit photo dimension." MouseUp="HandleEscapeCodeTextBlockMouseUp" Foreground="#FFEEEEEE" Margin="0,0,5,0" Cursor="Hand"/>
-            <TextBlock Text="|w/h| width/height." MouseUp="HandleEscapeCodeTextBlockMouseUp" Foreground="#FFEEEEEE" Cursor="Hand"/>
+            <TextBlock Text="|w/h:2| width/height with 2 decimals." MouseUp="HandleEscapeCodeTextBlockMouseUp" Foreground="#FFEEEEEE" Cursor="Hand"/>
         </StackPanel>
 
         <StackPanel Grid.Row="11" Orientation="Horizontal" HorizontalAlignment="Right">

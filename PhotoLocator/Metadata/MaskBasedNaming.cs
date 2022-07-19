@@ -189,9 +189,9 @@ namespace PhotoLocator.Metadata
                     else if (TagIs(tag, "alt", out iColon))
                     {
                         var metadata = GetMetadata() ?? throw new ArgumentException("Metadata not available");
-                        var altitudeString = (metadata.GetQuery(ExifHandler.DjiRelativeAltitude1) ?? metadata.GetQuery(ExifHandler.DjiRelativeAltitude2)) as string;
-                        if (double.TryParse(altitudeString, NumberStyles.Number, CultureInfo.InvariantCulture, out var altitude))
-                            result.Append(altitude.ToString(iColon < 0 ? "F1" : "F" + tag[(iColon + 1)..]));
+                        var altitude = ExifHandler.GetRelativeAltitude(metadata) ?? ExifHandler.GetGpsAltitude(metadata);
+                        if (altitude.HasValue)
+                            result.Append(altitude.Value.ToString(iColon < 0 ? "F1" : "F" + tag[(iColon + 1)..]));
                     }
                     else if (TagIs(tag, "a", out iColon))
                     {
