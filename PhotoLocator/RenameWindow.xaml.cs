@@ -185,6 +185,8 @@ namespace PhotoLocator
                     }
 
                     item.Rename(newName, Path.Combine(Path.GetDirectoryName(item.FullPath)!, newName));
+                    _allPictures.Remove(item);
+                    item.InsertOrdered(_allPictures);
                 }
             }
             catch (IOException ex)

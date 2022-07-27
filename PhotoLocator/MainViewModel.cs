@@ -363,6 +363,7 @@ namespace PhotoLocator
             var selectedItems = GetSelectedItems().ToList();
             if (selectedItems.Count == 0)
                 return;
+            var focused = SelectedPicture;
             if (selectedItems.Any(i => i.ThumbnailImage is null))
                 await WaitForPicturesLoadedAsync();
             var renameWin = new RenameWindow(selectedItems, Pictures);
@@ -378,6 +379,8 @@ namespace PhotoLocator
             }
             if (_fileSystemWatcher != null)
                 _fileSystemWatcher.EnableRaisingEvents = true;
+            if (focused != null)
+                FocusListBoxItem?.Invoke(focused);
             UpdatePreviewPictureAsync().WithExceptionLogging();
         });
 
@@ -714,23 +717,15 @@ namespace PhotoLocator
                     var ext = Path.GetExtension(name).ToLowerInvariant();
                     if (File.Exists(e.FullPath) && PhotoFileExtensions.Contains(ext))
                     {
-                        var list = Pictures.ToList();
-                        var firstFileIndex = list.FindIndex(item => item.IsFile);
                         var newItem = new PictureItemViewModel(e.FullPath, false);
-                        var newIndex = ~list.BinarySearch(firstFileIndex, list.Count - firstFileIndex, newItem,
-                            new SelectorComparer<PictureItemViewModel>(item => item.Name));
-                        if (newIndex < 0)
+                        if (!newItem.InsertOrdered(Pictures))
                             return;
-                        Pictures.Insert(newIndex, newItem);
                     }
                     else if (Directory.Exists(e.FullPath))
                     {
-                        var list = Pictures.Where(item => item.IsDirectory).ToList();
                         var newItem = new PictureItemViewModel(e.FullPath, true);
-                        var newIndex = ~list.BinarySearch(newItem, new SelectorComparer<PictureItemViewModel>(item => item.Name));
-                        if (newIndex < 0)
+                        if (!newItem.InsertOrdered(Pictures))
                             return;
-                        Pictures.Insert(newIndex, newItem);
                     }
                     else
                         return;
