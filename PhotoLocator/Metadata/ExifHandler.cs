@@ -163,18 +163,25 @@ namespace PhotoLocator.Metadata
 
         public static DateTime? GetTimeStamp(BitmapMetadata metadata)
         {
+            DateTime? dateTaken = DateTime.TryParse(metadata.DateTaken, out var dateTakenStr) ?
+                DateTime.SpecifyKind(dateTakenStr, DateTimeKind.Local) :
+                null;
+
             if (metadata.CameraManufacturer == "DJI") // Fix for DNG and JPG version of the same picture having different metadata.DateTaken
             {
-                var timestampStr = (metadata.GetQuery(FileTimeStampQuery1) ?? metadata.GetQuery(FileTimeStampQuery2)) as string;
-                if (timestampStr is not null && !timestampStr.EndsWith("00:00:00") && // Fix for but in CaptureOne that resets the time part in HDR merge
-                    DateTime.TryParseExact(timestampStr, "yyyy:MM:dd HH:mm:ss", CultureInfo.InvariantCulture, DateTimeStyles.AssumeLocal, out var timestamp))
-                    return timestamp;
+                var fileTimeStampStr = (metadata.GetQuery(FileTimeStampQuery1) ?? metadata.GetQuery(FileTimeStampQuery2)) as string;
+                if (fileTimeStampStr is not null && !fileTimeStampStr.EndsWith("00:00:00") && // Fix for bug in CaptureOne that resets the time part in HDR merge
+                    DateTime.TryParseExact(fileTimeStampStr, "yyyy:MM:dd HH:mm:ss", CultureInfo.InvariantCulture, DateTimeStyles.AssumeLocal, out var fileTimeStamp))
+                {
+                    if (!dateTaken.HasValue)
+                        return fileTimeStamp;
+                    var diff = dateTaken.Value - fileTimeStamp;
+                    if (diff.Duration() < TimeSpan.FromSeconds(10)) // Only take fileTimeStamp if the file wasn't changed in another program
+                        return fileTimeStamp;
+                }
             }
 
-            if (DateTime.TryParse(metadata.DateTaken, out var dateTaken))
-                return DateTime.SpecifyKind(dateTaken, DateTimeKind.Local);
-
-            return null;
+            return dateTaken;
         }
 
         public static double? GetRelativeAltitude(BitmapMetadata metadata)
