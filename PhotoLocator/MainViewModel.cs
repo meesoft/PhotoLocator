@@ -341,12 +341,12 @@ namespace PhotoLocator
             }
         }
 
-        public ICommand SaveCommand => new RelayCommand(o =>
+        public ICommand SaveCommand => new RelayCommand(async o =>
         {
             var updatedPictures = Pictures.Where(i => i.GeoTagUpdated).ToArray();
             if (updatedPictures.Length == 0)
                 return;
-            RunProcessWithProgressBarAsync(async progressCallback =>
+            await RunProcessWithProgressBarAsync(async progressCallback =>
             {
                 int i = 0;
                 await Parallel.ForEachAsync(updatedPictures, new ParallelOptions { MaxDegreeOfParallelism = 2 }, async (item, ct) =>
@@ -355,7 +355,9 @@ namespace PhotoLocator
                     progressCallback((double)Interlocked.Increment(ref i) / updatedPictures.Length);
                 });
                 await Task.Delay(10);
-            }, "Saving...").WithExceptionLogging();
+            }, "Saving...");
+            if (SelectedPicture != null)
+                SelectItem(SelectedPicture);
         });
 
         public ICommand RenameCommand => new RelayCommand(async o =>
