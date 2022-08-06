@@ -265,7 +265,12 @@ namespace PhotoLocator.Metadata
 
             var exposureTime = Rational.Decode(metadata.GetQuery(ExposureTimeQuery1) ?? metadata.GetQuery(ExposureTimeQuery2));
             if (exposureTime != null)
-                metadataStrings.Add(exposureTime.ToDouble() + "s");
+            {
+                if (exposureTime.Num == 1 && exposureTime.Denom > 1)
+                    metadataStrings.Add($"{exposureTime.Num}/{exposureTime.Denom}s");
+                else
+                    metadataStrings.Add(exposureTime.ToDouble() + "s");
+            }
 
             var lensAperture = Rational.Decode(metadata.GetQuery(LensApertureQuery1) ?? metadata.GetQuery(LensApertureQuery2));
             if (lensAperture != null)
