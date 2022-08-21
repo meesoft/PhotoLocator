@@ -570,6 +570,16 @@ namespace PhotoLocator
                 SelectItem(focusedItem);
         });
 
+        public ICommand CreateFolderCommand => new RelayCommand(o =>
+        {
+            if (string.IsNullOrEmpty(PhotoFolderPath))
+                return;
+            var folderName = Interaction.InputBox("Folder name:", "Create folder");
+            if (string.IsNullOrEmpty(folderName))
+                return;
+            Directory.CreateDirectory(Path.Combine(PhotoFolderPath, folderName));
+        });
+
         public ICommand ExecuteSelectedCommand => new RelayCommand(o =>
         {
             if (SelectedPicture is null)

@@ -38,6 +38,7 @@
         <KeyBinding Key="F3" Command="{Binding SlideShowCommand}" />
         <KeyBinding Key="F5" Command="{Binding RefreshFolderCommand}" />
         <KeyBinding Key="F6" Command="{Binding MoveSelectedCommand}" />
+        <KeyBinding Key="F7" Command="{Binding CreateFolderCommand}" />
         <KeyBinding Key="F11" Command="{Binding SlideShowCommand}" />
     </Window.InputBindings>
 

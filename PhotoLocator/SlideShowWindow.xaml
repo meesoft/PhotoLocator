@@ -19,7 +19,7 @@
     </Window.Resources>
     
     <Grid>
-        <Image Source="{Binding PictureSource}"/>
+        <Image Source="{Binding PictureSource}" RenderOptions.BitmapScalingMode="Unspecified" />
 
         <TextBlock VerticalAlignment="Bottom" HorizontalAlignment="Right" Margin="8" FontSize="20" FontWeight="Bold" Foreground="Black"
                    TextWrapping="Wrap" Text="{Binding PictureTitle}"/>
