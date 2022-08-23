@@ -68,7 +68,11 @@ namespace PhotoLocator
 
         public string[] CleanPhotoFileExtensions()
         {
-            var extensions = PhotoFileExtensions!.Replace("*", "").Replace(" ", ",").Replace(";", ",").ToLowerInvariant().
+            var extensions = PhotoFileExtensions!.
+                Replace("*", "", StringComparison.Ordinal).
+                Replace(" ", ",", StringComparison.Ordinal).
+                Replace(";", ",", StringComparison.Ordinal).
+                ToLowerInvariant().
                 Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
             for (int i = 0; i < extensions.Length; i++)
                 if (!extensions[i].StartsWith('.'))

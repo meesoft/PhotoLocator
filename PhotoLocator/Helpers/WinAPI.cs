@@ -5,10 +5,10 @@ namespace PhotoLocator.Helpers
 {
     static class WinAPI
     {
-        [DllImport("User32.dll")]
+        [DllImport("User32.dll"), DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
         public static extern bool SetCursorPos(int X, int Y);
 
-        [DllImport("kernel32.dll")]
+        [DllImport("kernel32.dll"), DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
         public static extern EXECUTION_STATE SetThreadExecutionState(EXECUTION_STATE esFlags);
 
         [Flags]
@@ -25,7 +25,7 @@ namespace PhotoLocator.Helpers
             SetThreadExecutionState(EXECUTION_STATE.ES_DISPLAY_REQUIRED);
         }
 
-        [DllImport("shell32.dll", CharSet = CharSet.Auto)]
+        [DllImport("shell32.dll", CharSet = CharSet.Auto), DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
         public static extern bool ShellExecuteEx(ref SHELLEXECUTEINFO lpExecInfo);
 
         [StructLayout(LayoutKind.Sequential)]

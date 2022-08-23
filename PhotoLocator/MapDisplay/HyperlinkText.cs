@@ -54,6 +54,7 @@ namespace PhotoLocator.MapDisplay
 
                     link.RequestNavigate += (s, e) =>
                     {
+#pragma warning disable CA1031 // Do not catch general exception types
                         try
                         {
                             Process.Start(new ProcessStartInfo(e.Uri.ToString()) { UseShellExecute = true });
@@ -62,6 +63,7 @@ namespace PhotoLocator.MapDisplay
                         {
                             Debug.WriteLine($"{e.Uri}: {ex}");
                         }
+#pragma warning restore CA1031 // Do not catch general exception types
                     };
 #endif
                     inlines.Add(link);

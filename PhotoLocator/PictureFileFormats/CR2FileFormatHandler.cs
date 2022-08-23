@@ -5,7 +5,7 @@ using System.Windows.Media.Imaging;
 
 namespace PhotoLocator.PictureFileFormats
 {
-    public class CR2FileFormatHandler
+    public static class CR2FileFormatHandler
     {
         /// <summary>
         /// Takes extension in lower case including .

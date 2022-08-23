@@ -3,7 +3,7 @@ using System.Windows.Input;
 
 namespace PhotoLocator.Helpers
 {
-    public class CursorOverride : IDisposable
+    public sealed class CursorOverride : IDisposable
     {
         private Cursor _previousCursor;
 

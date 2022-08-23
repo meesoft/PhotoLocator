@@ -17,7 +17,7 @@ namespace PhotoLocator
     /// <summary>
     /// Interaction logic for MainWindow.xaml
     /// </summary>
-    public partial class MainWindow : Window
+    public sealed partial class MainWindow : Window, IDisposable
     {
         readonly MainViewModel _viewModel;
         Point _previousMousePosition;
@@ -360,6 +360,11 @@ namespace PhotoLocator
                 sx, 0,
                 0, sy,
                 tx, ty);
+        }
+
+        public void Dispose()
+        {
+            _viewModel?.Dispose();
         }
     }
 }

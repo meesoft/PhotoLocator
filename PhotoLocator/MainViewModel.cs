@@ -612,7 +612,7 @@ namespace PhotoLocator
             {
                 await CancelPictureLoading();
                 PhotoFolderPath = parent;
-                var select = Pictures.FirstOrDefault(item => item.FullPath.Equals(currentPath, StringComparison.CurrentCultureIgnoreCase));
+                var select = Pictures.FirstOrDefault(item => item.FullPath.Equals(currentPath, StringComparison.OrdinalIgnoreCase));
                 if (select != null)
                     SelectItem(select);
             }
@@ -742,7 +742,7 @@ namespace PhotoLocator
                     else
                         return;
                     if (_loadPicturesTask != null)
-                        _loadPicturesTask.ContinueWith(_ => Application.Current.Dispatcher.BeginInvoke(LoadPicturesAsync)).WithExceptionLogging();
+                        _loadPicturesTask.ContinueWith(_ => Application.Current.Dispatcher.BeginInvoke(LoadPicturesAsync), TaskScheduler.Default).WithExceptionLogging();
                     else
                         LoadPicturesAsync().WithExceptionLogging();
                 }
@@ -758,7 +758,7 @@ namespace PhotoLocator
                     {
                         changed.ThumbnailImage = null;
                         if (_loadPicturesTask != null)
-                            _loadPicturesTask.ContinueWith(_ => Application.Current.Dispatcher.BeginInvoke(LoadPicturesAsync)).WithExceptionLogging();
+                            _loadPicturesTask.ContinueWith(_ => Application.Current.Dispatcher.BeginInvoke(LoadPicturesAsync), TaskScheduler.Default).WithExceptionLogging();
                         else
                             LoadPicturesAsync().WithExceptionLogging();
                     }

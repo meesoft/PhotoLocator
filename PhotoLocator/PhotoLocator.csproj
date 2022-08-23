@@ -11,7 +11,9 @@
 	<Copyright>(c) 2022 Michael Vinther</Copyright>
 	<Company>MeeSoft</Company>
 	<ApplicationIcon>Resources\PhotoLocator.ico</ApplicationIcon>
-	<NoWarn>IDE0017</NoWarn>
+	<EnableNETAnalyzers>true</EnableNETAnalyzers>
+	<AnalysisMode>All</AnalysisMode>
+	<NoWarn>CA1014,IDE0017</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>

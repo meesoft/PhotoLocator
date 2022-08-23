@@ -22,8 +22,8 @@ namespace PhotoLocator.Metadata
             var trace = new GpsTrace { Locations = new LocationCollection() };
             var document = new XmlDocument();
             document.Load(stream);
-            var gpx = document["gpx"] ?? throw new Exception("gpx node missing");
-            var trk = gpx["trk"] ?? throw new Exception("trk node missing");
+            var gpx = document["gpx"] ?? throw new FormatException("gpx node missing");
+            var trk = gpx["trk"] ?? throw new FormatException("trk node missing");
             foreach (XmlNode trkseg in trk)
                 if (trkseg.Name == "trkseg")
                     foreach (XmlNode trkpt in trkseg)
@@ -60,18 +60,18 @@ namespace PhotoLocator.Metadata
             var document = new XmlDocument();
             document.Load(stream);
             var placemarks = new List<Placemark>();
-            var kml = document["kml"] ?? throw new Exception("kml node missing");
+            var kml = document["kml"] ?? throw new FormatException("kml node missing");
             foreach (var node in kml.FirstChild!.ChildNodes.Cast<XmlElement>().Where(n => n.Name == "Placemark"))
             {
                 var placemark = new Placemark();
                 placemark.Name = node["name"]?.InnerText;
 
-                var timeSpanNode = node["TimeSpan"] ?? throw new Exception("TimeSpan node missing");
+                var timeSpanNode = node["TimeSpan"] ?? throw new FormatException("TimeSpan node missing");
                 placemark.StartTime = DateTime.Parse(timeSpanNode["begin"]!.InnerText);
                 placemark.EndTime = DateTime.Parse(timeSpanNode["end"]!.InnerText);
 
                 var coordContainerNode = node["LineString"] ?? node["Point"]!;
-                var coordsNode = coordContainerNode["coordinates"] ?? throw new Exception("coordinates node missing");
+                var coordsNode = coordContainerNode["coordinates"] ?? throw new FormatException("coordinates node missing");
                 foreach (var coord in coordsNode.InnerText.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries))
                 {
                     var coords = coord.Split(',');

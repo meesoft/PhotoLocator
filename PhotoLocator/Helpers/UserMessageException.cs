@@ -4,7 +4,7 @@ using System.Runtime.Serialization;
 namespace PhotoLocator.Helpers
 {
     [Serializable]
-    class UserMessageException : Exception
+    public class UserMessageException : Exception
     {
         public UserMessageException()
         {

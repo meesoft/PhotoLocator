@@ -92,7 +92,7 @@ namespace PhotoLocator
                         ExampleName = _exampleNamer.GetFileName(RenameMask);
                         ErrorMessage = null;
                         IsExtensionWarningVisible = !Path.GetExtension(ExampleName).Equals(
-                            Path.GetExtension(_exampleNamer.OriginalFileName), StringComparison.InvariantCultureIgnoreCase);
+                            Path.GetExtension(_exampleNamer.OriginalFileName), StringComparison.OrdinalIgnoreCase);
                     }
                     catch (Exception ex)
                     {
@@ -175,7 +175,7 @@ namespace PhotoLocator
                     // Allow overwriting when renaming single picture
                     if (_selectedPictures.Count == 1 && item.IsFile)
                     {
-                        var overwritingFile = _allPictures.FirstOrDefault(f => f != item && f.IsFile && f.Name.Equals(newName, StringComparison.CurrentCultureIgnoreCase));
+                        var overwritingFile = _allPictures.FirstOrDefault(f => f != item && f.IsFile && f.Name.Equals(newName, StringComparison.OrdinalIgnoreCase));
                         if (overwritingFile != null &&
                             MessageBox.Show($"The file {newName} already exists, do you want to overwrite it?", "Rename", MessageBoxButton.OKCancel, MessageBoxImage.Question) == MessageBoxResult.OK)
                             {

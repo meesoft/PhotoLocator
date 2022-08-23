@@ -15,7 +15,7 @@ namespace PhotoLocator.MapDisplay
 {
     public class HeadingToVisibilityConverter : IValueConverter
     {
-        public object Convert(object value, Type targetType, object parameter, string language)
+        public static object Convert(object value, Type targetType, object parameter, string language)
         {
             return (double)value != 0d ? Visibility.Visible : Visibility.Collapsed;
         }

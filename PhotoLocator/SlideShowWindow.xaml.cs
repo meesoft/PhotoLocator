@@ -93,7 +93,7 @@ namespace PhotoLocator
             PictureSource = SelectedPicture.LoadPreview(System.Threading.CancellationToken.None);
 
             var name = Path.GetFileNameWithoutExtension(SelectedPicture.Name)!;
-            var i = name.IndexOf('[');
+            var i = name.IndexOf('[', StringComparison.Ordinal);
             if (i > 2)
                 name = name[..i].TrimEnd();
             if (_showMetadataInSlideShow)

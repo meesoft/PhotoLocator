@@ -76,7 +76,7 @@ namespace PhotoLocator.Metadata
         static bool TagWithOffsetIs(string tag, string value, out double offset)
         {
             offset = 0;
-            if (tag.StartsWith(value))
+            if (tag.StartsWith(value, StringComparison.Ordinal))
             {
                 if (tag.Length == value.Length)
                     return true;
@@ -160,10 +160,10 @@ namespace PhotoLocator.Metadata
                     }
                     else if (tag.EndsWith('?'))
                     {
-                        var iFirstWildcard = tag.IndexOf('?');
+                        var iFirstWildcard = tag.IndexOf('?', StringComparison.Ordinal);
                         var nChars = tag.Length - iFirstWildcard;
                         var prefix = tag[0..iFirstWildcard];
-                        var iPrefix = _file.Name.IndexOf(prefix);
+                        var iPrefix = _file.Name.IndexOf(prefix, StringComparison.Ordinal);
                         if (iPrefix < 0)
                             throw new ArgumentException($"Search string '{prefix}' not found in name '{_file.Name}'");
                         result.Append(_file.Name.AsSpan(iPrefix + prefix.Length, nChars));
