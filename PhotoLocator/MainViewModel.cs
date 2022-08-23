@@ -19,6 +19,7 @@ using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media.Imaging;
 using System.Windows.Shell;
+using System.Windows.Threading;
 
 namespace PhotoLocator
 {
@@ -84,11 +85,11 @@ namespace PhotoLocator
         private bool _isWindowEnabled = true;
 
         public IEnumerable<string> PhotoFileExtensions { get; set; } = Enumerable.Empty<string>();
-        
+
         public string? SavedFilePostfix { get; set; }
 
         public bool ShowFolders { get; set; }
-     
+
         public int SlideShowInterval { get; set; }
 
         public bool ShowMetadataInSlideShow { get; set; }
@@ -130,8 +131,8 @@ namespace PhotoLocator
         }
         private Location? _savedLocation;
 
-        public ComboBoxItem? SelectedViewModeItem 
-        { 
+        public ComboBoxItem? SelectedViewModeItem
+        {
             get => _selectedViewModeItem;
             set
             {
@@ -251,8 +252,8 @@ namespace PhotoLocator
                     if (!string.IsNullOrEmpty(metadata))
                         title += " [" + metadata + "]";
                 }
-                catch 
-                { 
+                catch
+                {
                 }
                 ct.ThrowIfCancellationRequested();
                 return title;
@@ -393,7 +394,7 @@ namespace PhotoLocator
             var pictures = Pictures.Where(item => item.IsFile).ToList();
             if (pictures.Count == 0)
                 return;
-            var slideShowWin = new SlideShowWindow(pictures, SelectedPicture?.IsFile == true ? SelectedPicture : Pictures.First(), 
+            var slideShowWin = new SlideShowWindow(pictures, SelectedPicture?.IsFile == true ? SelectedPicture : Pictures.First(),
                 SlideShowInterval, ShowMetadataInSlideShow, GetSelectedMapLayerName?.Invoke());
             slideShowWin.Owner = App.Current.MainWindow;
             slideShowWin.ShowDialog();
@@ -408,7 +409,7 @@ namespace PhotoLocator
             settingsWin.PhotoFileExtensions = photoFileExtensions;
             settingsWin.ShowFolders = ShowFolders;
             settingsWin.SavedFilePostfix = SavedFilePostfix;
-            settingsWin.SlideShowInterval= SlideShowInterval;
+            settingsWin.SlideShowInterval = SlideShowInterval;
             settingsWin.ShowMetadataInSlideShow = ShowMetadataInSlideShow;
             settingsWin.DataContext = settingsWin;
             if (settingsWin.ShowDialog() == true)
@@ -458,7 +459,7 @@ namespace PhotoLocator
             await WaitForPicturesLoadedAsync();
             if (droppedEntries.Any(f => Path.GetDirectoryName(f) != PhotoFolderPath))
                 PhotoFolderPath = null;
-            var fileNames = new List<string>(); 
+            var fileNames = new List<string>();
             foreach (var path in droppedEntries)
                 if (Directory.Exists(path))
                     await AppendFilesAsync(Directory.EnumerateFiles(path));
@@ -691,7 +692,7 @@ namespace PhotoLocator
                 SelectItem(Pictures.FirstOrDefault(item => item.IsFile) ?? Pictures[0]);
             await LoadPicturesAsync();
         }
-     
+
         private void SetupFileSystemWatcher()
         {
             _fileSystemWatcher = new FileSystemWatcher(PhotoFolderPath!);
@@ -788,7 +789,7 @@ namespace PhotoLocator
         {
             _loadCancellation?.Dispose();
             _loadCancellation = new CancellationTokenSource();
-            
+
             var candidates = Pictures.Where(item => item.ThumbnailImage is null).ToArray();
             // Reorder so that we take alternately one from the top and one from the bottom
             var reordered = new PictureItemViewModel[candidates.Length];
@@ -797,8 +798,13 @@ namespace PhotoLocator
             for (int i = 0; i < candidates.Length; i++)
                 reordered[i] = (i & 1) == 0 ? candidates[iStart++] : candidates[--iEnd];
             _loadPicturesTask = Parallel.ForEachAsync(reordered,
-                new ParallelOptions { MaxDegreeOfParallelism = 2, CancellationToken = _loadCancellation.Token }, 
-                (item, ct) => item.LoadMetadataAndThumbnailAsync(ct));
+                new ParallelOptions { MaxDegreeOfParallelism = 2, CancellationToken = _loadCancellation.Token },
+                async (item, ct) =>
+                {
+                    await item.LoadMetadataAndThumbnailAsync(ct);
+                    if (item.IsSelected && item.GeoTag != null)
+                        MapCenter = item.GeoTag;
+                });
             await _loadPicturesTask;
             _loadPicturesTask = null;
         }
