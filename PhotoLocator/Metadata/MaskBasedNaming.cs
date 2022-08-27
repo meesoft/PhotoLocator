@@ -60,7 +60,7 @@ namespace PhotoLocator.Metadata
         static bool TagIs(string tag, string value, out int iColon)
         {
             iColon = -1;
-            if (tag.StartsWith(value))
+            if (tag.StartsWith(value, StringComparison.Ordinal))
             {
                 if (tag.Length == value.Length)
                     return true;
@@ -82,7 +82,7 @@ namespace PhotoLocator.Metadata
                     return true;
                 if (tag[value.Length] == '+' || tag[value.Length] == '-')
                 {
-                    offset = double.Parse(tag[value.Length..]);
+                    offset = double.Parse(tag[value.Length..], CultureInfo.CurrentCulture);
                     return true;
                 }
             }
@@ -94,7 +94,7 @@ namespace PhotoLocator.Metadata
             if (iColon < 0)
                 result.Append(value);
             else
-                result.Append(value.ToString("D" + tag[(iColon + 1)..]));
+                result.Append(value.ToString("D" + tag[(iColon + 1)..], CultureInfo.CurrentCulture));
         }
 
         private void AppendMetadataRational(StringBuilder result, int iColon, string tag, string query1, string query2)
@@ -106,7 +106,7 @@ namespace PhotoLocator.Metadata
                 if (iColon < 0)
                     result.Append(value.ToDouble());
                 else
-                    result.Append(value.ToDouble().ToString("F" + tag[(iColon + 1)..]));
+                    result.Append(value.ToDouble().ToString("F" + tag[(iColon + 1)..], CultureInfo.CurrentCulture));
             }
         }
 
@@ -117,7 +117,7 @@ namespace PhotoLocator.Metadata
             if (iColon < 0)
                 result.Append(value);
             else
-                result.Append(Convert.ToInt32(value).ToString("D" + tag[(iColon + 1)..]));
+                result.Append(Convert.ToInt32(value, CultureInfo.InvariantCulture).ToString("D" + tag[(iColon + 1)..], CultureInfo.CurrentCulture));
         }
 
         public string GetFileName(string mask)
@@ -143,20 +143,20 @@ namespace PhotoLocator.Metadata
                     }
                     else if (TagIs(tag, "*", out iColon))
                     {
-                        var startIndex = int.Parse(tag[(iColon + 1)..]);
+                        var startIndex = int.Parse(tag[(iColon + 1)..], CultureInfo.InvariantCulture);
                         result.Append(Path.GetFileNameWithoutExtension(OriginalFileName[startIndex..]));
                     }
                     else if (TagWithOffsetIs(tag, "DT", out offset))
                     {
-                        result.Append(GetTimestamp().AddHours(offset).ToString("yyyy-MM-dd HH.mm.ss"));
+                        result.Append(GetTimestamp().AddHours(offset).ToString("yyyy-MM-dd HH.mm.ss", CultureInfo.InvariantCulture));
                     }
                     else if (TagWithOffsetIs(tag, "D", out offset))
                     {
-                        result.Append(GetTimestamp().AddHours(offset).ToString("yyyy-MM-dd"));
+                        result.Append(GetTimestamp().AddHours(offset).ToString("yyyy-MM-dd", CultureInfo.InvariantCulture));
                     }
                     else if (TagWithOffsetIs(tag, "T", out offset))
                     {
-                        result.Append(GetTimestamp().AddHours(offset).ToString("HH.mm.ss"));
+                        result.Append(GetTimestamp().AddHours(offset).ToString("HH.mm.ss", CultureInfo.InvariantCulture));
                     }
                     else if (tag.EndsWith('?'))
                     {
@@ -184,14 +184,14 @@ namespace PhotoLocator.Metadata
                     {
                         var frame = GetFrame();
                         var whr = (double)frame.PixelWidth / frame.PixelHeight;
-                        result.Append(whr.ToString(iColon < 0 ? "F2" : "F" + tag[(iColon + 1)..]));
+                        result.Append(whr.ToString(iColon < 0 ? "F2" : "F" + tag[(iColon + 1)..], CultureInfo.CurrentCulture));
                     }
                     else if (TagIs(tag, "alt", out iColon))
                     {
                         var metadata = GetMetadata() ?? throw new ArgumentException("Metadata not available");
                         var altitude = ExifHandler.GetRelativeAltitude(metadata) ?? ExifHandler.GetGpsAltitude(metadata);
                         if (altitude.HasValue)
-                            result.Append(altitude.Value.ToString(iColon < 0 ? "F1" : "F" + tag[(iColon + 1)..]));
+                            result.Append(altitude.Value.ToString(iColon < 0 ? "F1" : "F" + tag[(iColon + 1)..], CultureInfo.CurrentCulture));
                     }
                     else if (TagIs(tag, "a", out iColon))
                     {

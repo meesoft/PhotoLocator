@@ -39,7 +39,7 @@ namespace PhotoLocator.PictureFileFormats
             {
                 SeekOrigin.Begin => _source.Seek(offset + _sourceOffset, SeekOrigin.Begin) - _sourceOffset,
                 SeekOrigin.Current or SeekOrigin.End => _source.Seek(offset, origin) - _sourceOffset,
-                _ => throw new ArgumentException(nameof(origin)),
+                _ => throw new ArgumentException("Unsupported value of " + nameof(origin)),
             };
         }
 

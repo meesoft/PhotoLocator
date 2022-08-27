@@ -170,7 +170,7 @@ namespace PhotoLocator.Metadata
             if (metadata.CameraManufacturer == "DJI") // Fix for DNG and JPG version of the same picture having different metadata.DateTaken
             {
                 var fileTimeStampStr = (metadata.GetQuery(FileTimeStampQuery1) ?? metadata.GetQuery(FileTimeStampQuery2)) as string;
-                if (fileTimeStampStr is not null && !fileTimeStampStr.EndsWith("00:00:00") && // Fix for bug in CaptureOne that resets the time part in HDR merge
+                if (fileTimeStampStr is not null &&
                     DateTime.TryParseExact(fileTimeStampStr, "yyyy:MM:dd HH:mm:ss", CultureInfo.InvariantCulture, DateTimeStyles.AssumeLocal, out var fileTimeStamp))
                 {
                     if (!dateTaken.HasValue)
@@ -261,7 +261,7 @@ namespace PhotoLocator.Metadata
 
             var altitude = GetRelativeAltitude(metadata);
             if (altitude.HasValue)
-                metadataStrings.Add(altitude.Value.ToString("0.0") + 'm');
+                metadataStrings.Add(altitude.Value.ToString("0.0", CultureInfo.CurrentCulture) + 'm');
 
             var exposureTime = Rational.Decode(metadata.GetQuery(ExposureTimeQuery1) ?? metadata.GetQuery(ExposureTimeQuery2));
             if (exposureTime != null)
@@ -286,7 +286,7 @@ namespace PhotoLocator.Metadata
 
             var timestamp = GetTimeStamp(metadata);
             if (timestamp.HasValue)
-                metadataStrings.Add(timestamp.Value.ToString("G"));
+                metadataStrings.Add(timestamp.Value.ToString("G", CultureInfo.CurrentCulture));
 
             return string.Join(", ", metadataStrings);
         }

@@ -17,7 +17,7 @@ namespace PhotoLocator
     /// <summary>
     /// Interaction logic for RenameWindow.xaml
     /// </summary>
-    public sealed partial class RenameWindow : Window, INotifyPropertyChanged
+    public sealed partial class RenameWindow : Window, INotifyPropertyChanged, IDisposable
     {
         readonly IList<PictureItemViewModel> _selectedPictures;
         readonly ObservableCollection<PictureItemViewModel> _allPictures;
@@ -46,7 +46,7 @@ namespace PhotoLocator
             MaskMenuButton.ContextMenu = new ContextMenu();
             foreach (var mask in _previousMasks)
             {
-                var menuItem = new MenuItem { Header = mask.Replace("_", "__"), Tag = mask };
+                var menuItem = new MenuItem { Header = mask.Replace("_", "__", StringComparison.Ordinal), Tag = mask };
                 menuItem.Click += HandleMaskItemClick;
                 MaskMenuButton.ContextMenu.Items.Add(menuItem);
             }
@@ -194,12 +194,17 @@ namespace PhotoLocator
                 MessageBox.Show(ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                 return;
             }
-            if (RenameMask.Contains('|'))
+            if (RenameMask.Contains('|', StringComparison.Ordinal))
             {
                 using var settings = new RegistrySettings();
                 settings.RenameMasks = string.Join('\\', (new[] { RenameMask }).Concat(_previousMasks).Distinct().Take(10));
             }
             DialogResult = true;
+        }
+
+        public void Dispose()
+        {
+            _exampleNamer?.Dispose();
         }
     }
 }
