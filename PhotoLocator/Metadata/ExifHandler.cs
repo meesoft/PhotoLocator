@@ -2,7 +2,6 @@
 
 using MapControl;
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
@@ -12,7 +11,7 @@ using System.Windows.Media.Imaging;
 
 namespace PhotoLocator.Metadata
 {
-    class ExifHandler
+    internal class ExifHandler
     {
         // See https://exiv2.org/tags.html
 
@@ -59,7 +58,7 @@ namespace PhotoLocator.Metadata
         public const string DjiRelativeAltitude1 = @"/xmp/http\:\/\/www.dji.com\/drone-dji\/1.0\/:RelativeAltitude"; // Decimal string
         public const string DjiRelativeAltitude2 = @"/ifd/{ushort=700}/http\:\/\/www.dji.com\/drone-dji\/1.0\/:RelativeAltitude";
 
-        const BitmapCreateOptions CreateOptions = BitmapCreateOptions.PreservePixelFormat | BitmapCreateOptions.IgnoreColorProfile;
+        public const BitmapCreateOptions CreateOptions = BitmapCreateOptions.PreservePixelFormat | BitmapCreateOptions.IgnoreColorProfile;
 
         public static void SetGeotag(string sourceFileName, string targetFileName, Location location)
         {
@@ -95,7 +94,7 @@ namespace PhotoLocator.Metadata
         private static void CheckPixels(BitmapFrame frame1, BitmapFrame frame2)
         {
             if (frame1.PixelWidth != frame2.PixelWidth || frame1.PixelHeight != frame2.PixelHeight)
-                throw new Exception("Dimensions have changed");
+                throw new InvalidDataException("Dimensions have changed");
 
             var bytesPerLine = frame1.PixelWidth * 3;
             var pixels1 = new byte[bytesPerLine * frame1.PixelHeight];
@@ -105,7 +104,7 @@ namespace PhotoLocator.Metadata
             frame2.CopyPixels(pixels2, bytesPerLine, 0);
             for (var i = 0; i < pixels1.Length; i++)
                 if (pixels1[i] != pixels2[i])
-                    throw new Exception("Pixels have changed");
+                    throw new InvalidDataException("Pixels have changed");
         }
 
         public static void SetGeotag(BitmapMetadata metadata, Location location)

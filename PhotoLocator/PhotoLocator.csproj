@@ -32,4 +32,10 @@
 	<Resource Include="Resources\PhotoLocator.ico" />
   </ItemGroup>
 
+  <ItemGroup>
+	<AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleToAttribute">
+		<_Parameter1>PhotoLocatorTest</_Parameter1>
+	</AssemblyAttribute>
+  </ItemGroup>
+
 </Project>

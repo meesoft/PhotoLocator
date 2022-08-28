@@ -9,7 +9,7 @@ using System.Xml;
 
 namespace PhotoLocator.Metadata
 {
-    class GpsTrace : PolylineItem
+    internal class GpsTrace : PolylineItem
     {
         public readonly List<DateTime> TimeStamps = new();
 
@@ -19,11 +19,11 @@ namespace PhotoLocator.Metadata
 
         public static GpsTrace DecodeGpxStream(Stream stream)
         {
-            var trace = new GpsTrace { Locations = new LocationCollection() };
+            var trace = new GpsTrace();
             var document = new XmlDocument();
             document.Load(stream);
-            var gpx = document["gpx"] ?? throw new FormatException("gpx node missing");
-            var trk = gpx["trk"] ?? throw new FormatException("trk node missing");
+            var gpx = document["gpx"] ?? throw new FileFormatException("gpx node missing");
+            var trk = gpx["trk"] ?? throw new FileFormatException("trk node missing");
             foreach (XmlNode trkseg in trk)
                 if (trkseg.Name == "trkseg")
                     foreach (XmlNode trkpt in trkseg)
@@ -37,7 +37,7 @@ namespace PhotoLocator.Metadata
                                 trace.Locations.Add(new Location(
                                     double.Parse(lat.InnerText, CultureInfo.InvariantCulture),
                                     double.Parse(lon.InnerText, CultureInfo.InvariantCulture)));
-                                trace.TimeStamps.Add(DateTime.Parse(time.InnerText));
+                                trace.TimeStamps.Add(DateTime.Parse(time.InnerText, CultureInfo.InvariantCulture));
                             }
                         }
             return trace;
@@ -55,23 +55,23 @@ namespace PhotoLocator.Metadata
             return (val1 * (1 - alpha) + val2 * alpha);
         }
 
-        static GpsTrace DecodeKmlStream(Stream stream, TimeSpan minimumInterval)
+        public static GpsTrace DecodeKmlStream(Stream stream, TimeSpan minimumInterval)
         {
             var document = new XmlDocument();
             document.Load(stream);
             var placemarks = new List<Placemark>();
-            var kml = document["kml"] ?? throw new FormatException("kml node missing");
+            var kml = document["kml"] ?? throw new FileFormatException("kml node missing");
             foreach (var node in kml.FirstChild!.ChildNodes.Cast<XmlElement>().Where(n => n.Name == "Placemark"))
             {
                 var placemark = new Placemark();
                 placemark.Name = node["name"]?.InnerText;
 
-                var timeSpanNode = node["TimeSpan"] ?? throw new FormatException("TimeSpan node missing");
-                placemark.StartTime = DateTime.Parse(timeSpanNode["begin"]!.InnerText);
-                placemark.EndTime = DateTime.Parse(timeSpanNode["end"]!.InnerText);
+                var timeSpanNode = node["TimeSpan"] ?? throw new FileFormatException("TimeSpan node missing");
+                placemark.StartTime = DateTime.Parse(timeSpanNode["begin"]!.InnerText, CultureInfo.InvariantCulture);
+                placemark.EndTime = DateTime.Parse(timeSpanNode["end"]!.InnerText, CultureInfo.InvariantCulture);
 
                 var coordContainerNode = node["LineString"] ?? node["Point"]!;
-                var coordsNode = coordContainerNode["coordinates"] ?? throw new FormatException("coordinates node missing");
+                var coordsNode = coordContainerNode["coordinates"] ?? throw new FileFormatException("coordinates node missing");
                 foreach (var coord in coordsNode.InnerText.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries))
                 {
                     var coords = coord.Split(',');
@@ -83,7 +83,7 @@ namespace PhotoLocator.Metadata
             }
 
             double minInterval = minimumInterval.TotalHours / 24;
-            var trace = new GpsTrace { Locations = new LocationCollection() };
+            var trace = new GpsTrace();
             foreach (var placemark in placemarks)
             {
                 var startTime = placemark.StartTime.ToOADate();
@@ -118,7 +118,7 @@ namespace PhotoLocator.Metadata
                 return DecodeGpxStream(file);
             if (ext == ".kml")
                 return DecodeKmlStream(file, mininumInterval);
-            throw new Exception("Unsupported file format");
+            throw new FileFormatException("Unsupported file format");
         }
     }
 }

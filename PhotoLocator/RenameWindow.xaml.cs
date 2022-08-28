@@ -158,7 +158,7 @@ namespace PhotoLocator
 
         private void HandleRenameButtonClick(object sender, RoutedEventArgs e)
         {
-            if (_selectedPictures.Count > 1 && !RenameMask.Contains('|'))
+            if (_selectedPictures.Count > 1 && !RenameMask.Contains('|', StringComparison.Ordinal))
                 throw new UserMessageException("Multiple files cannot be renamed to the same name.");
             RenameMask = RenameMask.Trim();
             _exampleNamer?.Dispose();

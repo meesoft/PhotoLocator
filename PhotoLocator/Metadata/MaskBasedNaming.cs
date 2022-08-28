@@ -44,7 +44,7 @@ namespace PhotoLocator.Metadata
             if (_frame is null)
             {
                 _fileStream = File.OpenRead(_file.FullPath);
-                var decoder = BitmapDecoder.Create(_fileStream, BitmapCreateOptions.PreservePixelFormat | BitmapCreateOptions.IgnoreColorProfile, BitmapCacheOption.OnDemand);
+                var decoder = BitmapDecoder.Create(_fileStream, ExifHandler.CreateOptions, BitmapCacheOption.OnDemand);
                 _frame = decoder.Frames[0];
             }
             return _frame;

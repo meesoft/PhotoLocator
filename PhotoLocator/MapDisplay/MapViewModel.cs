@@ -12,7 +12,16 @@ namespace PhotoLocator.MapDisplay
 
     public class PolylineItem
     {
-        public LocationCollection? Locations { get; set; }
+        public PolylineItem() : this(new LocationCollection())
+        {
+        }
+
+        public PolylineItem(LocationCollection locations)
+        {
+            Locations = locations;
+        }
+
+        public LocationCollection Locations { get; }
     }
 
     public class MapViewModel
@@ -84,15 +93,13 @@ namespace PhotoLocator.MapDisplay
                 Location = new Location(53.5207, 8.2323)
             });
 
-            Polylines.Add(new PolylineItem
-            {
-                Locations = LocationCollection.Parse("53.5140,8.1451 53.5123,8.1506 53.5156,8.1623 53.5276,8.1757 53.5491,8.1852 53.5495,8.1877 53.5426,8.1993 53.5184,8.2219 53.5182,8.2386 53.5195,8.2387")
-            });
+            Polylines.Add(new PolylineItem(
+                LocationCollection.Parse("53.5140,8.1451 53.5123,8.1506 53.5156,8.1623 53.5276,8.1757 53.5491,8.1852 53.5495,8.1877 53.5426,8.1993 53.5184,8.2219 53.5182,8.2386 53.5195,8.2387")
+            ));
 
-            Polylines.Add(new PolylineItem
-            {
-                Locations = LocationCollection.Parse("53.5978,8.1212 53.6018,8.1494 53.5859,8.1554 53.5852,8.1531 53.5841,8.1539 53.5802,8.1392 53.5826,8.1309 53.5867,8.1317 53.5978,8.1212")
-            });
+            Polylines.Add(new PolylineItem(
+                LocationCollection.Parse("53.5978,8.1212 53.6018,8.1494 53.5859,8.1554 53.5852,8.1531 53.5841,8.1539 53.5802,8.1392 53.5826,8.1309 53.5867,8.1317 53.5978,8.1212")
+            ));
         }
     }
 }
