@@ -112,7 +112,7 @@ namespace PhotoLocator
             return bestFix;
         }
 
-        private (int Tagged, int NotTagged) AutoTag(IEnumerable<GpsTrace> gpsTraces)
+        internal (int Tagged, int NotTagged) AutoTag(IEnumerable<GpsTrace> gpsTraces)
         {
             int tagged = 0, notTagged = 0;
             var sourceImages = _allItems.Where(item => item.GeoTag != null && item.TimeStamp.HasValue && !_selectedItems.Contains(item)).ToArray();

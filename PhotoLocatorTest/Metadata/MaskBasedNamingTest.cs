@@ -1,4 +1,4 @@
-﻿using System.Windows.Media.Imaging;
+﻿using System;
 
 namespace PhotoLocator.Metadata
 {
@@ -17,28 +17,56 @@ namespace PhotoLocator.Metadata
         }
 
         [TestMethod]
-        public void GetFileNameWithMask1()
-        {
-            Assert.AreEqual("2022-08-28 21.41.37.jpg",
-                _renamer.GetFileName("|DT||ext|"));
-        }
-
-        [TestMethod]
-        public void GetFileNameWithMask2()
+        public void GetFileNameWithMaskSourceName()
         {
             Assert.AreEqual("2022-06-17_19.03.02.jpg",
                 _renamer.GetFileName("|*||ext|"));
         }
 
         [TestMethod]
-        public void GetFileNameWithMask3()
+        public void GetFileNameWithMaskSourceSkip2()
+        {
+            Assert.AreEqual("22-06-17_19.03.02.jpg",
+                _renamer.GetFileName("|*:2||ext|"));
+        }
+
+        [TestMethod]
+        public void GetFileNameWithMaskSourceSkipBefore()
+        {
+            Assert.AreEqual("19.jpg",
+                _renamer.GetFileName("|_??||ext|"));
+        }
+
+        [TestMethod]
+        public void GetFileNameWithMaskCounter()
+        {
+            Assert.AreEqual("0001.jpg",
+                _renamer.GetFileName("|#:4||ext|"));
+        }
+
+        [TestMethod]
+        public void GetFileNameWithMaskDT()
+        {
+            Assert.AreEqual("2022-08-28 21.41.37.jpg",
+                _renamer.GetFileName("|DT||ext|"));
+        }
+
+        [TestMethod]
+        public void GetFileNameWithMaskDTplus1()
+        {
+            Assert.AreEqual("2022-08-28 22.41.37.jpg",
+                _renamer.GetFileName("|DT+1||ext|"));
+        }
+
+        [TestMethod]
+        public void GetFileNameWithMaskExposureSettings()
         {
             Assert.AreEqual("3-0-4-100-101",
                 _renamer.GetFileName("|a:0|-|t:0|-|f:0|-|iso|-|alt:0|"));
         }
 
         [TestMethod]
-        public void GetFileNameWithMask4()
+        public void GetFileNameWithMaskDimensions()
         {
             Assert.AreEqual("0341-0191-2",
                 _renamer.GetFileName("|width:4|-|height:4|-|w/h:0|"));
