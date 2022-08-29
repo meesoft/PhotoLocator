@@ -19,7 +19,6 @@ using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media.Imaging;
 using System.Windows.Shell;
-using System.Windows.Threading;
 
 namespace PhotoLocator
 {
