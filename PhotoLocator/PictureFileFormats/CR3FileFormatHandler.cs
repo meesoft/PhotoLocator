@@ -46,7 +46,7 @@ namespace PhotoLocator.PictureFileFormats
                 stream.Position += index + index2 - length;
                 return GeneralFileFormatHandler.LoadFromStream(new OffsetStreamReader(stream), rotation, maxWidth, ct);
             }
-            throw new FormatException();
+            throw new FileFormatException();
         }
     }
 }

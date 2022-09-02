@@ -22,6 +22,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\MapUiTools\WPF\MapUiTools.WPF.csproj" />
+    <ProjectReference Include="..\PhotoshopImageLoader\PhotoLocator.PhotoshopImageLoader.csproj" />
   </ItemGroup>
 
   <ItemGroup>

@@ -81,7 +81,7 @@ namespace PhotoLocator.PictureFileFormats
                     ifdOffset = reader.ReadInt32(); // Get next IFD offset
                 }
             }
-            throw new FormatException();
+            throw new FileFormatException();
         }
     }
 }

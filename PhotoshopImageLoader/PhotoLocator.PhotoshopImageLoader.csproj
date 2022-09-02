@@ -1,0 +1,56 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net6.0-windows</TargetFramework>
+    <AllowUnsafeBlocks>True</AllowUnsafeBlocks>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="..\PsdPlugin\PsdFile\Compression\EndianReverser.cs" Link="PsdFile\Compression\EndianReverser.cs" />
+    <Compile Include="..\PsdPlugin\PsdFile\Compression\ImageData.cs" Link="PsdFile\Compression\ImageData.cs" />
+    <Compile Include="..\PsdPlugin\PsdFile\Compression\ImageDataFactory.cs" Link="PsdFile\Compression\ImageDataFactory.cs" />
+    <Compile Include="..\PsdPlugin\PsdFile\Compression\RawImage.cs" Link="PsdFile\Compression\RawImage.cs" />
+    <Compile Include="..\PsdPlugin\PsdFile\Compression\RleImage.cs" Link="PsdFile\Compression\RleImage.cs" />
+    <Compile Include="..\PsdPlugin\PsdFile\Compression\ZipImage.cs" Link="PsdFile\Compression\ZipImage.cs" />
+    <Compile Include="..\PsdPlugin\PsdFile\Compression\ZipPredict16Image.cs" Link="PsdFile\Compression\ZipPredict16Image.cs" />
+    <Compile Include="..\PsdPlugin\PsdFile\Compression\ZipPredict32Image.cs" Link="PsdFile\Compression\ZipPredict32Image.cs" />
+    <Compile Include="..\PsdPlugin\PsdFile\Exceptions.cs" Link="PsdFile\Exceptions.cs" />
+    <Compile Include="..\PsdPlugin\PsdFile\ImageResource.cs" Link="PsdFile\ImageResource.cs" />
+    <Compile Include="..\PsdPlugin\PsdFile\ImageResources\AlphaChannelNames.cs" Link="PsdFile\ImageResources\AlphaChannelNames.cs" />
+    <Compile Include="..\PsdPlugin\PsdFile\ImageResources\RawImageResource.cs" Link="PsdFile\ImageResources\RawImageResource.cs" />
+    <Compile Include="..\PsdPlugin\PsdFile\ImageResources\ResolutionInfo.cs" Link="PsdFile\ImageResources\ResolutionInfo.cs" />
+    <Compile Include="..\PsdPlugin\PsdFile\ImageResources\Thumbnail.cs" Link="PsdFile\ImageResources\Thumbnail.cs" />
+    <Compile Include="..\PsdPlugin\PsdFile\ImageResources\UnicodeAlphaNames.cs" Link="PsdFile\ImageResources\UnicodeAlphaNames.cs" />
+    <Compile Include="..\PsdPlugin\PsdFile\ImageResources\VersionInfo.cs" Link="PsdFile\ImageResources\VersionInfo.cs" />
+    <Compile Include="..\PsdPlugin\PsdFile\Layers\BlendingRanges.cs" Link="PsdFile\Layers\BlendingRanges.cs" />
+    <Compile Include="..\PsdPlugin\PsdFile\Layers\Channel.cs" Link="PsdFile\Layers\Channel.cs" />
+    <Compile Include="..\PsdPlugin\PsdFile\Layers\Layer.cs" Link="PsdFile\Layers\Layer.cs" />
+    <Compile Include="..\PsdPlugin\PsdFile\Layers\LayerInfo.cs" Link="PsdFile\Layers\LayerInfo.cs" />
+    <Compile Include="..\PsdPlugin\PsdFile\Layers\LayerInfo\InfoLayers.cs" Link="PsdFile\Layers\LayerInfo\InfoLayers.cs" />
+    <Compile Include="..\PsdPlugin\PsdFile\Layers\LayerInfo\LayerSectionInfo.cs" Link="PsdFile\Layers\LayerInfo\LayerSectionInfo.cs" />
+    <Compile Include="..\PsdPlugin\PsdFile\Layers\LayerInfo\LayerUnicodeName.cs" Link="PsdFile\Layers\LayerInfo\LayerUnicodeName.cs" />
+    <Compile Include="..\PsdPlugin\PsdFile\Layers\LayerInfo\RawLayerInfo.cs" Link="PsdFile\Layers\LayerInfo\RawLayerInfo.cs" />
+    <Compile Include="..\PsdPlugin\PsdFile\Layers\Mask.cs" Link="PsdFile\Layers\Mask.cs" />
+    <Compile Include="..\PsdPlugin\PsdFile\LoadContext.cs" Link="PsdFile\LoadContext.cs" />
+    <Compile Include="..\PsdPlugin\PsdFile\PsdBinaryReader.cs" Link="PsdFile\PsdBinaryReader.cs" />
+    <Compile Include="..\PsdPlugin\PsdFile\PsdBinaryWriter.cs" Link="PsdFile\PsdBinaryWriter.cs" />
+    <Compile Include="..\PsdPlugin\PsdFile\PsdBlendMode.cs" Link="PsdFile\PsdBlendMode.cs" />
+    <Compile Include="..\PsdPlugin\PsdFile\PsdBlockLengthWriter.cs" Link="PsdFile\PsdBlockLengthWriter.cs" />
+    <Compile Include="..\PsdPlugin\PsdFile\PsdFile.cs" Link="PsdFile\PsdFile.cs" />
+    <Compile Include="..\PsdPlugin\PsdFile\RleReader.cs" Link="PsdFile\RleReader.cs" />
+    <Compile Include="..\PsdPlugin\PsdFile\RleRowLengths.cs" Link="PsdFile\RleRowLengths.cs" />
+    <Compile Include="..\PsdPlugin\PsdFile\RleWriter.cs" Link="PsdFile\RleWriter.cs" />
+    <Compile Include="..\PsdPlugin\PsdFile\Util.cs" Link="PsdFile\Util.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="PsdFile\Compression\" />
+    <Folder Include="PsdFile\ImageResources\" />
+    <Folder Include="PsdFile\Layers\LayerInfo\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="System.Drawing.Common" Version="6.0.0" />
+  </ItemGroup>
+
+</Project>

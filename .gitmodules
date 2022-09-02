@@ -1,0 +1,3 @@
+[submodule "PsdPlugin"]
+	path = PsdPlugin
+	url = https://github.com/PsdPlugin/PsdPlugin.git
