@@ -13,6 +13,7 @@ namespace PhotoLocator.Metadata
         public static void ClassInit(TestContext context)
         {
             var file = new PictureItemViewModel(@"TestData\2022-06-17_19.03.02.jpg", false);
+            file.LoadMetadataAndThumbnailAsync(CancellationToken.None).AsTask().Wait();
             _renamer = new MaskBasedNaming(file, 1);
         }
 
@@ -47,14 +48,14 @@ namespace PhotoLocator.Metadata
         [TestMethod]
         public void GetFileNameWithMaskDT()
         {
-            Assert.AreEqual("2022-08-28 21.41.37.jpg",
+            Assert.AreEqual("2022-06-17 19.03.02.jpg",
                 _renamer.GetFileName("|DT||ext|"));
         }
 
         [TestMethod]
         public void GetFileNameWithMaskDTplus1()
         {
-            Assert.AreEqual("2022-08-28 22.41.37.jpg",
+            Assert.AreEqual("2022-06-17 20.03.02.jpg",
                 _renamer.GetFileName("|DT+1||ext|"));
         }
 
