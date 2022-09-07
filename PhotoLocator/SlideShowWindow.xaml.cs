@@ -26,6 +26,7 @@ namespace PhotoLocator
         readonly IList<PictureItemViewModel> _pictures;
         readonly bool _showMetadataInSlideShow;
         readonly DispatcherTimer _timer;
+        private TouchPoint? _touchStart;
 
         public SlideShowWindow(IList<PictureItemViewModel> pictures, PictureItemViewModel selectedPicture, int slideShowInterval, bool showMetadataInSlideShow, 
             string? selectedMapLayerName)
@@ -137,6 +138,31 @@ namespace PhotoLocator
                 PictureIndex = 0;
             else if (e.Key == Key.End)
                 PictureIndex = _pictures.Count - 1;
+        }
+
+        private void HandleTouchDown(object sender, TouchEventArgs e)
+        {
+            _touchStart = e.GetTouchPoint(this);
+        }
+
+        private void HandleTouchMove(object sender, TouchEventArgs e)
+        {
+            const int MinDragDist = 120;
+            if (_touchStart is null)
+                return;
+            var pt = e.GetTouchPoint(this);
+            if (pt.Position.X < _touchStart.Position.X - MinDragDist || 
+                pt.Position.Y < _touchStart.Position.Y - MinDragDist)
+            {
+                PictureIndex++;
+                _touchStart = null;
+            }
+            else if (pt.Position.X > _touchStart.Position.X + MinDragDist || 
+                     pt.Position.Y > _touchStart.Position.Y + MinDragDist)
+            {
+                PictureIndex--;
+                _touchStart = null;
+            }
         }
     }
 }

@@ -5,7 +5,7 @@ namespace PhotoLocator
 {
     sealed class RegistrySettings : IDisposable
     {
-        public const string DefaultPhotoFileExtensions = ".jpg, .cr2, .cr3";
+        public const string DefaultPhotoFileExtensions = ".jpg, .cr2, .cr3, .dng";
 
         public RegistryKey Key = Registry.CurrentUser.CreateSubKey(@"SOFTWARE\MeeSoft\PhotoLocator");
 
@@ -71,7 +71,7 @@ namespace PhotoLocator
 
         public string RenameMasks
         {
-            get => Key.GetValue(nameof(RenameMasks)) as string ?? "|DT| [|_????|]|ext|";
+            get => Key.GetValue(nameof(RenameMasks)) as string ?? "|DT| [|*:4|]|ext|";
             set => Key.SetValue(nameof(RenameMasks), value);
         }
 

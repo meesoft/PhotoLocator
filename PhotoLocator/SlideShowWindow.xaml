@@ -18,7 +18,7 @@
         <BooleanToVisibilityConverter x:Key="BooleanToVisibility" />
     </Window.Resources>
     
-    <Grid>
+    <Grid TouchDown="HandleTouchDown" TouchMove="HandleTouchMove">
         <Image Source="{Binding PictureSource}" RenderOptions.BitmapScalingMode="Unspecified" />
 
         <TextBlock VerticalAlignment="Bottom" HorizontalAlignment="Right" Margin="8" FontSize="20" FontWeight="Bold" Foreground="Black"
