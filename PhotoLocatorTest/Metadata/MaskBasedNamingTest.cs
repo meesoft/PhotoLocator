@@ -12,7 +12,7 @@ namespace PhotoLocator.Metadata
         [ClassInitialize]
         public static void ClassInit(TestContext context)
         {
-            var file = new PictureItemViewModel(@"TestData\2022-06-17_19.03.02.jpg", false);
+            var file = new PictureItemViewModel(@"TestData\2022-06-17_19.03.02.jpg", false, (s, e) => { });
             file.LoadMetadataAndThumbnailAsync(CancellationToken.None).AsTask().Wait();
             _renamer = new MaskBasedNaming(file, 1);
         }

@@ -24,8 +24,6 @@ namespace PhotoLocator
     {
 #if DEBUG
         static readonly bool _isInDesignMode = DesignerProperties.GetIsInDesignMode(new DependencyObject());
-#else
-        const bool _isInDesignMode = false;
 #endif
 
         public event PropertyChangedEventHandler? PropertyChanged;
@@ -42,11 +40,12 @@ namespace PhotoLocator
 #endif
         }
 
-        public PictureItemViewModel(string fileName, bool isDirectory)
+        public PictureItemViewModel(string fileName, bool isDirectory, PropertyChangedEventHandler handleFilePropertyChanged)
         {
             _name = Path.GetFileName(fileName);
             FullPath = fileName;
             IsDirectory = isDirectory;
+            PropertyChanged += handleFilePropertyChanged;
         }
 
         void NotifyPropertyChanged([CallerMemberName] string? propertyName = null)

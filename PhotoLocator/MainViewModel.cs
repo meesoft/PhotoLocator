@@ -19,6 +19,7 @@ using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media.Imaging;
 using System.Windows.Shell;
+using System.Windows.Threading;
 
 namespace PhotoLocator
 {
@@ -34,6 +35,7 @@ namespace PhotoLocator
         CancellationTokenSource? _loadCancellation;
         CancellationTokenSource? _previewCancellation;
         FileSystemWatcher? _fileSystemWatcher;
+        bool _titleUpdatePending;
 
         public event PropertyChangedEventHandler? PropertyChanged;
 
@@ -61,9 +63,21 @@ namespace PhotoLocator
                 _previewPictureTitle = "Preview";
             }
 #endif
+            Pictures.CollectionChanged += (s, e) => BeginTitleUpdate();
         }
 
-        public string WindowTitle => "PhotoLocator" + (string.IsNullOrEmpty(PhotoFolderPath) ? null : " - " + PhotoFolderPath);
+        public string WindowTitle
+        {
+            get
+            {
+                var result = "PhotoLocator";
+                if (!string.IsNullOrEmpty(PhotoFolderPath))
+                    result += " - " + PhotoFolderPath;
+                var checkedCount = Pictures.Count(p => p.IsChecked);
+                result += $" - {checkedCount} of {Pictures.Count} selected";
+                return result;
+            }
+        }
 
         public bool IsProgressBarVisible { get => _isProgressBarVisible; set => SetProperty(ref _isProgressBarVisible, value); }
         private bool _isProgressBarVisible;
@@ -100,7 +114,7 @@ namespace PhotoLocator
             {
                 if (SetProperty(ref _photoFolderPath, value))
                 {
-                    NotifyPropertyChanged(nameof(WindowTitle));
+                    BeginTitleUpdate();
                     LoadFolderContentsAsync(false).WithExceptionShowing();
                 }
             }
@@ -677,7 +691,7 @@ namespace PhotoLocator
             SetupFileSystemWatcher();
             if (ShowFolders)
                 foreach (var dir in Directory.EnumerateDirectories(PhotoFolderPath))
-                    Pictures.Add(new PictureItemViewModel(dir, true));
+                    Pictures.Add(new PictureItemViewModel(dir, true, HandleFilePropertyChanged));
             await AppendFilesAsync(Directory.EnumerateFiles(PhotoFolderPath));
             if (Polylines.Count > 0)
                 MapCenter = Polylines[0].Center;
@@ -729,13 +743,13 @@ namespace PhotoLocator
                     var ext = Path.GetExtension(name).ToLowerInvariant();
                     if (File.Exists(e.FullPath) && PhotoFileExtensions.Contains(ext))
                     {
-                        var newItem = new PictureItemViewModel(e.FullPath, false);
+                        var newItem = new PictureItemViewModel(e.FullPath, false, HandleFilePropertyChanged);
                         if (!newItem.InsertOrdered(Pictures))
                             return;
                     }
                     else if (Directory.Exists(e.FullPath))
                     {
-                        var newItem = new PictureItemViewModel(e.FullPath, true);
+                        var newItem = new PictureItemViewModel(e.FullPath, true, HandleFilePropertyChanged);
                         if (!newItem.InsertOrdered(Pictures))
                             return;
                     }
@@ -766,6 +780,24 @@ namespace PhotoLocator
             });
         }
 
+        private void HandleFilePropertyChanged(object? sender, PropertyChangedEventArgs e)
+        {
+            if (e.PropertyName == nameof(PictureItemViewModel.IsChecked))
+                BeginTitleUpdate();
+        }
+
+        private void BeginTitleUpdate()
+        {
+            if (_titleUpdatePending)
+                return;
+            _titleUpdatePending = true;
+            Dispatcher.CurrentDispatcher.BeginInvoke(() =>
+            {
+                _titleUpdatePending = false;
+                NotifyPropertyChanged(nameof(WindowTitle));
+            });
+        }
+
         private async Task AppendFilesAsync(IEnumerable<string> fileNames)
         {
             foreach (var fileName in fileNames)
@@ -774,7 +806,7 @@ namespace PhotoLocator
                     continue;
                 var ext = Path.GetExtension(fileName).ToLowerInvariant();
                 if (PhotoFileExtensions.Contains(ext))
-                    Pictures.Add(new PictureItemViewModel(fileName, false));
+                    Pictures.Add(new PictureItemViewModel(fileName, false, HandleFilePropertyChanged));
                 else if (ext == ".gpx" || ext == ".kml")
                 {
                     var trace = await Task.Run(() => GpsTrace.DecodeGpsTraceFile(fileName, TimeSpan.FromMinutes(1)));
