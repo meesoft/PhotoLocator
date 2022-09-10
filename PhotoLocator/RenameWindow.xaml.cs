@@ -58,7 +58,7 @@ namespace PhotoLocator
 
         private void HandleWindowLoaded(object sender, RoutedEventArgs e)
         {
-            MaskTextBox.CaretIndex = RenameMask.Length;
+            MaskTextBox.CaretIndex = Math.Max(0, RenameMask.LastIndexOf('.'));
             MaskTextBox.Focus();
         }
 
