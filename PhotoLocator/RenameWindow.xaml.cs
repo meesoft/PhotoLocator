@@ -1,5 +1,4 @@
-﻿using Microsoft.VisualBasic.FileIO;
-using PhotoLocator.Helpers;
+﻿using PhotoLocator.Helpers;
 using PhotoLocator.Metadata;
 using System;
 using System.Collections.Generic;
@@ -166,7 +165,7 @@ namespace PhotoLocator
             try
             {
                 int counter = 0;
-                foreach (var item in _selectedPictures)
+                foreach (var item in _selectedPictures.ToArray())
                 {
                     string newName;
                     using (var namer = new MaskBasedNaming(item, counter++))
@@ -186,10 +185,12 @@ namespace PhotoLocator
 
                     item.Rename(newName, Path.Combine(Path.GetDirectoryName(item.FullPath)!, newName));
                     _allPictures.Remove(item);
+                    item.IsChecked = false;
                     item.InsertOrdered(_allPictures);
+                    _selectedPictures.Remove(item);
                 }
             }
-            catch (IOException ex)
+            catch (Exception ex) when (ex is IOException || ex is ArgumentException)
             {
                 MessageBox.Show(ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                 return;

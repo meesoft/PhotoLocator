@@ -74,7 +74,10 @@ namespace PhotoLocator
                 if (!string.IsNullOrEmpty(PhotoFolderPath))
                     result += " - " + PhotoFolderPath;
                 var checkedCount = Pictures.Count(p => p.IsChecked);
-                result += $" - {checkedCount} of {Pictures.Count} selected";
+                if (checkedCount > 0)
+                    result += $" - {checkedCount} of {Pictures.Count} selected";
+                else
+                    result += $" - {Pictures.Count} items";
                 return result;
             }
         }
@@ -388,16 +391,14 @@ namespace PhotoLocator
             PreviewPictureSource = null;
             if (_fileSystemWatcher != null)
                 _fileSystemWatcher.EnableRaisingEvents = false;
-            if (renameWin.ShowDialog() == true)
-            {
-                DeselectAllCommand.Execute(null);
-                UpdatePushpins();
-            }
+            renameWin.ShowDialog();
             if (_fileSystemWatcher != null)
                 _fileSystemWatcher.EnableRaisingEvents = true;
             if (focused != null)
                 FocusListBoxItem?.Invoke(focused);
             UpdatePreviewPictureAsync().WithExceptionLogging();
+            UpdatePushpins();
+            UpdatePoints();
         });
 
         public Func<string?>? GetSelectedMapLayerName { get; internal set; }
