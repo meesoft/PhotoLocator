@@ -11,6 +11,7 @@
   <ItemGroup>
     <None Remove="TestData\2022-06-17_19.03.02.jpg" />
     <None Remove="TestData\2022-08-14_12.38.33.jpg" />
+    <None Remove="TestData\history-2016-05-17.kml" />
   </ItemGroup>
 
   <ItemGroup>
@@ -20,6 +21,7 @@
     <EmbeddedResource Include="TestData\2022-06-17_19.03.02.jpg">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </EmbeddedResource>
+    <EmbeddedResource Include="TestData\history-2016-05-17.kml" />
     <EmbeddedResource Include="TestData\history-2022-07-09.kml">
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </EmbeddedResource>

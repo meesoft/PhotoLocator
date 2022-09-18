@@ -15,7 +15,19 @@ namespace PhotoLocator.Metadata
         }
 
         [TestMethod]
-        public void DecodeKmlStream_ShouldDecodeKml()
+        public void DecodeKmlStream_ShouldDecodeKml1()
+        {
+            using var stream = GetType().Assembly.GetManifestResourceStream(@"PhotoLocator.TestData.history-2016-05-17.kml")
+                ?? throw new FileNotFoundException("Resource not found");
+
+            var trace = GpsTrace.DecodeKmlStream(stream, TimeSpan.FromMinutes(15));
+
+            Assert.AreEqual(540, trace.Locations.Count);
+        }
+
+
+        [TestMethod]
+        public void DecodeKmlStream_ShouldDecodeKml2()
         {
             using var stream = GetType().Assembly.GetManifestResourceStream(@"PhotoLocator.TestData.history-2022-07-09.kml")
                 ?? throw new FileNotFoundException("Resource not found");

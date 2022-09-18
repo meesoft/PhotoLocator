@@ -63,23 +63,51 @@ namespace PhotoLocator.Metadata
             var kml = document["kml"] ?? throw new FileFormatException("kml node missing");
             foreach (var node in kml.FirstChild!.ChildNodes.Cast<XmlElement>().Where(n => n.Name == "Placemark"))
             {
-                var placemark = new Placemark();
-                placemark.Name = node["name"]?.InnerText;
-
-                var timeSpanNode = node["TimeSpan"] ?? throw new FileFormatException("TimeSpan node missing");
-                placemark.StartTime = DateTime.Parse(timeSpanNode["begin"]!.InnerText, CultureInfo.InvariantCulture);
-                placemark.EndTime = DateTime.Parse(timeSpanNode["end"]!.InnerText, CultureInfo.InvariantCulture);
-
-                var coordContainerNode = node["LineString"] ?? node["Point"]!;
-                var coordsNode = coordContainerNode["coordinates"] ?? throw new FileFormatException("coordinates node missing");
-                foreach (var coord in coordsNode.InnerText.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries))
+                var gxTrack = node["gx:Track"];
+                if (gxTrack is not null)
                 {
-                    var coords = coord.Split(',');
-                    placemark.Coordinates.Add(new Location(
-                        double.Parse(coords[1], CultureInfo.InvariantCulture),
-                        double.Parse(coords[0], CultureInfo.InvariantCulture)));
+                    var placemark = new Placemark();
+                    foreach (var child in gxTrack.ChildNodes.Cast<XmlElement>())
+                    {
+                        if (child.Name == "when")
+                        {
+                            placemark.StartTime = DateTime.Parse(child.InnerText, CultureInfo.InvariantCulture);
+                            placemark.EndTime = placemark.StartTime;
+                        }
+                        else if (child.Name == "gx:coord")
+                        {
+                            var coords = child.InnerText.Split(' ');
+                            placemark.Coordinates.Add(new Location(
+                                double.Parse(coords[1], CultureInfo.InvariantCulture),
+                                double.Parse(coords[0], CultureInfo.InvariantCulture)));
+                            if (placemark.StartTime != default)
+                            {
+                                placemarks.Add(placemark);
+                                placemark = new Placemark();
+                            }
+                        }
+                    }
                 }
-                placemarks.Add(placemark);
+                else
+                {
+                    var placemark = new Placemark();
+                    placemark.Name = node["name"]?.InnerText;
+
+                    var timeSpanNode = node["TimeSpan"] ?? throw new FileFormatException("TimeSpan node missing");
+                    placemark.StartTime = DateTime.Parse(timeSpanNode["begin"]!.InnerText, CultureInfo.InvariantCulture);
+                    placemark.EndTime = DateTime.Parse(timeSpanNode["end"]!.InnerText, CultureInfo.InvariantCulture);
+
+                    var coordContainerNode = node["LineString"] ?? node["Point"]!;
+                    var coordsNode = coordContainerNode["coordinates"] ?? throw new FileFormatException("coordinates node missing");
+                    foreach (var coord in coordsNode.InnerText.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries))
+                    {
+                        var coords = coord.Split(',');
+                        placemark.Coordinates.Add(new Location(
+                            double.Parse(coords[1], CultureInfo.InvariantCulture),
+                            double.Parse(coords[0], CultureInfo.InvariantCulture)));
+                    }
+                    placemarks.Add(placemark);
+                }
             }
 
             double minInterval = minimumInterval.TotalHours / 24;
