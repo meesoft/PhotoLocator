@@ -36,6 +36,7 @@ namespace PhotoLocator
         CancellationTokenSource? _previewCancellation;
         FileSystemWatcher? _fileSystemWatcher;
         bool _titleUpdatePending;
+        readonly List <(string Path, BitmapSource Picture)> _pictureCache = new ();
 
         public event PropertyChangedEventHandler? PropertyChanged;
 
@@ -274,8 +275,30 @@ namespace PhotoLocator
                 ct.ThrowIfCancellationRequested();
                 return title;
             }, ct);
-            PreviewPictureSource = await Task.Run(() => selected.LoadPreview(ct), ct);
-            PreviewPictureTitle = await textTask;
+            try
+            {
+                var cached = _pictureCache.Where(item => item.Path == selected.FullPath).FirstOrDefault();
+                if (cached.Path is null)
+                {
+                    while (_pictureCache.Count > 3)
+                        _pictureCache.RemoveAt(0);
+                    var loaded = await Task.Run(() => selected.LoadPreview(ct), ct);
+                    PreviewPictureSource = loaded;
+                    if (loaded is not null)
+                        _pictureCache.Add((selected.FullPath, loaded));
+                }
+                else
+                    PreviewPictureSource = cached.Picture;
+                PreviewPictureTitle = await textTask;
+            }
+            catch (OperationCanceledException)
+            {
+            }
+            catch (Exception ex)
+            {
+                PreviewPictureSource = null;
+                PreviewPictureTitle = ex.Message;
+            }
         }
 
         public ICommand AutoTagCommand => new RelayCommand(async o =>
@@ -619,13 +642,13 @@ namespace PhotoLocator
                 WinAPI.ShowFileProperties(SelectedPicture.FullPath);
         });
 
-        public ICommand ParentFolderCommand => new RelayCommand(async o =>
+        public ICommand ParentFolderCommand => new RelayCommand(o =>
         {
             var currentPath = PhotoFolderPath?.TrimEnd('\\');
             var parent = Path.GetDirectoryName(currentPath);
             if (parent != null)
             {
-                await CancelPictureLoading();
+                CancelPictureLoading();
                 PhotoFolderPath = parent;
                 var select = Pictures.FirstOrDefault(item => item.FullPath.Equals(currentPath, StringComparison.OrdinalIgnoreCase));
                 if (select != null)
@@ -684,7 +707,7 @@ namespace PhotoLocator
             _fileSystemWatcher?.Dispose();
             _fileSystemWatcher = null;
             var selectedName = SelectedPicture?.Name;
-            await CancelPictureLoading();
+            CancelPictureLoading();
             if (string.IsNullOrEmpty(PhotoFolderPath))
                 return;
             Pictures.Clear();
@@ -756,6 +779,7 @@ namespace PhotoLocator
                     }
                     else
                         return;
+                    _pictureCache.Clear();
                     if (_loadPicturesTask != null)
                         _loadPicturesTask.ContinueWith(_ => Application.Current.Dispatcher.BeginInvoke(LoadPicturesAsync), TaskScheduler.Default).WithExceptionLogging();
                     else
@@ -767,6 +791,7 @@ namespace PhotoLocator
                     var changed = Pictures.FirstOrDefault(item => item.FullPath == e.FullPath);
                     if (changed == null)
                         return;
+                    _pictureCache.Clear();
                     if (changed.IsSelected)
                         UpdatePreviewPictureAsync().WithExceptionLogging();
                     if (changed.ThumbnailImage != null)
@@ -853,10 +878,11 @@ namespace PhotoLocator
                 }, "Loading");
         }
 
-        private async Task CancelPictureLoading()
+        private void CancelPictureLoading()
         {
             _loadCancellation?.Cancel();
-            await WaitForPicturesLoadedAsync();
+            _loadCancellation = null;
+            _loadPicturesTask = null;
         }
 
         public void Dispose()
