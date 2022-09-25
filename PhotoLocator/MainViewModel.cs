@@ -417,6 +417,7 @@ namespace PhotoLocator
             renameWin.ShowDialog();
             if (_fileSystemWatcher != null)
                 _fileSystemWatcher.EnableRaisingEvents = true;
+            _pictureCache.Clear();
             if (focused != null)
                 FocusListBoxItem?.Invoke(focused);
             UpdatePreviewPictureAsync().WithExceptionLogging();
@@ -743,9 +744,13 @@ namespace PhotoLocator
 
         private void HandleFileSystemWatcherRename(object sender, RenamedEventArgs e)
         {
-            var renamed = Pictures.FirstOrDefault(item => item.FullPath == e.OldFullPath);
+            var renamed = Pictures.ToArray().FirstOrDefault(item => item.FullPath == e.OldFullPath);
             if (renamed != null)
-                Application.Current.Dispatcher.BeginInvoke(() => renamed.Renamed(e.FullPath));
+                Application.Current.Dispatcher.BeginInvoke(() =>
+                {
+                    _pictureCache.Clear();
+                    renamed.Renamed(e.FullPath);
+                });
             else
                 HandleFileSystemWatcherChange(this, e);
         }
