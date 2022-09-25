@@ -150,7 +150,16 @@ namespace PhotoLocator
         }
         string? _errorMessage;
 
-        public bool CanSaveGeoTag => IsFile && Path.GetExtension(Name)?.ToLowerInvariant() == ".jpg";
+        public bool CanSaveGeoTag
+        {
+            get
+            {
+                if (IsDirectory)
+                    return false;
+                var ext = Path.GetExtension(Name)?.ToLowerInvariant();
+                return ext == ".jpg" || ext == ".jpeg";
+            }
+        }
 
         public Rotation Rotation { get => _rotation; set => _rotation = value; }
         Rotation _rotation;
