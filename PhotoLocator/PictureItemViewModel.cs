@@ -195,7 +195,7 @@ namespace PhotoLocator
         public async ValueTask LoadMetadataAndThumbnailAsync(CancellationToken ct)
         {
             if (IsFile)
-                await LoadMetadata(ct);
+                await LoadMetadataAsync(ct);
             if (ThumbnailImage != null)
                 return;
             ThumbnailImage = await Task.Run(() =>
@@ -225,13 +225,13 @@ namespace PhotoLocator
             }, ct);
         }
 
-        private async Task LoadMetadata(CancellationToken ct)
+        private async Task LoadMetadataAsync(CancellationToken ct)
         {
             try
             {
-                GeoTag = await Task.Run(() =>
+                GeoTag = await Task.Run(async () =>
                 {
-                    using var file = File.OpenRead(FullPath);
+                    using var file = await FileHelpers.OpenFileWithRetryAsync(FullPath, ct);
                     var decoder = BitmapDecoder.Create(file, BitmapCreateOptions.IgnoreColorProfile, BitmapCacheOption.None);
                     if (decoder.Frames[0].Metadata is not BitmapMetadata metadata)
                         return null;
