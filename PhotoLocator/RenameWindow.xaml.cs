@@ -18,6 +18,8 @@ namespace PhotoLocator
     /// </summary>
     public sealed partial class RenameWindow : Window, INotifyPropertyChanged, IDisposable
     {
+        private const int RenameHistoryLength = 20;
+
         readonly IList<PictureItemViewModel> _selectedPictures;
         readonly ObservableCollection<PictureItemViewModel> _allPictures;
         readonly string[] _previousMasks;
@@ -198,7 +200,7 @@ namespace PhotoLocator
             if (RenameMask.Contains('|', StringComparison.Ordinal))
             {
                 using var settings = new RegistrySettings();
-                settings.RenameMasks = string.Join('\\', (new[] { RenameMask }).Concat(_previousMasks).Distinct().Take(10));
+                settings.RenameMasks = string.Join('\\', (new[] { RenameMask }).Concat(_previousMasks).Distinct().Take(RenameHistoryLength));
             }
             DialogResult = true;
         }

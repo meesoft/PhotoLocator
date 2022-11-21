@@ -248,6 +248,9 @@ namespace PhotoLocator
                 }, ct);
                 GeoTagSaved = GeoTag != null;
             }
+            catch (NotSupportedException)
+            {
+            }
             catch (Exception ex)
             {
                 ErrorMessage = ex.ToString();
