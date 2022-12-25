@@ -118,6 +118,7 @@
                 <KeyBinding Key="Add" Command="{Binding SelectCandidatesCommand}" />
                 <KeyBinding Key="Subtract" Command="{Binding DeselectAllCommand}" />
                 <KeyBinding Key="Divide" Command="{Binding QuickSearchCommand}" />
+                <KeyBinding Key="F" Modifiers="Ctrl" Command="{Binding QuickSearchCommand}" />
             </ListBox.InputBindings>
             <ListBox.ContextMenu>
                 <ContextMenu>
@@ -125,7 +126,7 @@
                         <MenuItem Header="All (Ctrl+A)" Command="{Binding SelectAllCommand}" />
                         <MenuItem Header="Non-geotagged (Num+)" Command="{Binding SelectCandidatesCommand}" />
                         <MenuItem Header="None (Num-)" Command="{Binding DeselectAllCommand}" />
-                        <MenuItem Header="Search (Num/)" Command="{Binding QuickSearchCommand}" />
+                        <MenuItem Header="Search (Ctrl+F)" Command="{Binding QuickSearchCommand}" />
                     </MenuItem>
                     <MenuItem Header="Open file (Enter)" Command="{Binding ExecuteSelectedCommand}" />
                     <MenuItem Header="Open in Google maps" Command="{Binding OpenInMapsCommand}" />

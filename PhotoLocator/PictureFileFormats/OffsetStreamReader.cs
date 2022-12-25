@@ -7,11 +7,20 @@ namespace PhotoLocator.PictureFileFormats
     {
         readonly long _sourceOffset;
         readonly Stream _source;
+        readonly bool _disposeSource;
 
-        public OffsetStreamReader(Stream source)
+        public OffsetStreamReader(Stream source, bool disposeSource = false)
         {
             _sourceOffset = source.Position;
             _source = source;
+            _disposeSource = disposeSource;
+        }
+
+        protected override void Dispose(bool disposing)
+        {
+            base.Dispose(disposing);
+            if (disposing && _disposeSource)
+                _source.Dispose();
         }
 
         public override bool CanRead => _source.CanRead;
