@@ -229,6 +229,9 @@ namespace PhotoLocator
         {
             try
             {
+                var ext = Path.GetExtension(FullPath).ToLowerInvariant();
+                if (ext == ".mp4" || ext == ".mov" || ext == ".avi")
+                    return;
                 GeoTag = await Task.Run(async () =>
                 {
                     using var file = await FileHelpers.OpenFileWithRetryAsync(FullPath, ct);
