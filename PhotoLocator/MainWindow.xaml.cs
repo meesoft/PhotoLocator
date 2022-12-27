@@ -353,8 +353,8 @@ namespace PhotoLocator
             if (!forceReset && ZoomedPreviewImage.RenderTransform is MatrixTransform m && 
                 m.Matrix.M11 == sx && m.Matrix.M22 == sy && m.Matrix.OffsetX <= 0 && m.Matrix.OffsetY <= 0)
                 return;
-            var tx = IntMath.Round((ZoomedPreviewCanvas.ActualWidth - _viewModel.PreviewPictureSource.PixelWidth * zoom / screenDpi.PixelsPerInchX * 96) / 2);
-            var ty = IntMath.Round((ZoomedPreviewCanvas.ActualHeight - _viewModel.PreviewPictureSource.PixelHeight * zoom / screenDpi.PixelsPerInchY * 96) / 2);
+            var tx = IntMath.Round(ZoomedPreviewCanvas.ActualWidth - _viewModel.PreviewPictureSource.PixelWidth * zoom / screenDpi.PixelsPerInchX * 96) / 2;
+            var ty = IntMath.Round(ZoomedPreviewCanvas.ActualHeight - _viewModel.PreviewPictureSource.PixelHeight * zoom / screenDpi.PixelsPerInchY * 96) / 2;
             ZoomedPreviewImage.RenderTransform = new MatrixTransform(
                 sx, 0,
                 0, sy,
