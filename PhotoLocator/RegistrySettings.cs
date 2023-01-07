@@ -3,11 +3,21 @@ using System;
 
 namespace PhotoLocator
 {
-    sealed class RegistrySettings : IDisposable
+    sealed class RegistrySettings : IDisposable, IRegistrySettings
     {
         public const string DefaultPhotoFileExtensions = ".jpg, .jpeg, .cr2, .cr3, .dng";
 
         public RegistryKey Key = Registry.CurrentUser.CreateSubKey(@"SOFTWARE\MeeSoft\PhotoLocator");
+
+        public object? GetValue(string name)
+        {
+            return Key.GetValue(name);
+        }
+
+        public void SetValue(string name, object value)
+        {
+            Key.SetValue(name, value);
+        }
 
         public int FirstLaunch
         {

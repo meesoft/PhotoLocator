@@ -14,23 +14,24 @@ namespace PhotoLocator
 {
     class AutoTagViewModel : INotifyPropertyChanged
     {
+        readonly IEnumerable<PictureItemViewModel> _allItems;
+        readonly IEnumerable<PictureItemViewModel> _selectedItems;
+        readonly IRegistrySettings _settings;
+
         public AutoTagViewModel(IEnumerable<PictureItemViewModel> allItems, IEnumerable<PictureItemViewModel> selectedItems, IEnumerable<GpsTrace> polylines, 
-            Action completedAction)
+            Action completedAction, IRegistrySettings settings)
         {
             _allItems = allItems;
             _selectedItems = selectedItems;
             GpsTraces = polylines;
             CompletedAction = completedAction;
-            using var settings = new RegistrySettings();
-            _traceFilePath = settings.Key.GetValue(nameof(TraceFilePath)) as string;
-            _maxTimestampDifference = (settings.Key.GetValue(nameof(MaxTimestampDifference)) as int? ?? 15 * 60) / 60.0;
-            _timestampOffset = (settings.Key.GetValue(nameof(TimestampOffset)) as int? ?? 0) / 3600.0;
+            _settings = settings;
+            _traceFilePath = _settings.GetValue(nameof(TraceFilePath)) as string;
+            _maxTimestampDifference = (_settings.GetValue(nameof(MaxTimestampDifference)) as int? ?? 15 * 60) / 60.0;
+            _timestampOffset = (_settings.GetValue(nameof(TimestampOffset)) as int? ?? 0) / 3600.0;
         }
 
         public event PropertyChangedEventHandler? PropertyChanged;
-
-        readonly IEnumerable<PictureItemViewModel> _allItems;
-        readonly IEnumerable<PictureItemViewModel> _selectedItems;
 
         public IEnumerable<GpsTrace> GpsTraces { get; }
 
@@ -149,10 +150,9 @@ namespace PhotoLocator
 
         private void SaveSettings()
         {
-            using var settings = new RegistrySettings();
-            settings.Key.SetValue(nameof(TraceFilePath), TraceFilePath ?? String.Empty);
-            settings.Key.SetValue(nameof(MaxTimestampDifference), IntMath.Round(MaxTimestampDifference * 60));
-            settings.Key.SetValue(nameof(TimestampOffset), IntMath.Round(TimestampOffset * 3600));
+            _settings.SetValue(nameof(TraceFilePath), TraceFilePath ?? String.Empty);
+            _settings.SetValue(nameof(MaxTimestampDifference), IntMath.Round(MaxTimestampDifference * 60));
+            _settings.SetValue(nameof(TimestampOffset), IntMath.Round(TimestampOffset * 3600));
         }
     }
 }

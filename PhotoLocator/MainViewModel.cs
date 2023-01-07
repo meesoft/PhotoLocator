@@ -316,7 +316,10 @@ namespace PhotoLocator
                 return;
             }
             var autoTagWin = new AutoTagWindow();
-            var autoTagViewModel = new AutoTagViewModel(Pictures, selectedItems, Polylines, () => { autoTagWin.DialogResult = true; });
+            using var settings = new RegistrySettings();
+            var autoTagViewModel = new AutoTagViewModel(Pictures, selectedItems, Polylines,
+                () => { autoTagWin.DialogResult = true; }, 
+                settings);
             autoTagWin.Owner = App.Current.MainWindow;
             autoTagWin.DataContext = autoTagViewModel;
             PreviewPictureSource = null;

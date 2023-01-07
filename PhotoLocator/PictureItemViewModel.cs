@@ -20,7 +20,7 @@ using System.Windows.Media.Imaging;
 namespace PhotoLocator
 {
     [DebuggerDisplay("Name={Name}")]
-    public class PictureItemViewModel : INotifyPropertyChanged
+    public class PictureItemViewModel : IFileInformation, INotifyPropertyChanged
     {
 #if DEBUG
         static readonly bool _isInDesignMode = DesignerProperties.GetIsInDesignMode(new DependencyObject());

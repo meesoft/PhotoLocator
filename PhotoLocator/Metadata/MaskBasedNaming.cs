@@ -10,13 +10,13 @@ namespace PhotoLocator.Metadata
     sealed class MaskBasedNaming : IDisposable
     {
         static readonly char[] InvalidFileNameChars = Path.GetInvalidFileNameChars();
-        readonly PictureItemViewModel _file;
+        readonly IFileInformation _file;
         readonly int _counter;
         FileStream? _fileStream;
         BitmapFrame? _frame;
         BitmapMetadata? _metadata;
 
-        public MaskBasedNaming(PictureItemViewModel file, int counter)
+        public MaskBasedNaming(IFileInformation file, int counter)
         {
             _file = file;
             _counter = counter;

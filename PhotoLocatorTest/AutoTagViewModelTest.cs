@@ -1,4 +1,5 @@
 ﻿using MapControl;
+using Moq;
 using PhotoLocator.Metadata;
 
 namespace PhotoLocator
@@ -17,8 +18,8 @@ namespace PhotoLocator
             var location = new Location(1, 2);
             trace.Locations.Add(location);
             trace.TimeStamps.Add(file.TimeStamp!.Value.AddMinutes(1));
-
-            var vm = new AutoTagViewModel(new[] { file }, new[] { file }, new[] { trace }, () => { });
+            var settings = Mock.Of<IRegistrySettings>();
+            var vm = new AutoTagViewModel(new[] { file }, new[] { file }, new[] { trace }, () => { }, settings);
             vm.MaxTimestampDifference = 2;
             vm.AutoTag(vm.GpsTraces);
 
