@@ -38,20 +38,25 @@ namespace PhotoLocator
             {
                 var text = new StringBuilder();
                 using var popimsLicenseStream = new StreamReader(typeof(AboutWindow).Assembly.GetManifestResourceStream(
-                    "PhotoLocator.Resources.LICENSE")!);
+                    "PhotoLocator.Resources.LICENSE")!, Encoding.Latin1);
                 text.AppendLine(popimsLicenseStream.ReadToEnd());
                 text.AppendLine();
                 text.AppendLine("Third party open source licenses:");
                 text.AppendLine();
                 text.AppendLine("____");
                 using var mapLicenseStream = new StreamReader(typeof(AboutWindow).Assembly.GetManifestResourceStream(
-                    "PhotoLocator.Resources.XamlMapControlLicense")!);
+                    "PhotoLocator.Resources.XamlMapControlLicense")!, Encoding.Latin1);
                 text.AppendLine(mapLicenseStream.ReadToEnd());
                 text.AppendLine();
                 text.AppendLine("____");
                 using var apiLicenseStream = new StreamReader(typeof(AboutWindow).Assembly.GetManifestResourceStream(
-                    "PhotoLocator.Resources.Windows-API-Code-PackLicense")!);
+                    "PhotoLocator.Resources.Windows-API-Code-PackLicense")!, Encoding.Latin1);
                 text.AppendLine(apiLicenseStream.ReadToEnd());
+                text.AppendLine();
+                text.AppendLine("____");
+                using var psdLicenseStream = new StreamReader(typeof(AboutWindow).Assembly.GetManifestResourceStream(
+                    "PhotoLocator.Resources.PsdLicense")!, Encoding.Latin1);
+                text.AppendLine(psdLicenseStream.ReadToEnd());
 
                 return text.ToString();
             }
