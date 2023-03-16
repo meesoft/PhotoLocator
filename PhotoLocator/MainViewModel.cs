@@ -248,10 +248,12 @@ namespace PhotoLocator
         private void UpdatePushpins()
         {
             Pushpins.Clear();
-            if (SelectedPicture?.GeoTag != null)
-                Pushpins.Add(new PointItem { Location = SelectedPicture.GeoTag, Name = SelectedPicture.Name });
+            foreach(var trace in Polylines.Where(t => t.Locations.Count == 1 && !string.IsNullOrEmpty(t.Name)))
+                Pushpins.Add(new PointItem { Location = trace.Locations[0], Name = trace.Name });
             if (SavedLocation != null)
                 Pushpins.Add(new PointItem { Location = SavedLocation, Name = "Saved location" });
+            if (SelectedPicture?.GeoTag != null)
+                Pushpins.Add(new PointItem { Location = SelectedPicture.GeoTag, Name = SelectedPicture.Name });
         }
 
         private async Task UpdatePreviewPictureAsync()
@@ -844,8 +846,8 @@ namespace PhotoLocator
                     Pictures.Add(new PictureItemViewModel(fileName, false, HandleFilePropertyChanged));
                 else if (ext == ".gpx" || ext == ".kml")
                 {
-                    var trace = await Task.Run(() => GpsTrace.DecodeGpsTraceFile(fileName, TimeSpan.FromMinutes(1)));
-                    if (trace.TimeStamps.Count > 0)
+                    var traces = await Task.Run(() => GpsTrace.DecodeGpsTraceFile(fileName, TimeSpan.FromMinutes(1)));
+                    foreach (var trace in traces)
                         Polylines.Add(trace);
                 }
             }

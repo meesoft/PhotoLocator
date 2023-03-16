@@ -1,37 +1,44 @@
 ﻿using MapControl;
 using System;
+using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
+using System.Linq;
 using System.Xml;
 
 namespace PhotoLocator.Gps
 {
     static class GpxDecoder
     {
-        public static GpsTrace DecodeStream(Stream stream)
+        public static IEnumerable<GpsTrace> DecodeStream(Stream stream)
         {
-            var trace = new GpsTrace();
             var document = new XmlDocument();
             document.Load(stream);
             var gpx = document["gpx"] ?? throw new FileFormatException("gpx node missing");
-            var trk = gpx["trk"] ?? throw new FileFormatException("trk node missing");
-            foreach (XmlNode trkseg in trk)
-                if (trkseg.Name == "trkseg")
-                    foreach (XmlNode trkpt in trkseg)
-                        if (trkpt.Name == "trkpt")
+            foreach (var trk in gpx.OfType<XmlNode>().Where(n => n.Name == "trk"))
+            {
+                var name = trk["name"]?.InnerText;
+                foreach (var trkseg in trk.OfType<XmlNode>().Where(n => n.Name == "trkseg"))
+                {
+                    var trace = new GpsTrace();
+                    trace.Name = name;
+                    foreach (var trkpt in trkseg.OfType<XmlNode>().Where(n => n.Name == "trkpt"))
+                    {
+                        var lat = trkpt.Attributes?["lat"];
+                        var lon = trkpt.Attributes?["lon"];
+                        var time = trkpt["time"];
+                        if (lat != null && lon != null && time != null)
                         {
-                            var lat = trkpt.Attributes?["lat"];
-                            var lon = trkpt.Attributes?["lon"];
-                            var time = trkpt["time"];
-                            if (lat != null && lon != null && time != null)
-                            {
-                                trace.Locations.Add(new Location(
-                                    double.Parse(lat.InnerText, CultureInfo.InvariantCulture),
-                                    double.Parse(lon.InnerText, CultureInfo.InvariantCulture)));
-                                trace.TimeStamps.Add(DateTime.Parse(time.InnerText, CultureInfo.InvariantCulture));
-                            }
+                            trace.Locations.Add(new Location(
+                                double.Parse(lat.InnerText, CultureInfo.InvariantCulture),
+                                double.Parse(lon.InnerText, CultureInfo.InvariantCulture)));
+                            trace.TimeStamps.Add(DateTime.Parse(time.InnerText, CultureInfo.InvariantCulture));
                         }
-            return trace;
+                    }
+                    if (trace.Locations.Count > 0)
+                        yield return trace;
+                }
+            }
         }
     }
 }

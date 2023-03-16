@@ -22,7 +22,7 @@ namespace PhotoLocator.Gps
             return val1 * (1 - alpha) + val2 * alpha;
         }
 
-        public static GpsTrace DecodeStream(Stream stream, TimeSpan minimumInterval)
+        public static IEnumerable<GpsTrace> DecodeStream(Stream stream, TimeSpan minimumInterval)
         {
             var document = new XmlDocument();
             document.Load(stream);
@@ -102,7 +102,8 @@ namespace PhotoLocator.Gps
                     }
                 }
             };
-            return trace;
+            if (trace.Locations.Count > 0)
+                yield return trace;
         }
     }
 }

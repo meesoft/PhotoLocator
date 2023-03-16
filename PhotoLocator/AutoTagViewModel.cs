@@ -142,10 +142,10 @@ namespace PhotoLocator
                 return GpsTraces;
             var minDist = TimeSpan.FromMinutes(MaxTimestampDifference);
             if (File.Exists(TraceFilePath))
-                return GpsTraces.Append(GpsTrace.DecodeGpsTraceFile(TraceFilePath, minDist));
+                return GpsTraces.Concat(GpsTrace.DecodeGpsTraceFile(TraceFilePath, minDist));
             return GpsTraces.
-                Concat(Directory.EnumerateFiles(TraceFilePath, "*.gpx").Select(fileName => GpsTrace.DecodeGpsTraceFile(fileName, minDist))).
-                Concat(Directory.EnumerateFiles(TraceFilePath, "*.kml").Select(fileName => GpsTrace.DecodeGpsTraceFile(fileName, minDist)));
+                Concat(Directory.EnumerateFiles(TraceFilePath, "*.gpx").SelectMany(fileName => GpsTrace.DecodeGpsTraceFile(fileName, minDist))).
+                Concat(Directory.EnumerateFiles(TraceFilePath, "*.kml").SelectMany(fileName => GpsTrace.DecodeGpsTraceFile(fileName, minDist)));
         }
 
         private void SaveSettings()
