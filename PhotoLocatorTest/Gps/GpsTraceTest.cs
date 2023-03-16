@@ -1,4 +1,4 @@
-namespace PhotoLocator.Metadata
+namespace PhotoLocator.Gps
 {
     [TestClass]
     public class GpsTraceTest
@@ -9,7 +9,7 @@ namespace PhotoLocator.Metadata
             using var stream = GetType().Assembly.GetManifestResourceStream(@"PhotoLocator.TestData.2022-07-02_16-19.gpx")
                 ?? throw new FileNotFoundException("Resource not found");
 
-            var trace = GpsTrace.DecodeGpxStream(stream);
+            var trace = GpxDecoder.DecodeStream(stream);
 
             Assert.AreEqual(244, trace.Locations.Count);
         }
@@ -20,7 +20,7 @@ namespace PhotoLocator.Metadata
             using var stream = GetType().Assembly.GetManifestResourceStream(@"PhotoLocator.TestData.history-2016-05-17.kml")
                 ?? throw new FileNotFoundException("Resource not found");
 
-            var trace = GpsTrace.DecodeKmlStream(stream, TimeSpan.FromMinutes(15));
+            var trace = KmlDecoder.DecodeStream(stream, TimeSpan.FromMinutes(15));
 
             Assert.AreEqual(540, trace.Locations.Count);
         }
@@ -32,7 +32,7 @@ namespace PhotoLocator.Metadata
             using var stream = GetType().Assembly.GetManifestResourceStream(@"PhotoLocator.TestData.history-2022-07-09.kml")
                 ?? throw new FileNotFoundException("Resource not found");
 
-            var trace = GpsTrace.DecodeKmlStream(stream, TimeSpan.FromMinutes(15));
+            var trace = KmlDecoder.DecodeStream(stream, TimeSpan.FromMinutes(15));
 
             Assert.AreEqual(259, trace.Locations.Count);
         }

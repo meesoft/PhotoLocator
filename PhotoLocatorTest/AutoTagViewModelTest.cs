@@ -1,6 +1,6 @@
 ﻿using MapControl;
 using Moq;
-using PhotoLocator.Metadata;
+using PhotoLocator.Gps;
 
 namespace PhotoLocator
 {

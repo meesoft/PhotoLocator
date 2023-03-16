@@ -1,5 +1,6 @@
 ﻿using MapControl;
 using Microsoft.VisualBasic;
+using PhotoLocator.Gps;
 using PhotoLocator.Helpers;
 using PhotoLocator.MapDisplay;
 using PhotoLocator.Metadata;
@@ -242,6 +243,15 @@ namespace PhotoLocator
                     Points.RemoveAt(i);
             foreach (var item in newPoints.Values)
                 Points.Add(new PointItem { Location = item.GeoTag, Name = item.Name });
+        }
+
+        private void UpdatePushpins()
+        {
+            Pushpins.Clear();
+            if (SelectedPicture?.GeoTag != null)
+                Pushpins.Add(new PointItem { Location = SelectedPicture.GeoTag, Name = SelectedPicture.Name });
+            if (SavedLocation != null)
+                Pushpins.Add(new PointItem { Location = SavedLocation, Name = "Saved location" });
         }
 
         private async Task UpdatePreviewPictureAsync()
@@ -696,15 +706,6 @@ namespace PhotoLocator
                 SelectedPicture.GeoTag.Longitude.ToString(CultureInfo.InvariantCulture) + "&t=h";
             Process.Start(new ProcessStartInfo(url) { UseShellExecute = true });
         });
-
-        private void UpdatePushpins()
-        {
-            Pushpins.Clear();
-            if (SelectedPicture?.GeoTag != null)
-                Pushpins.Add(new PointItem { Location = SelectedPicture.GeoTag, Name = SelectedPicture.Name });
-            if (SavedLocation != null)
-                Pushpins.Add(new PointItem { Location = SavedLocation, Name = "Saved location" });
-        }
 
         private async Task LoadFolderContentsAsync(bool keepSelection)
         {

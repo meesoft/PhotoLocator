@@ -1,5 +1,4 @@
 ﻿using MapControl;
-using PhotoLocator.MapDisplay;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
@@ -7,42 +6,10 @@ using System.IO;
 using System.Linq;
 using System.Xml;
 
-namespace PhotoLocator.Metadata
+namespace PhotoLocator.Gps
 {
-    internal class GpsTrace : PolylineItem
+    static class KmlDecoder
     {
-        public readonly List<DateTime> TimeStamps = new();
-
-        public Location? Center => Locations is null || Locations.Count == 0 ? null : new Location(
-            Locations.Select(l => l.Latitude).Sum() / Locations.Count,
-            Locations.Select(l => l.Longitude).Sum() / Locations.Count);
-
-        public static GpsTrace DecodeGpxStream(Stream stream)
-        {
-            var trace = new GpsTrace();
-            var document = new XmlDocument();
-            document.Load(stream);
-            var gpx = document["gpx"] ?? throw new FileFormatException("gpx node missing");
-            var trk = gpx["trk"] ?? throw new FileFormatException("trk node missing");
-            foreach (XmlNode trkseg in trk)
-                if (trkseg.Name == "trkseg")
-                    foreach (XmlNode trkpt in trkseg)
-                        if (trkpt.Name == "trkpt")
-                        {
-                            var lat = trkpt.Attributes?["lat"];
-                            var lon = trkpt.Attributes?["lon"];
-                            var time = trkpt["time"];
-                            if (lat != null && lon != null && time != null)
-                            {
-                                trace.Locations.Add(new Location(
-                                    double.Parse(lat.InnerText, CultureInfo.InvariantCulture),
-                                    double.Parse(lon.InnerText, CultureInfo.InvariantCulture)));
-                                trace.TimeStamps.Add(DateTime.Parse(time.InnerText, CultureInfo.InvariantCulture));
-                            }
-                        }
-            return trace;
-        }
-
         class Placemark
         {
             public string? Name;
@@ -52,10 +19,10 @@ namespace PhotoLocator.Metadata
 
         static double Interpolate(double val1, double val2, double alpha)
         {
-            return (val1 * (1 - alpha) + val2 * alpha);
+            return val1 * (1 - alpha) + val2 * alpha;
         }
 
-        public static GpsTrace DecodeKmlStream(Stream stream, TimeSpan minimumInterval)
+        public static GpsTrace DecodeStream(Stream stream, TimeSpan minimumInterval)
         {
             var document = new XmlDocument();
             document.Load(stream);
@@ -110,7 +77,7 @@ namespace PhotoLocator.Metadata
                 }
             }
 
-            double minInterval = minimumInterval.TotalHours / 24;
+            var minInterval = minimumInterval.TotalHours / 24;
             var trace = new GpsTrace();
             foreach (var placemark in placemarks)
             {
@@ -127,7 +94,7 @@ namespace PhotoLocator.Metadata
                 }
                 else
                 {
-                    for (int i = 0; i < placemark.Coordinates.Count; i++)
+                    for (var i = 0; i < placemark.Coordinates.Count; i++)
                     {
                         trace.Locations.Add(placemark.Coordinates[i]);
                         trace.TimeStamps.Add(DateTime.SpecifyKind(DateTime.FromOADate(
@@ -136,17 +103,6 @@ namespace PhotoLocator.Metadata
                 }
             };
             return trace;
-        }
-
-        public static GpsTrace DecodeGpsTraceFile(string fileName, TimeSpan mininumInterval)
-        {
-            var ext = Path.GetExtension(fileName).ToLowerInvariant();
-            using var file = File.OpenRead(fileName);
-            if (ext == ".gpx")
-                return DecodeGpxStream(file);
-            if (ext == ".kml")
-                return DecodeKmlStream(file, mininumInterval);
-            throw new FileFormatException("Unsupported file format");
         }
     }
 }
