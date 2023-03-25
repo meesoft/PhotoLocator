@@ -94,6 +94,18 @@ namespace PhotoLocator
         }
         bool _isChecked;
 
+        public bool IsVideo
+        {
+            get
+            {
+                if (IsDirectory)
+                    return false;
+                var ext = Path.GetExtension(FullPath).ToLowerInvariant();
+                var isVideo = ext == ".mp4" || ext == ".mov" || ext == ".avi";
+                return isVideo;
+            }
+        }
+
         public bool GeoTagSaved
         {
             get => _geoTagSaved;
@@ -229,8 +241,7 @@ namespace PhotoLocator
         {
             try
             {
-                var ext = Path.GetExtension(FullPath).ToLowerInvariant();
-                if (ext == ".mp4" || ext == ".mov" || ext == ".avi")
+                if (IsVideo)
                     return;
                 GeoTag = await Task.Run(async () =>
                 {

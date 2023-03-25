@@ -13,7 +13,6 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
-using System.Windows.Media.Imaging;
 using System.Windows.Threading;
 
 namespace PhotoLocator
@@ -90,8 +89,22 @@ namespace PhotoLocator
 
         private void UpdatePicture()
         {
+            _timer.Stop();
             SelectedPicture = _pictures[PictureIndex];
-            PictureSource = SelectedPicture.LoadPreview(System.Threading.CancellationToken.None);
+
+            if (SelectedPicture.IsVideo)
+            {
+                MediaPlayer.Source = new Uri(SelectedPicture.FullPath);
+                MediaPlayer.Visibility = Visibility.Visible;
+                PictureSource = null;
+            }
+            else
+            {
+                PictureSource = SelectedPicture.LoadPreview(System.Threading.CancellationToken.None);
+                MediaPlayer.Visibility = Visibility.Collapsed;
+                MediaPlayer.Source = null;
+                _timer.Start();
+            }
 
             var name = Path.GetFileNameWithoutExtension(SelectedPicture.Name)!;
             var i = name.IndexOf('[', StringComparison.Ordinal);
@@ -115,8 +128,6 @@ namespace PhotoLocator
                 IsMapVisible = true;
             }
 
-            _timer.Stop();
-            _timer.Start();
             WinAPI.KeepDisplayAlive();
         }
 
