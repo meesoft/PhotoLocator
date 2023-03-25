@@ -116,7 +116,9 @@
                 <KeyBinding Key="Enter" Modifiers="Alt" Command="{Binding FilePropertiesCommand}" />
                 <KeyBinding Key="A" Modifiers="Ctrl" Command="{Binding SelectAllCommand}" />
                 <KeyBinding Key="Add" Command="{Binding SelectCandidatesCommand}" />
+                <KeyBinding Key="OemPlus" Command="{Binding SelectCandidatesCommand}" />
                 <KeyBinding Key="Subtract" Command="{Binding DeselectAllCommand}" />
+                <KeyBinding Key="OemMinus" Command="{Binding DeselectAllCommand}" />
                 <KeyBinding Key="Divide" Command="{Binding QuickSearchCommand}" />
                 <KeyBinding Key="F" Modifiers="Ctrl" Command="{Binding QuickSearchCommand}" />
             </ListBox.InputBindings>
