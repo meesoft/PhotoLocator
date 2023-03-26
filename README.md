@@ -9,7 +9,7 @@ KML files can be obtained directly from the Google maps location history. GPX fi
 
 ![Screenshot](./Screenshot.jpg)
 
-## JPEG and raw file preview
+## JPEG, raw and video file preview
 PhotoLocator can also preview JPEG, raw and video files and you can delete unwanted files. Note that to be able to preview 
 some raw image formats you need to install the Raw Image Extension from the Microsoft Store.
 
@@ -19,8 +19,8 @@ some raw image formats you need to install the Raw Image Extension from the Micr
 Selected files can be automatically renamed based on timestamp, dimensions and other metadata tags.
 
 ## Slideshow with location map
-There is also a full screen slideshow feature with a small location map display. You can drag/drop in files and folders to do a 
-slideshow across multiple folders. 
+There is also a full screen slideshow feature with a small location map display. The slideshow can also play video files.
+You can drag/drop in files and folders to do a slideshow across multiple folders. 
 
 Note that it is possible to use Chrome's full screen cast feature to display the slideshow on a TV with Chromecast.
 
