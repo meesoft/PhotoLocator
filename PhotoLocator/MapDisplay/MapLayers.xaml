@@ -24,7 +24,7 @@
         Description="© [OpenTopoMap](https://opentopomap.org/) © [OpenStreetMap contributors](http://www.openstreetmap.org/copyright)"/>
     <map:MapTileLayer
         x:Key="Seamarks"
-        TileSource="http://tiles.openseamap.org/seamark/{z}/{x}/{y}.png"
+        TileSource="https://tiles.openseamap.org/seamark/{z}/{x}/{y}.png"
         SourceName="Seamarks"
         MinZoomLevel="9"
         MaxZoomLevel="18"/>
@@ -55,9 +55,11 @@
     <map:WmsImageLayer
         x:Key="TopPlusOpenWMS"
         ServiceUri="https://sgx.geodatenzentrum.de/wms_topplus_open"
-        Description="© [BKG](https://gdz.bkg.bund.de/index.php/default/webdienste/topplus-produkte/wms-topplusopen-mit-layer-fur-normalausgabe-und-druck-wms-topplus-open.html)"/>
+        Description="© [BKG](https://gdz.bkg.bund.de/index.php/default/webdienste/topplus-produkte/wms-topplusopen-mit-layer-fur-normalausgabe-und-druck-wms-topplus-open.html)"
+        RelativeImageSize="1.2"/>
     <map:WmsImageLayer
         x:Key="OpenStreetMapWMS"
         ServiceUri="http://ows.terrestris.de/osm/service"
-        Description="© [terrestris GmbH &amp; Co. KG](http://ows.terrestris.de/) © [OpenStreetMap contributors](http://www.openstreetmap.org/copyright)"/>
+        Description="© [terrestris GmbH &amp; Co. KG](http://ows.terrestris.de/) © [OpenStreetMap contributors](http://www.openstreetmap.org/copyright)"
+        RelativeImageSize="1.2"/>
 </ResourceDictionary>

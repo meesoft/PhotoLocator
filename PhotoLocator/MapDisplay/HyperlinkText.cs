@@ -1,8 +1,6 @@
 ﻿// XAML Map Control - https://github.com/ClemensFischer/XAML-Map-Control
-// © 2022 Clemens Fischer
+// Copyright © 2023 Clemens Fischer
 // Licensed under the Microsoft Public License (Ms-PL)
-
-#nullable disable
 
 using System;
 using System.Collections.Generic;
@@ -42,7 +40,7 @@ namespace PhotoLocator.MapDisplay
 
                 if (match.Success &&
                     match.Groups.Count == 3 &&
-                    Uri.TryCreate(match.Groups[2].Value, UriKind.Absolute, out var uri))
+                    Uri.TryCreate(match.Groups[2].Value, UriKind.Absolute, out Uri uri))
                 {
                     inlines.Add(new Run { Text = text.Substring(0, match.Index) });
                     text = text.Substring(match.Index + match.Length);
@@ -54,7 +52,6 @@ namespace PhotoLocator.MapDisplay
 
                     link.RequestNavigate += (s, e) =>
                     {
-#pragma warning disable CA1031 // Do not catch general exception types
                         try
                         {
                             Process.Start(new ProcessStartInfo(e.Uri.ToString()) { UseShellExecute = true });
@@ -63,7 +60,6 @@ namespace PhotoLocator.MapDisplay
                         {
                             Debug.WriteLine($"{e.Uri}: {ex}");
                         }
-#pragma warning restore CA1031 // Do not catch general exception types
                     };
 #endif
                     inlines.Add(link);
@@ -96,7 +92,9 @@ namespace PhotoLocator.MapDisplay
             InlineCollection inlines = null;
 
             if (obj is TextBlock block)
+            {
                 inlines = block.Inlines;
+            }
             else if (obj is Paragraph paragraph)
             {
                 inlines = paragraph.Inlines;
@@ -106,7 +104,7 @@ namespace PhotoLocator.MapDisplay
             {
                 inlines.Clear();
 
-                foreach (var inline in ((string)e.NewValue).TextToInlines())
+                foreach (var inline in TextToInlines((string)e.NewValue))
                 {
                     inlines.Add(inline);
                 }

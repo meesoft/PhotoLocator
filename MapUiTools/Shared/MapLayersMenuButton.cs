@@ -1,7 +1,8 @@
 ﻿// XAML Map Control - https://github.com/ClemensFischer/XAML-Map-Control
-// © 2022 Clemens Fischer
+// Copyright © 2023 Clemens Fischer
 // Licensed under the Microsoft Public License (Ms-PL)
 
+using System;
 using System.Collections.ObjectModel;
 using System.Collections.Specialized;
 using System.Linq;
@@ -27,6 +28,9 @@ namespace MapControl.UiTools
     {
         public string Text { get; set; }
         public UIElement Layer { get; set; }
+        public Func<UIElement> LayerFactory { get; set; }
+
+        public UIElement GetLayer() => Layer ?? (Layer = LayerFactory?.Invoke());
     }
 
 #if WINUI || UWP
@@ -51,8 +55,8 @@ namespace MapControl.UiTools
 
         public MapBase Map
         {
-            get { return (MapBase)GetValue(MapProperty); }
-            set { SetValue(MapProperty, value); }
+            get => (MapBase)GetValue(MapProperty);
+            set => SetValue(MapProperty, value);
         }
 
         public Collection<MapLayerItem> MapLayers { get; } = new ObservableCollection<MapLayerItem>();
@@ -67,10 +71,10 @@ namespace MapControl.UiTools
 
                 foreach (var item in MapLayers)
                 {
-                    menu.Items.Add(CreateMenuItem(item.Text, item.Layer, MapLayerClicked));
+                    menu.Items.Add(CreateMenuItem(item.Text, item, MapLayerClicked));
                 }
 
-                var initialLayer = MapLayers.Select(l => l.Layer).FirstOrDefault();
+                var initialLayer = MapLayers.Select(l => l.GetLayer()).FirstOrDefault();
 
                 if (MapOverlays.Count > 0)
                 {
@@ -81,7 +85,7 @@ namespace MapControl.UiTools
 
                     foreach (var item in MapOverlays)
                     {
-                        menu.Items.Add(CreateMenuItem(item.Text, item.Layer, MapOverlayClicked));
+                        menu.Items.Add(CreateMenuItem(item.Text, item, MapOverlayClicked));
                     }
                 }
 
@@ -95,17 +99,17 @@ namespace MapControl.UiTools
         private void MapLayerClicked(object sender, RoutedEventArgs e)
         {
             var item = (FrameworkElement)sender;
-            var layer = (UIElement)item.Tag;
+            var mapLayerItem = (MapLayerItem)item.Tag;
 
-            SetMapLayer(layer);
+            SetMapLayer(mapLayerItem.GetLayer());
         }
 
         private void MapOverlayClicked(object sender, RoutedEventArgs e)
         {
             var item = (FrameworkElement)sender;
-            var layer = (UIElement)item.Tag;
+            var mapLayerItem = (MapLayerItem)item.Tag;
 
-            ToggleMapOverlay(layer);
+            ToggleMapOverlay(mapLayerItem.GetLayer());
         }
 
         private void SetMapLayer(UIElement layer)
@@ -129,7 +133,7 @@ namespace MapControl.UiTools
             {
                 int index = 1;
 
-                foreach (var overlay in MapOverlays.Select(l => l.Layer))
+                foreach (var overlay in MapOverlays.Select(o => o.Layer).Where(o => o != null))
                 {
                     if (overlay == layer)
                     {
@@ -151,7 +155,7 @@ namespace MapControl.UiTools
         {
             foreach (var item in GetMenuItems())
             {
-                item.IsChecked = Map.Children.Contains((UIElement)item.Tag);
+                item.IsChecked = Map.Children.Contains(((MapLayerItem)item.Tag).Layer);
             }
         }
     }

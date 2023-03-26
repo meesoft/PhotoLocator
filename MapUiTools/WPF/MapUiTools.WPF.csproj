@@ -5,9 +5,9 @@
         <RootNamespace>MapControl.UiTools</RootNamespace>
         <AssemblyTitle>XAML Map Control UI Tools Library for WPF</AssemblyTitle>
         <Product>XAML Map Control</Product>
-        <Version>7.2.0</Version>
+        <Version>8.2.0</Version>
         <Authors>Clemens Fischer</Authors>
-        <Copyright>Copyright © 2022 Clemens Fischer</Copyright>
+        <Copyright>Copyright © 2023 Clemens Fischer</Copyright>
         <SignAssembly>true</SignAssembly>
     </PropertyGroup>
 
@@ -15,7 +15,7 @@
         <Compile Include="..\Shared\*.cs" />
     </ItemGroup>
 
-	<ItemGroup>
-		<PackageReference Include="XAML.MapControl" Version="7.2.1" />
-	</ItemGroup>
+    <ItemGroup>
+		<PackageReference Include="XAML.MapControl" Version="8.1.0" />
+    </ItemGroup>
 </Project>
