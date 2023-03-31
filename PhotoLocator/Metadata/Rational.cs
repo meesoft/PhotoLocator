@@ -75,20 +75,18 @@ namespace PhotoLocator.Metadata
         //form the 3-rational exif value from an angle in decimal degrees
         public GPSRational(double angleInDeg)
         {
-            //convert angle in decimal degrees to three rationals (deg, min, sec) with denominator of 1
-            //NOTE:  this formulation results in a descretization of about 100 ft in the lat/lon position
+            const int secondsDenominator = 100;
+
             var absAngleInDeg = Math.Abs(angleInDeg);
             var degreesInt = (int)absAngleInDeg;
             absAngleInDeg -= degreesInt;
             var minutesInt = (int)(absAngleInDeg * 60.0);
             absAngleInDeg -= minutesInt / 60.0;
-            var secondsInt = (int)(absAngleInDeg * 3600.0 + 0.50);
+            var secondsInt = (int)(absAngleInDeg * 3600.0 * secondsDenominator + 0.50);
 
-            //form a rational using "1" as the denominator
-            var denominator = 1;
-            Degrees = new Rational(degreesInt, denominator);
-            Minutes = new Rational(minutesInt, denominator);
-            Seconds = new Rational(secondsInt, denominator);
+            Degrees = new Rational(degreesInt, 1);
+            Minutes = new Rational(minutesInt, 1);
+            Seconds = new Rational(secondsInt, secondsDenominator);
 
             AngleInDegrees = Degrees.ToDouble() + Minutes.ToDouble() / 60.0 + Seconds.ToDouble() / 3600.0;
 
