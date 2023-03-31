@@ -9,15 +9,16 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 	ProjectSection(SolutionItems) = preProject
 		.editorconfig = .editorconfig
 		.gitignore = .gitignore
-		README.md = README.md
 		Directory.Build.props = Directory.Build.props
+		.github\workflows\dotnet.yml = .github\workflows\dotnet.yml
+		README.md = README.md
 	EndProjectSection
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MapUiTools.WPF", "MapUiTools\WPF\MapUiTools.WPF.csproj", "{F3B40BD6-38BB-4F20-BC77-07C368CE0753}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "PhotoLocatorTest", "PhotoLocatorTest\PhotoLocatorTest.csproj", "{AF564DC9-3BE9-4D56-9403-017DB2D00A88}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PhotoLocator.PhotoshopImageLoader", "PhotoshopImageLoader\PhotoLocator.PhotoshopImageLoader.csproj", "{AB3CFAFD-1E8D-4EC8-9B58-0BA7B8B08198}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "PhotoLocator.PhotoshopImageLoader", "PhotoshopImageLoader\PhotoLocator.PhotoshopImageLoader.csproj", "{AB3CFAFD-1E8D-4EC8-9B58-0BA7B8B08198}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

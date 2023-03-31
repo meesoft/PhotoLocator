@@ -30,7 +30,7 @@ namespace PhotoLocator.MapDisplay
         /// Converts text containing hyperlinks in markdown syntax [text](url)
         /// to a collection of Run and Hyperlink inlines.
         /// </summary>
-        public static IEnumerable<Inline> TextToInlines(this string text)
+        public static IEnumerable<Inline> TextToInlines(this string? text)
         {
             var inlines = new List<Inline>();
 
@@ -40,7 +40,7 @@ namespace PhotoLocator.MapDisplay
 
                 if (match.Success &&
                     match.Groups.Count == 3 &&
-                    Uri.TryCreate(match.Groups[2].Value, UriKind.Absolute, out Uri uri))
+                    Uri.TryCreate(match.Groups[2].Value, UriKind.Absolute, out Uri? uri))
                 {
                     inlines.Add(new Run { Text = text.Substring(0, match.Index) });
                     text = text.Substring(match.Index + match.Length);
@@ -89,7 +89,7 @@ namespace PhotoLocator.MapDisplay
 
         private static void InlinesSourcePropertyChanged(DependencyObject obj, DependencyPropertyChangedEventArgs e)
         {
-            InlineCollection inlines = null;
+            InlineCollection? inlines = null;
 
             if (obj is TextBlock block)
             {
