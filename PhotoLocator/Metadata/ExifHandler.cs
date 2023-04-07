@@ -3,6 +3,7 @@
 using MapControl;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.Linq;
@@ -89,6 +90,29 @@ namespace PhotoLocator.Metadata
             memoryStream.Position = 0;
             memoryStream.CopyTo(targetFileStream);
             memoryStream.Dispose();
+        }
+
+        public static void SetGeotag(string sourceFileName, string targetFileName, Location location, string exifToolPath)
+        {
+            var startInfo = new ProcessStartInfo(exifToolPath,
+                $"-GPSLatitude={location.Latitude.ToString(CultureInfo.InvariantCulture)} " +
+                $"-GPSLongitude={location.Longitude.ToString(CultureInfo.InvariantCulture)} " +
+                $"\"{sourceFileName}\" ");
+            if (targetFileName == sourceFileName)
+                startInfo.Arguments += "-overwrite_original";
+            else
+            {
+                File.Delete(targetFileName);
+                startInfo.Arguments += $"-out \"{targetFileName}\"";
+            }
+            startInfo.CreateNoWindow = true;
+            startInfo.RedirectStandardOutput = true;
+            startInfo.RedirectStandardError = true;
+            var process = Process.Start(startInfo) ?? throw new IOException("Failed to start ExifTool");
+            if (!process.WaitForExit(60000))
+                throw new TimeoutException();
+            if (process.ExitCode != 0)
+                throw new IOException(process.StandardOutput.ReadToEnd() + '\n' + process.StandardError.ReadToEnd());
         }
 
         private static void CheckPixels(BitmapFrame frame1, BitmapFrame frame2)

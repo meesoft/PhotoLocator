@@ -1,5 +1,7 @@
-﻿using System;
+﻿using PhotoLocator.Helpers;
+using System;
 using System.ComponentModel;
+using System.IO;
 using System.Runtime.CompilerServices;
 using System.Windows;
 
@@ -47,6 +49,13 @@ namespace PhotoLocator
         }
         string? _savedFilePostfix;
 
+        public string? ExifToolPath
+        {
+            get => _exifToolPath;
+            set => SetProperty(ref _exifToolPath, value);
+        }
+        string? _exifToolPath;
+
         public int SlideShowInterval
         {
             get => _slideShowInterval;
@@ -63,6 +72,31 @@ namespace PhotoLocator
 
         private void HandleOkButtonClick(object sender, RoutedEventArgs e)
         {
+            OkButton.Focus();
+
+            if (!string.IsNullOrEmpty(SavedFilePostfix))
+            { 
+                foreach(var ch in Path.GetInvalidFileNameChars())
+                    if (SavedFilePostfix.Contains(ch, StringComparison.Ordinal))
+                        throw new UserMessageException($"Postfix contains invalid character '{ch}'");
+            }
+
+            if (!string.IsNullOrEmpty(ExifToolPath))
+            {
+                const string ExifToolName = "exiftool.exe";
+
+                if (!File.Exists(ExifToolPath))
+                {
+                    var newPath = Path.Combine(ExifToolPath, ExifToolName);
+                    if (File.Exists(newPath))
+                        ExifToolPath = newPath;
+                    else
+                        throw new UserMessageException("ExifTool not found in specified path");
+                }
+                else if (!Path.GetFileName(ExifToolPath).Equals(ExifToolName, StringComparison.OrdinalIgnoreCase))
+                    throw new UserMessageException($"ExifTool executable must be named '{ExifToolName}'");
+            }
+
             DialogResult = true;
         }
 

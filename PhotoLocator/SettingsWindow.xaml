@@ -16,6 +16,8 @@
             <RowDefinition Height="35"/>
             <RowDefinition Height="20"/>
             <RowDefinition Height="20"/>
+            <RowDefinition Height="20"/>
+            <RowDefinition Height="20"/>
             <RowDefinition Height="25"/>
             <RowDefinition Height="20"/>
             <RowDefinition Height="35"/>
@@ -24,7 +26,7 @@
         </Grid.RowDefinitions>
 
         <TextBlock Grid.Row="0" Foreground="#FFEEEEEE" VerticalAlignment="Bottom"
-                   Text="Show photo files with extensions (writing only supported for JPG):" />
+                   Text="Show photo files with extensions:" />
         <TextBox Grid.Row="1" Text="{Binding PhotoFileExtensions}"/>
 
         <CheckBox Grid.Row="2" Content="Show folders" IsChecked="{Binding ShowFolders}" VerticalAlignment="Center" />
@@ -34,13 +36,17 @@
         <TextBox Grid.Row="4" Text="{Binding SavedFilePostfix}"/>
 
         <TextBlock Grid.Row="5" Foreground="#FFEEEEEE" VerticalAlignment="Bottom"
+                   Text="ExifTool path (required for tagging other that JPEGs):" />
+        <TextBox Grid.Row="6" Text="{Binding ExifToolPath}"/>
+
+        <TextBlock Grid.Row="7" Foreground="#FFEEEEEE" VerticalAlignment="Bottom"
                    Text="Slideshow interval in seconds:" />
-        <TextBox Grid.Row="6" Text="{Binding SlideShowInterval}"/>
+        <TextBox Grid.Row="8" Text="{Binding SlideShowInterval}"/>
 
-        <CheckBox Grid.Row="7" Content="Show EXIF metadata in slide show" IsChecked="{Binding ShowMetadataInSlideShow}" VerticalAlignment="Center" />
+        <CheckBox Grid.Row="9" Content="Show EXIF metadata in slide show" IsChecked="{Binding ShowMetadataInSlideShow}" VerticalAlignment="Center" />
 
-        <StackPanel Grid.Row="9" Orientation="Horizontal" HorizontalAlignment="Right">
-            <Button Content="Save" Width="80" Click="HandleOkButtonClick" IsDefault="True" />
+        <StackPanel Grid.Row="11" Orientation="Horizontal" HorizontalAlignment="Right">
+            <Button Content="Save" Width="80" Click="HandleOkButtonClick" IsDefault="True" Name="OkButton" />
             <Button Content="Cancel" Margin="10,0,0,0" Width="80" IsCancel="True" />
         </StackPanel>
     </Grid>

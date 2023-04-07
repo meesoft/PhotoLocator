@@ -24,7 +24,7 @@ using System.Windows.Threading;
 
 namespace PhotoLocator
 {
-    internal sealed class MainViewModel : INotifyPropertyChanged, IDisposable
+    internal sealed class MainViewModel : INotifyPropertyChanged, ISettings, IDisposable
     {
 #if DEBUG
         static readonly bool _isInDesignMode = DesignerProperties.GetIsInDesignMode(new DependencyObject());
@@ -105,6 +105,8 @@ namespace PhotoLocator
         public IEnumerable<string> PhotoFileExtensions { get; set; } = Enumerable.Empty<string>();
 
         public string? SavedFilePostfix { get; set; }
+
+        public string? ExifToolPath { get; set; }
 
         public bool ShowFolders { get; set; }
 
@@ -406,7 +408,7 @@ namespace PhotoLocator
                 int i = 0;
                 await Parallel.ForEachAsync(updatedPictures, new ParallelOptions { MaxDegreeOfParallelism = 2 }, async (item, ct) =>
                 {
-                    await item.SaveGeoTagAsync(SavedFilePostfix);
+                    await item.SaveGeoTagAsync();
                     progressCallback((double)Interlocked.Increment(ref i) / updatedPictures.Length);
                 });
                 await Task.Delay(10);
@@ -462,6 +464,7 @@ namespace PhotoLocator
             settingsWin.PhotoFileExtensions = photoFileExtensions;
             settingsWin.ShowFolders = ShowFolders;
             settingsWin.SavedFilePostfix = SavedFilePostfix;
+            settingsWin.ExifToolPath = ExifToolPath;
             settingsWin.SlideShowInterval = SlideShowInterval;
             settingsWin.ShowMetadataInSlideShow = ShowMetadataInSlideShow;
             settingsWin.DataContext = settingsWin;
@@ -479,6 +482,7 @@ namespace PhotoLocator
                     refresh = true;
                 }
                 SavedFilePostfix = settingsWin.SavedFilePostfix;
+                ExifToolPath = settingsWin.ExifToolPath;
                 SlideShowInterval = settingsWin.SlideShowInterval;
                 ShowMetadataInSlideShow = settingsWin.ShowMetadataInSlideShow;
                 if (refresh)
@@ -682,17 +686,17 @@ namespace PhotoLocator
         {
             if (SelectedPicture is null || SelectedPicture.IsDirectory)
                 return;
-            var settingsWin = new MetadataWindow();
+            var metadataWin = new MetadataWindow();
             using (new CursorOverride())
             {
-                settingsWin.Owner = App.Current.MainWindow;
-                settingsWin.Title = SelectedPicture.Name;
-                settingsWin.Metadata = String.Join("\n", ExifHandler.EnumerateMetadata(SelectedPicture.FullPath));
+                metadataWin.Owner = App.Current.MainWindow;
+                metadataWin.Title = SelectedPicture.Name;
+                metadataWin.Metadata = String.Join("\n", ExifHandler.EnumerateMetadata(SelectedPicture.FullPath));
             }
-            if (string.IsNullOrEmpty(settingsWin.Metadata))
+            if (string.IsNullOrEmpty(metadataWin.Metadata))
                 throw new UserMessageException("Unable to list metadata for file");
-            settingsWin.DataContext = settingsWin;
-            settingsWin.ShowDialog();
+            metadataWin.DataContext = metadataWin;
+            metadataWin.ShowDialog();
         });
 
         public ICommand OpenInMapsCommand => new RelayCommand(o =>
@@ -722,7 +726,7 @@ namespace PhotoLocator
             SetupFileSystemWatcher();
             if (ShowFolders)
                 foreach (var dir in Directory.EnumerateDirectories(PhotoFolderPath))
-                    Pictures.Add(new PictureItemViewModel(dir, true, HandleFilePropertyChanged));
+                    Pictures.Add(new PictureItemViewModel(dir, true, HandleFilePropertyChanged, null));
             await AppendFilesAsync(Directory.EnumerateFiles(PhotoFolderPath));
             if (Polylines.Count > 0)
                 MapCenter = Polylines[0].Center;
@@ -778,13 +782,13 @@ namespace PhotoLocator
                     var ext = Path.GetExtension(name).ToLowerInvariant();
                     if (File.Exists(e.FullPath) && PhotoFileExtensions.Contains(ext))
                     {
-                        var newItem = new PictureItemViewModel(e.FullPath, false, HandleFilePropertyChanged);
+                        var newItem = new PictureItemViewModel(e.FullPath, false, HandleFilePropertyChanged, this);
                         if (!newItem.InsertOrdered(Pictures))
                             return;
                     }
                     else if (Directory.Exists(e.FullPath))
                     {
-                        var newItem = new PictureItemViewModel(e.FullPath, true, HandleFilePropertyChanged);
+                        var newItem = new PictureItemViewModel(e.FullPath, true, HandleFilePropertyChanged, null);
                         if (!newItem.InsertOrdered(Pictures))
                             return;
                     }
@@ -843,7 +847,7 @@ namespace PhotoLocator
                     continue;
                 var ext = Path.GetExtension(fileName).ToLowerInvariant();
                 if (PhotoFileExtensions.Contains(ext))
-                    Pictures.Add(new PictureItemViewModel(fileName, false, HandleFilePropertyChanged));
+                    Pictures.Add(new PictureItemViewModel(fileName, false, HandleFilePropertyChanged, this));
                 else if (ext == ".gpx" || ext == ".kml")
                 {
                     var traces = await Task.Run(() => GpsTrace.DecodeGpsTraceFile(fileName, TimeSpan.FromMinutes(1)));

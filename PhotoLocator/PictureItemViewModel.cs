@@ -25,27 +25,29 @@ namespace PhotoLocator
 #if DEBUG
         static readonly bool _isInDesignMode = DesignerProperties.GetIsInDesignMode(new DependencyObject());
 #endif
+        readonly ISettings? _settings;
 
         public event PropertyChangedEventHandler? PropertyChanged;
 
+#if DEBUG
         public PictureItemViewModel()
         {
             _name = nameof(PictureItemViewModel);
-#if DEBUG
             if (_isInDesignMode)
             {
                 _geoTag = new Location(0, 0);
                 _geoTagSaved = true;
             }
-#endif
         }
+#endif
 
-        public PictureItemViewModel(string fileName, bool isDirectory, PropertyChangedEventHandler handleFilePropertyChanged)
+        public PictureItemViewModel(string fileName, bool isDirectory, PropertyChangedEventHandler handleFilePropertyChanged, ISettings? settings)
         {
             _name = Path.GetFileName(fileName);
             FullPath = fileName;
             IsDirectory = isDirectory;
             PropertyChanged += handleFilePropertyChanged;
+            _settings = settings;
         }
 
         void NotifyPropertyChanged([CallerMemberName] string? propertyName = null)
@@ -168,6 +170,8 @@ namespace PhotoLocator
             {
                 if (IsDirectory)
                     return false;
+                if (_settings != null && !string.IsNullOrEmpty(_settings.ExifToolPath))
+                    return true;
                 var ext = Path.GetExtension(Name)?.ToLowerInvariant();
                 return ext == ".jpg" || ext == ".jpeg";
             }
@@ -334,15 +338,21 @@ namespace PhotoLocator
             }
         }
 
-        internal async Task SaveGeoTagAsync(string? postfix)
+        internal async Task SaveGeoTagAsync()
         {
             try
             {
                 await Task.Run(() =>
                 {
+                    var postfix = _settings?.SavedFilePostfix;
+                    var exifToolPath = _settings?.ExifToolPath;
                     var newFileName = string.IsNullOrEmpty(postfix) ? FullPath :
                         Path.Combine(Path.GetDirectoryName(FullPath)!, Path.GetFileNameWithoutExtension(FullPath)) + postfix + Path.GetExtension(FullPath);
-                    ExifHandler.SetGeotag(FullPath, newFileName, GeoTag ?? throw new InvalidOperationException(nameof(GeoTag) + " not set"));
+                    var tag = GeoTag ?? throw new InvalidOperationException(nameof(GeoTag) + " not set");
+                    if (string.IsNullOrEmpty(exifToolPath))
+                        ExifHandler.SetGeotag(FullPath, newFileName, tag);
+                    else
+                        ExifHandler.SetGeotag(FullPath, newFileName, tag, exifToolPath);
                 });
                 GeoTagSaved = true;
             }

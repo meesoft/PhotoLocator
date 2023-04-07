@@ -42,6 +42,7 @@ namespace PhotoLocator
             _viewModel.PhotoFileExtensions = settings.PhotoFileExtensions.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
             _viewModel.ShowFolders = settings.ShowFolders;
             _viewModel.SavedFilePostfix = settings.SavedFilePostfix;
+            _viewModel.ExifToolPath = settings.ExifToolPath;
             _viewModel.SlideShowInterval = settings.SlideShowInterval;
             _viewModel.ShowMetadataInSlideShow = settings.ShowMetadataInSlideShow;
             var i = settings.LeftColumnWidth;
@@ -99,6 +100,7 @@ namespace PhotoLocator
                 settings.PhotoFileExtensions = String.Join(",", _viewModel.PhotoFileExtensions);
             if (_viewModel.SavedFilePostfix != null)
                 settings.SavedFilePostfix = _viewModel.SavedFilePostfix;
+            settings.ExifToolPath = _viewModel.ExifToolPath;
             settings.ViewMode = _viewModel.SelectedViewModeItem?.Tag as ViewMode? ?? ViewMode.Map;
             settings.SlideShowInterval = _viewModel.SlideShowInterval;
             settings.ShowMetadataInSlideShow = _viewModel.ShowMetadataInSlideShow;

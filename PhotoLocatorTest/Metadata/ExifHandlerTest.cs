@@ -57,5 +57,37 @@ namespace PhotoLocator.Metadata
 
             Assert.AreEqual(35.0, tag, 0.1);
         }
+
+        [TestMethod]
+        public void SetGeotag_ShouldSet_UsingBitmapMetadata()
+        {
+            var setValue = new MapControl.Location(10, 20);
+            ExifHandler.SetGeotag(@"TestData\2022-06-17_19.03.02.jpg", @"TestData\2022-06-17_19.03.02-out1.jpg", setValue);
+
+            var newValue = ExifHandler.GetGeotag(@"TestData\2022-06-17_19.03.02-out1.jpg");
+            Assert.AreEqual(setValue, newValue);
+        }
+
+        const string ExifToolPath = @"C:\Users\Downloads\exiftool.exe";
+      
+        [TestMethod, Ignore]
+        public void SetGeotag_ShouldSet_UsingExifTool()
+        {
+            var setValue = new MapControl.Location(10, 20);
+            ExifHandler.SetGeotag(@"TestData\2022-06-17_19.03.02.jpg", @"TestData\2022-06-17_19.03.02-out2.jpg", setValue, ExifToolPath);
+
+            var newValue = ExifHandler.GetGeotag(@"TestData\2022-06-17_19.03.02-out2.jpg");
+            Assert.AreEqual(setValue, newValue);
+        }
+
+        [TestMethod, Ignore]
+        public void SetGeotag_ShouldSet_UsingExifTool_InPlace()
+        {
+            var setValue = new MapControl.Location(10, 20);
+            ExifHandler.SetGeotag(@"TestData\2022-06-17_19.03.02.jpg", @"TestData\2022-06-17_19.03.02.jpg", setValue, ExifToolPath);
+
+            var newValue = ExifHandler.GetGeotag(@"TestData\2022-06-17_19.03.02.jpg");
+            Assert.AreEqual(setValue, newValue);
+        }
     }
 }

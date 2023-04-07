@@ -43,6 +43,18 @@ namespace PhotoLocator
             set => Key.SetValue(nameof(PhotoFolderPath), value ?? throw new ArgumentException("Directory cannot be null"));
         }
 
+        public string SavedFilePostfix
+        {
+            get => Key.GetValue(nameof(SavedFilePostfix)) as string ?? "[geo]";
+            set => Key.SetValue(nameof(SavedFilePostfix), value);
+        }
+
+        public string? ExifToolPath
+        {
+            get => Key.GetValue(nameof(ExifToolPath)) as string;
+            set => Key.SetValue(nameof(ExifToolPath), value ?? string.Empty);
+        }
+
         public string? SelectedLayer
         {
             get => Key.GetValue(nameof(SelectedLayer)) as string;
@@ -53,12 +65,6 @@ namespace PhotoLocator
         {
             get => (ViewMode)(Key.GetValue(nameof(ViewMode)) as int? ?? (int)ViewMode.Split);
             set => Key.SetValue(nameof(ViewMode), (int)value);
-        }
-
-        public string SavedFilePostfix
-        {
-            get => Key.GetValue(nameof(SavedFilePostfix)) as string ?? "[geo]";
-            set => Key.SetValue(nameof(SavedFilePostfix), value);
         }
 
         public int SlideShowInterval

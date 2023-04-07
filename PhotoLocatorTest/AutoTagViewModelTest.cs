@@ -10,7 +10,7 @@ namespace PhotoLocator
         [TestMethod]
         public async Task AutoTag()
         {
-            var file = new PictureItemViewModel(@"TestData\2022-06-17_19.03.02.jpg", false, (s, e) => { });
+            var file = new PictureItemViewModel(@"TestData\2022-06-17_19.03.02.jpg", false, (s, e) => { }, null);
             file.IsSelected = true;
             await file.LoadMetadataAndThumbnailAsync(CancellationToken.None);
 
