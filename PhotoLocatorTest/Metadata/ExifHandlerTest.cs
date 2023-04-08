@@ -61,32 +61,54 @@ namespace PhotoLocator.Metadata
         [TestMethod]
         public void SetGeotag_ShouldSet_UsingBitmapMetadata()
         {
-            var setValue = new MapControl.Location(10, 20);
+            var setValue = new MapControl.Location(-10, -20);
             ExifHandler.SetGeotag(@"TestData\2022-06-17_19.03.02.jpg", @"TestData\2022-06-17_19.03.02-out1.jpg", setValue);
 
             var newValue = ExifHandler.GetGeotag(@"TestData\2022-06-17_19.03.02-out1.jpg");
             Assert.AreEqual(setValue, newValue);
         }
 
-        const string ExifToolPath = @"C:\Users\Downloads\exiftool.exe";
+        const string ExifToolPath = @"TestData\exiftool.exe";
       
-        [TestMethod, Ignore]
+        [TestMethod]
         public void SetGeotag_ShouldSet_UsingExifTool()
         {
-            var setValue = new MapControl.Location(10, 20);
+            if (!File.Exists(ExifToolPath))
+                Assert.Inconclusive("ExifTool not found");
+
+            var setValue = new MapControl.Location(-10, -20);
             ExifHandler.SetGeotag(@"TestData\2022-06-17_19.03.02.jpg", @"TestData\2022-06-17_19.03.02-out2.jpg", setValue, ExifToolPath);
 
             var newValue = ExifHandler.GetGeotag(@"TestData\2022-06-17_19.03.02-out2.jpg");
             Assert.AreEqual(setValue, newValue);
         }
 
-        [TestMethod, Ignore]
+        [TestMethod]
         public void SetGeotag_ShouldSet_UsingExifTool_InPlace()
         {
-            var setValue = new MapControl.Location(10, 20);
+            if (!File.Exists(ExifToolPath))
+                Assert.Inconclusive("ExifTool not found");
+
+            var setValue = new MapControl.Location(-10, -20);
             ExifHandler.SetGeotag(@"TestData\2022-06-17_19.03.02.jpg", @"TestData\2022-06-17_19.03.02.jpg", setValue, ExifToolPath);
 
             var newValue = ExifHandler.GetGeotag(@"TestData\2022-06-17_19.03.02.jpg");
+            Assert.AreEqual(setValue, newValue);
+        }
+
+        [TestMethod]
+        public void SetGeotag_ShouldSetInCr3_UsingExifTool()
+        {
+            const string FileName = @"TestData\Test.CR3";
+            if (!File.Exists(FileName))
+                Assert.Inconclusive("Image not found");
+            if (!File.Exists(ExifToolPath))
+                Assert.Inconclusive("ExifTool not found");
+
+            var setValue = new MapControl.Location(-10, -20);
+            ExifHandler.SetGeotag(FileName, "tagged.cr3", setValue, ExifToolPath);
+
+            var newValue = ExifHandler.GetGeotag("tagged.cr3");
             Assert.AreEqual(setValue, newValue);
         }
     }

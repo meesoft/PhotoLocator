@@ -93,8 +93,8 @@ namespace PhotoLocator
                     else
                         throw new UserMessageException("ExifTool not found in specified path");
                 }
-                else if (!Path.GetFileName(ExifToolPath).Equals(ExifToolName, StringComparison.OrdinalIgnoreCase))
-                    throw new UserMessageException($"ExifTool executable must be named '{ExifToolName}'");
+                else if (ExifToolPath.EndsWith("(-k).exe", StringComparison.OrdinalIgnoreCase))
+                    throw new UserMessageException($"Invalid ExifTool executable name");
             }
 
             DialogResult = true;

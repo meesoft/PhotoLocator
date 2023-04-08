@@ -92,11 +92,17 @@ namespace PhotoLocator.Metadata
             memoryStream.Dispose();
         }
 
-        public static void SetGeotag(string sourceFileName, string targetFileName, Location location, string exifToolPath)
+        public static void SetGeotag(string sourceFileName, string targetFileName, Location location, string? exifToolPath)
         {
-            var startInfo = new ProcessStartInfo(exifToolPath,
+            if (string.IsNullOrEmpty(exifToolPath))
+                SetGeotag(sourceFileName,targetFileName, location);
+
+            var startInfo = new ProcessStartInfo(exifToolPath!,
+                //"-m " +
                 $"-GPSLatitude={location.Latitude.ToString(CultureInfo.InvariantCulture)} " +
+                $"-GPSLatitudeRef={Math.Sign(location.Latitude)} " +
                 $"-GPSLongitude={location.Longitude.ToString(CultureInfo.InvariantCulture)} " +
+                $"-GPSLongitudeRef={Math.Sign(location.Longitude)} " +
                 $"\"{sourceFileName}\" ");
             if (targetFileName == sourceFileName)
                 startInfo.Arguments += "-overwrite_original";

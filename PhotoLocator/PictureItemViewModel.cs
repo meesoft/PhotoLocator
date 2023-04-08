@@ -345,14 +345,11 @@ namespace PhotoLocator
                 await Task.Run(() =>
                 {
                     var postfix = _settings?.SavedFilePostfix;
-                    var exifToolPath = _settings?.ExifToolPath;
                     var newFileName = string.IsNullOrEmpty(postfix) ? FullPath :
                         Path.Combine(Path.GetDirectoryName(FullPath)!, Path.GetFileNameWithoutExtension(FullPath)) + postfix + Path.GetExtension(FullPath);
-                    var tag = GeoTag ?? throw new InvalidOperationException(nameof(GeoTag) + " not set");
-                    if (string.IsNullOrEmpty(exifToolPath))
-                        ExifHandler.SetGeotag(FullPath, newFileName, tag);
-                    else
-                        ExifHandler.SetGeotag(FullPath, newFileName, tag, exifToolPath);
+                    ExifHandler.SetGeotag(FullPath, newFileName, 
+                        GeoTag ?? throw new InvalidOperationException(nameof(GeoTag) + " not set"), 
+                        _settings?.ExifToolPath);
                 });
                 GeoTagSaved = true;
             }
