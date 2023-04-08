@@ -40,6 +40,7 @@
         <KeyBinding Key="F6" Command="{Binding MoveSelectedCommand}" />
         <KeyBinding Key="F7" Command="{Binding CreateFolderCommand}" />
         <KeyBinding Key="F11" Command="{Binding SlideShowCommand}" />
+        <KeyBinding Key="F12" Command="{Binding SettingsCommand}" />
     </Window.InputBindings>
 
     <Window.TaskbarItemInfo>
@@ -100,9 +101,9 @@
             <Button Content="Slide show" Width="100" Command="{Binding SlideShowCommand}"
                     ToolTip="Full screen slide show with map display (F3)" />
             <Button Content="¼" FontFamily="Webdings" FontSize="19" Command="{Binding SettingsCommand}"
-                    ToolTip="Settings" Width="32" />
+                    ToolTip="Settings (F12)" Width="32" />
             <Button Content="i" FontFamily="Webdings" FontSize="20" Command="{Binding AboutCommand}"
-                    ToolTip="About" Width="32" />
+                    ToolTip="About (F1)" Width="32" />
         </StackPanel>
 
         <ListBox Grid.Column="0" Grid.Row="1" Margin="0,0,10,0" ItemsSource="{Binding Pictures}" Name="PictureListBox"
