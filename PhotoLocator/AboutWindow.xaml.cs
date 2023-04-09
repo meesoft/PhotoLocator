@@ -57,6 +57,11 @@ namespace PhotoLocator
                 using var psdLicenseStream = new StreamReader(typeof(AboutWindow).Assembly.GetManifestResourceStream(
                     "PhotoLocator.Resources.PsdLicense")!, Encoding.Latin1);
                 text.AppendLine(psdLicenseStream.ReadToEnd());
+                text.AppendLine();
+                text.AppendLine("____");
+                using var contextMenuLicenseStream = new StreamReader(typeof(AboutWindow).Assembly.GetManifestResourceStream(
+                    "PhotoLocator.Resources.ExplorerShellContextMenuLicense.txt")!, Encoding.Latin1);
+                text.AppendLine(contextMenuLicenseStream.ReadToEnd());                
 
                 return text.ToString();
             }

@@ -1,5 +1,6 @@
 ﻿using MapControl;
 using Microsoft.VisualBasic;
+using Peter;
 using PhotoLocator.Gps;
 using PhotoLocator.Helpers;
 using PhotoLocator.MapDisplay;
@@ -660,6 +661,18 @@ namespace PhotoLocator
         {
             if (SelectedPicture != null)
                 WinAPI.ShowFileProperties(SelectedPicture.FullPath);
+        });
+
+        public ICommand ShellContextMenuCommand => new RelayCommand(o =>
+        {
+            var allSelected = GetSelectedItems().ToArray();
+            if (allSelected.Length == 0)
+                return;
+            var files = allSelected.Select(f => new FileInfo(f.FullPath)).ToArray();
+            var mainWindow = Application.Current.MainWindow;
+            var pt = mainWindow.PointToScreen(Mouse.GetPosition(mainWindow));
+            var contextMenu = new ShellContextMenu();
+            contextMenu.ShowContextMenu(files, new System.Drawing.Point((int)pt.X, (int)pt.Y));
         });
 
         public ICommand ParentFolderCommand => new RelayCommand(o =>

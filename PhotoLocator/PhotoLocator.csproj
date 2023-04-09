@@ -30,6 +30,7 @@
 	<EmbeddedResource Include="..\PsdPlugin\License.txt" Link="Resources\PsdLicense" />
 	<EmbeddedResource Include="..\XamlMapControlLicense" Link="Resources\XamlMapControlLicense" />
     <EmbeddedResource Include="..\Windows-API-Code-PackLicense" Link="Resources\Windows-API-Code-PackLicense" />
+    <EmbeddedResource Include="Resources\ExplorerShellContextMenuLicense.txt" />
 	<Resource Include="Resources\PhotoLocator.ico" />
   </ItemGroup>
 
