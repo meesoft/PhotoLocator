@@ -135,6 +135,15 @@ namespace PhotoLocator
             }
         }
 
+        private void HandlePictureListBoxPreviewMouseButtonUp(object sender, MouseButtonEventArgs e)
+        {
+            if (e.ChangedButton == MouseButton.Right && (Keyboard.IsKeyDown(Key.LeftShift) || Keyboard.IsKeyDown(Key.RightShift)))
+            {
+                e.Handled = true;
+                _viewModel.ShellContextMenuCommand.Execute(null);
+            }
+        }
+
         private void HandlePictureListBoxPreviewTextInput(object sender, TextCompositionEventArgs e)
         {
             if (_viewModel.SelectedPicture != null && _viewModel.SelectedPicture.Name.StartsWith(e.Text, StringComparison.CurrentCultureIgnoreCase))

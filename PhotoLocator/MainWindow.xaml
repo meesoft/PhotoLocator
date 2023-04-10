@@ -108,7 +108,9 @@
 
         <ListBox Grid.Column="0" Grid.Row="1" Margin="0,0,10,0" ItemsSource="{Binding Pictures}" Name="PictureListBox"
                  SelectionMode="Single" SelectedItem="{Binding SelectedPicture}"
-                 PreviewMouseDown="HandlePictureListBoxPreviewMouseButtonDown" PreviewTextInput="HandlePictureListBoxPreviewTextInput"
+                 PreviewMouseDown="HandlePictureListBoxPreviewMouseButtonDown" 
+                 PreviewMouseUp ="HandlePictureListBoxPreviewMouseButtonUp" 
+                 PreviewTextInput="HandlePictureListBoxPreviewTextInput"
                  PreviewKeyDown="HandlePictureListBoxPreviewKeyDown" PreviewKeyUp="HandlePictureListBoxPreviewKeyUp" >
             <ListBox.InputBindings>
                 <KeyBinding Key="Enter" Command="{Binding ExecuteSelectedCommand}" />
@@ -134,12 +136,12 @@
                     <MenuItem Header="Open file (Enter)" Command="{Binding ExecuteSelectedCommand}" />
                     <MenuItem Header="Open in Google maps" Command="{Binding OpenInMapsCommand}" />
                     <MenuItem Header="Open Explorer (Ctrl+E)" Command="{Binding ExploreCommand}" />
-                    <MenuItem Header="Open Shell context menu" Command="{Binding ShellContextMenuCommand}" />
+                    <MenuItem Header="Shell context menu (Shift+right click)" Command="{Binding ShellContextMenuCommand}" />
                     <MenuItem Header="Show metadata" Command="{Binding ShowMetadataCommand}" />
                     <MenuItem Header="Rename (F2)" Command="{Binding RenameCommand}" />
                     <MenuItem Header="Move selected (F6)" Command="{Binding MoveSelectedCommand}" />
                     <MenuItem Header="Delete selected (Del)" Command="{Binding DeleteSelectedCommand}" />
-                    <MenuItem Header="Properties (Alt-Enter)" Command="{Binding FilePropertiesCommand}" />
+                    <MenuItem Header="Properties (Alt+Enter)" Command="{Binding FilePropertiesCommand}" />
                 </ContextMenu>
             </ListBox.ContextMenu>
             <ListBox.ItemsPanel>
