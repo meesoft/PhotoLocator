@@ -1,6 +1,7 @@
 ﻿// Based on example from https://www.codeproject.com/Questions/815338/Inserting-GPS-tags-into-jpeg-EXIF-metadata-using-n
 
 using MapControl;
+using PhotoLocator.Helpers;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -118,7 +119,7 @@ namespace PhotoLocator.Metadata
             if (!process.WaitForExit(60000))
                 throw new TimeoutException();
             if (process.ExitCode != 0)
-                throw new IOException(process.StandardOutput.ReadToEnd() + '\n' + process.StandardError.ReadToEnd());
+                throw new UserMessageException(process.StandardOutput.ReadToEnd() + '\n' + process.StandardError.ReadToEnd());
         }
 
         private static void CheckPixels(BitmapFrame frame1, BitmapFrame frame2)

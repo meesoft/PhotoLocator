@@ -353,6 +353,10 @@ namespace PhotoLocator
                 });
                 GeoTagSaved = true;
             }
+            catch (UserMessageException ex)
+            {
+                ErrorMessage = ex.Message;
+            }
             catch (Exception ex)
             {
                 ErrorMessage = ex.ToString();

@@ -9,7 +9,7 @@ The locations can either be set automatically based on timestamps or manually by
 PhotoLocator can perfom a lossless update of the EXIF data in the target files directly or in copies of the files.
 
 If you need to save geotags to other than JPEG files you need to download ExifTool (https://exiftool.org/) and setup the path to it in 
-the settings dialog.
+the Settings dialog.
 
 KML files can be obtained directly from the Google maps location history. GPX files can be exported by many location and sports tracking apps. 
 
@@ -35,7 +35,7 @@ Note that it is possible to use Chrome's full screen cast feature to display the
 ## Troubleshooting
 * If PhotoLocator cannot start, you need to install the .NET 6 Desktop Runtime.
 
-* You can make ExifTool ignore minor errors by renaming it to exiftool(-m).exe and updating the path under settings accordingly.
+* You can make ExifTool ignore minor errors by renaming it to exiftool(-m).exe and updating the path under Settings accordingly.
 
 ## Why PhotoLocator?
 I have been using GeoSetter for many years but it has not been maintained for a long time and then it completely stopped working 
