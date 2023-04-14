@@ -16,6 +16,8 @@ namespace PhotoLocator.MapDisplay
     {
         public static readonly string TileCachePath = Path.Combine(Path.GetTempPath(), "PhotoLocator", "TileCache");
 
+        public event Action<object, MapItemEventArgs>? MapItemSelected;
+
         static MapView()
         {
             ImageLoader.HttpClient.DefaultRequestHeaders.Add("User-Agent", "PhotoLocator");
@@ -149,6 +151,13 @@ namespace PhotoLocator.MapDisplay
             var mapItem = (MapItem)sender;
             mapItem.IsSelected = !mapItem.IsSelected;
             e.Handled = true;
+            MapItemSelected?.Invoke(this, new MapItemEventArgs(mapItem));
+        }
+
+        private void MapItemLeftButtonDown(object sender, MouseEventArgs e)
+        {
+            var mapItem = (MapItem)sender;
+            MapItemSelected?.Invoke(this, new MapItemEventArgs(mapItem));
         }
 
         private static string GetLatLonText(Location location)

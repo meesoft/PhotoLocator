@@ -3,10 +3,13 @@
 ![Icon](./PhotoLocator/Resources/PhotoLocator.png)
 
 ## Photo geotagging and location browsing
-PhotoLocator can import GPS traces from GPX and KML files and then apply the GPS positions to JPEG files by synchronizing with
+PhotoLocator can import GPS traces from GPX and KML files and then apply the GPS positions to picture files by synchronizing with
 the photo timestamps. GPS tags can also be imported from other already geotagged photos.
 The locations can either be set automatically based on timestamps or manually by copy/pasting from other files or selecting on the map.
 PhotoLocator can perfom a lossless update of the EXIF data in the target files directly or in copies of the files.
+
+If you need to save geotags to other than JPEG files you need to download ExifTool (https://exiftool.org/) and setup the path to it in 
+the settings dialog.
 
 KML files can be obtained directly from the Google maps location history. GPX files can be exported by many location and sports tracking apps. 
 
@@ -30,7 +33,9 @@ Note that it is possible to use Chrome's full screen cast feature to display the
 ![Screenshot](./SlideshowScreenshot.jpg)
 
 ## Troubleshooting
-If PhotoLocator cannot start, you need to install the .NET 6 Desktop Runtime.
+* If PhotoLocator cannot start, you need to install the .NET 6 Desktop Runtime.
+
+* You can make ExifTool ignore minor errors by renaming it to exiftool(-m).exe and updating the path under settings accordingly.
 
 ## Why PhotoLocator?
 I have been using GeoSetter for many years but it has not been maintained for a long time and then it completely stopped working 

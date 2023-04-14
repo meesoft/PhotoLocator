@@ -22,6 +22,7 @@
 
             <Style x:Key="PointItemStyle" TargetType="map:MapItem">
                 <EventSetter Event="TouchDown" Handler="MapItemTouchDown"/>
+                <EventSetter Event="MouseLeftButtonDown" Handler="MapItemLeftButtonDown"/>
                 <Setter Property="AutoCollapse" Value="True"/>
                 <Setter Property="Location" Value="{Binding Location}"/>
                 <Setter Property="Template">

@@ -236,6 +236,22 @@ namespace PhotoLocator
                 yield return SelectedPicture;
         }
 
+        public void SelectItem(PictureItemViewModel select)
+        {
+            SelectedPicture = select;
+            FocusListBoxItem?.Invoke(select);
+        }
+
+        public void HandleMapItemSelected(object sender, MapItemEventArgs eventArgs)
+        {
+            var pointItem = eventArgs.Item.Content as PointItem;
+            if (pointItem is null)
+                return;
+            var fileItem = Pictures.FirstOrDefault(p => p.Name == pointItem.Name);
+            if (fileItem is not null)
+                SelectItem(fileItem);
+        }
+
         internal void UpdatePoints()
         {
             var newPoints = Pictures.Where(item => item.IsChecked && item.GeoTag != null && item != SelectedPicture).ToDictionary(p => p.Name);
@@ -688,12 +704,6 @@ namespace PhotoLocator
                     SelectItem(select);
             }
         });
-
-        public void SelectItem(PictureItemViewModel select)
-        {
-            SelectedPicture = select;
-            FocusListBoxItem?.Invoke(select);
-        }
 
         public ICommand ShowMetadataCommand => new RelayCommand(o =>
         {

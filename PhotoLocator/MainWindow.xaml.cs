@@ -51,6 +51,7 @@ namespace PhotoLocator
             var selectedLayer = settings.SelectedLayer;
             Map.mapLayersMenuButton.ContextMenu.Items.OfType<MenuItem>().FirstOrDefault(item => Equals(item.Header, selectedLayer))?.
                 RaiseEvent(new RoutedEventArgs(MenuItem.ClickEvent));
+            Map.MapItemSelected += _viewModel.HandleMapItemSelected;
             _viewModel.SelectedViewModeItem = settings.ViewMode switch
             {
                 ViewMode.Preview =>  PreviewViewItem,
