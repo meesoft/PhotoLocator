@@ -138,7 +138,8 @@ namespace PhotoLocator
 
         private void HandlePictureListBoxPreviewMouseButtonUp(object sender, MouseButtonEventArgs e)
         {
-            if (e.ChangedButton == MouseButton.Right && (Keyboard.IsKeyDown(Key.LeftShift) || Keyboard.IsKeyDown(Key.RightShift)))
+            if (e.ChangedButton == MouseButton.Right && (Keyboard.IsKeyDown(Key.LeftShift) || Keyboard.IsKeyDown(Key.RightShift))
+                || e.ChangedButton == MouseButton.Middle)
             {
                 e.Handled = true;
                 _viewModel.ShellContextMenuCommand.Execute(null);

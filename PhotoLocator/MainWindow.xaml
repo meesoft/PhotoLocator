@@ -174,7 +174,8 @@
 
             <Grid Grid.Row="1" Visibility="{Binding IsPreviewVisible, Converter={StaticResource BooleanToVisibility}}" Margin="0,4,0,0" 
                   PreviewMouseDown="HandlePreviewImageMouseDown" PreviewMouseMove="HandlePreviewImageMouseMove">
-                <Image Name="FullPreviewImage" Source="{Binding PreviewPictureSource}" SnapsToDevicePixels="True" />
+                <Image Name="FullPreviewImage" Source="{Binding PreviewPictureSource}" 
+                       RenderOptions.BitmapScalingMode="Unspecified" SnapsToDevicePixels="True" />
                 <Canvas Name="ZoomedPreviewCanvas" ClipToBounds="True" >
                     <Image Name="ZoomedPreviewImage" Source="{Binding PreviewPictureSource}"
                            Stretch="None" RenderOptions.BitmapScalingMode="NearestNeighbor" SnapsToDevicePixels="True" />
