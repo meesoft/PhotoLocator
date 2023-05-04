@@ -303,11 +303,11 @@ namespace PhotoLocator.Metadata
             }
 
             var lensAperture = Rational.Decode(metadata.GetQuery(LensApertureQuery1) ?? metadata.GetQuery(LensApertureQuery2));
-            if (lensAperture != null)
+            if (lensAperture != null && lensAperture.Num > 0 && lensAperture.Denom > 0)
                 metadataStrings.Add("f/" + lensAperture.ToDouble());
 
             var focalLength = Rational.Decode(metadata.GetQuery(FocalLengthQuery1) ?? metadata.GetQuery(FocalLengthQuery2));
-            if (focalLength != null)
+            if (focalLength != null && focalLength.Num > 0 && focalLength.Denom > 0)
                 metadataStrings.Add(focalLength.ToDouble() + "mm");
 
             var iso = metadata.GetQuery(IsoQuery1) ?? metadata.GetQuery(IsoQuery2);
