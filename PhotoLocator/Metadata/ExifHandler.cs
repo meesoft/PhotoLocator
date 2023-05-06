@@ -259,8 +259,14 @@ namespace PhotoLocator.Metadata
                 if (metadataValue is BitmapMetadata innerBitmapMetadata)
                     foreach (var inner in EnumerateMetadata(innerBitmapMetadata, fullQuery))
                         yield return inner;
-                else if (metadataValue is ulong ulongValue)
-                    yield return fullQuery + $" = {ulongValue} ({Rational.Decode(metadataValue)?.ToDouble()})";
+                else if (metadataValue is long || metadataValue is ulong)
+                {
+                    var rational = Rational.Decode(metadataValue);
+                    if (rational != null && rational.Denom > 0)
+                        yield return fullQuery + $" = {metadataValue} ({rational.Num} / {rational.Denom})";
+                    else
+                        yield return fullQuery + $" = {metadataValue} ({metadataValue.GetType().Name})";
+                }
                 else if (metadataValue is Array arrayValue)
                 {
                     if (arrayValue.Length <= 4)
