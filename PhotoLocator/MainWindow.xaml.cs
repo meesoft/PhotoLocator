@@ -148,13 +148,19 @@ namespace PhotoLocator
 
         private void HandlePictureListBoxPreviewTextInput(object sender, TextCompositionEventArgs e)
         {
-            if (_viewModel.SelectedPicture != null && _viewModel.SelectedPicture.Name.StartsWith(e.Text, StringComparison.CurrentCultureIgnoreCase))
-                return;
-            var item = _viewModel.Pictures.FirstOrDefault(item => item.Name.StartsWith(e.Text, StringComparison.CurrentCultureIgnoreCase));
-            if (item != null)
-            {
-                _viewModel.SelectItem(item);
+            if (SelectItem(e.Text, PictureListBox.SelectedIndex + 1, _viewModel.Pictures.Count) ||
+                SelectItem(e.Text, 0, PictureListBox.SelectedIndex))
                 e.Handled = true;
+
+            bool SelectItem(string text, int min, int max)
+            {
+                for (int i = min; i < max; i++)
+                    if (_viewModel.Pictures[i].Name.StartsWith(text, StringComparison.CurrentCultureIgnoreCase))
+                    {
+                        _viewModel.SelectItem(_viewModel.Pictures[i]);
+                        return true;
+                    }
+                return false;
             }
         }
 

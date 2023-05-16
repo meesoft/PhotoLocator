@@ -166,6 +166,8 @@ namespace PhotoLocator
                         UpdatePreviewPictureAsync().WithExceptionLogging();
                     else
                         PreviewPictureSource = null;
+                    UpdatePoints();
+                    UpdatePushpins();
                 }
             }
         }
@@ -254,6 +256,8 @@ namespace PhotoLocator
 
         internal void UpdatePoints()
         {
+            if (!IsMapVisible)
+                return;
             var newPoints = Pictures.Where(item => item.IsChecked && item.GeoTag != null && item != SelectedPicture).ToDictionary(p => p.Name);
             for (int i = Points.Count - 1; i >= 0; i--)
                 if (newPoints.ContainsKey(Points[i].Name!))
@@ -267,7 +271,9 @@ namespace PhotoLocator
         private void UpdatePushpins()
         {
             Pushpins.Clear();
-            foreach(var trace in Polylines.Where(t => t.Locations.Count == 1 && !string.IsNullOrEmpty(t.Name)))
+            if (!IsMapVisible)
+                return;
+            foreach (var trace in Polylines.Where(t => t.Locations.Count == 1 && !string.IsNullOrEmpty(t.Name)))
                 Pushpins.Add(new PointItem { Location = trace.Locations[0], Name = trace.Name });
             if (SavedLocation != null)
                 Pushpins.Add(new PointItem { Location = SavedLocation, Name = "Saved location" });
