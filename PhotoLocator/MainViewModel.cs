@@ -258,13 +258,12 @@ namespace PhotoLocator
         {
             if (!IsMapVisible)
                 return;
-            var newPoints = Pictures.Where(item => item.IsChecked && item.GeoTag != null && item != SelectedPicture).ToDictionary(p => p.Name);
+            var updatedPoints = Pictures.Where(item => item.IsChecked && item.GeoTag != null && item != SelectedPicture)
+                .ToDictionary(p => p.Name);
             for (int i = Points.Count - 1; i >= 0; i--)
-                if (newPoints.ContainsKey(Points[i].Name!))
-                    newPoints.Remove(Points[i].Name!);
-                else
+                if (!updatedPoints.Remove(Points[i].Name!))
                     Points.RemoveAt(i);
-            foreach (var item in newPoints.Values)
+            foreach (var item in updatedPoints.Values)
                 Points.Add(new PointItem { Location = item.GeoTag, Name = item.Name });
         }
 
