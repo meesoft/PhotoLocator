@@ -164,9 +164,9 @@ namespace PhotoLocator
             RenameMask = RenameMask.Trim();
             _exampleNamer?.Dispose();
             _exampleNamer = null;
+            int counter = 0;
             try
             {
-                int counter = 0;
                 foreach (var item in _selectedPictures.ToArray())
                 {
                     string newName;
@@ -179,10 +179,10 @@ namespace PhotoLocator
                         var overwritingFile = _allPictures.FirstOrDefault(f => f != item && f.IsFile && f.Name.Equals(newName, StringComparison.OrdinalIgnoreCase));
                         if (overwritingFile != null &&
                             MessageBox.Show($"The file {newName} already exists, do you want to overwrite it?", "Rename", MessageBoxButton.OKCancel, MessageBoxImage.Question) == MessageBoxResult.OK)
-                            {
-                                overwritingFile.Recycle();
-                                _allPictures.Remove(overwritingFile);
-                            }
+                        {
+                            overwritingFile.Recycle();
+                            _allPictures.Remove(overwritingFile);
+                        }
                     }
 
                     item.Rename(newName, Path.Combine(Path.GetDirectoryName(item.FullPath)!, newName));
@@ -197,10 +197,14 @@ namespace PhotoLocator
                 MessageBox.Show(ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                 return;
             }
-            if (RenameMask.Contains('|', StringComparison.Ordinal))
+            finally
             {
-                using var settings = new RegistrySettings();
-                settings.RenameMasks = string.Join('\\', (new[] { RenameMask }).Concat(_previousMasks).Distinct().Take(RenameHistoryLength));
+                if (counter > 0 && RenameMask.Contains('|', StringComparison.Ordinal))
+                {
+                    using var settings = new RegistrySettings();
+                    settings.RenameMasks = string.Join('\\', 
+                        (new[] { RenameMask }).Concat(_previousMasks).Distinct().Take(RenameHistoryLength));
+                }
             }
             DialogResult = true;
         }

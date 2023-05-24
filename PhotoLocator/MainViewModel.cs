@@ -425,7 +425,8 @@ namespace PhotoLocator
             var updatedPictures = Pictures.Where(i => i.GeoTagUpdated).ToArray();
             if (updatedPictures.Length == 0)
                 return;
-            DisableFileSystemWatcher();
+            if (_fileSystemWatcher is not null)
+                _fileSystemWatcher.EnableRaisingEvents = false;
             await RunProcessWithProgressBarAsync(async progressCallback =>
             {
                 int i = 0;
@@ -438,7 +439,8 @@ namespace PhotoLocator
             }, "Saving...");
             if (SelectedPicture != null)
                 SelectItem(SelectedPicture);
-            SetupFileSystemWatcher();
+            if (_fileSystemWatcher is not null)
+                _fileSystemWatcher.EnableRaisingEvents = true;
         });
 
         public ICommand RenameCommand => new RelayCommand(async o =>
@@ -789,15 +791,17 @@ namespace PhotoLocator
 
         private void HandleFileSystemWatcherRename(object sender, RenamedEventArgs e)
         {
-            var renamed = Pictures.ToArray().FirstOrDefault(item => item.FullPath == e.OldFullPath);
-            if (renamed != null)
-                Application.Current.Dispatcher.BeginInvoke(() =>
+            Application.Current.Dispatcher.BeginInvoke(() =>
+            {
+                var renamed = Pictures.FirstOrDefault(item => item.FullPath == e.OldFullPath);
+                if (renamed != null)
                 {
                     _pictureCache.Clear();
                     renamed.Renamed(e.FullPath);
-                });
-            else
-                HandleFileSystemWatcherChange(this, e);
+                }
+                else
+                    HandleFileSystemWatcherChange(this, e);
+            });
         }
 
         private void HandleFileSystemWatcherChange(object sender, FileSystemEventArgs e)
