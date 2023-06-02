@@ -69,6 +69,8 @@ namespace PhotoLocator
             else
             {
                 var savedPhotoFolderPath = settings.PhotoFolderPath;
+                if (!Directory.Exists(savedPhotoFolderPath))
+                    savedPhotoFolderPath = Environment.GetFolderPath(Environment.SpecialFolder.MyPictures);
                 Dispatcher.BeginInvoke(() => _viewModel.PhotoFolderPath = savedPhotoFolderPath);
             }
 
