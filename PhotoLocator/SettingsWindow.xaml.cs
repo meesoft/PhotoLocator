@@ -4,6 +4,7 @@ using System.ComponentModel;
 using System.IO;
 using System.Runtime.CompilerServices;
 using System.Windows;
+using System.Windows.Media;
 
 namespace PhotoLocator
 {
@@ -12,9 +13,11 @@ namespace PhotoLocator
     /// </summary>
     public partial class SettingsWindow : INotifyPropertyChanged
     {
-        public SettingsWindow()
+        public SettingsWindow(Func<BitmapScalingMode> getScalingMode, Action<BitmapScalingMode> setScalingMode)
         {
             InitializeComponent();
+            GetScalingMode = getScalingMode;
+            SetScalingMode = setScalingMode;
         }
 
         public event PropertyChangedEventHandler? PropertyChanged;
@@ -62,6 +65,18 @@ namespace PhotoLocator
             set => SetProperty(ref _slideShowInterval, value);
         }
         int _slideShowInterval;
+
+        public Func<BitmapScalingMode> GetScalingMode;
+        public Action<BitmapScalingMode> SetScalingMode;
+        public BitmapScalingMode BitmapScalingMode 
+        { 
+            get => GetScalingMode(); 
+            set
+            { 
+                SetScalingMode(value); 
+                PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(BitmapScalingMode)));
+            }
+        }
 
         public bool ShowMetadataInSlideShow
         {

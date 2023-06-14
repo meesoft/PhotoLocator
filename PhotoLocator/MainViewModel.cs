@@ -19,6 +19,7 @@ using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
+using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Shell;
 using System.Windows.Threading;
@@ -201,6 +202,9 @@ namespace PhotoLocator
 
         public int PreviewZoom { get => _previewZoom; set => SetProperty(ref _previewZoom, value); }
         private int _previewZoom;
+
+        public BitmapScalingMode BitmapScalingMode { get => _bitmapScalingMode; set => SetProperty(ref _bitmapScalingMode, value); }
+        BitmapScalingMode _bitmapScalingMode;
 
         public ObservableCollection<PictureItemViewModel> Pictures { get; } = new ObservableCollection<PictureItemViewModel>();
 
@@ -476,7 +480,7 @@ namespace PhotoLocator
             if (pictures.Count == 0)
                 return;
             var slideShowWin = new SlideShowWindow(pictures, SelectedPicture?.IsFile == true ? SelectedPicture : Pictures.First(),
-                SlideShowInterval, ShowMetadataInSlideShow, GetSelectedMapLayerName?.Invoke());
+                SlideShowInterval, BitmapScalingMode, ShowMetadataInSlideShow, GetSelectedMapLayerName?.Invoke());
             slideShowWin.Owner = App.Current.MainWindow;
             slideShowWin.ShowDialog();
             SelectItem(slideShowWin.SelectedPicture);
@@ -485,7 +489,8 @@ namespace PhotoLocator
         public ICommand SettingsCommand => new RelayCommand(o =>
         {
             var photoFileExtensions = string.Join(", ", PhotoFileExtensions);
-            var settingsWin = new SettingsWindow();
+            var previousScalingMode = BitmapScalingMode;
+            var settingsWin = new SettingsWindow(() => BitmapScalingMode, m => BitmapScalingMode = m);
             settingsWin.Owner = App.Current.MainWindow;
             settingsWin.PhotoFileExtensions = photoFileExtensions;
             settingsWin.ShowFolders = ShowFolders;
@@ -510,9 +515,14 @@ namespace PhotoLocator
                 SavedFilePostfix = settingsWin.SavedFilePostfix;
                 ExifToolPath = settingsWin.ExifToolPath;
                 SlideShowInterval = settingsWin.SlideShowInterval;
+                BitmapScalingMode = settingsWin.BitmapScalingMode;
                 ShowMetadataInSlideShow = settingsWin.ShowMetadataInSlideShow;
                 if (refresh)
                     RefreshFolderCommand.Execute(null);
+            }
+            else
+            {
+                BitmapScalingMode = previousScalingMode;
             }
         });
 

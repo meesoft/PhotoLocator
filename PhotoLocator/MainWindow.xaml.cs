@@ -44,6 +44,7 @@ namespace PhotoLocator
             _viewModel.SavedFilePostfix = settings.SavedFilePostfix;
             _viewModel.ExifToolPath = settings.ExifToolPath;
             _viewModel.SlideShowInterval = settings.SlideShowInterval;
+            _viewModel.BitmapScalingMode = settings.BitmapScalingMode;
             _viewModel.ShowMetadataInSlideShow = settings.ShowMetadataInSlideShow;
             var i = settings.LeftColumnWidth;
             if (i > 10 && i < Width)
@@ -106,6 +107,7 @@ namespace PhotoLocator
             settings.ExifToolPath = _viewModel.ExifToolPath;
             settings.ViewMode = _viewModel.SelectedViewModeItem?.Tag as ViewMode? ?? ViewMode.Map;
             settings.SlideShowInterval = _viewModel.SlideShowInterval;
+            settings.BitmapScalingMode = _viewModel.BitmapScalingMode;
             settings.ShowMetadataInSlideShow = _viewModel.ShowMetadataInSlideShow;
             settings.LeftColumnWidth = (int)LeftColumn.Width.Value;
             settings.SelectedLayer = GetSelectedMapLayerName();

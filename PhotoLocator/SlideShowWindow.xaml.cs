@@ -27,13 +27,14 @@ namespace PhotoLocator
         readonly DispatcherTimer _timer;
         private TouchPoint? _touchStart;
 
-        public SlideShowWindow(IList<PictureItemViewModel> pictures, PictureItemViewModel selectedPicture, int slideShowInterval, bool showMetadataInSlideShow, 
-            string? selectedMapLayerName)
+        public SlideShowWindow(IList<PictureItemViewModel> pictures, PictureItemViewModel selectedPicture, int slideShowInterval, 
+            BitmapScalingMode bitmapScalingMode, bool showMetadataInSlideShow, string? selectedMapLayerName)
         {
             _pictures = pictures;
             SelectedPicture = selectedPicture;
             _showMetadataInSlideShow = showMetadataInSlideShow;
             _timer = new DispatcherTimer(TimeSpan.FromSeconds(slideShowInterval), DispatcherPriority.Normal, HandleTimerEvent, Dispatcher);
+            BitmapScalingMode = bitmapScalingMode;
             InitializeComponent();
             DataContext = this;
             Map.map.TargetZoomLevel = 7;
@@ -67,6 +68,8 @@ namespace PhotoLocator
 
         public bool IsMapVisible { get => _isMapVisible; set => SetProperty(ref _isMapVisible, value); }
         private bool _isMapVisible;
+
+        public BitmapScalingMode BitmapScalingMode { get; }
 
         public ImageSource? PictureSource { get => _pictureSource; set => SetProperty(ref _pictureSource, value); }
         private ImageSource? _pictureSource;

@@ -1,5 +1,6 @@
 ﻿using Microsoft.Win32;
 using System;
+using System.Windows.Media;
 
 namespace PhotoLocator
 {
@@ -71,6 +72,12 @@ namespace PhotoLocator
         {
             get => Key.GetValue(nameof(SlideShowInterval)) as int? ?? 20;
             set => Key.SetValue(nameof(SlideShowInterval), value);
+        }
+
+        public BitmapScalingMode BitmapScalingMode
+        {
+            get => (BitmapScalingMode)(Key.GetValue(nameof(BitmapScalingMode)) as int? ?? 1);
+            set => Key.SetValue(nameof(BitmapScalingMode), (int)value);
         }
 
         public bool ShowMetadataInSlideShow

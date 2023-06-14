@@ -19,7 +19,7 @@
     </Window.Resources>
     
     <Grid TouchDown="HandleTouchDown" TouchMove="HandleTouchMove">
-        <Image Source="{Binding PictureSource}" RenderOptions.BitmapScalingMode="Unspecified" />
+        <Image Source="{Binding PictureSource}" RenderOptions.BitmapScalingMode="{Binding BitmapScalingMode}" />
         <MediaElement Name="MediaPlayer" Visibility="Collapsed" MediaEnded="HandleTimerEvent"/>
 
         <TextBlock VerticalAlignment="Bottom" HorizontalAlignment="Right" Margin="8" FontSize="20" FontWeight="Bold" Foreground="Black"
