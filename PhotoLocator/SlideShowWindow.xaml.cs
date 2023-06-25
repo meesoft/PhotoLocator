@@ -178,5 +178,19 @@ namespace PhotoLocator
                 _touchStart = null;
             }
         }
+
+        private void HandlePreviewMouseWheel(object sender, MouseWheelEventArgs e)
+        {
+            if (e.Delta > 0)
+            {
+                PictureIndex--;
+                e.Handled = true;
+            }
+            else if (e.Delta < 0)
+            {
+                PictureIndex++;
+                e.Handled = true;
+            }
+        }
     }
 }

@@ -617,7 +617,7 @@ namespace PhotoLocator
             return focusedItem;
         }
 
-        public ICommand DeleteSelectedCommand => new RelayCommand(o =>
+        public ICommand DeleteSelectedCommand => new RelayCommand(async o =>
         {
             var focusedItem = SelectedPicture;
             var allSelected = GetSelectedItems().ToArray();
@@ -626,16 +626,21 @@ namespace PhotoLocator
             focusedItem = GetNearestUnchecked(focusedItem, allSelected);
             if (MessageBox.Show($"Delete {allSelected.Length} selected item(s)?", "Confirm", MessageBoxButton.OKCancel, MessageBoxImage.Question) != MessageBoxResult.OK)
                 return;
-            using var cursor = new CursorOverride();
+
             var selectedIndex = Pictures.IndexOf(SelectedPicture!);
             SelectedPicture = null;
             PreviewPictureSource = null;
             PreviewPictureTitle = null;
-            foreach (var item in allSelected)
+            await RunProcessWithProgressBarAsync(progressCallback => Task.Run(() =>
             {
-                item.Recycle();
-                Pictures.Remove(item);
-            }
+                int i = 0;
+                foreach (var item in allSelected)
+                {
+                    item.Recycle();
+                    Application.Current.Dispatcher.Invoke(() => Pictures.Remove(item));
+                    progressCallback((double)(++i) / allSelected.Length);
+                }
+            }), "Deleting...");
             if (focusedItem != null)
                 SelectItem(focusedItem);
         });
