@@ -636,7 +636,7 @@ namespace PhotoLocator
                 int i = 0;
                 foreach (var item in allSelected)
                 {
-                    item.Recycle();
+                    item.Recycle(false);
                     Application.Current.Dispatcher.Invoke(() => Pictures.Remove(item));
                     progressCallback((double)(++i) / allSelected.Length);
                 }

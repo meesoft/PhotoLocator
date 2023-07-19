@@ -29,13 +29,14 @@
             <RowDefinition Height="20"/>
             <RowDefinition Height="20"/>
             <RowDefinition Height="20"/>
+            <RowDefinition Height="20"/>
         </Grid.RowDefinitions>
 
         <TextBlock Grid.Row="0" Foreground="#FFEEEEEE" VerticalAlignment="Bottom"
                    Text="Rename mask:" />
         <TextBox Grid.Row="1" Text="{Binding RenameMask, UpdateSourceTrigger=PropertyChanged}" FontFamily="Lucida Console"
                  Margin="0,0,22,0" Name="MaskTextBox" VerticalContentAlignment="Center" />
-        
+
         <Button Name="MaskMenuButton" Grid.Row="1" Width="22" HorizontalAlignment="Right" ToolTip="History" Click="MaskMenuButtonClick" >
             <TextBlock FontSize="16" FontWeight="Bold" Text="☰" Margin="0,-4,0,0" />
         </Button>
@@ -73,7 +74,11 @@
             <TextBlock Text="|w/h:2| width/height with 2 decimals." MouseUp="HandleEscapeCodeTextBlockMouseUp" Foreground="#FFEEEEEE" Cursor="Hand"/>
         </StackPanel>
 
-        <StackPanel Grid.Row="11" Orientation="Horizontal" HorizontalAlignment="Right">
+        <CheckBox Grid.Row="11" Content="Rename sidecar files" IsChecked="{Binding IsRenameSidecarChecked}" />
+        <ProgressBar Grid.Row="11" Width="170" Height="10" HorizontalAlignment="Right" Value="{Binding ProgressBarValue}" Maximum="1"
+                     Visibility="{Binding IsProgressBarVisible, Converter={StaticResource BooleanToVisibility}}"/>
+
+        <StackPanel Grid.Row="12" Orientation="Horizontal" HorizontalAlignment="Right">
             <TextBlock Text="Mask error" Foreground="#FFAE4040" ToolTip="{Binding ErrorMessage}" Margin="10,0"
                        Visibility="{Binding IsErrorVisible, Converter={StaticResource BooleanToVisibility}}"/>
             <TextBlock Text="File extension was changed" Foreground="#FFD4AA28" Margin="10,0"

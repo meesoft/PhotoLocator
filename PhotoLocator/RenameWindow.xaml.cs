@@ -138,6 +138,27 @@ namespace PhotoLocator
         }
         private bool _isExtensionWarningVisible;
 
+        public bool IsProgressBarVisible
+        {
+            get => _isProgressBarVisible;
+            set => SetProperty(ref _isProgressBarVisible, value);
+        }
+        private bool _isProgressBarVisible;
+
+        public double ProgressBarValue
+        {
+            get => _progressBarValue;
+            set => SetProperty(ref _progressBarValue, value);
+        }
+        private double _progressBarValue;
+
+        public bool IsRenameSidecarChecked
+        {
+            get => _isRenameSidecarChecked;
+            set => SetProperty(ref _isRenameSidecarChecked, value);
+        }
+        private bool _isRenameSidecarChecked = true;
+
         private void MaskMenuButtonClick(object sender, RoutedEventArgs e)
         {
             MaskMenuButton.ContextMenu.IsOpen = true;
@@ -146,6 +167,7 @@ namespace PhotoLocator
         private void HandleMaskItemClick(object sender, RoutedEventArgs e)
         {
             RenameMask = (string)((MenuItem)sender).Tag;
+            MaskTextBox.Focus();
         }
 
         private void HandleEscapeCodeTextBlockMouseUp(object sender, MouseButtonEventArgs e)
@@ -165,9 +187,13 @@ namespace PhotoLocator
             _exampleNamer?.Dispose();
             _exampleNamer = null;
             int counter = 0;
+            ProgressBarValue = 0;
+            IsProgressBarVisible = true;
             try
             {
-                foreach (var item in _selectedPictures.ToArray())
+                var selectedPictures = _selectedPictures.ToArray();
+                int i = 0;
+                foreach (var item in selectedPictures)
                 {
                     string newName;
                     using (var namer = new MaskBasedNaming(item, counter++))
@@ -180,16 +206,17 @@ namespace PhotoLocator
                         if (overwritingFile != null &&
                             MessageBox.Show($"The file {newName} already exists, do you want to overwrite it?", "Rename", MessageBoxButton.OKCancel, MessageBoxImage.Question) == MessageBoxResult.OK)
                         {
-                            overwritingFile.Recycle();
+                            overwritingFile.Recycle(IsRenameSidecarChecked && !IsExtensionWarningVisible);
                             _allPictures.Remove(overwritingFile);
                         }
                     }
 
-                    item.Rename(newName, Path.Combine(Path.GetDirectoryName(item.FullPath)!, newName));
+                    item.Rename(newName, Path.Combine(Path.GetDirectoryName(item.FullPath)!, newName), IsRenameSidecarChecked && !IsExtensionWarningVisible);
                     _allPictures.Remove(item);
                     item.IsChecked = false;
                     item.InsertOrdered(_allPictures);
                     _selectedPictures.Remove(item);
+                    ProgressBarValue = (++i) / (double)(selectedPictures.Length);
                 }
             }
             catch (Exception ex) when (ex is IOException || ex is ArgumentException)
@@ -199,6 +226,7 @@ namespace PhotoLocator
             }
             finally
             {
+                IsProgressBarVisible = false;
                 if (counter > 0 && RenameMask.Contains('|', StringComparison.Ordinal))
                 {
                     using var settings = new RegistrySettings();
