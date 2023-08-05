@@ -1,114 +1,46 @@
 ﻿using PhotoLocator.Helpers;
 using System;
-using System.ComponentModel;
 using System.IO;
-using System.Runtime.CompilerServices;
 using System.Windows;
-using System.Windows.Media;
 
-namespace PhotoLocator
+namespace PhotoLocator.Settings
 {
     /// <summary>
     /// Interaction logic for SettingsWindow.xaml
     /// </summary>
-    public partial class SettingsWindow : INotifyPropertyChanged
+    public partial class SettingsWindow
     {
-        public SettingsWindow(Func<BitmapScalingMode> getScalingMode, Action<BitmapScalingMode> setScalingMode)
+        public SettingsWindow()
         {
             InitializeComponent();
-            GetScalingMode = getScalingMode;
-            SetScalingMode = setScalingMode;
         }
 
-        public event PropertyChangedEventHandler? PropertyChanged;
-
-        protected bool SetProperty<T>(ref T field, T newValue, [CallerMemberName] string? propertyName = null)
-        {
-            if (Equals(field, newValue))
-                return false;
-            field = newValue;
-            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
-            return true;
-        }
-
-        public string? PhotoFileExtensions 
-        { 
-            get => _photoFileExtensions; 
-            set => SetProperty(ref _photoFileExtensions, value ?? RegistrySettings.DefaultPhotoFileExtensions); 
-        }
-        private string? _photoFileExtensions;
-
-        public bool ShowFolders
-        {
-            get => _showFolders;
-            set => SetProperty(ref _showFolders, value);
-        }
-        bool _showFolders;
-
-        public string? SavedFilePostfix
-        {
-            get => _savedFilePostfix;
-            set => SetProperty(ref _savedFilePostfix, value);
-        }
-        string? _savedFilePostfix;
-
-        public string? ExifToolPath
-        {
-            get => _exifToolPath;
-            set => SetProperty(ref _exifToolPath, value);
-        }
-        string? _exifToolPath;
-
-        public int SlideShowInterval
-        {
-            get => _slideShowInterval;
-            set => SetProperty(ref _slideShowInterval, value);
-        }
-        int _slideShowInterval;
-
-        public Func<BitmapScalingMode> GetScalingMode;
-        public Action<BitmapScalingMode> SetScalingMode;
-        public BitmapScalingMode BitmapScalingMode 
-        { 
-            get => GetScalingMode(); 
-            set
-            { 
-                SetScalingMode(value); 
-                PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(BitmapScalingMode)));
-            }
-        }
-
-        public bool ShowMetadataInSlideShow
-        {
-            get => _showMetadataInSlideShow;
-            set => SetProperty(ref _showMetadataInSlideShow, value);
-        }
-        bool _showMetadataInSlideShow;
+        public ObservableSettings Settings { get; } = new ObservableSettings();
 
         private void HandleOkButtonClick(object sender, RoutedEventArgs e)
         {
             OkButton.Focus();
 
-            if (!string.IsNullOrEmpty(SavedFilePostfix))
+            if (!string.IsNullOrEmpty(Settings.SavedFilePostfix))
             { 
                 foreach(var ch in Path.GetInvalidFileNameChars())
-                    if (SavedFilePostfix.Contains(ch, StringComparison.Ordinal))
+                    if (Settings.SavedFilePostfix.Contains(ch, StringComparison.Ordinal))
                         throw new UserMessageException($"Postfix contains invalid character '{ch}'");
             }
 
-            if (!string.IsNullOrEmpty(ExifToolPath))
+            if (!string.IsNullOrEmpty(Settings.ExifToolPath))
             {
                 const string ExifToolName = "exiftool.exe";
 
-                if (!File.Exists(ExifToolPath))
+                if (!File.Exists(Settings.ExifToolPath))
                 {
-                    var newPath = Path.Combine(ExifToolPath, ExifToolName);
+                    var newPath = Path.Combine(Settings.ExifToolPath, ExifToolName);
                     if (File.Exists(newPath))
-                        ExifToolPath = newPath;
+                        Settings.ExifToolPath = newPath;
                     else
                         throw new UserMessageException("ExifTool not found in specified path");
                 }
-                else if (ExifToolPath.EndsWith("(-k).exe", StringComparison.OrdinalIgnoreCase))
+                else if (Settings.ExifToolPath.EndsWith("(-k).exe", StringComparison.OrdinalIgnoreCase))
                     throw new UserMessageException($"Invalid ExifTool executable name");
             }
 
@@ -117,7 +49,7 @@ namespace PhotoLocator
 
         public string[] CleanPhotoFileExtensions()
         {
-            var extensions = PhotoFileExtensions!.
+            var extensions = Settings.PhotoFileExtensions!.
                 Replace("*", "", StringComparison.Ordinal).
                 Replace(" ", ",", StringComparison.Ordinal).
                 Replace(";", ",", StringComparison.Ordinal).

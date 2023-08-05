@@ -1,9 +1,23 @@
-﻿namespace PhotoLocator
+﻿using System.Windows.Media;
+
+namespace PhotoLocator.Settings
 {
     public interface ISettings
     {
-        string? SavedFilePostfix { get; }
+        string PhotoFileExtensions { get; set; }
 
-        string? ExifToolPath { get; }
+        bool ShowFolders { get; set; }
+
+        bool IncludeSidecarFiles { get; set; }
+
+        string SavedFilePostfix { get; set; }
+
+        string? ExifToolPath { get; set; }
+
+        int SlideShowInterval { get; set; }
+
+        bool ShowMetadataInSlideShow { get; set; }
+
+        BitmapScalingMode BitmapScalingMode { get; set; }
     }
 }

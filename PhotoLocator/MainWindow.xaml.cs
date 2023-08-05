@@ -1,5 +1,6 @@
 ﻿using PhotoLocator.Helpers;
 using PhotoLocator.MapDisplay;
+using PhotoLocator.Settings;
 using System;
 using System.ComponentModel;
 using System.IO;
@@ -38,22 +39,17 @@ namespace PhotoLocator
 
         private void HandleWindowLoaded(object sender, RoutedEventArgs e)
         {
-            using var settings = new RegistrySettings();
-            _viewModel.PhotoFileExtensions = settings.PhotoFileExtensions.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
-            _viewModel.ShowFolders = settings.ShowFolders;
-            _viewModel.SavedFilePostfix = settings.SavedFilePostfix;
-            _viewModel.ExifToolPath = settings.ExifToolPath;
-            _viewModel.SlideShowInterval = settings.SlideShowInterval;
-            _viewModel.BitmapScalingMode = settings.BitmapScalingMode;
-            _viewModel.ShowMetadataInSlideShow = settings.ShowMetadataInSlideShow;
-            var i = settings.LeftColumnWidth;
-            if (i > 10 && i < Width)
-                LeftColumn.Width = new GridLength(i);
-            var selectedLayer = settings.SelectedLayer;
+            using var registrySettings = new RegistrySettings();
+            _viewModel.PhotoFileExtensions = registrySettings.PhotoFileExtensions.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+            _viewModel.Settings.AssignSettings(registrySettings);
+            var leftColumnWidth = registrySettings.LeftColumnWidth;
+            if (leftColumnWidth > 10 && leftColumnWidth < Width)
+                LeftColumn.Width = new GridLength(leftColumnWidth);
+            var selectedLayer = registrySettings.SelectedLayer;
             Map.mapLayersMenuButton.ContextMenu.Items.OfType<MenuItem>().FirstOrDefault(item => Equals(item.Header, selectedLayer))?.
                 RaiseEvent(new RoutedEventArgs(MenuItem.ClickEvent));
             Map.MapItemSelected += _viewModel.HandleMapItemSelected;
-            _viewModel.SelectedViewModeItem = settings.ViewMode switch
+            _viewModel.SelectedViewModeItem = registrySettings.ViewMode switch
             {
                 ViewMode.Preview =>  PreviewViewItem,
                 ViewMode.Split =>  SplitViewItem,
@@ -69,16 +65,16 @@ namespace PhotoLocator
                 });
             else
             {
-                var savedPhotoFolderPath = settings.PhotoFolderPath;
+                var savedPhotoFolderPath = registrySettings.PhotoFolderPath;
                 if (!Directory.Exists(savedPhotoFolderPath))
                     savedPhotoFolderPath = Environment.GetFolderPath(Environment.SpecialFolder.MyPictures);
                 Dispatcher.BeginInvoke(() => _viewModel.PhotoFolderPath = savedPhotoFolderPath);
             }
 
-            if (settings.FirstLaunch < 1)
+            if (registrySettings.FirstLaunch < 1)
             {
                 MainViewModel.AboutCommand.Execute(null);
-                settings.FirstLaunch = 1;
+                registrySettings.FirstLaunch = 1;
             }
             PictureListBox.Focus();
 
@@ -96,21 +92,14 @@ namespace PhotoLocator
 
         private void HandleWindowClosed(object sender, EventArgs e)
         {
-            using var settings = new RegistrySettings();
+            using var registrySettings = new RegistrySettings();
+            registrySettings.AssignSettings(_viewModel.Settings);
             if (!string.IsNullOrEmpty(_viewModel.PhotoFolderPath))
-                settings.PhotoFolderPath = _viewModel.PhotoFolderPath;
-            settings.ShowFolders = _viewModel.ShowFolders;
-            if (_viewModel.PhotoFileExtensions != null)
-                settings.PhotoFileExtensions = String.Join(",", _viewModel.PhotoFileExtensions);
-            if (_viewModel.SavedFilePostfix != null)
-                settings.SavedFilePostfix = _viewModel.SavedFilePostfix;
-            settings.ExifToolPath = _viewModel.ExifToolPath;
-            settings.ViewMode = _viewModel.SelectedViewModeItem?.Tag as ViewMode? ?? ViewMode.Map;
-            settings.SlideShowInterval = _viewModel.SlideShowInterval;
-            settings.BitmapScalingMode = _viewModel.BitmapScalingMode;
-            settings.ShowMetadataInSlideShow = _viewModel.ShowMetadataInSlideShow;
-            settings.LeftColumnWidth = (int)LeftColumn.Width.Value;
-            settings.SelectedLayer = GetSelectedMapLayerName();
+                registrySettings.PhotoFolderPath = _viewModel.PhotoFolderPath;
+            registrySettings.PhotoFileExtensions = String.Join(",", _viewModel.PhotoFileExtensions);
+            registrySettings.ViewMode = _viewModel.SelectedViewModeItem?.Tag as ViewMode? ?? ViewMode.Map;
+            registrySettings.LeftColumnWidth = (int)LeftColumn.Width.Value;
+            registrySettings.SelectedLayer = GetSelectedMapLayerName();
             _viewModel.Dispose();
         }
 

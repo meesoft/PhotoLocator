@@ -1,5 +1,6 @@
 ﻿using PhotoLocator.Helpers;
 using PhotoLocator.Metadata;
+using PhotoLocator.Settings;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -26,7 +27,7 @@ namespace PhotoLocator
         MaskBasedNaming? _exampleNamer;
 
 #if DEBUG
-        public RenameWindow() : this(new List<PictureItemViewModel>(), new ObservableCollection<PictureItemViewModel>())
+        public RenameWindow() : this(new List<PictureItemViewModel>(), new ObservableCollection<PictureItemViewModel>(), new ObservableSettings())
         {
             RenameMask = nameof(RenameMask);
             ExampleName = nameof(ExampleName);
@@ -34,7 +35,8 @@ namespace PhotoLocator
         }
 #endif
 
-        public RenameWindow(IList<PictureItemViewModel> selectedPictures, ObservableCollection<PictureItemViewModel> allPictures)
+        public RenameWindow(IList<PictureItemViewModel> selectedPictures, ObservableCollection<PictureItemViewModel> allPictures,
+            ISettings osettings)
         {
             InitializeComponent();
             Title = $"Rename {selectedPictures.Count} file(s)";
@@ -42,8 +44,8 @@ namespace PhotoLocator
             _allPictures = allPictures;
             _renameMask = string.Empty;
 
-            using var settings = new RegistrySettings();
-            _previousMasks = settings.RenameMasks.Split('\\', StringSplitOptions.RemoveEmptyEntries);
+            using var registrySettings = new RegistrySettings();
+            _previousMasks = registrySettings.RenameMasks.Split('\\', StringSplitOptions.RemoveEmptyEntries);
             MaskMenuButton.ContextMenu = new ContextMenu();
             foreach (var mask in _previousMasks)
             {

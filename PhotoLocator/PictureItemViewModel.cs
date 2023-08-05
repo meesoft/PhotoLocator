@@ -4,6 +4,7 @@ using Microsoft.WindowsAPICodePack.Shell;
 using PhotoLocator.Helpers;
 using PhotoLocator.Metadata;
 using PhotoLocator.PictureFileFormats;
+using PhotoLocator.Settings;
 using System;
 using System.Collections;
 using System.Collections.Generic;

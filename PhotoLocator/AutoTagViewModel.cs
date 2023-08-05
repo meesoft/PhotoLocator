@@ -1,6 +1,7 @@
 ﻿using MapControl;
 using PhotoLocator.Gps;
 using PhotoLocator.Helpers;
+using PhotoLocator.Settings;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;

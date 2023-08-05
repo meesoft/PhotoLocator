@@ -5,6 +5,7 @@ using PhotoLocator.Gps;
 using PhotoLocator.Helpers;
 using PhotoLocator.MapDisplay;
 using PhotoLocator.Metadata;
+using PhotoLocator.Settings;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -26,7 +27,7 @@ using System.Windows.Threading;
 
 namespace PhotoLocator
 {
-    internal sealed class MainViewModel : INotifyPropertyChanged, ISettings, IDisposable
+    internal sealed class MainViewModel : INotifyPropertyChanged, IDisposable
     {
 #if DEBUG
         static readonly bool _isInDesignMode = DesignerProperties.GetIsInDesignMode(new DependencyObject());
@@ -67,6 +68,7 @@ namespace PhotoLocator
                 _previewPictureTitle = "Preview";
             }
 #endif
+            Settings = new ObservableSettings();
             Pictures.CollectionChanged += (s, e) => BeginTitleUpdate();
         }
 
@@ -105,16 +107,8 @@ namespace PhotoLocator
         private bool _isWindowEnabled = true;
 
         public IEnumerable<string> PhotoFileExtensions { get; set; } = Enumerable.Empty<string>();
-
-        public string? SavedFilePostfix { get; set; }
-
-        public string? ExifToolPath { get; set; }
-
-        public bool ShowFolders { get; set; }
-
-        public int SlideShowInterval { get; set; }
-
-        public bool ShowMetadataInSlideShow { get; set; }
+       
+        public ISettings Settings { get; }
 
         public string? PhotoFolderPath
         {
@@ -202,9 +196,6 @@ namespace PhotoLocator
 
         public int PreviewZoom { get => _previewZoom; set => SetProperty(ref _previewZoom, value); }
         private int _previewZoom;
-
-        public BitmapScalingMode BitmapScalingMode { get => _bitmapScalingMode; set => SetProperty(ref _bitmapScalingMode, value); }
-        BitmapScalingMode _bitmapScalingMode;
 
         public ObservableCollection<PictureItemViewModel> Pictures { get; } = new ObservableCollection<PictureItemViewModel>();
 
@@ -356,10 +347,10 @@ namespace PhotoLocator
                 return;
             }
             var autoTagWin = new AutoTagWindow();
-            using var settings = new RegistrySettings();
+            using var registrySettings = new RegistrySettings();
             var autoTagViewModel = new AutoTagViewModel(Pictures, selectedItems, Polylines,
                 () => { autoTagWin.DialogResult = true; }, 
-                settings);
+                registrySettings);
             autoTagWin.Owner = App.Current.MainWindow;
             autoTagWin.DataContext = autoTagViewModel;
             PreviewPictureSource = null;
@@ -455,7 +446,7 @@ namespace PhotoLocator
             var focused = SelectedPicture;
             if (selectedItems.Any(i => i.ThumbnailImage is null))
                 await WaitForPicturesLoadedAsync();
-            var renameWin = new RenameWindow(selectedItems, Pictures);
+            var renameWin = new RenameWindow(selectedItems, Pictures, Settings);
             renameWin.Owner = App.Current.MainWindow;
             renameWin.DataContext = renameWin;
             PreviewPictureSource = null;
@@ -480,7 +471,7 @@ namespace PhotoLocator
             if (pictures.Count == 0)
                 return;
             var slideShowWin = new SlideShowWindow(pictures, SelectedPicture?.IsFile == true ? SelectedPicture : Pictures.First(),
-                SlideShowInterval, BitmapScalingMode, ShowMetadataInSlideShow, GetSelectedMapLayerName?.Invoke());
+                GetSelectedMapLayerName?.Invoke(), Settings);
             slideShowWin.Owner = App.Current.MainWindow;
             slideShowWin.ShowDialog();
             SelectItem(slideShowWin.SelectedPicture);
@@ -488,41 +479,31 @@ namespace PhotoLocator
 
         public ICommand SettingsCommand => new RelayCommand(o =>
         {
-            var photoFileExtensions = string.Join(", ", PhotoFileExtensions);
-            var previousScalingMode = BitmapScalingMode;
-            var settingsWin = new SettingsWindow(() => BitmapScalingMode, m => BitmapScalingMode = m);
+            var photoFileExtensions = string.Join(", ", Settings.PhotoFileExtensions);
+            var previousScalingMode = Settings.BitmapScalingMode;
+            var settingsWin = new SettingsWindow();
             settingsWin.Owner = App.Current.MainWindow;
-            settingsWin.PhotoFileExtensions = photoFileExtensions;
-            settingsWin.ShowFolders = ShowFolders;
-            settingsWin.SavedFilePostfix = SavedFilePostfix;
-            settingsWin.ExifToolPath = ExifToolPath;
-            settingsWin.SlideShowInterval = SlideShowInterval;
-            settingsWin.ShowMetadataInSlideShow = ShowMetadataInSlideShow;
-            settingsWin.DataContext = settingsWin;
+            settingsWin.Settings.AssignSettings(Settings);
+            settingsWin.Settings.PropertyChanged += (s, e) =>
+            {
+                if (e.PropertyName == nameof(Settings.BitmapScalingMode))
+                    Settings.BitmapScalingMode = settingsWin.Settings.BitmapScalingMode;
+            };
+            settingsWin.DataContext = settingsWin.Settings;
             if (settingsWin.ShowDialog() == true)
             {
-                bool refresh = false;
-                if (settingsWin.PhotoFileExtensions != photoFileExtensions)
-                {
-                    PhotoFileExtensions = settingsWin.CleanPhotoFileExtensions();
-                    refresh = true;
-                }
-                if (settingsWin.ShowFolders != ShowFolders)
-                {
-                    ShowFolders = settingsWin.ShowFolders;
-                    refresh = true;
-                }
-                SavedFilePostfix = settingsWin.SavedFilePostfix;
-                ExifToolPath = settingsWin.ExifToolPath;
-                SlideShowInterval = settingsWin.SlideShowInterval;
-                BitmapScalingMode = settingsWin.BitmapScalingMode;
-                ShowMetadataInSlideShow = settingsWin.ShowMetadataInSlideShow;
+                bool refresh =
+                    settingsWin.Settings.PhotoFileExtensions != photoFileExtensions ||
+                    settingsWin.Settings.ShowFolders != Settings.ShowFolders;
+                Settings.AssignSettings(settingsWin.Settings);
+                PhotoFileExtensions = settingsWin.CleanPhotoFileExtensions();
+
                 if (refresh)
                     RefreshFolderCommand.Execute(null);
             }
             else
             {
-                BitmapScalingMode = previousScalingMode;
+                Settings.BitmapScalingMode = previousScalingMode;
             }
         });
 
@@ -770,7 +751,7 @@ namespace PhotoLocator
             Pictures.Clear();
             Polylines.Clear();
             SetupFileSystemWatcher();
-            if (ShowFolders)
+            if (Settings.ShowFolders)
                 foreach (var dir in Directory.EnumerateDirectories(PhotoFolderPath))
                     Pictures.Add(new PictureItemViewModel(dir, true, HandleFilePropertyChanged, null));
             await AppendFilesAsync(Directory.EnumerateFiles(PhotoFolderPath));
@@ -834,9 +815,9 @@ namespace PhotoLocator
                     await Task.Delay(1000);
                     var name = Path.GetFileName(e.FullPath);
                     var ext = Path.GetExtension(name).ToLowerInvariant();
-                    if (File.Exists(e.FullPath) && PhotoFileExtensions.Contains(ext))
+                    if (File.Exists(e.FullPath) && Settings.PhotoFileExtensions.Contains(ext, StringComparison.OrdinalIgnoreCase))
                     {
-                        var newItem = new PictureItemViewModel(e.FullPath, false, HandleFilePropertyChanged, this);
+                        var newItem = new PictureItemViewModel(e.FullPath, false, HandleFilePropertyChanged, Settings);
                         if (!newItem.InsertOrdered(Pictures))
                             return;
                     }
@@ -900,8 +881,8 @@ namespace PhotoLocator
                 if (Pictures.Any(i => i.FullPath == fileName))
                     continue;
                 var ext = Path.GetExtension(fileName).ToLowerInvariant();
-                if (PhotoFileExtensions.Contains(ext))
-                    Pictures.Add(new PictureItemViewModel(fileName, false, HandleFilePropertyChanged, this));
+                if (Settings.PhotoFileExtensions.Contains(ext, StringComparison.OrdinalIgnoreCase))
+                    Pictures.Add(new PictureItemViewModel(fileName, false, HandleFilePropertyChanged, Settings));
                 else if (ext == ".gpx" || ext == ".kml")
                 {
                     var traces = await Task.Run(() => GpsTrace.DecodeGpsTraceFile(fileName, TimeSpan.FromMinutes(1)));

@@ -2,6 +2,7 @@
 using PhotoLocator.Helpers;
 using PhotoLocator.MapDisplay;
 using PhotoLocator.Metadata;
+using PhotoLocator.Settings;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -23,18 +24,16 @@ namespace PhotoLocator
     public partial class SlideShowWindow : Window, INotifyPropertyChanged
     {
         readonly IList<PictureItemViewModel> _pictures;
-        readonly bool _showMetadataInSlideShow;
         readonly DispatcherTimer _timer;
         private TouchPoint? _touchStart;
 
-        public SlideShowWindow(IList<PictureItemViewModel> pictures, PictureItemViewModel selectedPicture, int slideShowInterval, 
-            BitmapScalingMode bitmapScalingMode, bool showMetadataInSlideShow, string? selectedMapLayerName)
+        public SlideShowWindow(IList<PictureItemViewModel> pictures, PictureItemViewModel selectedPicture, 
+            string? selectedMapLayerName, ISettings settings)
         {
             _pictures = pictures;
             SelectedPicture = selectedPicture;
-            _showMetadataInSlideShow = showMetadataInSlideShow;
-            _timer = new DispatcherTimer(TimeSpan.FromSeconds(slideShowInterval), DispatcherPriority.Normal, HandleTimerEvent, Dispatcher);
-            BitmapScalingMode = bitmapScalingMode;
+            Settings = settings;
+            _timer = new DispatcherTimer(TimeSpan.FromSeconds(settings.SlideShowInterval), DispatcherPriority.Normal, HandleTimerEvent, Dispatcher);
             InitializeComponent();
             DataContext = this;
             Map.map.TargetZoomLevel = 7;
@@ -55,6 +54,8 @@ namespace PhotoLocator
             return true;
         }
 
+        public ISettings Settings { get; }
+
         public static Visibility MapToolsVisibility => Visibility.Hidden;
 
         public Location? MapCenter
@@ -68,8 +69,6 @@ namespace PhotoLocator
 
         public bool IsMapVisible { get => _isMapVisible; set => SetProperty(ref _isMapVisible, value); }
         private bool _isMapVisible;
-
-        public BitmapScalingMode BitmapScalingMode { get; }
 
         public ImageSource? PictureSource { get => _pictureSource; set => SetProperty(ref _pictureSource, value); }
         private ImageSource? _pictureSource;
@@ -113,7 +112,7 @@ namespace PhotoLocator
             var i = name.IndexOf('[', StringComparison.Ordinal);
             if (i > 2)
                 name = name[..i].TrimEnd();
-            if (_showMetadataInSlideShow)
+            if (Settings.ShowMetadataInSlideShow)
             {
                 var metadata = ExifHandler.GetMetataString(SelectedPicture.FullPath);
                 if (!string.IsNullOrEmpty(metadata))
