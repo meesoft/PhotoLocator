@@ -479,7 +479,7 @@ namespace PhotoLocator
 
         public ICommand SettingsCommand => new RelayCommand(o =>
         {
-            var photoFileExtensions = string.Join(", ", Settings.PhotoFileExtensions);
+            var previousPhotoFileExtensions = Settings.PhotoFileExtensions;
             var previousScalingMode = Settings.BitmapScalingMode;
             var settingsWin = new SettingsWindow();
             settingsWin.Owner = App.Current.MainWindow;
@@ -493,10 +493,11 @@ namespace PhotoLocator
             if (settingsWin.ShowDialog() == true)
             {
                 bool refresh =
-                    settingsWin.Settings.PhotoFileExtensions != photoFileExtensions ||
+                    settingsWin.Settings.PhotoFileExtensions != previousPhotoFileExtensions ||
                     settingsWin.Settings.ShowFolders != Settings.ShowFolders;
                 Settings.AssignSettings(settingsWin.Settings);
-                PhotoFileExtensions = settingsWin.CleanPhotoFileExtensions();
+                PhotoFileExtensions = Settings.CleanPhotoFileExtensions();
+                Settings.PhotoFileExtensions = String.Join(",", PhotoFileExtensions);
 
                 if (refresh)
                     RefreshFolderCommand.Execute(null);
@@ -605,7 +606,9 @@ namespace PhotoLocator
             if (allSelected.Length == 0)
                 return;
             focusedItem = GetNearestUnchecked(focusedItem, allSelected);
-            if (MessageBox.Show($"Delete {allSelected.Length} selected item(s)?", "Confirm", MessageBoxButton.OKCancel, MessageBoxImage.Question) != MessageBoxResult.OK)
+            if (MessageBox.Show($"Delete {allSelected.Length} selected item(s)?" + 
+                (Settings.IncludeSidecarFiles ? "\nSidecar files will be included." : string.Empty), 
+                "Confirm", MessageBoxButton.OKCancel, MessageBoxImage.Question) != MessageBoxResult.OK)
                 return;
 
             var selectedIndex = Pictures.IndexOf(SelectedPicture!);
@@ -617,7 +620,7 @@ namespace PhotoLocator
                 int i = 0;
                 foreach (var item in allSelected)
                 {
-                    item.Recycle(false);
+                    item.Recycle(Settings.IncludeSidecarFiles);
                     Application.Current.Dispatcher.Invoke(() => Pictures.Remove(item));
                     progressCallback((double)(++i) / allSelected.Length);
                 }

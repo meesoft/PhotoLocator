@@ -40,8 +40,8 @@ namespace PhotoLocator
         private void HandleWindowLoaded(object sender, RoutedEventArgs e)
         {
             using var registrySettings = new RegistrySettings();
-            _viewModel.PhotoFileExtensions = registrySettings.PhotoFileExtensions.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
             _viewModel.Settings.AssignSettings(registrySettings);
+            _viewModel.PhotoFileExtensions = _viewModel.Settings.CleanPhotoFileExtensions();
             var leftColumnWidth = registrySettings.LeftColumnWidth;
             if (leftColumnWidth > 10 && leftColumnWidth < Width)
                 LeftColumn.Width = new GridLength(leftColumnWidth);
@@ -96,7 +96,6 @@ namespace PhotoLocator
             registrySettings.AssignSettings(_viewModel.Settings);
             if (!string.IsNullOrEmpty(_viewModel.PhotoFolderPath))
                 registrySettings.PhotoFolderPath = _viewModel.PhotoFolderPath;
-            registrySettings.PhotoFileExtensions = String.Join(",", _viewModel.PhotoFileExtensions);
             registrySettings.ViewMode = _viewModel.SelectedViewModeItem?.Tag as ViewMode? ?? ViewMode.Map;
             registrySettings.LeftColumnWidth = (int)LeftColumn.Width.Value;
             registrySettings.SelectedLayer = GetSelectedMapLayerName();

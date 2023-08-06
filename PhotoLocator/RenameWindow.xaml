@@ -74,7 +74,8 @@
             <TextBlock Text="|w/h:2| width/height with 2 decimals." MouseUp="HandleEscapeCodeTextBlockMouseUp" Foreground="#FFEEEEEE" Cursor="Hand"/>
         </StackPanel>
 
-        <CheckBox Grid.Row="11" Content="Rename sidecar files" IsChecked="{Binding IsRenameSidecarChecked}" />
+        <CheckBox Grid.Row="11" Content="Rename sidecar files" IsChecked="{Binding Settings.IncludeSidecarFiles}" />
+        
         <ProgressBar Grid.Row="11" Width="170" Height="10" HorizontalAlignment="Right" Value="{Binding ProgressBarValue}" Maximum="1"
                      Visibility="{Binding IsProgressBarVisible, Converter={StaticResource BooleanToVisibility}}"/>
 

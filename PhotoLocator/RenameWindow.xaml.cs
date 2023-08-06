@@ -36,12 +36,13 @@ namespace PhotoLocator
 #endif
 
         public RenameWindow(IList<PictureItemViewModel> selectedPictures, ObservableCollection<PictureItemViewModel> allPictures,
-            ISettings osettings)
+            ISettings settings)
         {
             InitializeComponent();
             Title = $"Rename {selectedPictures.Count} file(s)";
             _selectedPictures = selectedPictures;
             _allPictures = allPictures;
+            Settings = settings;
             _renameMask = string.Empty;
 
             using var registrySettings = new RegistrySettings();
@@ -80,6 +81,8 @@ namespace PhotoLocator
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
             return true;
         }
+
+        public ISettings Settings { get; }
 
         public string RenameMask
         {
@@ -154,13 +157,6 @@ namespace PhotoLocator
         }
         private double _progressBarValue;
 
-        public bool IsRenameSidecarChecked
-        {
-            get => _isRenameSidecarChecked;
-            set => SetProperty(ref _isRenameSidecarChecked, value);
-        }
-        private bool _isRenameSidecarChecked = true;
-
         private void MaskMenuButtonClick(object sender, RoutedEventArgs e)
         {
             MaskMenuButton.ContextMenu.IsOpen = true;
@@ -208,12 +204,12 @@ namespace PhotoLocator
                         if (overwritingFile != null &&
                             MessageBox.Show($"The file {newName} already exists, do you want to overwrite it?", "Rename", MessageBoxButton.OKCancel, MessageBoxImage.Question) == MessageBoxResult.OK)
                         {
-                            overwritingFile.Recycle(IsRenameSidecarChecked && !IsExtensionWarningVisible);
+                            overwritingFile.Recycle(Settings.IncludeSidecarFiles && !IsExtensionWarningVisible);
                             _allPictures.Remove(overwritingFile);
                         }
                     }
 
-                    item.Rename(newName, Path.Combine(Path.GetDirectoryName(item.FullPath)!, newName), IsRenameSidecarChecked && !IsExtensionWarningVisible);
+                    item.Rename(newName, Path.Combine(Path.GetDirectoryName(item.FullPath)!, newName), Settings.IncludeSidecarFiles && !IsExtensionWarningVisible);
                     _allPictures.Remove(item);
                     item.IsChecked = false;
                     item.InsertOrdered(_allPictures);
@@ -231,8 +227,8 @@ namespace PhotoLocator
                 IsProgressBarVisible = false;
                 if (counter > 0 && RenameMask.Contains('|', StringComparison.Ordinal))
                 {
-                    using var settings = new RegistrySettings();
-                    settings.RenameMasks = string.Join('\\', 
+                    using var registrySettings = new RegistrySettings();
+                    registrySettings.RenameMasks = string.Join('\\', 
                         (new[] { RenameMask }).Concat(_previousMasks).Distinct().Take(RenameHistoryLength));
                 }
             }

@@ -46,19 +46,5 @@ namespace PhotoLocator.Settings
 
             DialogResult = true;
         }
-
-        public string[] CleanPhotoFileExtensions()
-        {
-            var extensions = Settings.PhotoFileExtensions!.
-                Replace("*", "", StringComparison.Ordinal).
-                Replace(" ", ",", StringComparison.Ordinal).
-                Replace(";", ",", StringComparison.Ordinal).
-                ToLowerInvariant().
-                Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
-            for (int i = 0; i < extensions.Length; i++)
-                if (!extensions[i].StartsWith('.'))
-                    extensions[i] = '.' + extensions[i];
-            return extensions;
-        }
     }
 }
