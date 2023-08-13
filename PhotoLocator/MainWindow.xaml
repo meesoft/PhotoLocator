@@ -176,7 +176,8 @@
                   PreviewMouseDown="HandlePreviewImageMouseDown" PreviewMouseMove="HandlePreviewImageMouseMove">
                 <Image Name="FullPreviewImage" Source="{Binding PreviewPictureSource}" 
                        RenderOptions.BitmapScalingMode="{Binding Settings.BitmapScalingMode}" SnapsToDevicePixels="True" />
-                <Canvas Name="ZoomedPreviewCanvas" ClipToBounds="True" >
+                <Canvas Name="PreviewCanvas" ClipToBounds="True" >
+                    <Image Name="ResampledPreviewImage" Stretch="None" SnapsToDevicePixels="True" VerticalAlignment="Center" HorizontalAlignment="Center" />
                     <Image Name="ZoomedPreviewImage" Source="{Binding PreviewPictureSource}"
                            Stretch="None" RenderOptions.BitmapScalingMode="NearestNeighbor" SnapsToDevicePixels="True" />
                 </Canvas>

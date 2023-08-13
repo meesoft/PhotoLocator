@@ -13,6 +13,7 @@
 	<EnableNETAnalyzers>true</EnableNETAnalyzers>
 	<AnalysisMode>All</AnalysisMode>
 	<NoWarn>CA1014,IDE0017</NoWarn>
+	<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
 
   <ItemGroup>

@@ -57,12 +57,15 @@
         <Grid Grid.Row="10">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="100"/>
+                <ColumnDefinition Width="100"/>
                 <ColumnDefinition/>
             </Grid.ColumnDefinitions>
             <RadioButton Grid.Column="0" Content="Linear" Foreground="#FFDDDDDD" VerticalAlignment="Center"
                          IsChecked="{Binding Path=BitmapScalingMode, Converter={StaticResource ComparisonConverter}, ConverterParameter={x:Static BitmapScalingMode.Linear}}"/>
             <RadioButton Grid.Column="1" Content="Fant" Foreground="#FFDDDDDD" VerticalAlignment="Center"
                          IsChecked="{Binding Path=BitmapScalingMode, Converter={StaticResource ComparisonConverter}, ConverterParameter={x:Static BitmapScalingMode.Fant}}"/>
+            <RadioButton Grid.Column="2" Content="Lanczos" Foreground="#FFDDDDDD" VerticalAlignment="Center"
+                         IsChecked="{Binding Path=BitmapScalingMode, Converter={StaticResource ComparisonConverter}, ConverterParameter={x:Static BitmapScalingMode.Unspecified}}"/>
         </Grid>
 
         <CheckBox Grid.Row="11" Content="Show EXIF metadata in slide show" IsChecked="{Binding ShowMetadataInSlideShow}" VerticalAlignment="Center" />

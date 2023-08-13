@@ -1,4 +1,5 @@
-﻿using PhotoLocator.Helpers;
+﻿using MeeSoft.ImageProcessing.Operations;
+using PhotoLocator.Helpers;
 using PhotoLocator.MapDisplay;
 using PhotoLocator.Settings;
 using System;
@@ -35,6 +36,7 @@ namespace PhotoLocator
                 _viewModel.SelectedViewModeItem = _viewModel.SelectedViewModeItem == MapViewItem ? PreviewViewItem : MapViewItem);
             DataContext = _viewModel;
             _viewModel.PropertyChanged += HandleViewModelPropertyChanged;
+            _viewModel.Settings.PropertyChanged += HandleViewModelPropertyChanged;
         }
 
         private void HandleWindowLoaded(object sender, RoutedEventArgs e)
@@ -269,9 +271,38 @@ namespace PhotoLocator
         private void HandleViewModelPropertyChanged(object? sender, PropertyChangedEventArgs e)
         {
             if (e.PropertyName == nameof(_viewModel.PreviewPictureSource))
-                InitializePreviewRenderTransform(false);
+            {
+                if (_viewModel.PreviewZoom > 0)
+                    InitializePreviewRenderTransform(false);
+                else if (_viewModel.Settings.BitmapScalingMode == 0)
+                    UpdateResampledImage();
+            }
             else if (e.PropertyName == nameof(_viewModel.PreviewZoom))
                 UpdatePreviewZoom();
+            else if (e.PropertyName == nameof(_viewModel.Settings.BitmapScalingMode))
+                UpdatePreviewZoom();
+        }
+
+        private void UpdateResampledImage()
+        {
+            var sourceImage = _viewModel.PreviewPictureSource;
+            if (sourceImage is null || PreviewCanvas.ActualWidth < 1 || PreviewCanvas.ActualHeight < 1)
+            {
+                ResampledPreviewImage.Source = null;
+                return;
+            }
+            var srcWidth = sourceImage.PixelWidth;
+            var srcHeight = sourceImage.PixelHeight;
+            var screenDpi = VisualTreeHelper.GetDpi(this);
+            var maxWidth = PreviewCanvas.ActualWidth * screenDpi.DpiScaleX;
+            var MaxHeight = PreviewCanvas.ActualHeight * screenDpi.DpiScaleY;
+            var scale = Math.Min(maxWidth / srcWidth, MaxHeight / srcHeight);
+            //TODO: Handle pixel format
+            var resizeOperation = new LanczosResizeOperation();
+            var resampled = resizeOperation.Apply8(sourceImage, 4,
+                (int)(srcWidth * scale), (int)(srcHeight * scale),
+                screenDpi.PixelsPerInchX, screenDpi.PixelsPerInchY);
+            ResampledPreviewImage.Source = resampled;
         }
 
         private void HandleViewModeSelectionChanged(object sender, SelectionChangedEventArgs e)
@@ -339,15 +370,28 @@ namespace PhotoLocator
             Zoom100Item.IsChecked = _viewModel.PreviewZoom == 1;
             Zoom200Item.IsChecked = _viewModel.PreviewZoom == 2;
             Zoom400Item.IsChecked = _viewModel.PreviewZoom == 4;
+            ResampledPreviewImage.Source = null;
             if (_viewModel.PreviewZoom == 0)
             {
-                FullPreviewImage.Visibility = Visibility.Visible;
-                ZoomedPreviewCanvas.Visibility = Visibility.Collapsed;
+                if (_viewModel.Settings.BitmapScalingMode == 0) // Lanczos resampling
+                {
+                    ResampledPreviewImage.Visibility = Visibility.Visible;
+                    FullPreviewImage.Visibility = Visibility.Collapsed;
+                    UpdateLayout();
+                    UpdateResampledImage();
+                }
+                else // WPF scaling
+                {
+                    ResampledPreviewImage.Visibility = Visibility.Collapsed;
+                    FullPreviewImage.Visibility = Visibility.Visible;
+                }
+                ZoomedPreviewImage.Visibility = Visibility.Collapsed;
             }
             else
             {
                 FullPreviewImage.Visibility = Visibility.Collapsed;
-                ZoomedPreviewCanvas.Visibility = Visibility.Visible;
+                ResampledPreviewImage.Visibility = Visibility.Collapsed;
+                ZoomedPreviewImage.Visibility = Visibility.Visible;
                 UpdateLayout();
                 InitializePreviewRenderTransform(true);
             }
@@ -355,7 +399,7 @@ namespace PhotoLocator
 
         private void InitializePreviewRenderTransform(bool forceReset)
         {
-            if (_viewModel.PreviewPictureSource is null || _viewModel.PreviewZoom == 0)
+            if (_viewModel.PreviewPictureSource is null)
                 return;
             var screenDpi = VisualTreeHelper.GetDpi(this);
             var zoom = _viewModel.PreviewZoom;
@@ -364,8 +408,8 @@ namespace PhotoLocator
             if (!forceReset && ZoomedPreviewImage.RenderTransform is MatrixTransform m && 
                 m.Matrix.M11 == sx && m.Matrix.M22 == sy && m.Matrix.OffsetX <= 0 && m.Matrix.OffsetY <= 0)
                 return;
-            var tx = IntMath.Round(ZoomedPreviewCanvas.ActualWidth - _viewModel.PreviewPictureSource.PixelWidth * zoom / screenDpi.PixelsPerInchX * 96) / 2;
-            var ty = IntMath.Round(ZoomedPreviewCanvas.ActualHeight - _viewModel.PreviewPictureSource.PixelHeight * zoom / screenDpi.PixelsPerInchY * 96) / 2;
+            var tx = IntMath.Round(PreviewCanvas.ActualWidth - _viewModel.PreviewPictureSource.PixelWidth * zoom / screenDpi.PixelsPerInchX * 96) / 2;
+            var ty = IntMath.Round(PreviewCanvas.ActualHeight - _viewModel.PreviewPictureSource.PixelHeight * zoom / screenDpi.PixelsPerInchY * 96) / 2;
             ZoomedPreviewImage.RenderTransform = new MatrixTransform(
                 sx, 0,
                 0, sy,
