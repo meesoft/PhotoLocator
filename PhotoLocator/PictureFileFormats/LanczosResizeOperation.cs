@@ -1,5 +1,6 @@
 ﻿using PhotoLocator.Helpers;
 using System;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Media.Imaging;
 
@@ -128,68 +129,67 @@ namespace MeeSoft.ImageProcessing.Operations
             {
                 for (int i = 0; i < _weights.Length; i++)
                 {
-                    byte min = 255;
-                    byte max = 0;
                     float sum = 0;
                     for (int j = 0; j < _weights[i].SourcePixelWeights.Length; j++)
                     {
-                        var s = source[srcOffset + _weights[i].SourcePixelWeights[j].SourceIndex];
-                        if (s < min)
-                            min = s;
-                        if (s > max)
-                            max = s;
-                        sum += s * _weights[i].SourcePixelWeights[j].SourceWeight;
+                        var sample = source[srcOffset + _weights[i].SourcePixelWeights[j].SourceIndex];
+                        sum += sample * _weights[i].SourcePixelWeights[j].SourceWeight;
                     }
-                    dest[dstOffset + i * dstSampleDist] = (byte)RealMath.EnsureRange(sum + 0.5f, min, max);
+                    dest[dstOffset + i * dstSampleDist] = (byte)RealMath.EnsureRange(sum + 0.5f, 0, 255);
                 }
             }
         }
 
-        public BitmapSource Apply8(BitmapSource source, int planes, int newWidth, int newHeight, double newDpiX, double newDpiY)
+        public BitmapSource Apply8(BitmapSource source, int planes, int pixelSize, int newWidth, int newHeight, 
+            double newDpiX, double newDpiY, CancellationToken ct)
         {
             var srcWidth = source.PixelWidth;
             var srcHeight = source.PixelHeight;
             if (srcWidth == newWidth && srcHeight == newHeight)
                 return source;
 
-            var srcPixels = new byte[srcWidth * srcHeight * planes];
-            source.CopyPixels(srcPixels, srcWidth * planes, 0);
+            var srcPixels = new byte[srcWidth * srcHeight * pixelSize];
+            source.CopyPixels(srcPixels, srcWidth * pixelSize, 0);
 
             if (srcWidth != newWidth)
             { 
-                var horzResampler = new LineResampler(FilterFunc, FilterWindow, srcWidth, planes, newWidth);
-                var dstPixels = new byte[newWidth * srcHeight * planes];
+                var horzResampler = new LineResampler(FilterFunc, FilterWindow, srcWidth, pixelSize, newWidth);
+                var dstPixels = new byte[newWidth * srcHeight * pixelSize];
                 Parallel.For(0, srcHeight, y =>
                 {
                     unsafe
                     {
-                        fixed (byte* src = &srcPixels[y * srcWidth * planes])
-                        fixed (byte* dst = &dstPixels[y * newWidth * planes])
+                        fixed (byte* src = &srcPixels[y * srcWidth * pixelSize])
+                        fixed (byte* dst = &dstPixels[y * newWidth * pixelSize])
                             for (int p = 0; p < planes; p++)
-                                horzResampler.Apply(src, p, dst, p, planes);
+                                horzResampler.Apply(src, p, dst, p, pixelSize);
                     }
+                    ct.ThrowIfCancellationRequested();
                 });
                 srcPixels = dstPixels; 
                 srcWidth = newWidth;
             }
             if (srcHeight != newHeight)
             {
-                var horzResampler = new LineResampler(FilterFunc, FilterWindow, srcHeight, srcWidth * planes, newHeight);
-                var dstPixels = new byte[newWidth * newHeight * planes];
+                var horzResampler = new LineResampler(FilterFunc, FilterWindow, srcHeight, srcWidth * pixelSize, newHeight);
+                var dstPixels = new byte[newWidth * newHeight * pixelSize];
                 Parallel.For(0, srcWidth, x =>
                 {
                     unsafe
                     {
-                        fixed (byte* src = &srcPixels[x * planes])
-                        fixed (byte* dst = &dstPixels[x * planes])
+                        fixed (byte* src = &srcPixels[x * pixelSize])
+                        fixed (byte* dst = &dstPixels[x * pixelSize])
                             for (int p = 0; p < planes; p++)
-                                horzResampler.Apply(src, p, dst, p, planes * srcWidth);
+                                horzResampler.Apply(src, p, dst, p, pixelSize * srcWidth);
                     }
+                    ct.ThrowIfCancellationRequested();
                 });
                 srcPixels = dstPixels;
                 srcHeight = newHeight;
             }
-            return BitmapSource.Create(newWidth, newHeight, newDpiX, newDpiY, source.Format, null, srcPixels, newWidth * planes);
+            var result = BitmapSource.Create(newWidth, newHeight, newDpiX, newDpiY, source.Format, null, srcPixels, newWidth * pixelSize);
+            result.Freeze();
+            return result;
         }
     }
 }

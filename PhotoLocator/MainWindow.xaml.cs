@@ -6,6 +6,7 @@ using System;
 using System.ComponentModel;
 using System.IO;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
@@ -283,28 +284,6 @@ namespace PhotoLocator
                 UpdatePreviewZoom();
         }
 
-        private void UpdateResampledImage()
-        {
-            var sourceImage = _viewModel.PreviewPictureSource;
-            if (sourceImage is null || PreviewCanvas.ActualWidth < 1 || PreviewCanvas.ActualHeight < 1)
-            {
-                ResampledPreviewImage.Source = null;
-                return;
-            }
-            var srcWidth = sourceImage.PixelWidth;
-            var srcHeight = sourceImage.PixelHeight;
-            var screenDpi = VisualTreeHelper.GetDpi(this);
-            var maxWidth = PreviewCanvas.ActualWidth * screenDpi.DpiScaleX;
-            var MaxHeight = PreviewCanvas.ActualHeight * screenDpi.DpiScaleY;
-            var scale = Math.Min(maxWidth / srcWidth, MaxHeight / srcHeight);
-            //TODO: Handle pixel format
-            var resizeOperation = new LanczosResizeOperation();
-            var resampled = resizeOperation.Apply8(sourceImage, 4,
-                (int)(srcWidth * scale), (int)(srcHeight * scale),
-                screenDpi.PixelsPerInchX, screenDpi.PixelsPerInchY);
-            ResampledPreviewImage.Source = resampled;
-        }
-
         private void HandleViewModeSelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             if (_viewModel is null)
@@ -327,6 +306,12 @@ namespace PhotoLocator
                 PreviewRow.Height = new GridLength(1, GridUnitType.Star);
                 UpdatePreviewZoom();
             }
+        }
+
+        private void HandlePreviewCanvasSizeChanged(object sender, SizeChangedEventArgs e)
+        {
+            if (_viewModel.PreviewZoom == 0 && _viewModel.Settings.BitmapScalingMode == 0)
+                UpdateResampledImage();
         }
 
         private void HandlePreviewImageMouseDown(object sender, MouseButtonEventArgs e)
@@ -397,6 +382,45 @@ namespace PhotoLocator
             }
         }
 
+        CancellationTokenSource? _resamplerCancellation;
+
+        private async void UpdateResampledImage()
+        {
+            if (_resamplerCancellation is not null)
+            {
+                _resamplerCancellation.Cancel();
+                _resamplerCancellation.Dispose();
+                _resamplerCancellation = null;
+            }
+            var sourceImage = _viewModel.PreviewPictureSource;
+            if (sourceImage is null || PreviewCanvas.ActualWidth < 1 || PreviewCanvas.ActualHeight < 1)
+            {
+                ResampledPreviewImage.Source = null;
+                return;
+            }
+            var screenDpi = VisualTreeHelper.GetDpi(this);
+            var maxWidth = PreviewCanvas.ActualWidth * screenDpi.DpiScaleX;
+            var MaxHeight = PreviewCanvas.ActualHeight * screenDpi.DpiScaleY;
+            var scale = Math.Min(maxWidth / sourceImage.PixelWidth, MaxHeight / sourceImage.PixelHeight);
+            //TODO: Handle pixel format
+            var resizeOperation = new LanczosResizeOperation();
+            _resamplerCancellation = new CancellationTokenSource();
+            var resampled = await Task.Run(() => resizeOperation.Apply8(sourceImage, 3, 4,
+                (int)(sourceImage.PixelWidth * scale), (int)(sourceImage.PixelHeight * scale),
+                screenDpi.PixelsPerInchX, screenDpi.PixelsPerInchY,
+                _resamplerCancellation.Token), _resamplerCancellation.Token);
+            if (sourceImage == _viewModel.PreviewPictureSource)
+            {
+                ResampledPreviewImage.Source = resampled;
+                var tx = IntMath.Round(PreviewCanvas.ActualWidth - resampled.PixelWidth / screenDpi.PixelsPerInchX * 96) / 2;
+                var ty = IntMath.Round(PreviewCanvas.ActualHeight - resampled.PixelHeight / screenDpi.PixelsPerInchY * 96) / 2;
+                ResampledPreviewImage.RenderTransform = new MatrixTransform(
+                    1, 0,
+                    0, 1,
+                    tx, ty);
+            }
+        }
+
         private void InitializePreviewRenderTransform(bool forceReset)
         {
             if (_viewModel.PreviewPictureSource is null)
@@ -419,6 +443,7 @@ namespace PhotoLocator
         public void Dispose()
         {
             _viewModel?.Dispose();
+            _resamplerCancellation?.Dispose();
         }
     }
 }
