@@ -21,6 +21,8 @@ namespace PhotoLocator
     /// </summary>
     public sealed partial class MainWindow : Window, IDisposable
     {
+        const BitmapScalingMode BitmapScalingModeLanczos = BitmapScalingMode.Unspecified;
+
         readonly MainViewModel _viewModel;
         Point _previousMousePosition;
         bool _isDraggingPreview, _isStartingFileItemDrag;
@@ -275,7 +277,7 @@ namespace PhotoLocator
             {
                 if (_viewModel.PreviewZoom > 0)
                     InitializePreviewRenderTransform(false);
-                else if (_viewModel.Settings.BitmapScalingMode == 0)
+                else if (_viewModel.Settings.BitmapScalingMode == BitmapScalingModeLanczos)
                     UpdateResampledImage();
             }
             else if (e.PropertyName == nameof(_viewModel.PreviewZoom))
@@ -310,7 +312,7 @@ namespace PhotoLocator
 
         private void HandlePreviewCanvasSizeChanged(object sender, SizeChangedEventArgs e)
         {
-            if (_viewModel.PreviewZoom == 0 && _viewModel.Settings.BitmapScalingMode == 0)
+            if (_viewModel.PreviewZoom == 0 && _viewModel.Settings.BitmapScalingMode == BitmapScalingModeLanczos)
                 UpdateResampledImage();
         }
 
@@ -358,10 +360,9 @@ namespace PhotoLocator
             ResampledPreviewImage.Source = null;
             if (_viewModel.PreviewZoom == 0)
             {
-                if (_viewModel.Settings.BitmapScalingMode == 0) // Lanczos resampling
+                if (_viewModel.Settings.BitmapScalingMode == BitmapScalingModeLanczos)
                 {
                     ResampledPreviewImage.Visibility = Visibility.Visible;
-                    FullPreviewImage.Visibility = Visibility.Collapsed;
                     UpdateLayout();
                     UpdateResampledImage();
                 }
@@ -402,22 +403,27 @@ namespace PhotoLocator
             var maxWidth = PreviewCanvas.ActualWidth * screenDpi.DpiScaleX;
             var MaxHeight = PreviewCanvas.ActualHeight * screenDpi.DpiScaleY;
             var scale = Math.Min(maxWidth / sourceImage.PixelWidth, MaxHeight / sourceImage.PixelHeight);
-            //TODO: Handle pixel format
             var resizeOperation = new LanczosResizeOperation();
             _resamplerCancellation = new CancellationTokenSource();
-            var resampled = await Task.Run(() => resizeOperation.Apply8(sourceImage, 3, 4,
+            var resampled = await Task.Run(() => resizeOperation.Apply(sourceImage,
                 (int)(sourceImage.PixelWidth * scale), (int)(sourceImage.PixelHeight * scale),
                 screenDpi.PixelsPerInchX, screenDpi.PixelsPerInchY,
                 _resamplerCancellation.Token), _resamplerCancellation.Token);
             if (sourceImage == _viewModel.PreviewPictureSource)
             {
                 ResampledPreviewImage.Source = resampled;
-                var tx = IntMath.Round(PreviewCanvas.ActualWidth - resampled.PixelWidth / screenDpi.PixelsPerInchX * 96) / 2;
-                var ty = IntMath.Round(PreviewCanvas.ActualHeight - resampled.PixelHeight / screenDpi.PixelsPerInchY * 96) / 2;
-                ResampledPreviewImage.RenderTransform = new MatrixTransform(
-                    1, 0,
-                    0, 1,
-                    tx, ty);
+                if (resampled is null)
+                    FullPreviewImage.Visibility = Visibility.Visible;
+                else
+                {
+                    var tx = IntMath.Round(PreviewCanvas.ActualWidth - resampled.PixelWidth / screenDpi.PixelsPerInchX * 96) / 2;
+                    var ty = IntMath.Round(PreviewCanvas.ActualHeight - resampled.PixelHeight / screenDpi.PixelsPerInchY * 96) / 2;
+                    ResampledPreviewImage.RenderTransform = new MatrixTransform(
+                        1, 0,
+                        0, 1,
+                        tx, ty);
+                    FullPreviewImage.Visibility = Visibility.Collapsed;
+                }
             }
         }
 

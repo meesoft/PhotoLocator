@@ -2,24 +2,13 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Windows.Media;
 using System.Windows.Media.Imaging;
 
 namespace MeeSoft.ImageProcessing.Operations
 {
     public class LanczosResizeOperation
     {
-        /// <see cref="http://en.wikipedia.org/wiki/Sinc_filter"/>
-        public static float Sinc(float x)
-        {
-            if (Math.Abs(x) < 1e-8f)
-                return 1;
-            else
-            {
-                var xPi = x * Math.PI;
-                return (float)(Math.Sin(xPi) / xPi);
-            }
-        }
-
         /// <see cref="http://en.wikipedia.org/wiki/Lanczos_resampling"/>
         public static float Lanczos2(float x)
         {
@@ -30,7 +19,6 @@ namespace MeeSoft.ImageProcessing.Operations
             else return (float)(a * Math.Sin(Math.PI * x) * Math.Sin((Math.PI / a) * x) / RealMath.Sqr(Math.PI * x));
         }
 
-        /// <see cref="http://en.wikipedia.org/wiki/Lanczos_resampling"/>
         public static float Lanczos3(float x)
         {
             const double a = 3;
@@ -40,11 +28,11 @@ namespace MeeSoft.ImageProcessing.Operations
             else return (float)(a * Math.Sin(Math.PI * x) * Math.Sin((Math.PI / a) * x) / RealMath.Sqr(Math.PI * x));
         }
 
-        public Func<float, float> FilterFunc = Lanczos2;
+        public Func<float, float> FilterFunc = Lanczos3;
 
-        public float FilterWindow = 2;
+        public float FilterWindow = 3;
 
-        protected class LineResampler
+        class LineResampler
         {
             record struct SourcePixelWeight
             {
@@ -140,56 +128,83 @@ namespace MeeSoft.ImageProcessing.Operations
             }
         }
 
-        public BitmapSource Apply8(BitmapSource source, int planes, int pixelSize, int newWidth, int newHeight, 
+        private BitmapSource Apply8(BitmapSource source, int planes, int pixelSize, int newWidth, int newHeight,
             double newDpiX, double newDpiY, CancellationToken ct)
         {
-            var srcWidth = source.PixelWidth;
-            var srcHeight = source.PixelHeight;
-            if (srcWidth == newWidth && srcHeight == newHeight)
+            var width = source.PixelWidth;
+            var height = source.PixelHeight;
+            if (width == newWidth && height == newHeight)
                 return source;
 
-            var srcPixels = new byte[srcWidth * srcHeight * pixelSize];
-            source.CopyPixels(srcPixels, srcWidth * pixelSize, 0);
+            var pixels = new byte[width * height * pixelSize];
+            source.CopyPixels(pixels, width * pixelSize, 0);
 
-            if (srcWidth != newWidth)
-            { 
-                var horzResampler = new LineResampler(FilterFunc, FilterWindow, srcWidth, pixelSize, newWidth);
-                var dstPixels = new byte[newWidth * srcHeight * pixelSize];
-                Parallel.For(0, srcHeight, y =>
+            if (width != newWidth)
+            {
+                var horzResampler = new LineResampler(FilterFunc, FilterWindow, width, pixelSize, newWidth);
+                var dstPixels = new byte[newWidth * height * pixelSize];
+                Parallel.For(0, height, y =>
                 {
                     unsafe
                     {
-                        fixed (byte* src = &srcPixels[y * srcWidth * pixelSize])
+                        fixed (byte* src = &pixels[y * width * pixelSize])
                         fixed (byte* dst = &dstPixels[y * newWidth * pixelSize])
                             for (int p = 0; p < planes; p++)
                                 horzResampler.Apply(src, p, dst, p, pixelSize);
                     }
                     ct.ThrowIfCancellationRequested();
                 });
-                srcPixels = dstPixels; 
-                srcWidth = newWidth;
+                pixels = dstPixels;
+                width = newWidth;
             }
-            if (srcHeight != newHeight)
+            if (height != newHeight)
             {
-                var horzResampler = new LineResampler(FilterFunc, FilterWindow, srcHeight, srcWidth * pixelSize, newHeight);
+                var horzResampler = new LineResampler(FilterFunc, FilterWindow, height, width * pixelSize, newHeight);
                 var dstPixels = new byte[newWidth * newHeight * pixelSize];
-                Parallel.For(0, srcWidth, x =>
+                Parallel.For(0, width, x =>
                 {
                     unsafe
                     {
-                        fixed (byte* src = &srcPixels[x * pixelSize])
+                        fixed (byte* src = &pixels[x * pixelSize])
                         fixed (byte* dst = &dstPixels[x * pixelSize])
                             for (int p = 0; p < planes; p++)
-                                horzResampler.Apply(src, p, dst, p, pixelSize * srcWidth);
+                                horzResampler.Apply(src, p, dst, p, pixelSize * width);
                     }
                     ct.ThrowIfCancellationRequested();
                 });
-                srcPixels = dstPixels;
-                srcHeight = newHeight;
+                pixels = dstPixels;
+                height = newHeight;
             }
-            var result = BitmapSource.Create(newWidth, newHeight, newDpiX, newDpiY, source.Format, null, srcPixels, newWidth * pixelSize);
+            var result = BitmapSource.Create(width, height, newDpiX, newDpiY, source.Format, null, pixels, width * pixelSize);
             result.Freeze();
             return result;
+        }
+
+        public BitmapSource? Apply(BitmapSource source, int newWidth, int newHeight,
+            double newDpiX, double newDpiY, CancellationToken ct)
+        {
+            int planes, pixelSize;
+            if (source.Format == PixelFormats.Rgb24 || source.Format == PixelFormats.Bgr24)
+            {
+                planes = 3; pixelSize = 3;
+            }
+            else if (source.Format == PixelFormats.Bgr32)
+            {
+                planes = 3; pixelSize = 4;
+            }
+            else if (source.Format == PixelFormats.Bgra32 || source.Format == PixelFormats.Pbgra32 || source.Format == PixelFormats.Cmyk32)
+            {
+                planes = 4; pixelSize = 4;
+            }
+            else if (source.Format == PixelFormats.Gray8)
+            {
+                planes = 1; pixelSize = 1;
+            }
+            else
+            {
+                return null;
+            }
+            return Apply8(source, planes, pixelSize, newWidth, newHeight, newDpiX, newDpiY, ct);
         }
     }
 }

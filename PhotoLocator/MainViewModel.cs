@@ -193,6 +193,7 @@ namespace PhotoLocator
         public string? PreviewPictureTitle { get => _previewPictureTitle; set => SetProperty(ref _previewPictureTitle, value); }
         private string? _previewPictureTitle;
 
+        /// <summary> Zoom level or 0 for auto </summary>
         public int PreviewZoom { get => _previewZoom; set => SetProperty(ref _previewZoom, value); }
         private int _previewZoom;
 
