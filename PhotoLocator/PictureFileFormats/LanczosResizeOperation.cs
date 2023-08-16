@@ -43,7 +43,6 @@ namespace MeeSoft.ImageProcessing.Operations
             record struct Weight
             {
                 public SourcePixelWeight[] SourcePixelWeights;
-                public float Scale;
             }
 
             readonly Weight[] _weights;
@@ -52,18 +51,18 @@ namespace MeeSoft.ImageProcessing.Operations
             {
                 // Compute filter weights for each position along the line
                 _weights = new Weight[dstWidth];
-                float ScaleWN = (float)(srcWidth - 1) / Math.Max(dstWidth - 1, 1);
-                float ScaleNW = (float)(dstWidth - 1) / Math.Max(srcWidth - 1, 1);
-                if (dstWidth < srcWidth)
+                float scaleWN = (float)(srcWidth - 1) / Math.Max(dstWidth - 1, 1);
+                float scaleNW = (float)(dstWidth - 1) / Math.Max(srcWidth - 1, 1);
+                float reduceWindow = filterWindow * scaleWN;
+                Parallel.For(0, dstWidth, i =>
                 {
-                    float Window = filterWindow * ScaleWN;
-                    for (int i = 0; i < dstWidth; i++)
+                    float sum = 0;
+                    if (dstWidth < srcWidth)
                     {
-                        float center = i * ScaleWN;
-                        int pMin = (int)Math.Floor(center - Window);
-                        int pMax = (int)Math.Ceiling(center + Window);
+                        float center = i * scaleWN;
+                        int pMin = (int)Math.Floor(center - reduceWindow);
+                        int pMax = (int)Math.Ceiling(center + reduceWindow);
                         _weights[i].SourcePixelWeights = new SourcePixelWeight[pMax - pMin + 1];
-                        float sum = 0;
                         for (int p = pMin; p <= pMax; p++)
                         {
                             SourcePixelWeight spw;
@@ -73,23 +72,17 @@ namespace MeeSoft.ImageProcessing.Operations
                                 spw.SourceIndex = (srcWidth - 1) * srcSampleDist;
                             else
                                 spw.SourceIndex = p * srcSampleDist;
-                            spw.SourceWeight = filterFunc((p - center) * ScaleNW) * ScaleNW;
+                            spw.SourceWeight = filterFunc((p - center) * scaleNW) * scaleNW;
                             sum += spw.SourceWeight;
                             _weights[i].SourcePixelWeights[p - pMin] = spw;
                         }
-                        if (sum > 0)
-                            _weights[i].Scale = 1 / sum;
                     }
-                }
-                else
-                {
-                    for (int i = 0; i < dstWidth; i++)
+                    else
                     {
-                        float center = i * ScaleWN;
+                        float center = i * scaleWN;
                         int pMin = (int)Math.Floor(center - filterWindow);
                         int pMax = (int)Math.Ceiling(center + filterWindow);
                         _weights[i].SourcePixelWeights = new SourcePixelWeight[pMax - pMin + 1];
-                        float sum = 0;
                         for (int p = pMin; p <= pMax; p++)
                         {
                             SourcePixelWeight spw;
@@ -103,14 +96,14 @@ namespace MeeSoft.ImageProcessing.Operations
                             sum += spw.SourceWeight;
                             _weights[i].SourcePixelWeights[p - pMin] = spw;
                         }
-                        if (sum > 0)
-                            _weights[i].Scale = 1 / sum;
                     }
-                }
-                // Normalize filter weights
-                for (int i = 0; i < dstWidth; i++)
-                    for (int p = 0; p < _weights[i].SourcePixelWeights.Length; p++)
-                        _weights[i].SourcePixelWeights[p].SourceWeight *= _weights[i].Scale;
+                    if (sum > 0)
+                    {
+                        var scale = 1 / sum;
+                        for (int p = 0; p < _weights[i].SourcePixelWeights.Length; p++)
+                            _weights[i].SourcePixelWeights[p].SourceWeight *= scale;
+                    }
+                });
             }
 
             public unsafe void Apply(byte* source, int srcOffset, byte* dest, int dstOffset, int dstSampleDist)
@@ -184,15 +177,15 @@ namespace MeeSoft.ImageProcessing.Operations
             double newDpiX, double newDpiY, CancellationToken ct)
         {
             int planes, pixelSize;
-            if (source.Format == PixelFormats.Rgb24 || source.Format == PixelFormats.Bgr24)
-            {
-                planes = 3; pixelSize = 3;
-            }
-            else if (source.Format == PixelFormats.Bgr32)
+            if (source.Format == PixelFormats.Bgr32)
             {
                 planes = 3; pixelSize = 4;
             }
-            else if (source.Format == PixelFormats.Bgra32 || source.Format == PixelFormats.Pbgra32 || source.Format == PixelFormats.Cmyk32)
+            else if (source.Format == PixelFormats.Rgb24 || source.Format == PixelFormats.Bgr24)
+            {
+                planes = 3; pixelSize = 3;
+            }
+            else if (source.Format == PixelFormats.Cmyk32)
             {
                 planes = 4; pixelSize = 4;
             }
