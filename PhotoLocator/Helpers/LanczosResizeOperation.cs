@@ -1,11 +1,10 @@
-﻿using PhotoLocator.Helpers;
-using System;
+﻿using System;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 
-namespace MeeSoft.ImageProcessing.Operations
+namespace PhotoLocator.Helpers
 {
     public class LanczosResizeOperation
     {
@@ -16,7 +15,7 @@ namespace MeeSoft.ImageProcessing.Operations
             x = Math.Abs(x);
             if (x < 1e-8f) return 1;
             else if (x >= a) return 0;
-            else return (float)(a * Math.Sin(Math.PI * x) * Math.Sin((Math.PI / a) * x) / RealMath.Sqr(Math.PI * x));
+            else return (float)(a * Math.Sin(Math.PI * x) * Math.Sin(Math.PI / a * x) / RealMath.Sqr(Math.PI * x));
         }
 
         public static float Lanczos3(float x)
@@ -25,7 +24,7 @@ namespace MeeSoft.ImageProcessing.Operations
             x = Math.Abs(x);
             if (x < 1e-8f) return 1;
             else if (x >= a) return 0;
-            else return (float)(a * Math.Sin(Math.PI * x) * Math.Sin((Math.PI / a) * x) / RealMath.Sqr(Math.PI * x));
+            else return (float)(a * Math.Sin(Math.PI * x) * Math.Sin(Math.PI / a * x) / RealMath.Sqr(Math.PI * x));
         }
 
         public Func<float, float> FilterFunc = Lanczos3;
@@ -51,19 +50,19 @@ namespace MeeSoft.ImageProcessing.Operations
             {
                 // Compute filter weights for each position along the line
                 _weights = new Weight[dstWidth];
-                float scaleWN = (float)(srcWidth - 1) / Math.Max(dstWidth - 1, 1);
-                float scaleNW = (float)(dstWidth - 1) / Math.Max(srcWidth - 1, 1);
-                float reduceWindow = filterWindow * scaleWN;
+                var scaleWN = (float)(srcWidth - 1) / Math.Max(dstWidth - 1, 1);
+                var scaleNW = (float)(dstWidth - 1) / Math.Max(srcWidth - 1, 1);
+                var reduceWindow = filterWindow * scaleWN;
                 Parallel.For(0, dstWidth, i =>
                 {
                     float sum = 0;
                     if (dstWidth < srcWidth)
                     {
-                        float center = i * scaleWN;
-                        int pMin = (int)Math.Floor(center - reduceWindow);
-                        int pMax = (int)Math.Ceiling(center + reduceWindow);
+                        var center = i * scaleWN;
+                        var pMin = (int)Math.Floor(center - reduceWindow);
+                        var pMax = (int)Math.Ceiling(center + reduceWindow);
                         _weights[i].SourcePixelWeights = new SourcePixelWeight[pMax - pMin + 1];
-                        for (int p = pMin; p <= pMax; p++)
+                        for (var p = pMin; p <= pMax; p++)
                         {
                             SourcePixelWeight spw;
                             if (p < 0)
@@ -79,11 +78,11 @@ namespace MeeSoft.ImageProcessing.Operations
                     }
                     else
                     {
-                        float center = i * scaleWN;
-                        int pMin = (int)Math.Floor(center - filterWindow);
-                        int pMax = (int)Math.Ceiling(center + filterWindow);
+                        var center = i * scaleWN;
+                        var pMin = (int)Math.Floor(center - filterWindow);
+                        var pMax = (int)Math.Ceiling(center + filterWindow);
                         _weights[i].SourcePixelWeights = new SourcePixelWeight[pMax - pMin + 1];
-                        for (int p = pMin; p <= pMax; p++)
+                        for (var p = pMin; p <= pMax; p++)
                         {
                             SourcePixelWeight spw;
                             if (p < 0)
@@ -100,7 +99,7 @@ namespace MeeSoft.ImageProcessing.Operations
                     if (sum > 0)
                     {
                         var scale = 1 / sum;
-                        for (int p = 0; p < _weights[i].SourcePixelWeights.Length; p++)
+                        for (var p = 0; p < _weights[i].SourcePixelWeights.Length; p++)
                             _weights[i].SourcePixelWeights[p].SourceWeight *= scale;
                     }
                 });
@@ -108,10 +107,10 @@ namespace MeeSoft.ImageProcessing.Operations
 
             public unsafe void Apply(byte* source, int srcOffset, byte* dest, int dstOffset, int dstSampleDist)
             {
-                for (int i = 0; i < _weights.Length; i++)
+                for (var i = 0; i < _weights.Length; i++)
                 {
                     float sum = 0;
-                    for (int j = 0; j < _weights[i].SourcePixelWeights.Length; j++)
+                    for (var j = 0; j < _weights[i].SourcePixelWeights.Length; j++)
                     {
                         var sample = source[srcOffset + _weights[i].SourcePixelWeights[j].SourceIndex];
                         sum += sample * _weights[i].SourcePixelWeights[j].SourceWeight;
@@ -142,7 +141,7 @@ namespace MeeSoft.ImageProcessing.Operations
                     {
                         fixed (byte* src = &pixels[y * width * pixelSize])
                         fixed (byte* dst = &dstPixels[y * newWidth * pixelSize])
-                            for (int p = 0; p < planes; p++)
+                            for (var p = 0; p < planes; p++)
                                 horzResampler.Apply(src, p, dst, p, pixelSize);
                     }
                     ct.ThrowIfCancellationRequested();
@@ -160,7 +159,7 @@ namespace MeeSoft.ImageProcessing.Operations
                     {
                         fixed (byte* src = &pixels[x * pixelSize])
                         fixed (byte* dst = &dstPixels[x * pixelSize])
-                            for (int p = 0; p < planes; p++)
+                            for (var p = 0; p < planes; p++)
                                 horzResampler.Apply(src, p, dst, p, pixelSize * width);
                     }
                     ct.ThrowIfCancellationRequested();

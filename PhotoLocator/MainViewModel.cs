@@ -474,6 +474,7 @@ namespace PhotoLocator
                 GetSelectedMapLayerName?.Invoke(), Settings);
             slideShowWin.Owner = App.Current.MainWindow;
             slideShowWin.ShowDialog();
+            slideShowWin.Dispose();
             SelectItem(slideShowWin.SelectedPicture);
         });
 

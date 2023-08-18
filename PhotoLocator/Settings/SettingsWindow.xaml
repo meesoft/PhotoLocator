@@ -53,7 +53,7 @@
         <TextBox Grid.Row="8" Text="{Binding SlideShowInterval}"/>
 
         <TextBlock Grid.Row="9" Foreground="#FFEEEEEE" VerticalAlignment="Bottom"
-                   Text="Scaling mode:" />
+                   Text="Preview scaling mode:" />
         <Grid Grid.Row="10">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="100"/>

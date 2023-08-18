@@ -1,5 +1,4 @@
-﻿using MeeSoft.ImageProcessing.Operations;
-using PhotoLocator.Helpers;
+﻿using PhotoLocator.Helpers;
 using PhotoLocator.MapDisplay;
 using PhotoLocator.Settings;
 using System;
@@ -27,6 +26,7 @@ namespace PhotoLocator
         Point _previousMousePosition;
         bool _isDraggingPreview, _isStartingFileItemDrag;
         int _selectStartIndex;
+        CancellationTokenSource? _resamplerCancellation;
 
         public MainWindow()
         {
@@ -383,16 +383,11 @@ namespace PhotoLocator
             }
         }
 
-        CancellationTokenSource? _resamplerCancellation;
-
         private async void UpdateResampledImage()
         {
-            if (_resamplerCancellation is not null)
-            {
-                _resamplerCancellation.Cancel();
-                _resamplerCancellation.Dispose();
-                _resamplerCancellation = null;
-            }
+            _resamplerCancellation?.Cancel();
+            _resamplerCancellation?.Dispose();
+            _resamplerCancellation = null;
             var sourceImage = _viewModel.PreviewPictureSource;
             if (sourceImage is null || PreviewCanvas.ActualWidth < 1 || PreviewCanvas.ActualHeight < 1)
             {

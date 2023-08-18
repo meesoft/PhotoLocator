@@ -18,9 +18,10 @@
     <Window.Resources>
         <BooleanToVisibilityConverter x:Key="BooleanToVisibility" />
     </Window.Resources>
-    
-    <Grid TouchDown="HandleTouchDown" TouchMove="HandleTouchMove">
-        <Image Source="{Binding PictureSource}" RenderOptions.BitmapScalingMode="{Binding Settings.BitmapScalingMode}"/>
+
+    <Grid TouchDown="HandleTouchDown" TouchMove="HandleTouchMove" Name="ScreenGrid" SizeChanged="HandleSizeChanged">
+        <Image Source="{Binding PictureSource}" />
+        <Image Source="{Binding ResampledPictureSource}" Stretch="None" />
         <MediaElement Name="MediaPlayer" Visibility="Collapsed" MediaEnded="HandleTimerEvent"/>
 
         <TextBlock VerticalAlignment="Bottom" HorizontalAlignment="Right" Margin="8" FontSize="20" FontWeight="Bold" Foreground="Black"

@@ -10,10 +10,13 @@ using System.ComponentModel;
 using System.IO;
 using System.Linq;
 using System.Runtime.CompilerServices;
+using System.Threading;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
+using System.Windows.Media.Imaging;
 using System.Windows.Threading;
 
 namespace PhotoLocator
@@ -21,11 +24,13 @@ namespace PhotoLocator
     /// <summary>
     /// Interaction logic for SlideShowWindow.xaml
     /// </summary>
-    public partial class SlideShowWindow : Window, INotifyPropertyChanged
+    public sealed partial class SlideShowWindow : Window, INotifyPropertyChanged, IDisposable
     {
         readonly IList<PictureItemViewModel> _pictures;
         readonly DispatcherTimer _timer;
         private TouchPoint? _touchStart;
+        private BitmapSource? _sourceImage;
+        private CancellationTokenSource? _resamplerCancellation;
 
         public SlideShowWindow(IList<PictureItemViewModel> pictures, PictureItemViewModel selectedPicture, 
             string? selectedMapLayerName, ISettings settings)
@@ -45,7 +50,7 @@ namespace PhotoLocator
 
         public event PropertyChangedEventHandler? PropertyChanged;
 
-        protected bool SetProperty<T>(ref T field, T newValue, [CallerMemberName] string? propertyName = null)
+        bool SetProperty<T>(ref T field, T newValue, [CallerMemberName] string? propertyName = null)
         {
             if (Equals(field, newValue))
                 return false;
@@ -73,6 +78,9 @@ namespace PhotoLocator
         public ImageSource? PictureSource { get => _pictureSource; set => SetProperty(ref _pictureSource, value); }
         private ImageSource? _pictureSource;
 
+        public ImageSource? ResampledPictureSource { get => _resampledPictureSource; set => SetProperty(ref _resampledPictureSource, value); }
+        private ImageSource? _resampledPictureSource;
+
         public string? PictureTitle { get => _pictureTitle; set => SetProperty(ref _pictureTitle, value); }
         private string? _pictureTitle;
 
@@ -92,6 +100,7 @@ namespace PhotoLocator
         private void UpdatePicture()
         {
             _timer.Stop();
+            _resamplerCancellation?.Cancel();
             SelectedPicture = _pictures[PictureIndex];
 
             if (SelectedPicture.IsVideo)
@@ -99,13 +108,14 @@ namespace PhotoLocator
                 MediaPlayer.Source = new Uri(SelectedPicture.FullPath);
                 MediaPlayer.Visibility = Visibility.Visible;
                 PictureSource = null;
+                ResampledPictureSource = null;
+                _sourceImage = null;
             }
             else
             {
-                PictureSource = SelectedPicture.LoadPreview(System.Threading.CancellationToken.None);
-                MediaPlayer.Visibility = Visibility.Collapsed;
-                MediaPlayer.Source = null;
                 _timer.Start();
+                _sourceImage = SelectedPicture.LoadPreview(default);
+                UpdateResampledImage();
             }
 
             var name = Path.GetFileNameWithoutExtension(SelectedPicture.Name)!;
@@ -131,6 +141,42 @@ namespace PhotoLocator
             }
 
             WinAPI.KeepDisplayAlive();
+        }
+
+        private async void UpdateResampledImage()
+        {
+            _resamplerCancellation?.Cancel();
+            _resamplerCancellation?.Dispose();
+            _resamplerCancellation = null;
+            if (_sourceImage is null || ScreenGrid.ActualWidth < 1 || ScreenGrid.ActualHeight < 1)
+            {
+                PictureSource = null;
+                ResampledPictureSource = null;
+            }
+            else
+            {
+                var screenDpi = VisualTreeHelper.GetDpi(this);
+                var maxWidth = ScreenGrid.ActualWidth * screenDpi.DpiScaleX;
+                var MaxHeight = ScreenGrid.ActualHeight * screenDpi.DpiScaleY;
+                var scale = Math.Min(maxWidth / _sourceImage.PixelWidth, MaxHeight / _sourceImage.PixelHeight);
+                var resizeOperation = new LanczosResizeOperation();
+                _resamplerCancellation = new CancellationTokenSource();
+                var resampled = await Task.Run(() => resizeOperation.Apply(_sourceImage,
+                    (int)(_sourceImage.PixelWidth * scale), (int)(_sourceImage.PixelHeight * scale),
+                    screenDpi.PixelsPerInchX, screenDpi.PixelsPerInchY, _resamplerCancellation.Token), _resamplerCancellation.Token);
+                if (resampled is null)
+                {
+                    PictureSource = _sourceImage;
+                    ResampledPictureSource = null;
+                }
+                else
+                {
+                    ResampledPictureSource = resampled;
+                    PictureSource = null;
+                }
+            }
+            MediaPlayer.Visibility = Visibility.Collapsed;
+            MediaPlayer.Source = null;
         }
 
         private void HandleTimerEvent(object? sender, EventArgs e)
@@ -190,6 +236,18 @@ namespace PhotoLocator
                 PictureIndex++;
                 e.Handled = true;
             }
+        }
+
+        private void HandleSizeChanged(object sender, SizeChangedEventArgs e)
+        {
+            UpdateResampledImage();
+        }
+
+        public void Dispose()
+        {
+            _resamplerCancellation?.Cancel();
+            _resamplerCancellation?.Dispose();
+            _resamplerCancellation = null;
         }
     }
 }
