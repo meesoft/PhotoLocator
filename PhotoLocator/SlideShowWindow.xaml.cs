@@ -240,7 +240,8 @@ namespace PhotoLocator
 
         private void HandleSizeChanged(object sender, SizeChangedEventArgs e)
         {
-            UpdateResampledImage();
+            if (_sourceImage is not null)
+                UpdateResampledImage();
         }
 
         public void Dispose()
