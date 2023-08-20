@@ -11,6 +11,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
+using System.Windows.Media.Imaging;
 using System.Windows.Threading;
 
 namespace PhotoLocator
@@ -20,8 +21,6 @@ namespace PhotoLocator
     /// </summary>
     public sealed partial class MainWindow : Window, IDisposable
     {
-        const BitmapScalingMode BitmapScalingModeLanczos = BitmapScalingMode.Unspecified;
-
         readonly MainViewModel _viewModel;
         Point _previousMousePosition;
         bool _isDraggingPreview, _isStartingFileItemDrag;
@@ -277,12 +276,10 @@ namespace PhotoLocator
             {
                 if (_viewModel.PreviewZoom > 0)
                     InitializePreviewRenderTransform(false);
-                else if (_viewModel.Settings.BitmapScalingMode == BitmapScalingModeLanczos)
+                else if (_viewModel.Settings.LanczosUpscaling || _viewModel.Settings.LanczosDownscaling)
                     UpdateResampledImage();
             }
-            else if (e.PropertyName == nameof(_viewModel.PreviewZoom))
-                UpdatePreviewZoom();
-            else if (e.PropertyName == nameof(_viewModel.Settings.BitmapScalingMode))
+            else if (e.PropertyName == nameof(_viewModel.PreviewZoom) || e.PropertyName == nameof(_viewModel.Settings.ResamplingOptions))
                 UpdatePreviewZoom();
         }
 
@@ -312,7 +309,7 @@ namespace PhotoLocator
 
         private void HandlePreviewCanvasSizeChanged(object sender, SizeChangedEventArgs e)
         {
-            if (_viewModel.PreviewZoom == 0 && _viewModel.Settings.BitmapScalingMode == BitmapScalingModeLanczos)
+            if (_viewModel.PreviewZoom == 0 && (_viewModel.Settings.LanczosUpscaling || _viewModel.Settings.LanczosDownscaling))
                 UpdateResampledImage();
         }
 
@@ -360,7 +357,7 @@ namespace PhotoLocator
             ResampledPreviewImage.Source = null;
             if (_viewModel.PreviewZoom == 0)
             {
-                if (_viewModel.Settings.BitmapScalingMode == BitmapScalingModeLanczos)
+                if (_viewModel.Settings.LanczosUpscaling || _viewModel.Settings.LanczosDownscaling)
                 {
                     ResampledPreviewImage.Visibility = Visibility.Visible;
                     UpdateLayout();
@@ -398,12 +395,16 @@ namespace PhotoLocator
             var maxWidth = PreviewCanvas.ActualWidth * screenDpi.DpiScaleX;
             var MaxHeight = PreviewCanvas.ActualHeight * screenDpi.DpiScaleY;
             var scale = Math.Min(maxWidth / sourceImage.PixelWidth, MaxHeight / sourceImage.PixelHeight);
-            var resizeOperation = new LanczosResizeOperation();
-            _resamplerCancellation = new CancellationTokenSource();
-            var resampled = await Task.Run(() => resizeOperation.Apply(sourceImage,
-                (int)(sourceImage.PixelWidth * scale), (int)(sourceImage.PixelHeight * scale),
-                screenDpi.PixelsPerInchX, screenDpi.PixelsPerInchY,
-                _resamplerCancellation.Token), _resamplerCancellation.Token);
+            BitmapSource? resampled = null;
+            if (scale > 1 && _viewModel.Settings.LanczosUpscaling || scale < 1 && _viewModel.Settings.LanczosDownscaling)
+            {
+                var resizeOperation = new LanczosResizeOperation();
+                _resamplerCancellation = new CancellationTokenSource();
+                resampled = await Task.Run(() => resizeOperation.Apply(sourceImage,
+                    (int)(sourceImage.PixelWidth * scale), (int)(sourceImage.PixelHeight * scale),
+                    screenDpi.PixelsPerInchX, screenDpi.PixelsPerInchY,
+                    _resamplerCancellation.Token), _resamplerCancellation.Token);
+            }
             if (sourceImage == _viewModel.PreviewPictureSource)
             {
                 ResampledPreviewImage.Source = resampled;

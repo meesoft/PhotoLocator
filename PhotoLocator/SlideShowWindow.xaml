@@ -20,7 +20,7 @@
     </Window.Resources>
 
     <Grid TouchDown="HandleTouchDown" TouchMove="HandleTouchMove" Name="ScreenGrid" SizeChanged="HandleSizeChanged">
-        <Image Source="{Binding PictureSource}" />
+        <Image Source="{Binding PictureSource}" RenderOptions.BitmapScalingMode="{Binding Settings.BitmapScalingMode}" />
         <Image Source="{Binding ResampledPictureSource}" Stretch="None" />
         <MediaElement Name="MediaPlayer" Visibility="Collapsed" MediaEnded="HandleTimerEvent"/>
 

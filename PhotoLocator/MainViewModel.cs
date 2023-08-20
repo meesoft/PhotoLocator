@@ -482,6 +482,7 @@ namespace PhotoLocator
         {
             var previousPhotoFileExtensions = Settings.PhotoFileExtensions;
             var previousScalingMode = Settings.BitmapScalingMode;
+            var previousResamplingOptions = Settings.ResamplingOptions;
             var settingsWin = new SettingsWindow();
             settingsWin.Owner = App.Current.MainWindow;
             settingsWin.Settings.AssignSettings(Settings);
@@ -489,6 +490,8 @@ namespace PhotoLocator
             {
                 if (e.PropertyName == nameof(Settings.BitmapScalingMode))
                     Settings.BitmapScalingMode = settingsWin.Settings.BitmapScalingMode;
+                else if (e.PropertyName == nameof(Settings.LanczosUpscaling) || e.PropertyName == nameof(Settings.LanczosDownscaling))
+                    Settings.ResamplingOptions = settingsWin.Settings.ResamplingOptions;
             };
             settingsWin.DataContext = settingsWin.Settings;
             if (settingsWin.ShowDialog() == true)
@@ -506,6 +509,7 @@ namespace PhotoLocator
             else
             {
                 Settings.BitmapScalingMode = previousScalingMode;
+                Settings.ResamplingOptions = previousResamplingOptions;
             }
         });
 
