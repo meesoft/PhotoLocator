@@ -56,16 +56,19 @@
                    Text="Preview scaling mode:" />
         <Grid Grid.Row="10">
             <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="100"/>
-                <ColumnDefinition Width="100"/>
+                <ColumnDefinition Width="70"/>
+                <ColumnDefinition Width="70"/>
+                <ColumnDefinition Width="120"/>
                 <ColumnDefinition/>
             </Grid.ColumnDefinitions>
             <RadioButton Grid.Column="0" Content="Linear" Foreground="#FFDDDDDD" VerticalAlignment="Center"
                          IsChecked="{Binding Path=BitmapScalingMode, Converter={StaticResource ComparisonConverter}, ConverterParameter={x:Static BitmapScalingMode.Linear}}"/>
             <RadioButton Grid.Column="1" Content="Fant" Foreground="#FFDDDDDD" VerticalAlignment="Center"
                          IsChecked="{Binding Path=BitmapScalingMode, Converter={StaticResource ComparisonConverter}, ConverterParameter={x:Static BitmapScalingMode.Fant}}"/>
-            <RadioButton Grid.Column="2" Content="Lanczos" Foreground="#FFDDDDDD" VerticalAlignment="Center"
-                         IsChecked="{Binding Path=BitmapScalingMode, Converter={StaticResource ComparisonConverter}, ConverterParameter={x:Static BitmapScalingMode.Unspecified}}"/>
+            <CheckBox Grid.Column="2" Content="Lanczos upscaling" Foreground="#FFDDDDDD" VerticalAlignment="Bottom"
+                         IsChecked="{Binding Path=ResamplingOptions, Converter={StaticResource ComparisonConverter}, ConverterParameter={x:Static local:ResamplingOptions.LanczosUpscaling}}" Margin="0,0,0,5"/>
+            <CheckBox Grid.Column="3" Content="Lanczos downscaling" Foreground="#FFDDDDDD" VerticalAlignment="Center"
+                         IsChecked="{Binding Path=ResamplingOptions, Converter={StaticResource ComparisonConverter}, ConverterParameter={x:Static local:ResamplingOptions.LanczosDownscaling}}"/>
         </Grid>
 
         <CheckBox Grid.Row="11" Content="Show EXIF metadata in slide show" IsChecked="{Binding ShowMetadataInSlideShow}" VerticalAlignment="Center" />

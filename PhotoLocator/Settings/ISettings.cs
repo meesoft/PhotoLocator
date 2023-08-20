@@ -1,7 +1,15 @@
-﻿using System.Windows.Media;
+﻿using System;
+using System.Windows.Media;
 
 namespace PhotoLocator.Settings
 {
+    [Flags]
+    public enum ResamplingOptions
+    {
+        LanczosUpscaling = 1 << 1, 
+        LanczosDownscaling = 1 << 2,
+    }
+
     public interface ISettings
     {
         string PhotoFileExtensions { get; set; }
@@ -19,5 +27,7 @@ namespace PhotoLocator.Settings
         bool ShowMetadataInSlideShow { get; set; }
 
         BitmapScalingMode BitmapScalingMode { get; set; }
+
+        ResamplingOptions ResamplingOptions { get; set; }
     }
 }

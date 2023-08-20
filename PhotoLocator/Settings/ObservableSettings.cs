@@ -4,7 +4,7 @@ using System.Windows.Media;
 
 namespace PhotoLocator.Settings
 {
-    public class ObservableSettings : ISettings, INotifyPropertyChanged
+    public sealed class ObservableSettings : ISettings, INotifyPropertyChanged
     {
         public event PropertyChangedEventHandler? PropertyChanged;
 
@@ -66,11 +66,34 @@ namespace PhotoLocator.Settings
         }
         bool _showMetadataInSlideShow;
 
-        public BitmapScalingMode BitmapScalingMode 
-        { 
-            get => _bitmapScalingMode; 
-            set => SetProperty(ref _bitmapScalingMode, value); 
+        public BitmapScalingMode BitmapScalingMode
+        {
+            get => _bitmapScalingMode;
+            set => SetProperty(ref _bitmapScalingMode, value);
         }
         BitmapScalingMode _bitmapScalingMode;
+
+        public ResamplingOptions ResamplingOptions
+        {
+            get => _resamplingOptions;
+            set => SetProperty(ref _resamplingOptions, value);
+        }
+        ResamplingOptions _resamplingOptions;
+
+        public bool LanczosUpscaling
+        {
+            get => (ResamplingOptions & ResamplingOptions.LanczosUpscaling) != 0;
+            set => SetProperty(ref _resamplingOptions, value
+                ? _resamplingOptions | ResamplingOptions.LanczosUpscaling
+                : _resamplingOptions & ~ResamplingOptions.LanczosUpscaling);
+        }
+
+        public bool LanczosDownscaling
+        {
+            get => (ResamplingOptions & ResamplingOptions.LanczosDownscaling) != 0;
+            set => SetProperty(ref _resamplingOptions, value
+                ? _resamplingOptions | ResamplingOptions.LanczosDownscaling
+                : _resamplingOptions & ~ResamplingOptions.LanczosDownscaling);
+        }
     }
 }

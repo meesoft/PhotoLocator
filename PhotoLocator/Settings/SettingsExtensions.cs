@@ -13,6 +13,7 @@ namespace PhotoLocator.Settings
             target.ExifToolPath = source.ExifToolPath;
             target.SlideShowInterval = source.SlideShowInterval;
             target.BitmapScalingMode = source.BitmapScalingMode;
+            target.ResamplingOptions = source.ResamplingOptions;
             target.ShowMetadataInSlideShow = source.ShowMetadataInSlideShow;
         }
 

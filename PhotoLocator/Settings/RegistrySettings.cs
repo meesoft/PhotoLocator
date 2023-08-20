@@ -85,6 +85,11 @@ namespace PhotoLocator.Settings
             get => (BitmapScalingMode)(Key.GetValue(nameof(BitmapScalingMode)) as int? ?? 1);
             set => Key.SetValue(nameof(BitmapScalingMode), (int)value);
         }
+        public ResamplingOptions ResamplingOptions
+        {
+            get => (ResamplingOptions)(Key.GetValue(nameof(ResamplingOptions)) as int? ?? 0);
+            set => Key.SetValue(nameof(ResamplingOptions), (int)value);
+        }
 
         public bool ShowMetadataInSlideShow
         {
