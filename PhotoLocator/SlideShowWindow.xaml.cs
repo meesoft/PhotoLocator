@@ -179,6 +179,18 @@ namespace PhotoLocator
             MediaPlayer.Source = null;
         }
 
+        private void HandleWindowLoaded(object sender, RoutedEventArgs e)
+        {
+            var screenDpi = VisualTreeHelper.GetDpi(this);
+            WinAPI.SetCursorPos((int)((Left + Width) * screenDpi.DpiScaleX), (int)((Top + Height + 10) * screenDpi.DpiScaleY));
+        }
+
+        private void HandleSizeChanged(object sender, SizeChangedEventArgs e)
+        {
+            if (_sourceImage is not null)
+                UpdateResampledImage();
+        }
+
         private void HandleTimerEvent(object? sender, EventArgs e)
         {
             PictureIndex = (PictureIndex + 1) % _pictures.Count;
@@ -236,12 +248,6 @@ namespace PhotoLocator
                 PictureIndex++;
                 e.Handled = true;
             }
-        }
-
-        private void HandleSizeChanged(object sender, SizeChangedEventArgs e)
-        {
-            if (_sourceImage is not null)
-                UpdateResampledImage();
         }
 
         public void Dispose()
