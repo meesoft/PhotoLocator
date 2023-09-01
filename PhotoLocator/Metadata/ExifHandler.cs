@@ -96,7 +96,10 @@ namespace PhotoLocator.Metadata
         public static void SetGeotag(string sourceFileName, string targetFileName, Location location, string? exifToolPath)
         {
             if (string.IsNullOrEmpty(exifToolPath))
-                SetGeotag(sourceFileName,targetFileName, location);
+            {
+                SetGeotag(sourceFileName, targetFileName, location);
+                return;
+            }
 
             var startInfo = new ProcessStartInfo(exifToolPath!,
                 //"-m " +

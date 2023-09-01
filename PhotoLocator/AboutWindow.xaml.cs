@@ -71,7 +71,7 @@ namespace PhotoLocator
         {
             using var cursor = new CursorOverride();
             var version = GetType().Assembly.GetName().Version!;
-            var url = $"http://meesoft.com/PhotoLocator/CheckForUpdates.php?Version={version.Major:D3}{version.Minor:D3}{version.Build:D3}";
+            var url = $"http://meesoft.com/PhotoLocator/CheckForUpdates.php?Version={(version.Major % 100):D3}{version.Minor:D3}{version.Build:D3}";
             Process.Start(new ProcessStartInfo(url) { UseShellExecute = true });
         });
     }
