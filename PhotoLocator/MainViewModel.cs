@@ -374,7 +374,7 @@ namespace PhotoLocator
         public ICommand PasteCommand => new RelayCommand(o =>
         {
             if (SavedLocation is null)
-                return;
+                throw new UserMessageException("You need to save a location before applying");
             foreach (var item in GetSelectedItems().Where(i => i.CanSaveGeoTag && !Equals(i.GeoTag, SavedLocation)))
             {
                 item.GeoTag = SavedLocation;
@@ -382,6 +382,7 @@ namespace PhotoLocator
             }
             UpdatePushpins();
             UpdatePoints();
+            MapCenter = SavedLocation;
         });
 
         async Task RunProcessWithProgressBarAsync(Func<Action<double>, Task> body, string text)
