@@ -62,7 +62,7 @@ namespace PhotoLocator.Metadata
         public void SetGeotag_ShouldSet_UsingBitmapMetadata()
         {
             var setValue = new MapControl.Location(-10, -20);
-            ExifHandler.SetGeotag(@"TestData\2022-06-17_19.03.02.jpg", @"TestData\2022-06-17_19.03.02-out1.jpg", setValue);
+            ExifHandler.SetGeotag(@"TestData\2022-06-17_19.03.02.jpg", @"TestData\2022-06-17_19.03.02-out1.jpg", setValue, null);
 
             var newValue = ExifHandler.GetGeotag(@"TestData\2022-06-17_19.03.02-out1.jpg");
             Assert.AreEqual(setValue, newValue);
