@@ -366,33 +366,36 @@ namespace PhotoLocator
             }
         }
 
-        public void Rename(string newName, string newFullPath, bool renameSidecar)
+        public async Task RenameAsync(string newName, string newFullPath, bool renameSidecar)
         {
-            if (IsDirectory)
-                Directory.Move(FullPath, newFullPath);
-            else
+            await Task.Run(() =>
             {
-                File.Move(FullPath, newFullPath);
-                if (renameSidecar)
+                if (IsDirectory)
+                    Directory.Move(FullPath, newFullPath);
+                else
                 {
-                    try
+                    File.Move(FullPath, newFullPath);
+                    if (renameSidecar)
                     {
-                        foreach (var sidecar in GetSidecarFiles())
+                        try
                         {
-                            var sidecarName = Path.GetFileName(sidecar);
-                            if (Path.GetFileNameWithoutExtension(sidecarName).Equals(Path.GetFileNameWithoutExtension(Name), StringComparison.OrdinalIgnoreCase))
-                                File.Move(sidecar, Path.Combine(Path.GetDirectoryName(sidecar)!, Path.ChangeExtension(newName, Path.GetExtension(sidecarName))));
-                            else //  Sidecar name is full name with additional extension
-                                File.Move(sidecar, Path.Combine(Path.GetDirectoryName(sidecar)!, newName + sidecarName[Name.Length..]));
+                            foreach (var sidecar in GetSidecarFiles())
+                            {
+                                var sidecarName = Path.GetFileName(sidecar);
+                                if (Path.GetFileNameWithoutExtension(sidecarName).Equals(Path.GetFileNameWithoutExtension(Name), StringComparison.OrdinalIgnoreCase))
+                                    File.Move(sidecar, Path.Combine(Path.GetDirectoryName(sidecar)!, Path.ChangeExtension(newName, Path.GetExtension(sidecarName))));
+                                else //  Sidecar name is full name with additional extension
+                                    File.Move(sidecar, Path.Combine(Path.GetDirectoryName(sidecar)!, newName + sidecarName[Name.Length..]));
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            File.Move(newFullPath, FullPath); // Rename back if renaming sidecar fails
+                            throw new UserMessageException("Unable to rename sidecar file: " + ex.Message, ex);
                         }
                     }
-                    catch (Exception ex)
-                    {
-                        File.Move(newFullPath, FullPath); // Rename back if renaming sidecar fails
-                        throw new UserMessageException("Unable to rename sidecar file: " + ex.Message, ex);
-                    }
                 }
-            }
+            });
             Name = newName;
             FullPath = newFullPath;
         }

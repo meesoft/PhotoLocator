@@ -177,7 +177,7 @@ namespace PhotoLocator
             MaskTextBox.CaretIndex = carretIndex + tag.Length;
         }
 
-        private void HandleRenameButtonClick(object sender, RoutedEventArgs e)
+        private async void HandleRenameButtonClick(object sender, RoutedEventArgs e)
         {
             if (_selectedPictures.Count > 1 && !RenameMask.Contains('|', StringComparison.Ordinal))
                 throw new UserMessageException("Multiple files cannot be renamed to the same name.");
@@ -187,6 +187,7 @@ namespace PhotoLocator
             int counter = 0;
             ProgressBarValue = 0;
             IsProgressBarVisible = true;
+            IsEnabled = false;
             try
             {
                 var selectedPictures = _selectedPictures.ToArray();
@@ -208,8 +209,8 @@ namespace PhotoLocator
                             _allPictures.Remove(overwritingFile);
                         }
                     }
-
-                    item.Rename(newName, Path.Combine(Path.GetDirectoryName(item.FullPath)!, newName), Settings.IncludeSidecarFiles && !IsExtensionWarningVisible);
+                    await item.RenameAsync(newName, Path.Combine(Path.GetDirectoryName(item.FullPath)!, newName), 
+                        Settings.IncludeSidecarFiles && !IsExtensionWarningVisible);
                     _allPictures.Remove(item);
                     item.IsChecked = false;
                     item.InsertOrdered(_allPictures);
@@ -224,6 +225,7 @@ namespace PhotoLocator
             }
             finally
             {
+                IsEnabled = true;
                 IsProgressBarVisible = false;
                 if (counter > 0 && RenameMask.Contains('|', StringComparison.Ordinal))
                 {
