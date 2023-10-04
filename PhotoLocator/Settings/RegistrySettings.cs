@@ -82,12 +82,12 @@ namespace PhotoLocator.Settings
 
         public BitmapScalingMode BitmapScalingMode
         {
-            get => (BitmapScalingMode)(Key.GetValue(nameof(BitmapScalingMode)) as int? ?? 1);
+            get => (BitmapScalingMode)(Key.GetValue(nameof(BitmapScalingMode)) as int? ?? (int)BitmapScalingMode.Linear);
             set => Key.SetValue(nameof(BitmapScalingMode), (int)value);
         }
         public ResamplingOptions ResamplingOptions
         {
-            get => (ResamplingOptions)(Key.GetValue(nameof(ResamplingOptions)) as int? ?? 0);
+            get => (ResamplingOptions)(Key.GetValue(nameof(ResamplingOptions)) as int? ?? (int)ResamplingOptions.LanczosUpscaling);
             set => Key.SetValue(nameof(ResamplingOptions), (int)value);
         }
 
