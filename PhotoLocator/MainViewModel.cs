@@ -687,6 +687,12 @@ namespace PhotoLocator
                 Process.Start(new ProcessStartInfo("explorer.exe", PhotoFolderPath) { UseShellExecute = true });
         });
 
+        public ICommand CopyPathCommand => new RelayCommand(o =>
+        {
+            if (SelectedPicture != null)
+                Clipboard.SetText(SelectedPicture.FullPath);
+        });
+
         public ICommand FilePropertiesCommand => new RelayCommand(o =>
         {
             if (SelectedPicture != null)
