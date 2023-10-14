@@ -16,7 +16,7 @@ namespace PhotoLocator.Metadata
     internal class ExifHandler
     {
         // See https://exiv2.org/tags.html
-
+ 
         public const string FileTimeStampQuery1 = "/app1/{ushort=0}/{ushort=306}"; // String in "yyyy:MM:dd HH:mm:ss" format
         public const string FileTimeStampQuery2 = "/ifd/{ushort=306}";
 
@@ -156,7 +156,7 @@ namespace PhotoLocator.Metadata
             metadata.SetQuery(GpsLatitudeRefQuery1, location.Latitude >= 0 ? "N" : "S");
             metadata.SetQuery(GpsLongitudeRefQuery1, location.Longitude >= 0 ? "E" : "W");
 
-            //Rational altitudeRational = new Rational((int)altitude, 1);  //denoninator = 1 for Rational
+            //Rational altitudeRational = new Rational((int)altitude, 1);  //denominator = 1 for Rational
             //metadata.SetQuery(GpsAltitudeQuery, altitudeRational.bytes);
         }
 
@@ -287,7 +287,7 @@ namespace PhotoLocator.Metadata
             }
         }
 
-        public static string GetMetataString(string fileName)
+        public static string GetMetadataString(string fileName)
         {
             using var file = File.OpenRead(fileName);
             var decoder = BitmapDecoder.Create(file, CreateOptions, BitmapCacheOption.OnDemand);

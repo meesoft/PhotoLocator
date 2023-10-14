@@ -72,8 +72,8 @@ namespace PhotoLocator
             {
                 using var _ = new CursorOverride();
                 var gpsTraces = LoadAdditionalGpsTraces().ToArray();
-                var result = AutoTag(gpsTraces);
-                if (MessageBox.Show($"{result.Tagged} photos with timestamps were tagged, {result.NotTagged} were not.", "Auto tag", 
+                var (tagged, notTagged) = AutoTag(gpsTraces);
+                if (MessageBox.Show($"{tagged} photos with timestamps were tagged, {notTagged} were not.", "Auto tag", 
                     MessageBoxButton.OKCancel, MessageBoxImage.Information) != MessageBoxResult.OK)
                     return;
                 CompletedAction();
@@ -88,14 +88,14 @@ namespace PhotoLocator
         private Location? GetBestGeoFix(PictureItemViewModel[] sourceImages, IEnumerable<GpsTrace> gpsTraces, DateTime timeStamp)
         {
             Location? bestFix = null;
-            var minDist = TimeSpan.FromMinutes(MaxTimestampDifference + 0.001);
+            var minDistance = TimeSpan.FromMinutes(MaxTimestampDifference + 0.001);
             // Search in other images
             foreach (var geoFix in sourceImages)
             {
-                var dist = (timeStamp - geoFix.TimeStamp!.Value).Duration();
-                if (dist < minDist)
+                var distance = (timeStamp - geoFix.TimeStamp!.Value).Duration();
+                if (distance < minDistance)
                 {
-                    minDist = dist;
+                    minDistance = distance;
                     bestFix = geoFix.GeoTag;
                 }
             }
@@ -104,10 +104,10 @@ namespace PhotoLocator
             foreach (var trace in gpsTraces)
                 for (int i = 0; i < trace.TimeStamps.Count; i++)
                 {
-                    var dist = (timeStamp - trace.TimeStamps[i]).Duration();
-                    if (dist < minDist)
+                    var distance = (timeStamp - trace.TimeStamps[i]).Duration();
+                    if (distance < minDistance)
                     {
-                        minDist = dist;
+                        minDistance = distance;
                         bestFix = trace.Locations![i];
                     }
                 }
@@ -141,12 +141,12 @@ namespace PhotoLocator
         {
             if (string.IsNullOrEmpty(TraceFilePath))
                 return GpsTraces;
-            var minDist = TimeSpan.FromMinutes(MaxTimestampDifference);
+            var minDistance = TimeSpan.FromMinutes(MaxTimestampDifference);
             if (File.Exists(TraceFilePath))
-                return GpsTraces.Concat(GpsTrace.DecodeGpsTraceFile(TraceFilePath, minDist));
+                return GpsTraces.Concat(GpsTrace.DecodeGpsTraceFile(TraceFilePath, minDistance));
             return GpsTraces.
-                Concat(Directory.EnumerateFiles(TraceFilePath, "*.gpx").SelectMany(fileName => GpsTrace.DecodeGpsTraceFile(fileName, minDist))).
-                Concat(Directory.EnumerateFiles(TraceFilePath, "*.kml").SelectMany(fileName => GpsTrace.DecodeGpsTraceFile(fileName, minDist)));
+                Concat(Directory.EnumerateFiles(TraceFilePath, "*.gpx").SelectMany(fileName => GpsTrace.DecodeGpsTraceFile(fileName, minDistance))).
+                Concat(Directory.EnumerateFiles(TraceFilePath, "*.kml").SelectMany(fileName => GpsTrace.DecodeGpsTraceFile(fileName, minDistance)));
         }
 
         private void SaveSettings()

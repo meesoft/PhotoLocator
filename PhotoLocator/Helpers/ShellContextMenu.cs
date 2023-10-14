@@ -12,6 +12,9 @@
 #pragma warning disable CA1838
 #pragma warning disable CA2101
 #pragma warning disable CA5392
+#pragma warning disable IDE0045 // Convert to conditional expression
+#pragma warning disable IDE0051 // Remove unused private members
+#pragma warning disable IDE1006 // Naming Styles
 
 using System;
 using System.Drawing;
@@ -396,7 +399,7 @@ namespace Peter
             ReleaseAll();
 
             IntPtr pMenu = IntPtr.Zero,
-                iContextMenuPtr = IntPtr.Zero;
+            iContextMenuPtr = IntPtr.Zero;
 
             try
             {

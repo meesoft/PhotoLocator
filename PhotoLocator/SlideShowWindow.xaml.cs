@@ -124,7 +124,7 @@ namespace PhotoLocator
                 name = name[..i].TrimEnd();
             if (Settings.ShowMetadataInSlideShow)
             {
-                var metadata = ExifHandler.GetMetataString(SelectedPicture.FullPath);
+                var metadata = ExifHandler.GetMetadataString(SelectedPicture.FullPath);
                 if (!string.IsNullOrEmpty(metadata))
                     name = name + " [" + metadata + "]";
             }
@@ -218,18 +218,18 @@ namespace PhotoLocator
 
         private void HandleTouchMove(object sender, TouchEventArgs e)
         {
-            const int MinDragDist = 120;
+            const int MinDragDistance = 120;
             if (_touchStart is null)
                 return;
             var pt = e.GetTouchPoint(this);
-            if (pt.Position.X < _touchStart.Position.X - MinDragDist || 
-                pt.Position.Y < _touchStart.Position.Y - MinDragDist)
+            if (pt.Position.X < _touchStart.Position.X - MinDragDistance || 
+                pt.Position.Y < _touchStart.Position.Y - MinDragDistance)
             {
                 PictureIndex++;
                 _touchStart = null;
             }
-            else if (pt.Position.X > _touchStart.Position.X + MinDragDist || 
-                     pt.Position.Y > _touchStart.Position.Y + MinDragDist)
+            else if (pt.Position.X > _touchStart.Position.X + MinDragDistance || 
+                     pt.Position.Y > _touchStart.Position.Y + MinDragDistance)
             {
                 PictureIndex--;
                 _touchStart = null;

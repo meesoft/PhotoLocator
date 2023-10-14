@@ -218,7 +218,7 @@ namespace PhotoLocator
 
         public IEnumerable<PictureItemViewModel> GetSelectedItems()
         {
-            PictureItemViewModel? firstChecked = SelectedPicture != null && SelectedPicture.IsChecked ? SelectedPicture : null;
+            var firstChecked = SelectedPicture != null && SelectedPicture.IsChecked ? SelectedPicture : null;
             foreach (var item in Pictures)
                 if (item.IsChecked)
                 {
@@ -241,8 +241,7 @@ namespace PhotoLocator
 
         public void HandleMapItemSelected(object sender, MapItemEventArgs eventArgs)
         {
-            var pointItem = eventArgs.Item.Content as PointItem;
-            if (pointItem is null)
+            if (eventArgs.Item.Content is not PointItem pointItem)
                 return;
             var fileItem = Pictures.FirstOrDefault(p => p.Name == pointItem.Name);
             if (fileItem is not null)
@@ -296,7 +295,7 @@ namespace PhotoLocator
                 var title = selected.Name;
                 try
                 {
-                    var metadata = ExifHandler.GetMetataString(selected.FullPath);
+                    var metadata = ExifHandler.GetMetadataString(selected.FullPath);
                     if (!string.IsNullOrEmpty(metadata))
                         title += " [" + metadata + "]";
                 }
@@ -524,7 +523,8 @@ namespace PhotoLocator
         public ICommand BrowseForPhotosCommand => new RelayCommand(o =>
         {
             var browser = new System.Windows.Forms.FolderBrowserDialog();
-            browser.InitialDirectory = PhotoFolderPath;
+            if (PhotoFolderPath is not null)
+                browser.InitialDirectory = PhotoFolderPath;
             if (browser.ShowDialog() == System.Windows.Forms.DialogResult.OK)
                 PhotoFolderPath = browser.SelectedPath;
         });

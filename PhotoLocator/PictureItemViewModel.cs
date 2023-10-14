@@ -180,8 +180,7 @@ namespace PhotoLocator
             }
         }
 
-        public Rotation Rotation { get => _rotation; set => _rotation = value; }
-        Rotation _rotation;
+        public Rotation Rotation { get; set; }
 
         public bool InsertOrdered(ObservableCollection<PictureItemViewModel> collection)
         {

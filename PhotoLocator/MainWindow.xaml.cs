@@ -162,18 +162,18 @@ namespace PhotoLocator
 
         private void HandlePictureListBoxPreviewKeyDown(object sender, KeyEventArgs e)
         {
-            var selecteditem = _viewModel.SelectedPicture;
-            if (selecteditem is null)
+            var selectedItem = _viewModel.SelectedPicture;
+            if (selectedItem is null)
                 return;
             if (e.Key == Key.Space)
             {
-                selecteditem.IsChecked = !selecteditem.IsChecked;
+                selectedItem.IsChecked = !selectedItem.IsChecked;
                 e.Handled = true;
             }
             else if (e.Key == Key.Insert)
             {
                 if (!(e.KeyboardDevice.IsKeyDown(Key.LeftShift) || e.KeyboardDevice.IsKeyDown(Key.RightShift)))
-                    selecteditem.IsChecked = !selecteditem.IsChecked;
+                    selectedItem.IsChecked = !selectedItem.IsChecked;
                 if (PictureListBox.SelectedIndex < PictureListBox.Items.Count - 1)
                 {
                     PictureListBox.SelectedItem = PictureListBox.Items[PictureListBox.SelectedIndex + 1];
