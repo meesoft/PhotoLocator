@@ -187,7 +187,7 @@ namespace PhotoLocator
                 FocusListBoxItem(PictureListBox.SelectedItem);
                 e.Handled = true;
             }
-            else if (e.Key == Key.LeftShift || e.Key == Key.RightShift)
+            else if (e.Key is Key.LeftShift or Key.RightShift)
             {
                 _selectStartIndex = Math.Max(0, PictureListBox.SelectedIndex);
             }
@@ -279,7 +279,7 @@ namespace PhotoLocator
                 else if (_viewModel.Settings.LanczosUpscaling || _viewModel.Settings.LanczosDownscaling)
                     UpdateResampledImage();
             }
-            else if (e.PropertyName == nameof(_viewModel.PreviewZoom) || e.PropertyName == nameof(_viewModel.Settings.ResamplingOptions))
+            else if (e.PropertyName is nameof(_viewModel.PreviewZoom) or nameof(_viewModel.Settings.ResamplingOptions))
                 UpdatePreviewZoom();
         }
 
@@ -315,7 +315,7 @@ namespace PhotoLocator
 
         private void HandlePreviewImageMouseDown(object sender, MouseButtonEventArgs e)
         {
-            if (e.ChangedButton == MouseButton.Left || e.ChangedButton == MouseButton.Middle)
+            if (e.ChangedButton is MouseButton.Left or MouseButton.Middle)
             {
                 _previousMousePosition = e.GetPosition(this);
                 _isDraggingPreview = _viewModel.PreviewZoom != 0;

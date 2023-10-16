@@ -17,14 +17,14 @@ namespace PhotoLocator.Gps
             Locations.Select(l => l.Latitude).Sum() / Locations.Count,
             Locations.Select(l => l.Longitude).Sum() / Locations.Count);
        
-        public static GpsTrace[] DecodeGpsTraceFile(string fileName, TimeSpan mininumInterval)
+        public static GpsTrace[] DecodeGpsTraceFile(string fileName, TimeSpan minimumInterval)
         {
             var ext = Path.GetExtension(fileName).ToLowerInvariant();
             using var file = File.OpenRead(fileName);
             if (ext == ".gpx")
                 return GpxDecoder.DecodeStream(file).ToArray();
             if (ext == ".kml")
-                return KmlDecoder.DecodeStream(file, mininumInterval).ToArray();
+                return KmlDecoder.DecodeStream(file, minimumInterval).ToArray();
             throw new FileFormatException("Unsupported file format");
         }
     }

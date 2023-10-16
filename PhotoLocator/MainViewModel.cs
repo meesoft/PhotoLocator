@@ -490,7 +490,7 @@ namespace PhotoLocator
             {
                 if (e.PropertyName == nameof(Settings.BitmapScalingMode))
                     Settings.BitmapScalingMode = settingsWin.Settings.BitmapScalingMode;
-                else if (e.PropertyName == nameof(Settings.LanczosUpscaling) || e.PropertyName == nameof(Settings.LanczosDownscaling))
+                else if (e.PropertyName is nameof(Settings.LanczosUpscaling) or nameof(Settings.LanczosDownscaling))
                     Settings.ResamplingOptions = settingsWin.Settings.ResamplingOptions;
             };
             settingsWin.DataContext = settingsWin.Settings;
@@ -825,7 +825,7 @@ namespace PhotoLocator
                     if (removed != null)
                         Pictures.Remove(removed);
                 }
-                else if (e.ChangeType == WatcherChangeTypes.Created || e.ChangeType == WatcherChangeTypes.Renamed)
+                else if (e.ChangeType is WatcherChangeTypes.Created or WatcherChangeTypes.Renamed)
                 {
                     await Task.Delay(1000);
                     var name = Path.GetFileName(e.FullPath);
@@ -898,7 +898,7 @@ namespace PhotoLocator
                 var ext = Path.GetExtension(fileName).ToLowerInvariant();
                 if (Settings.PhotoFileExtensions.Contains(ext, StringComparison.OrdinalIgnoreCase))
                     Pictures.Add(new PictureItemViewModel(fileName, false, HandleFilePropertyChanged, Settings));
-                else if (ext == ".gpx" || ext == ".kml")
+                else if (ext is ".gpx" or ".kml")
                 {
                     var traces = await Task.Run(() => GpsTrace.DecodeGpsTraceFile(fileName, TimeSpan.FromMinutes(1)));
                     foreach (var trace in traces)

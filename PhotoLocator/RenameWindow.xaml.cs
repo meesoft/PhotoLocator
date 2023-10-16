@@ -93,8 +93,7 @@ namespace PhotoLocator
                 {
                     try
                     {
-                        if (_exampleNamer is null)
-                            _exampleNamer = new MaskBasedNaming(_selectedPictures[0], 0);
+                        _exampleNamer ??= new MaskBasedNaming(_selectedPictures[0], 0);
                         ExampleName = _exampleNamer.GetFileName(RenameMask);
                         ErrorMessage = null;
                         IsExtensionWarningVisible = !Path.GetExtension(ExampleName).Equals(
@@ -172,9 +171,9 @@ namespace PhotoLocator
         {
             var tag = ((TextBlock)sender).Text;
             tag = tag[0..(tag.IndexOf('|', 1) + 1)];
-            var carretIndex = MaskTextBox.CaretIndex;
-            MaskTextBox.Text = MaskTextBox.Text.Insert(carretIndex, tag);
-            MaskTextBox.CaretIndex = carretIndex + tag.Length;
+            var caretIndex = MaskTextBox.CaretIndex;
+            MaskTextBox.Text = MaskTextBox.Text.Insert(caretIndex, tag);
+            MaskTextBox.CaretIndex = caretIndex + tag.Length;
         }
 
         private async void HandleRenameButtonClick(object sender, RoutedEventArgs e)
@@ -218,7 +217,7 @@ namespace PhotoLocator
                     ProgressBarValue = (++i) / (double)(selectedPictures.Length);
                 }
             }
-            catch (Exception ex) when (ex is IOException || ex is ArgumentException)
+            catch (Exception ex) when (ex is IOException or ArgumentException)
             {
                 MessageBox.Show(ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                 return;

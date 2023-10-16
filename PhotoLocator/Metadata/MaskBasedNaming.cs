@@ -9,7 +9,7 @@ namespace PhotoLocator.Metadata
 {
     sealed class MaskBasedNaming : IDisposable
     {
-        static readonly char[] InvalidFileNameChars = Path.GetInvalidFileNameChars();
+        static readonly char[] _invalidFileNameChars = Path.GetInvalidFileNameChars();
         readonly IFileInformation _file;
         readonly int _counter;
         FileStream? _fileStream;
@@ -52,8 +52,7 @@ namespace PhotoLocator.Metadata
 
         BitmapMetadata? GetMetadata()
         {
-            if (_metadata is null)
-                _metadata = GetFrame().Metadata as BitmapMetadata;
+            _metadata ??= GetFrame().Metadata as BitmapMetadata;
             return _metadata;
         }
 
@@ -80,7 +79,7 @@ namespace PhotoLocator.Metadata
             {
                 if (tag.Length == value.Length)
                     return true;
-                if (tag[value.Length] == '+' || tag[value.Length] == '-')
+                if (tag[value.Length] is '+' or '-')
                 {
                     offset = double.Parse(tag[value.Length..], CultureInfo.CurrentCulture);
                     return true;
@@ -127,8 +126,6 @@ namespace PhotoLocator.Metadata
             {
                 if (mask[i] == '|')
                 {
-                    int iColon;
-                    double offset;
                     int iEnd = mask.IndexOf('|', i + 1);
                     if (iEnd < 0)
                         throw new ArgumentException($"Tag at {i} not closed");
@@ -141,12 +138,12 @@ namespace PhotoLocator.Metadata
                     {
                         result.Append(Path.GetFileNameWithoutExtension(OriginalFileName));
                     }
-                    else if (TagIs(tag, "*", out iColon))
+                    else if (TagIs(tag, "*", out var iColon))
                     {
                         var startIndex = int.Parse(tag[(iColon + 1)..], CultureInfo.InvariantCulture);
                         result.Append(Path.GetFileNameWithoutExtension(OriginalFileName[startIndex..]));
                     }
-                    else if (TagWithOffsetIs(tag, "DT", out offset))
+                    else if (TagWithOffsetIs(tag, "DT", out var offset))
                     {
                         result.Append(GetTimestamp().AddHours(offset).ToString("yyyy-MM-dd HH.mm.ss", CultureInfo.InvariantCulture));
                     }
@@ -215,7 +212,7 @@ namespace PhotoLocator.Metadata
                 }
                 else
                 {
-                    if (InvalidFileNameChars.Contains(mask[i]))
+                    if (_invalidFileNameChars.Contains(mask[i]))
                         throw new ArgumentException($"Invalid character in name '{mask[i]}'");
                     result.Append(mask[i]);
                 }

@@ -106,7 +106,7 @@ namespace PhotoLocator
                 if (IsDirectory)
                     return false;
                 var ext = Path.GetExtension(FullPath).ToLowerInvariant();
-                var isVideo = ext == ".mp4" || ext == ".mov" || ext == ".avi";
+                var isVideo = ext is ".mp4" or ".mov" or ".avi";
                 return isVideo;
             }
         }
@@ -176,7 +176,7 @@ namespace PhotoLocator
                 if (_settings != null && !string.IsNullOrEmpty(_settings.ExifToolPath))
                     return true;
                 var ext = Path.GetExtension(Name)?.ToLowerInvariant();
-                return ext == ".jpg" || ext == ".jpeg";
+                return ext is ".jpg" or ".jpeg";
             }
         }
 

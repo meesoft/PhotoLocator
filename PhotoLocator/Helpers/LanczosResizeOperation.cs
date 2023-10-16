@@ -27,9 +27,9 @@ namespace PhotoLocator.Helpers
             else return (float)(a * Math.Sin(Math.PI * x) * Math.Sin(Math.PI / a * x) / RealMath.Sqr(Math.PI * x));
         }
 
-        public Func<float, float> FilterFunc = Lanczos3;
+        public Func<float, float> FilterFunc { get; set; } = Lanczos3;
 
-        public float FilterWindow = 3;
+        public float FilterWindow { get; set; } = 3;
 
         class LineResampler
         {
@@ -46,7 +46,7 @@ namespace PhotoLocator.Helpers
 
             readonly Weight[] _weights;
 
-            public LineResampler(Func<float, float> filterFunc, float filterWindow, int srcWidth, int srcSampleDist, int dstWidth)
+            public LineResampler(Func<float, float> filterFunc, float filterWindow, int srcWidth, int srcSampleDistance, int dstWidth)
             {
                 // Compute filter weights for each position along the line
                 _weights = new Weight[dstWidth];
@@ -68,9 +68,9 @@ namespace PhotoLocator.Helpers
                             if (p < 0)
                                 spw.SourceIndex = 0;
                             else if (p >= srcWidth)
-                                spw.SourceIndex = (srcWidth - 1) * srcSampleDist;
+                                spw.SourceIndex = (srcWidth - 1) * srcSampleDistance;
                             else
-                                spw.SourceIndex = p * srcSampleDist;
+                                spw.SourceIndex = p * srcSampleDistance;
                             spw.SourceWeight = filterFunc((p - center) * scaleNW) * scaleNW;
                             sum += spw.SourceWeight;
                             _weights[i].SourcePixelWeights[p - pMin] = spw;
@@ -88,9 +88,9 @@ namespace PhotoLocator.Helpers
                             if (p < 0)
                                 spw.SourceIndex = 0;
                             else if (p >= srcWidth)
-                                spw.SourceIndex = (srcWidth - 1) * srcSampleDist;
+                                spw.SourceIndex = (srcWidth - 1) * srcSampleDistance;
                             else
-                                spw.SourceIndex = p * srcSampleDist;
+                                spw.SourceIndex = p * srcSampleDistance;
                             spw.SourceWeight = filterFunc(p - center);
                             sum += spw.SourceWeight;
                             _weights[i].SourcePixelWeights[p - pMin] = spw;
@@ -105,7 +105,7 @@ namespace PhotoLocator.Helpers
                 });
             }
 
-            public unsafe void Apply(byte* source, int srcOffset, byte* dest, int dstOffset, int dstSampleDist)
+            public unsafe void Apply(byte* source, int srcOffset, byte* dest, int dstOffset, int dstSampleDistance)
             {
                 for (var i = 0; i < _weights.Length; i++)
                 {
@@ -115,7 +115,7 @@ namespace PhotoLocator.Helpers
                         var sample = source[srcOffset + _weights[i].SourcePixelWeights[j].SourceIndex];
                         sum += sample * _weights[i].SourcePixelWeights[j].SourceWeight;
                     }
-                    dest[dstOffset + i * dstSampleDist] = (byte)RealMath.EnsureRange(sum + 0.5f, 0, 255);
+                    dest[dstOffset + i * dstSampleDistance] = (byte)RealMath.EnsureRange(sum + 0.5f, 0, 255);
                 }
             }
         }
