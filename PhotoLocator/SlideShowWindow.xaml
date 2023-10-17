@@ -22,7 +22,8 @@
 
     <Grid TouchDown="HandleTouchDown" TouchMove="HandleTouchMove" Name="ScreenGrid" SizeChanged="HandleSizeChanged">
         <Image Source="{Binding PictureSource}" RenderOptions.BitmapScalingMode="{Binding Settings.BitmapScalingMode}" />
-        <Image Source="{Binding ResampledPictureSource}" Stretch="None" />
+        <Image Source="{Binding ResampledPictureSource}" 
+               Stretch="None" RenderOptions.BitmapScalingMode="NearestNeighbor" SnapsToDevicePixels="True" UseLayoutRounding="True" />
         <MediaElement Name="MediaPlayer" Visibility="Collapsed" MediaEnded="HandleTimerEvent"/>
 
         <TextBlock VerticalAlignment="Bottom" HorizontalAlignment="Right" Margin="8" FontSize="20" FontWeight="Bold" Foreground="Black"

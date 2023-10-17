@@ -201,9 +201,9 @@ namespace PhotoLocator
         {
             if (e.Key == Key.Escape)
                 Close();
-            else if (e.Key == Key.Left || e.Key == Key.Up || e.Key == Key.PageUp)
+            else if (e.Key is Key.Left or Key.Up or Key.PageUp)
                 PictureIndex--;
-            else if (e.Key == Key.Right || e.Key == Key.Down || e.Key == Key.PageDown)
+            else if (e.Key is Key.Right or Key.Down or Key.PageDown)
                 PictureIndex++;
             else if (e.Key == Key.Home)
                 PictureIndex = 0;

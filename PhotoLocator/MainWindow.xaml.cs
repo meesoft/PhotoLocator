@@ -16,9 +16,7 @@ using System.Windows.Threading;
 
 namespace PhotoLocator
 {
-    /// <summary>
-    /// Interaction logic for MainWindow.xaml
-    /// </summary>
+    /// <summary> Interaction logic for MainWindow.xaml </summary>
     public sealed partial class MainWindow : Window, IDisposable
     {
         readonly MainViewModel _viewModel;
@@ -412,8 +410,8 @@ namespace PhotoLocator
                     FullPreviewImage.Visibility = Visibility.Visible;
                 else
                 {
-                    var tx = IntMath.Round(PreviewCanvas.ActualWidth - resampled.PixelWidth / screenDpi.PixelsPerInchX * 96) / 2;
-                    var ty = IntMath.Round(PreviewCanvas.ActualHeight - resampled.PixelHeight / screenDpi.PixelsPerInchY * 96) / 2;
+                    var tx = CalcCenterTranslation(PreviewCanvas.ActualWidth, resampled.PixelWidth, 1, screenDpi.PixelsPerInchX);
+                    var ty = CalcCenterTranslation(PreviewCanvas.ActualHeight, resampled.PixelHeight, 1, screenDpi.PixelsPerInchY);
                     ResampledPreviewImage.RenderTransform = new MatrixTransform(
                         1, 0,
                         0, 1,
@@ -431,15 +429,20 @@ namespace PhotoLocator
             var zoom = _viewModel.PreviewZoom;
             var sx = _viewModel.PreviewPictureSource.DpiX / screenDpi.PixelsPerInchX * zoom;
             var sy = _viewModel.PreviewPictureSource.DpiY / screenDpi.PixelsPerInchY * zoom;
+            var tx = CalcCenterTranslation(PreviewCanvas.ActualWidth, _viewModel.PreviewPictureSource.PixelWidth, zoom, screenDpi.PixelsPerInchX);
+            var ty = CalcCenterTranslation(PreviewCanvas.ActualHeight, _viewModel.PreviewPictureSource.PixelHeight, zoom, screenDpi.PixelsPerInchY);
             if (!forceReset && ZoomedPreviewImage.RenderTransform is MatrixTransform m && 
-                m.Matrix.M11 == sx && m.Matrix.M22 == sy && m.Matrix.OffsetX <= 0 && m.Matrix.OffsetY <= 0)
+                m.Matrix.M11 == sx && m.Matrix.M22 == sy && m.Matrix.OffsetX <= 0 && m.Matrix.OffsetY <= 0 && tx <=0 && ty <= 0)
                 return;
-            var tx = IntMath.Round(PreviewCanvas.ActualWidth - _viewModel.PreviewPictureSource.PixelWidth * zoom / screenDpi.PixelsPerInchX * 96) / 2;
-            var ty = IntMath.Round(PreviewCanvas.ActualHeight - _viewModel.PreviewPictureSource.PixelHeight * zoom / screenDpi.PixelsPerInchY * 96) / 2;
             ZoomedPreviewImage.RenderTransform = new MatrixTransform(
                 sx, 0,
                 0, sy,
                 tx, ty);
+        }
+
+        static double CalcCenterTranslation(double canvasSizeIn96, int imageSize, int zoom, double screenDpi)
+        {
+            return IntMath.Round((canvasSizeIn96 - imageSize * zoom / screenDpi * 96) / 2) + 0.5;
         }
 
         public void Dispose()
