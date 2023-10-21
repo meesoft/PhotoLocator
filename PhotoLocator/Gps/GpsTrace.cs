@@ -7,9 +7,9 @@ using System.Linq;
 
 namespace PhotoLocator.Gps
 {
-    internal class GpsTrace : PolylineItem
+    public class GpsTrace : PolylineItem
     {
-        public string? Name;
+        public string? Name { get; set; }
         
         public readonly List<DateTime> TimeStamps = new();
 

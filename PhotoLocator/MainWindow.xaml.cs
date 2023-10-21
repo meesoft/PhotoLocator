@@ -62,8 +62,7 @@ namespace PhotoLocator
             if (args.Length > 1 && File.Exists(args[1]))
                 Dispatcher.BeginInvoke(() =>
                 {
-                    _viewModel.PhotoFolderPath = Path.GetDirectoryName(args[1]);
-                    _viewModel.HandleDroppedFilesAsync(args[1..]).WithExceptionShowing();
+                    _viewModel.SetFolderPathAsync(Path.GetDirectoryName(args[1]), args[1]).WithExceptionShowing();
                 });
             else
             {
@@ -265,7 +264,7 @@ namespace PhotoLocator
         private void HandleDrop(object sender, DragEventArgs e)
         {
             if (e.Data.GetDataPresent(DataFormats.FileDrop) && e.Data.GetData(DataFormats.FileDrop) is string[] droppedEntries && droppedEntries.Length > 0)
-                Dispatcher.BeginInvoke(() => _viewModel.HandleDroppedFilesAsync(droppedEntries).WithExceptionShowing());
+                Dispatcher.BeginInvoke(() => _viewModel.HandleDroppedFiles(droppedEntries));
         }
 
         private void HandleViewModelPropertyChanged(object? sender, PropertyChangedEventArgs e)

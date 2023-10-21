@@ -26,6 +26,9 @@ dotnet_diagnostic.CA1051.severity = suggestion
 # CA1062: Validate arguments of public methods
 dotnet_diagnostic.CA1062.severity = none
 
+# CA1065: Do not raise exceptions in unexpected locations
+dotnet_diagnostic.CA1065.severity = none
+
 # CA1308: Normalize strings to uppercase
 dotnet_diagnostic.CA1308.severity = none
 
@@ -34,6 +37,8 @@ dotnet_diagnostic.CA1508.severity = suggestion
 
 # CA2007: Consider calling ConfigureAwait on the awaited task
 dotnet_diagnostic.CA2007.severity = none
+
+#### Coding styles ####
 
 csharp_indent_labels = one_less_than_current
 csharp_using_directive_placement = outside_namespace:silent
