@@ -6,7 +6,7 @@ namespace PhotoLocator.Settings
 {
     sealed class RegistrySettings : IDisposable, IRegistrySettings
     {
-        public const string DefaultPhotoFileExtensions = ".jpg, .jpeg, .cr2, .cr3, .dng";
+        public const string DefaultPhotoFileExtensions = ".jpg, .jpeg, .cr2, .cr3, .dng, .psd, .tif, .tiff, .mp4, .mov";
 
         public RegistryKey Key = Registry.CurrentUser.CreateSubKey(@"SOFTWARE\MeeSoft\PhotoLocator");
 
