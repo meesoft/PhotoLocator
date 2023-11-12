@@ -24,6 +24,7 @@ namespace PhotoLocator
         bool _isDraggingPreview, _isStartingFileItemDrag;
         int _selectStartIndex;
         CancellationTokenSource? _resamplerCancellation;
+        string[]? _draggedFiles;
 
         public MainWindow()
         {
@@ -240,9 +241,9 @@ namespace PhotoLocator
             {
                 if (_isStartingFileItemDrag && (e.GetPosition(this) - _previousMousePosition).Length > 10)
                 {
-                    var files = _viewModel.GetSelectedItems().Select(i => i.FullPath).ToArray();
-                    var data = new DataObject(DataFormats.FileDrop, files);
-                    data.SetData(DataFormats.Text, files[0]);
+                    _draggedFiles = _viewModel.GetSelectedItems().Select(i => i.FullPath).ToArray();
+                    var data = new DataObject(DataFormats.FileDrop, _draggedFiles);
+                    data.SetData(DataFormats.Text, _draggedFiles[0]);
                     DragDrop.DoDragDrop(this, data, DragDropEffects.All);
                     e.Handled = true;
                     _isStartingFileItemDrag = false;
@@ -263,8 +264,11 @@ namespace PhotoLocator
 
         private void HandleDrop(object sender, DragEventArgs e)
         {
-            if (e.Data.GetDataPresent(DataFormats.FileDrop) && e.Data.GetData(DataFormats.FileDrop) is string[] droppedEntries && droppedEntries.Length > 0)
+            if (e.Data.GetDataPresent(DataFormats.FileDrop) && e.Data.GetData(DataFormats.FileDrop) is string[] droppedEntries && droppedEntries.Length > 0
+                && !droppedEntries.Equals(_draggedFiles))
+            {
                 Dispatcher.BeginInvoke(() => _viewModel.HandleDroppedFiles(droppedEntries));
+            }
         }
 
         private void HandleViewModelPropertyChanged(object? sender, PropertyChangedEventArgs e)
