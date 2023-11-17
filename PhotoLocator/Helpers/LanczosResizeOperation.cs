@@ -110,11 +110,10 @@ namespace PhotoLocator.Helpers
                 for (var i = 0; i < _weights.Length; i++)
                 {
                     float sum = 0;
-                    for (var j = 0; j < _weights[i].SourcePixelWeights.Length; j++)
-                    {
-                        var sample = source[srcOffset + _weights[i].SourcePixelWeights[j].SourceIndex];
-                        sum += sample * _weights[i].SourcePixelWeights[j].SourceWeight;
-                    }
+                    int length = _weights[i].SourcePixelWeights.Length;
+                    fixed (SourcePixelWeight* sourceWeights = _weights[i].SourcePixelWeights)
+                    for (var j = 0; j < length; j++)
+                        sum += source[srcOffset + sourceWeights[j].SourceIndex] * sourceWeights[j].SourceWeight;
                     dest[dstOffset + i * dstSampleDistance] = (byte)RealMath.EnsureRange(sum + 0.5f, 0, 255);
                 }
             }
