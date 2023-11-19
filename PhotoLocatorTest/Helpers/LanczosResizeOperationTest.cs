@@ -1,7 +1,6 @@
-﻿using PhotoLocator.Helpers;
-using System.Diagnostics;
+﻿using System.Diagnostics;
 
-namespace PhotoLocator.Metadata
+namespace PhotoLocator.Helpers
 {
     [TestClass]
     public class LanczosResizeOperationTest
@@ -19,7 +18,7 @@ namespace PhotoLocator.Metadata
             };
 
             var srcPixels = new byte[SrcSize * SrcSize * 3];
-            for(int i=0; i<srcPixels.Length; i++) 
+            for (var i = 0; i < srcPixels.Length; i++)
                 srcPixels[i] = 10;
 
             //op.Apply(srcPixels, SrcSize, SrcSize, 3, 3, DstSize, DstSize, default);
