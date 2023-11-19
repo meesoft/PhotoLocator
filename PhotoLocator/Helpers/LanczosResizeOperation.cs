@@ -46,7 +46,7 @@ namespace PhotoLocator.Helpers
 
             readonly Weight[] _weights;
 
-            public LineResampler(Func<float, float> filterFunc, float filterWindow, int srcWidth, int srcSampleDistance, int dstWidth)
+            internal LineResampler(Func<float, float> filterFunc, float filterWindow, int srcWidth, int srcSampleDistance, int dstWidth)
             {
                 // Compute filter weights for each position along the line
                 _weights = new Weight[dstWidth];
@@ -112,27 +112,21 @@ namespace PhotoLocator.Helpers
                     float sum = 0.5f;
                     int length = _weights[i].SourcePixelWeights.Length;
                     fixed (SourcePixelWeight* sourceWeights = _weights[i].SourcePixelWeights)
-                    for (var j = 0; j < length; j++)
-                        sum += source[srcOffset + sourceWeights[j].SourceIndex] * sourceWeights[j].SourceWeight;
+                    {
+                        var sourceWeight = sourceWeights;
+                        for (var j = 0; j < length; j++, sourceWeight++)
+                            sum += source[srcOffset + (*sourceWeight).SourceIndex] * (*sourceWeight).SourceWeight;
+                    }
                     dest[dstOffset + i * dstSampleDistance] = (byte)RealMath.EnsureRange(sum, 0, 255);
                 }
             }
         }
-
-        private BitmapSource Apply8(BitmapSource source, int planes, int pixelSize, int newWidth, int newHeight,
-            double newDpiX, double newDpiY, CancellationToken ct)
+      
+        public byte[] Apply(byte[] pixels, int width, int height, int planes, int pixelSize, int newWidth, int newHeight, CancellationToken ct)
         {
-            var width = source.PixelWidth;
-            var height = source.PixelHeight;
-            if (width == newWidth && height == newHeight)
-                return source;
-
-            var pixels = new byte[width * height * pixelSize];
-            source.CopyPixels(pixels, width * pixelSize, 0);
-
             if (width != newWidth)
             {
-                var horzResampler = new LineResampler(FilterFunc, FilterWindow, width, pixelSize, newWidth);
+                var resampler = new LineResampler(FilterFunc, FilterWindow, width, pixelSize, newWidth);
                 var dstPixels = new byte[newWidth * height * pixelSize];
                 Parallel.For(0, height, y =>
                 {
@@ -141,7 +135,7 @@ namespace PhotoLocator.Helpers
                         fixed (byte* src = &pixels[y * width * pixelSize])
                         fixed (byte* dst = &dstPixels[y * newWidth * pixelSize])
                             for (var p = 0; p < planes; p++)
-                                horzResampler.Apply(src, p, dst, p, pixelSize);
+                                resampler.Apply(src, p, dst, p, pixelSize);
                     }
                     ct.ThrowIfCancellationRequested();
                 });
@@ -150,7 +144,7 @@ namespace PhotoLocator.Helpers
             }
             if (height != newHeight)
             {
-                var horzResampler = new LineResampler(FilterFunc, FilterWindow, height, width * pixelSize, newHeight);
+                var resampler = new LineResampler(FilterFunc, FilterWindow, height, width * pixelSize, newHeight);
                 var dstPixels = new byte[newWidth * newHeight * pixelSize];
                 Parallel.For(0, width, x =>
                 {
@@ -159,21 +153,24 @@ namespace PhotoLocator.Helpers
                         fixed (byte* src = &pixels[x * pixelSize])
                         fixed (byte* dst = &dstPixels[x * pixelSize])
                             for (var p = 0; p < planes; p++)
-                                horzResampler.Apply(src, p, dst, p, pixelSize * width);
+                                resampler.Apply(src, p, dst, p, pixelSize * width);
                     }
                     ct.ThrowIfCancellationRequested();
                 });
                 pixels = dstPixels;
                 height = newHeight;
             }
-            var result = BitmapSource.Create(width, height, newDpiX, newDpiY, source.Format, null, pixels, width * pixelSize);
-            result.Freeze();
-            return result;
+            return pixels;
         }
 
         public BitmapSource? Apply(BitmapSource source, int newWidth, int newHeight,
             double newDpiX, double newDpiY, CancellationToken ct)
         {
+            var width = source.PixelWidth;
+            var height = source.PixelHeight;
+            if (width == newWidth && height == newHeight)
+                return source;
+
             int planes, pixelSize;
             if (source.Format == PixelFormats.Bgr32)
             {
@@ -195,7 +192,15 @@ namespace PhotoLocator.Helpers
             {
                 return null;
             }
-            return Apply8(source, planes, pixelSize, newWidth, newHeight, newDpiX, newDpiY, ct);
+
+            var pixels = new byte[width * height * pixelSize];
+            source.CopyPixels(pixels, width * pixelSize, 0);
+
+            pixels = Apply(pixels, width, height, planes, pixelSize, newWidth, newHeight, ct);
+
+            var result = BitmapSource.Create(newWidth, newHeight, newDpiX, newDpiY, source.Format, null, pixels, newWidth * pixelSize);
+            result.Freeze();
+            return result;
         }
     }
 }

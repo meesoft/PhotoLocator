@@ -17,9 +17,5 @@ namespace PhotoLocator.Helpers
         public UserMessageException(string? message, Exception? innerException) : base(message, innerException)
         {
         }
-
-        protected UserMessageException(SerializationInfo info, StreamingContext context) : base(info, context)
-        {
-        }
     }
 }
