@@ -66,7 +66,7 @@ namespace PhotoLocator.Gps
 
                     var coordContainerNode = node["LineString"] ?? node["Point"]!;
                     var coordsNode = coordContainerNode["coordinates"] ?? throw new FileFormatException("coordinates node missing");
-                    foreach (var coord in coordsNode.InnerText.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries))
+                    foreach (var coord in coordsNode.InnerText.Split(' ', StringSplitOptions.RemoveEmptyEntries))
                     {
                         var coords = coord.Split(',');
                         placemark.Coordinates.Add(new Location(
