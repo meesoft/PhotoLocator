@@ -176,11 +176,13 @@ namespace PhotoLocator
 
         public bool InSplitViewMode => Equals(SelectedViewModeItem?.Tag, ViewMode.Split);
 
-        public ICommand? ToggleZoomCommand => new RelayCommand(o => PreviewZoom = PreviewZoom > 0 ? 0 : 1);
-        public ICommand? ZoomToFitCommand => new RelayCommand(o => PreviewZoom = 0);
-        public ICommand? Zoom100Command => new RelayCommand(o => PreviewZoom = 1);
-        public ICommand? Zoom200Command => new RelayCommand(o => PreviewZoom = 2);
-        public ICommand? Zoom400Command => new RelayCommand(o => PreviewZoom = 4);
+        public ICommand ToggleZoomCommand => new RelayCommand(o => PreviewZoom = PreviewZoom > 0 ? 0 : 1);
+        public ICommand ZoomToFitCommand => new RelayCommand(o => PreviewZoom = 0);
+        public ICommand Zoom100Command => new RelayCommand(o => PreviewZoom = 1);
+        public ICommand Zoom200Command => new RelayCommand(o => PreviewZoom = 2);
+        public ICommand Zoom400Command => new RelayCommand(o => PreviewZoom = 4);
+        public ICommand ZoomInCommand => new RelayCommand(o => PreviewZoom = Math.Min(PreviewZoom + 1, 4));
+        public ICommand ZoomOutCommand => new RelayCommand(o => PreviewZoom = Math.Max(PreviewZoom - 1, 0));
 
         public GridLength MapRowHeight { get => _mapRowHeight; set => SetProperty(ref _mapRowHeight, value); }
         private GridLength _mapRowHeight = new(1, GridUnitType.Star);
@@ -366,12 +368,12 @@ namespace PhotoLocator
             UpdatePreviewPictureAsync().WithExceptionLogging();
         });
 
-        public ICommand CopyCommand => new RelayCommand(o =>
+        public ICommand CopyLocationCommand => new RelayCommand(o =>
         {
             SavedLocation = MapCenter;
         });
 
-        public ICommand PasteCommand => new RelayCommand(o =>
+        public ICommand PasteLocationCommand => new RelayCommand(o =>
         {
             if (SavedLocation is null)
                 throw new UserMessageException("You need to save a location before applying");

@@ -239,15 +239,10 @@ namespace PhotoLocator
         private void HandlePreviewMouseWheel(object sender, MouseWheelEventArgs e)
         {
             if (e.Delta > 0)
-            {
                 PictureIndex--;
-                e.Handled = true;
-            }
             else if (e.Delta < 0)
-            {
                 PictureIndex++;
-                e.Handled = true;
-            }
+            e.Handled = true;
         }
 
         public void Dispose()

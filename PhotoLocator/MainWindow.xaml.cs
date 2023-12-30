@@ -314,6 +314,31 @@ namespace PhotoLocator
                 UpdateResampledImage();
         }
 
+        private void HandlePreviewMouseWheel(object sender, MouseWheelEventArgs e)
+        {
+            if (e.Delta > 0)
+            {
+                if (Keyboard.Modifiers == ModifierKeys.Control)
+                    _viewModel.ZoomInCommand.Execute(null);
+                else
+                {
+                    PictureListBox.SelectedIndex--;
+                    PictureListBox.ScrollIntoView(PictureListBox.SelectedItem);
+                }
+            }
+            else if (e.Delta < 0)
+            {
+                if (Keyboard.Modifiers == ModifierKeys.Control)
+                    _viewModel.ZoomOutCommand.Execute(null);
+                else
+                {
+                    PictureListBox.SelectedIndex++;
+                    PictureListBox.ScrollIntoView(PictureListBox.SelectedItem);
+                }
+            }
+            e.Handled = true;
+        }
+
         private void HandlePreviewImageMouseDown(object sender, MouseButtonEventArgs e)
         {
             if (e.ChangedButton is MouseButton.Left or MouseButton.Middle)

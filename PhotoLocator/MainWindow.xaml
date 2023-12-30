@@ -23,8 +23,8 @@
     <Window.InputBindings>
         <KeyBinding Key="O" Modifiers="Ctrl" Command="{Binding BrowseForPhotosCommand}" />
         <KeyBinding Key="T" Modifiers="Ctrl" Command="{Binding AutoTagCommand}" />
-        <KeyBinding Key="C" Modifiers="Ctrl" Command="{Binding CopyCommand}" />
-        <KeyBinding Key="V" Modifiers="Ctrl" Command="{Binding PasteCommand}" />
+        <KeyBinding Key="C" Modifiers="Ctrl" Command="{Binding CopyLocationCommand}" />
+        <KeyBinding Key="V" Modifiers="Ctrl" Command="{Binding PasteLocationCommand}" />
         <KeyBinding Key="S" Modifiers="Ctrl" Command="{Binding SaveCommand}" />
         <KeyBinding Key="Q" Modifiers="Ctrl" Command="{Binding ViewModeCommand}" />
         <KeyBinding Key="E" Modifiers="Ctrl" Command="{Binding ExploreCommand}" />
@@ -123,6 +123,10 @@
                 <KeyBinding Key="Subtract" Command="{Binding DeselectAllCommand}" />
                 <KeyBinding Key="OemMinus" Command="{Binding DeselectAllCommand}" />
                 <KeyBinding Key="Divide" Command="{Binding QuickSearchCommand}" />
+                <KeyBinding Key="Add" Modifiers="Ctrl" Command="{Binding ZoomInCommand}" />
+                <KeyBinding Key="OemPlus" Modifiers="Ctrl" Command="{Binding ZoomInCommand}" />
+                <KeyBinding Key="Subtract" Modifiers="Ctrl" Command="{Binding ZoomOutCommand}" />
+                <KeyBinding Key="OemMinus" Modifiers="Ctrl" Command="{Binding ZoomOutCommand}" />
                 <KeyBinding Key="F" Modifiers="Ctrl" Command="{Binding QuickSearchCommand}" />
             </ListBox.InputBindings>
             <ListBox.ContextMenu>
@@ -174,7 +178,7 @@
             <mapDisplay:MapView Grid.Row="0" x:Name="Map" Visibility="{Binding IsMapVisible, Converter={StaticResource BooleanToVisibility}}"/>
 
             <Grid Grid.Row="1" Visibility="{Binding IsPreviewVisible, Converter={StaticResource BooleanToVisibility}}" Margin="0,4,0,0" 
-                  PreviewMouseDown="HandlePreviewImageMouseDown" PreviewMouseMove="HandlePreviewImageMouseMove">
+                  PreviewMouseDown="HandlePreviewImageMouseDown" PreviewMouseMove="HandlePreviewImageMouseMove" PreviewMouseWheel="HandlePreviewMouseWheel" >
                 <Image Name="FullPreviewImage" Source="{Binding PreviewPictureSource}" 
                        RenderOptions.BitmapScalingMode="{Binding Settings.BitmapScalingMode}" SnapsToDevicePixels="True" />
                 <Canvas Name="PreviewCanvas" ClipToBounds="True" SizeChanged="HandlePreviewCanvasSizeChanged" UseLayoutRounding="True">
