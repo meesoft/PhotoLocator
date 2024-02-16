@@ -72,7 +72,7 @@ namespace PhotoLocator.MapDisplay
                 Loaded += async (s, e) =>
                 {
                     await Task.Delay(2000);
-                    await cache.Clean();
+                    await cache.CleanAsync();
                 };
             }
         }
