@@ -24,7 +24,7 @@ namespace PhotoLocator.MapDisplay
 {
     public static class HyperlinkText
     {
-        private static readonly Regex regex = new Regex(@"\[([^\]]+)\]\(([^\)]+)\)");
+        private static readonly Regex regex = new(@"\[([^\]]+)\]\(([^\)]+)\)");
 
         /// <summary>
         /// Converts text containing hyperlinks in markdown syntax [text](url)
@@ -40,10 +40,10 @@ namespace PhotoLocator.MapDisplay
 
                 if (match.Success &&
                     match.Groups.Count == 3 &&
-                    Uri.TryCreate(match.Groups[2].Value, UriKind.Absolute, out Uri? uri))
+                    Uri.TryCreate(match.Groups[2].Value, UriKind.Absolute, out var uri))
                 {
-                    inlines.Add(new Run { Text = text.Substring(0, match.Index) });
-                    text = text.Substring(match.Index + match.Length);
+                    inlines.Add(new Run { Text = text[..match.Index] });
+                    text = text[(match.Index + match.Length)..];
 
                     var link = new Hyperlink { NavigateUri = uri };
                     link.Inlines.Add(new Run { Text = match.Groups[1].Value });
