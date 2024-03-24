@@ -5,6 +5,7 @@ using PhotoLocator.Gps;
 using PhotoLocator.Helpers;
 using PhotoLocator.MapDisplay;
 using PhotoLocator.Metadata;
+using PhotoLocator.PictureFileFormats;
 using PhotoLocator.Settings;
 using System;
 using System.Collections.Generic;
@@ -741,6 +742,27 @@ namespace PhotoLocator
                 SelectedPicture.GeoTag.Longitude.ToString(CultureInfo.InvariantCulture) + "&t=h";
             Process.Start(new ProcessStartInfo(url) { UseShellExecute = true });
         });
+
+        public ICommand RotateLeftCommand => new RelayCommand(async o => await RotateSelected(270));
+
+        public ICommand RotateRightCommand => new RelayCommand(async o => await RotateSelected(90));
+
+        public ICommand Rotate180Command => new RelayCommand(async o => await RotateSelected(180));
+
+        private async Task RotateSelected(int angle)
+        {
+            var allSelected = GetSelectedItems().Where(item => item.IsFile && JpegTransformations.IsFileTypeSupported(item.Name)).ToArray();
+            await RunProcessWithProgressBarAsync(progressCallback => Task.Run(() =>
+            {
+                int i = 0;
+                foreach (var item in allSelected)
+                {
+                    JpegTransformations.Rotate(item.FullPath, angle);
+                    item.IsChecked = false;
+                    progressCallback((double)(++i) / allSelected.Length);
+                }
+            }), "Rotating...");
+        }
 
         private async Task LoadFolderContentsAsync(bool keepSelection, string? selectItemFullPath = null)
         {

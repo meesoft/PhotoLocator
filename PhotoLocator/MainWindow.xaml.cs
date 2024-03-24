@@ -38,6 +38,7 @@ namespace PhotoLocator
             DataContext = _viewModel;
             _viewModel.PropertyChanged += HandleViewModelPropertyChanged;
             _viewModel.Settings.PropertyChanged += HandleViewModelPropertyChanged;
+            CropGrid.DataContext = CropGrid;
         }
 
         private void HandleWindowLoaded(object sender, RoutedEventArgs e)
@@ -277,11 +278,27 @@ namespace PhotoLocator
             {
                 if (_viewModel.PreviewZoom > 0)
                     InitializePreviewRenderTransform(false);
-                else if (_viewModel.Settings.LanczosUpscaling || _viewModel.Settings.LanczosDownscaling)
-                    UpdateResampledImage();
+                else
+                {
+                    ShowCropControl();
+                    if (_viewModel.Settings.LanczosUpscaling || _viewModel.Settings.LanczosDownscaling)
+                        UpdateResampledImage();
+                }
             }
             else if (e.PropertyName is nameof(_viewModel.PreviewZoom) or nameof(_viewModel.Settings.ResamplingOptions))
                 UpdatePreviewZoom();
+        }
+
+        private void ShowCropControl()
+        {
+            var sourceImage = _viewModel.PreviewPictureSource;
+            if (sourceImage is not null)
+            {
+                var scale = Math.Min(PreviewCanvas.ActualWidth / sourceImage.PixelWidth, PreviewCanvas.ActualHeight / sourceImage.PixelHeight);
+                CropGrid.Width = sourceImage.PixelWidth * scale;
+                CropGrid.Height = sourceImage.PixelHeight * scale;
+                CropGrid.Reset();
+            }
         }
 
         private void HandleViewModeSelectionChanged(object sender, SelectionChangedEventArgs e)
@@ -341,7 +358,7 @@ namespace PhotoLocator
 
         private void HandlePreviewImageMouseDown(object sender, MouseButtonEventArgs e)
         {
-            if (e.ChangedButton is MouseButton.Left or MouseButton.Middle)
+            if (_viewModel.PreviewZoom > 0 && e.ChangedButton is MouseButton.Left or MouseButton.Middle)
             {
                 _previousMousePosition = e.GetPosition(this);
                 _isDraggingPreview = _viewModel.PreviewZoom != 0;

@@ -6,6 +6,7 @@
         xmlns:map="clr-namespace:MapControl;assembly=MapControl.WPF"
         xmlns:local="clr-namespace:PhotoLocator" 
         xmlns:mapDisplay="clr-namespace:PhotoLocator.MapDisplay"
+        xmlns:helpers="clr-namespace:PhotoLocator.Helpers"
         mc:Ignorable="d"
         d:DataContext="{d:DesignInstance Type=local:MainViewModel, IsDesignTimeCreatable=True}"
         Loaded="HandleWindowLoaded" Closed="HandleWindowClosed"
@@ -29,6 +30,7 @@
         <KeyBinding Key="Q" Modifiers="Ctrl" Command="{Binding ViewModeCommand}" />
         <KeyBinding Key="E" Modifiers="Ctrl" Command="{Binding ExploreCommand}" />
         <KeyBinding Key="A" Modifiers="Alt" Command="{Binding ToggleZoomCommand}" />
+        <KeyBinding Key="C" Modifiers="Alt" Command="{Binding CropCommand}" />
         <KeyBinding Key="D1" Modifiers="Ctrl" Command="{Binding ZoomToFitCommand}" />
         <KeyBinding Key="D2" Modifiers="Ctrl" Command="{Binding Zoom100Command}" />
         <KeyBinding Key="D3" Modifiers="Ctrl" Command="{Binding Zoom200Command}" />
@@ -92,9 +94,9 @@
 
             <Button Content="Auto tag" Width="100" Command="{Binding AutoTagCommand}"
                     ToolTip="Auto assign tags to selected pictures (Ctrl+T)" />
-            <Button Content="Save center" Width="100" Command="{Binding CopyCommand}"
+            <Button Content="Save center" Width="100" Command="{Binding CopyLocationCommand}"
                     ToolTip="Save location of current map center (Ctrl+C)" />
-            <Button Content="Apply location" Width="100" Command="{Binding PasteCommand}"
+            <Button Content="Apply location" Width="100" Command="{Binding PasteLocationCommand}"
                     ToolTip="Apply saved location to selected photos (Ctrl+V)" />
             <Button Content="Save changes" Width="100" Command="{Binding SaveCommand}"
                     ToolTip="Save changed geotags to photo files (Ctrl+S)" />
@@ -142,6 +144,12 @@
                     <MenuItem Header="Open Explorer (Ctrl+E)" Command="{Binding ExploreCommand}" />
                     <MenuItem Header="Shell context menu (Shift+right click)" Command="{Binding ShellContextMenuCommand}" />
                     <MenuItem Header="Show metadata" Command="{Binding ShowMetadataCommand}" />
+                    <MenuItem Header="Transform jpeg" >
+                        <MenuItem Header="Rotate left" Command="{Binding RotateLeftCommand}" />
+                        <MenuItem Header="Rotate right" Command="{Binding RotateRightCommand}" />
+                        <MenuItem Header="Rotate 180°" Command="{Binding Rotate180Command}" />
+                        <MenuItem Header="Crop" Command="{Binding CropCommand}" />
+                    </MenuItem>
                     <MenuItem Header="Rename (F2)" Command="{Binding RenameCommand}" />
                     <MenuItem Header="Move selected (F6)" Command="{Binding MoveSelectedCommand}" />
                     <MenuItem Header="Delete selected (Del)" Command="{Binding DeleteSelectedCommand}" />
@@ -181,18 +189,21 @@
                   PreviewMouseDown="HandlePreviewImageMouseDown" PreviewMouseMove="HandlePreviewImageMouseMove" PreviewMouseWheel="HandlePreviewMouseWheel" >
                 <Image Name="FullPreviewImage" Source="{Binding PreviewPictureSource}" 
                        RenderOptions.BitmapScalingMode="{Binding Settings.BitmapScalingMode}" SnapsToDevicePixels="True" />
+
                 <Canvas Name="PreviewCanvas" ClipToBounds="True" SizeChanged="HandlePreviewCanvasSizeChanged" UseLayoutRounding="True">
                     <Image Name="ResampledPreviewImage" 
                            Stretch="None" RenderOptions.BitmapScalingMode="NearestNeighbor" SnapsToDevicePixels="True" />
                     <Image Name="ZoomedPreviewImage" Source="{Binding PreviewPictureSource}"
                            Stretch="None" RenderOptions.BitmapScalingMode="NearestNeighbor" SnapsToDevicePixels="True" />
                 </Canvas>
-                
+
                 <TextBlock VerticalAlignment="Bottom" HorizontalAlignment="Right" Margin="8" FontSize="18" FontWeight="Bold" Foreground="Black"
                            TextWrapping="Wrap" Text="{Binding PreviewPictureTitle}"/>
                 <TextBlock VerticalAlignment="Bottom" HorizontalAlignment="Right" Margin="10" FontSize="18" FontWeight="Bold" Foreground="White"
                            TextWrapping="Wrap" Text="{Binding PreviewPictureTitle}"/>
-                
+
+                <helpers:CropControl x:Name="CropGrid" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+
                 <Grid.ContextMenu>
                     <ContextMenu>
                         <MenuItem Header="Zoom to fit (Ctrl+1)" IsCheckable="True" IsChecked="True" Name="ZoomToFitItem" Command="{Binding ZoomToFitCommand}" />
