@@ -191,7 +191,15 @@ namespace PhotoLocator
         public GridLength PreviewRowHeight { get => _previewRowHeight; set => SetProperty(ref _previewRowHeight, value); }
         private GridLength _previewRowHeight = new(0, GridUnitType.Star);
 
-        public BitmapSource? PreviewPictureSource { get => _previewPictureSource; set => SetProperty(ref _previewPictureSource, value); }
+        public BitmapSource? PreviewPictureSource 
+        { 
+            get => _previewPictureSource; 
+            set 
+            {
+                if (SetProperty(ref _previewPictureSource, value))
+                    IsCropControlVisible = false;
+            }
+        }
         private BitmapSource? _previewPictureSource;
 
         public string? PreviewPictureTitle { get => _previewPictureTitle; set => SetProperty(ref _previewPictureTitle, value); }
@@ -743,13 +751,48 @@ namespace PhotoLocator
             Process.Start(new ProcessStartInfo(url) { UseShellExecute = true });
         });
 
-        public ICommand RotateLeftCommand => new RelayCommand(async o => await RotateSelected(270));
+        public bool IsCropControlVisible { get => _isCropControlVisible; set => SetProperty(ref _isCropControlVisible, value); }
+        private bool _isCropControlVisible;
 
-        public ICommand RotateRightCommand => new RelayCommand(async o => await RotateSelected(90));
+        public ICommand CropCommand => new RelayCommand(async o =>
+        {
+            if (IsCropControlVisible)
+            {
+                try
+                {
+                    if (o is CropControl cropControl)
+                    {
+                        var cropRect = cropControl.CropRectangle;
+                        await RunProcessWithProgressBarAsync(progressCallback => Task.Run(() =>
+                        {
+                            if (SelectedPicture is null)
+                                return;
+                            JpegTransformations.Crop(SelectedPicture.FullPath,
+                                IntMath.Round(cropRect.Left),
+                                IntMath.Round(cropRect.Top),
+                                Math.Max(1, IntMath.Round(cropRect.Width)),
+                                Math.Max(1, IntMath.Round(cropRect.Height)));
+                        }), "Cropping");
+                        if (SelectedPicture is not null)
+                            SelectItem(SelectedPicture);
+                    }
+                }
+                finally
+                {
+                    IsCropControlVisible = false;
+                }
+            }
+            else 
+                IsCropControlVisible = SelectedPicture?.IsDirectory == false && JpegTransformations.IsFileTypeSupported(SelectedPicture.Name);
+        });
+        
+        public ICommand RotateLeftCommand => new RelayCommand(async o => await RotateSelectedAsync(270));
 
-        public ICommand Rotate180Command => new RelayCommand(async o => await RotateSelected(180));
+        public ICommand RotateRightCommand => new RelayCommand(async o => await RotateSelectedAsync(90));
 
-        private async Task RotateSelected(int angle)
+        public ICommand Rotate180Command => new RelayCommand(async o => await RotateSelectedAsync(180));
+
+        private async Task RotateSelectedAsync(int angle)
         {
             var allSelected = GetSelectedItems().Where(item => item.IsFile && JpegTransformations.IsFileTypeSupported(item.Name)).ToArray();
             await RunProcessWithProgressBarAsync(progressCallback => Task.Run(() =>

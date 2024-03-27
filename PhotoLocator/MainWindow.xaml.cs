@@ -235,6 +235,23 @@ namespace PhotoLocator
             _previousMousePosition = e.GetPosition(this);
         }
 
+        private void HandleWindowKeyDown(object sender, KeyEventArgs e)
+        {
+            if (_viewModel.IsCropControlVisible)
+            {
+                if (e.Key == Key.Enter)
+                {
+                    e.Handled = true;
+                    _viewModel.CropCommand.Execute(CropGrid);
+                }
+                else if (e.Key == Key.Escape)
+                {
+                    e.Handled = true;
+                    _viewModel.IsCropControlVisible = false;
+                }
+            }
+        }
+
         private void HandleFileItemMouseMove(object sender, MouseEventArgs e)
         {
             if (PictureListBox.SelectedItem != null &&
@@ -280,13 +297,17 @@ namespace PhotoLocator
                     InitializePreviewRenderTransform(false);
                 else
                 {
-                    ShowCropControl();
                     if (_viewModel.Settings.LanczosUpscaling || _viewModel.Settings.LanczosDownscaling)
                         UpdateResampledImage();
                 }
             }
             else if (e.PropertyName is nameof(_viewModel.PreviewZoom) or nameof(_viewModel.Settings.ResamplingOptions))
                 UpdatePreviewZoom();
+            else if (e.PropertyName is nameof(_viewModel.IsCropControlVisible))
+            {
+                if (_viewModel.IsCropControlVisible)
+                    ShowCropControl();
+            }
         }
 
         private void ShowCropControl()
@@ -297,7 +318,7 @@ namespace PhotoLocator
                 var scale = Math.Min(PreviewCanvas.ActualWidth / sourceImage.PixelWidth, PreviewCanvas.ActualHeight / sourceImage.PixelHeight);
                 CropGrid.Width = sourceImage.PixelWidth * scale;
                 CropGrid.Height = sourceImage.PixelHeight * scale;
-                CropGrid.Reset();
+                CropGrid.Reset(sourceImage.PixelWidth, sourceImage.PixelHeight);
             }
         }
 

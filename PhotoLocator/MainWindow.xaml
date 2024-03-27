@@ -11,6 +11,7 @@
         d:DataContext="{d:DesignInstance Type=local:MainViewModel, IsDesignTimeCreatable=True}"
         Loaded="HandleWindowLoaded" Closed="HandleWindowClosed"
         AllowDrop="True" Drop="HandleDrop" 
+        PreviewKeyDown="HandleWindowKeyDown"
         IsEnabled="{Binding IsWindowEnabled}"
         WindowState="Maximized"
         Title="{Binding WindowTitle}" 
@@ -22,19 +23,19 @@
     </Window.Resources>
 
     <Window.InputBindings>
-        <KeyBinding Key="O" Modifiers="Ctrl" Command="{Binding BrowseForPhotosCommand}" />
-        <KeyBinding Key="T" Modifiers="Ctrl" Command="{Binding AutoTagCommand}" />
         <KeyBinding Key="C" Modifiers="Ctrl" Command="{Binding CopyLocationCommand}" />
-        <KeyBinding Key="V" Modifiers="Ctrl" Command="{Binding PasteLocationCommand}" />
-        <KeyBinding Key="S" Modifiers="Ctrl" Command="{Binding SaveCommand}" />
-        <KeyBinding Key="Q" Modifiers="Ctrl" Command="{Binding ViewModeCommand}" />
-        <KeyBinding Key="E" Modifiers="Ctrl" Command="{Binding ExploreCommand}" />
-        <KeyBinding Key="A" Modifiers="Alt" Command="{Binding ToggleZoomCommand}" />
-        <KeyBinding Key="C" Modifiers="Alt" Command="{Binding CropCommand}" />
         <KeyBinding Key="D1" Modifiers="Ctrl" Command="{Binding ZoomToFitCommand}" />
         <KeyBinding Key="D2" Modifiers="Ctrl" Command="{Binding Zoom100Command}" />
         <KeyBinding Key="D3" Modifiers="Ctrl" Command="{Binding Zoom200Command}" />
         <KeyBinding Key="D4" Modifiers="Ctrl" Command="{Binding Zoom400Command}" />
+        <KeyBinding Key="E" Modifiers="Ctrl" Command="{Binding ExploreCommand}" />
+        <KeyBinding Key="O" Modifiers="Ctrl" Command="{Binding BrowseForPhotosCommand}" />
+        <KeyBinding Key="Q" Modifiers="Ctrl" Command="{Binding ViewModeCommand}" />
+        <KeyBinding Key="S" Modifiers="Ctrl" Command="{Binding SaveCommand}" />
+        <KeyBinding Key="T" Modifiers="Ctrl" Command="{Binding AutoTagCommand}" />
+        <KeyBinding Key="V" Modifiers="Ctrl" Command="{Binding PasteLocationCommand}" />
+        <KeyBinding Key="A" Modifiers="Alt" Command="{Binding ToggleZoomCommand}" />
+        <KeyBinding Key="C" Modifiers="Alt" Command="{Binding CropCommand}" />
         <KeyBinding Key="F1" Command="{Binding AboutCommand}" />
         <KeyBinding Key="F2" Command="{Binding RenameCommand}" />
         <KeyBinding Key="F3" Command="{Binding SlideShowCommand}" />
@@ -148,7 +149,7 @@
                         <MenuItem Header="Rotate left" Command="{Binding RotateLeftCommand}" />
                         <MenuItem Header="Rotate right" Command="{Binding RotateRightCommand}" />
                         <MenuItem Header="Rotate 180°" Command="{Binding Rotate180Command}" />
-                        <MenuItem Header="Crop" Command="{Binding CropCommand}" />
+                        <MenuItem Header="Crop (Alt-C)" Command="{Binding CropCommand}" IsChecked="{Binding IsCropControlVisible}" />
                     </MenuItem>
                     <MenuItem Header="Rename (F2)" Command="{Binding RenameCommand}" />
                     <MenuItem Header="Move selected (F6)" Command="{Binding MoveSelectedCommand}" />
@@ -202,7 +203,8 @@
                 <TextBlock VerticalAlignment="Bottom" HorizontalAlignment="Right" Margin="10" FontSize="18" FontWeight="Bold" Foreground="White"
                            TextWrapping="Wrap" Text="{Binding PreviewPictureTitle}"/>
 
-                <helpers:CropControl x:Name="CropGrid" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                <helpers:CropControl x:Name="CropGrid" HorizontalAlignment="Center" VerticalAlignment="Center" 
+                                     Visibility="{Binding Parent.DataContext.IsCropControlVisible, Converter={StaticResource BooleanToVisibility}}"/>
 
                 <Grid.ContextMenu>
                     <ContextMenu>
