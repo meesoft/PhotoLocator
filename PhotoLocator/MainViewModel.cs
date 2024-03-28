@@ -292,7 +292,10 @@ namespace PhotoLocator
             _previewCancellation?.Dispose();
             _previewCancellation = null;
             if (SelectedPicture is null || !IsPreviewVisible)
+            {
+                PreviewPictureSource = null;
                 return;
+            }
             var selected = SelectedPicture;
             if (selected.IsDirectory)
             {
@@ -417,6 +420,7 @@ namespace PhotoLocator
             catch (Exception ex)
             {
                 TaskbarProgressState = TaskbarItemProgressState.Error;
+                IsProgressBarVisible = false;
                 ExceptionHandler.ShowException(ex);
             }
             finally
@@ -751,6 +755,8 @@ namespace PhotoLocator
             Process.Start(new ProcessStartInfo(url) { UseShellExecute = true });
         });
 
+        public ICropControl? CropControl { get; internal set; }
+
         public bool IsCropControlVisible { get => _isCropControlVisible; set => SetProperty(ref _isCropControlVisible, value); }
         private bool _isCropControlVisible;
 
@@ -760,18 +766,13 @@ namespace PhotoLocator
             {
                 try
                 {
-                    if (o is CropControl cropControl)
+                    if (SelectedPicture is not null && CropControl is not null && (o is true || 
+                        MessageBox.Show("Crop to selection?", "Crop", MessageBoxButton.OKCancel, MessageBoxImage.Question) == MessageBoxResult.OK))
                     {
-                        var cropRect = cropControl.CropRectangle;
                         await RunProcessWithProgressBarAsync(progressCallback => Task.Run(() =>
                         {
-                            if (SelectedPicture is null)
-                                return;
-                            JpegTransformations.Crop(SelectedPicture.FullPath,
-                                IntMath.Round(cropRect.Left),
-                                IntMath.Round(cropRect.Top),
-                                Math.Max(1, IntMath.Round(cropRect.Width)),
-                                Math.Max(1, IntMath.Round(cropRect.Height)));
+                            progressCallback(-1);
+                            JpegTransformations.Crop(SelectedPicture.FullPath, CropControl.CropRectangle);
                         }), "Cropping");
                         if (SelectedPicture is not null)
                             SelectItem(SelectedPicture);
@@ -881,7 +882,7 @@ namespace PhotoLocator
                     var removed = Pictures.FirstOrDefault(item => item.FullPath == e.FullPath);
                     if (removed != null)
                         Pictures.Remove(removed);
-                }
+                    }
                 else if (e.ChangeType is WatcherChangeTypes.Created or WatcherChangeTypes.Renamed)
                 {
                     await Task.Delay(1000);

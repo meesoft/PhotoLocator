@@ -1,4 +1,5 @@
 ﻿using System.ComponentModel;
+using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.Windows;
 using System.Windows.Controls;
@@ -6,22 +7,30 @@ using System.Windows.Input;
 
 namespace PhotoLocator.Helpers
 {
-    /// <summary> Interaction logic for CropControl.xaml </summary>
-    public partial class CropControl : UserControl, INotifyPropertyChanged
+    public interface ICropControl
     {
-        private Point _previousMousePosition;
+        Rect CropRectangle { get; }
+    }
+
+    /// <summary> Interaction logic for CropControl.xaml </summary>
+    public partial class CropControl : UserControl, INotifyPropertyChanged, ICropControl
+    {
         int _imageWidth, _imageHeight;
+        Point _previousMousePosition;
+        double _widthHeightRatio;
+        string? _mouseOperation;
 
         public CropControl()
         {
             InitializeComponent();
-            Reset(0, 0);
+            Reset(1, 1);
         }
 
         public void Reset(int imageWidth, int imageHeight)
         {
             _imageWidth = imageWidth;
             _imageHeight = imageHeight;
+            _widthHeightRatio = (double)imageWidth / imageHeight;
             CropTopOffset = new(0.1, GridUnitType.Star);
             CropHeight = new(0.8, GridUnitType.Star);
             CropBottomOffset = new(0.1, GridUnitType.Star);
@@ -79,26 +88,108 @@ namespace PhotoLocator.Helpers
             get
             {
                 if (_imageWidth == 0 || _imageHeight == 0)
-                    return null;
+                    return "0";
                 var rect = CropRectangle;
                 return $"{rect.Width:F0}x{rect.Height:F0} {rect.Width / rect.Height:F2}";
             }
         }
 
-        private void HandleCropMouseDown(object sender, MouseButtonEventArgs e)
+        private void HandleMouseDown(object sender, MouseButtonEventArgs e)
         {
-            if (e.ChangedButton == MouseButton.Left)
-                _previousMousePosition = e.GetPosition(this);
+            if (e.ChangedButton != MouseButton.Left)
+                return;
+            _mouseOperation = (e.OriginalSource as FrameworkElement)?.Tag as string;
+            if (_mouseOperation is null)
+                return;
+            _previousMousePosition = e.GetPosition(this);
+            var rect = CropRectangle;
+            if (rect.Width > 1)
+                _widthHeightRatio = rect.Width / rect.Height;
+            CaptureMouse();
+            e.Handled = true;
         }
-        private void HandleCropMouseMove(object sender, MouseEventArgs e)
+
+        private void HandleMouseUp(object sender, MouseButtonEventArgs e)
         {
-            if (e.LeftButton == MouseButtonState.Pressed)
+            if (e.ChangedButton != MouseButton.Left || _mouseOperation == null)
+                return;
+            ReleaseMouseCapture();
+            _mouseOperation = null;
+            e.Handled = true;
+        }
+
+        private void HandleMouseMove(object sender, MouseEventArgs e)
+        {
+            if (e.LeftButton != MouseButtonState.Pressed || _mouseOperation is null)
+                return;
+
+            var mousePosition = e.GetPosition(this);
+
+            var horizontalSum = CropLeftOffset.Value + CropWidth.Value + CropRightOffset.Value;
+            var verticalSum = CropTopOffset.Value + CropHeight.Value + CropBottomOffset.Value;
+            var dx = (mousePosition.X - _previousMousePosition.X) / ActualWidth * horizontalSum;
+
+            double GetDyFromWidth()
             {
-                var mousePosition = e.GetPosition(this);
-                CropLeftOffset = new GridLength(CropLeftOffset.Value + mousePosition.X - _previousMousePosition.X);
-                CropTopOffset = new GridLength(CropTopOffset.Value + mousePosition.Y - _previousMousePosition.Y);
-                _previousMousePosition = mousePosition;
+                var newHeightInImage = CropWidth.Value / horizontalSum * _imageWidth / _widthHeightRatio;
+                var newHeightInGrid = newHeightInImage / _imageHeight * verticalSum;
+                return CropHeight.Value - newHeightInGrid;
             }
+
+            if (_mouseOperation == "Move")
+            {
+                dx = RealMath.EnsureRange(dx, -CropLeftOffset.Value, CropRightOffset.Value);
+                CropLeftOffset = new GridLength(CropLeftOffset.Value + dx, CropLeftOffset.GridUnitType);
+                CropRightOffset = new GridLength(CropRightOffset.Value - dx, CropRightOffset.GridUnitType);
+
+                var dy = (mousePosition.Y - _previousMousePosition.Y) / ActualHeight * verticalSum;
+                dy = RealMath.EnsureRange(dy, -CropTopOffset.Value, CropBottomOffset.Value);
+                CropTopOffset = new GridLength(CropTopOffset.Value + dy, CropTopOffset.GridUnitType);
+                CropBottomOffset = new GridLength(CropBottomOffset.Value - dy, CropBottomOffset.GridUnitType);
+            }
+            else if (_mouseOperation == "TopLeft")
+            {
+                dx = RealMath.EnsureRange(dx, -CropLeftOffset.Value, CropWidth.Value);
+                CropLeftOffset = new GridLength(CropLeftOffset.Value + dx, CropLeftOffset.GridUnitType);
+                CropWidth = new GridLength(CropWidth.Value - dx, CropWidth.GridUnitType);
+
+                var dy = RealMath.EnsureRange(GetDyFromWidth(), -CropTopOffset.Value, CropHeight.Value);
+                CropTopOffset = new GridLength(CropTopOffset.Value + dy, CropTopOffset.GridUnitType);
+                CropHeight = new GridLength(CropHeight.Value - dy, CropHeight.GridUnitType);
+            }
+            else if (_mouseOperation == "TopRight")
+            {
+                dx = RealMath.EnsureRange(dx, -CropWidth.Value, CropRightOffset.Value);
+                CropRightOffset = new GridLength(CropRightOffset.Value - dx, CropRightOffset.GridUnitType);
+                CropWidth = new GridLength(CropWidth.Value + dx, CropWidth.GridUnitType);
+
+                var dy = RealMath.EnsureRange(GetDyFromWidth(), -CropTopOffset.Value, CropHeight.Value);
+                CropTopOffset = new GridLength(CropTopOffset.Value + dy, CropTopOffset.GridUnitType);
+                CropHeight = new GridLength(CropHeight.Value - dy, CropHeight.GridUnitType);
+            }
+            else if (_mouseOperation == "BottomLeft")
+            {
+                dx = RealMath.EnsureRange(dx, -CropLeftOffset.Value, CropWidth.Value);
+                CropLeftOffset = new GridLength(CropLeftOffset.Value + dx, CropLeftOffset.GridUnitType);
+                CropWidth = new GridLength(CropWidth.Value - dx, CropWidth.GridUnitType);
+
+                var dy = RealMath.EnsureRange(GetDyFromWidth(), -CropBottomOffset.Value, CropHeight.Value);
+                CropBottomOffset = new GridLength(CropBottomOffset.Value + dy, CropBottomOffset.GridUnitType);
+                CropHeight = new GridLength(CropHeight.Value - dy, CropHeight.GridUnitType);
+            }
+            else if (_mouseOperation == "BottomRight")
+            {
+                dx = RealMath.EnsureRange(dx, -CropWidth.Value, CropRightOffset.Value);
+                CropRightOffset = new GridLength(CropRightOffset.Value - dx, CropRightOffset.GridUnitType);
+                CropWidth = new GridLength(CropWidth.Value + dx, CropWidth.GridUnitType);
+
+                var dy = RealMath.EnsureRange(GetDyFromWidth(), -CropBottomOffset.Value, CropHeight.Value);
+                CropBottomOffset = new GridLength(CropBottomOffset.Value + dy, CropBottomOffset.GridUnitType);
+                CropHeight = new GridLength(CropHeight.Value - dy, CropHeight.GridUnitType);
+            }
+
+            _previousMousePosition = mousePosition;
+            e.Handled = true;
         }
     }
 }

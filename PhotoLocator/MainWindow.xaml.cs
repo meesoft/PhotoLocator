@@ -242,7 +242,7 @@ namespace PhotoLocator
                 if (e.Key == Key.Enter)
                 {
                     e.Handled = true;
-                    _viewModel.CropCommand.Execute(CropGrid);
+                    _viewModel.CropCommand.Execute(true);
                 }
                 else if (e.Key == Key.Escape)
                 {
@@ -313,12 +313,15 @@ namespace PhotoLocator
         private void ShowCropControl()
         {
             var sourceImage = _viewModel.PreviewPictureSource;
-            if (sourceImage is not null)
+            if (sourceImage is null)
+                _viewModel.IsCropControlVisible = false;
+            else
             {
                 var scale = Math.Min(PreviewCanvas.ActualWidth / sourceImage.PixelWidth, PreviewCanvas.ActualHeight / sourceImage.PixelHeight);
                 CropGrid.Width = sourceImage.PixelWidth * scale;
                 CropGrid.Height = sourceImage.PixelHeight * scale;
                 CropGrid.Reset(sourceImage.PixelWidth, sourceImage.PixelHeight);
+                _viewModel.CropControl = CropGrid;
             }
         }
 

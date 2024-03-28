@@ -4,6 +4,7 @@ using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.Linq;
+using System.Windows;
 
 namespace PhotoLocator.PictureFileFormats
 {
@@ -24,6 +25,12 @@ namespace PhotoLocator.PictureFileFormats
             ProcessFile(fileName, $"{left} {top} {width} {height}");
         }
 
+        public static void Crop(string fileName, Rect cropRect)
+        {
+            Crop(fileName, IntMath.Round(cropRect.Left), IntMath.Round(cropRect.Top),
+                Math.Max(1, IntMath.Round(cropRect.Width)), Math.Max(1, IntMath.Round(cropRect.Height)));
+        }
+
         private static readonly char[] _lineSeparators = new[] { '\n', '\r' };
 
         private static void ProcessFile(string fileName, string args)
@@ -41,6 +48,6 @@ namespace PhotoLocator.PictureFileFormats
             var lines = output.Split(_lineSeparators, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.RemoveEmptyEntries);
             if (lines.Length > 0)
                 throw new UserMessageException(lines.Last());
-        }
+        }      
     }
 }
