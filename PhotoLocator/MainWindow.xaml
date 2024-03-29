@@ -212,6 +212,12 @@
                         <MenuItem Header="100% (Ctrl+2)" IsCheckable="True" Name="Zoom100Item" Command="{Binding Zoom100Command}"/>
                         <MenuItem Header="200% (Ctrl+3)" IsCheckable="True" Name="Zoom200Item" Command="{Binding Zoom200Command}" />
                         <MenuItem Header="400% (Ctrl+4)" IsCheckable="True" Name="Zoom400Item" Command="{Binding Zoom400Command}"  />
+                        <MenuItem Header="Transform jpeg" >
+                            <MenuItem Header="Rotate left" Command="{Binding RotateLeftCommand}" />
+                            <MenuItem Header="Rotate right" Command="{Binding RotateRightCommand}" />
+                            <MenuItem Header="Rotate 180°" Command="{Binding Rotate180Command}" />
+                            <MenuItem Header="Crop (Alt-C)" Command="{Binding CropCommand}" IsChecked="{Binding IsCropControlVisible}" />
+                        </MenuItem>
                     </ContextMenu>
                 </Grid.ContextMenu>
             </Grid>

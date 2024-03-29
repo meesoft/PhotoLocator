@@ -1,5 +1,5 @@
-﻿using System.ComponentModel;
-using System.Diagnostics;
+﻿using System;
+using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using System.Windows;
 using System.Windows.Controls;
@@ -23,20 +23,41 @@ namespace PhotoLocator.Helpers
         public CropControl()
         {
             InitializeComponent();
-            Reset(1, 1);
+            if (DesignerProperties.GetIsInDesignMode(this))
+                Reset(1, 1, 500, 0);
         }
 
-        public void Reset(int imageWidth, int imageHeight)
+        public void Reset(int imageWidth, int imageHeight, double imageScale, double cropWidthHeightRatio)
         {
             _imageWidth = imageWidth;
             _imageHeight = imageHeight;
-            _widthHeightRatio = (double)imageWidth / imageHeight;
-            CropTopOffset = new(0.1, GridUnitType.Star);
-            CropHeight = new(0.8, GridUnitType.Star);
-            CropBottomOffset = new(0.1, GridUnitType.Star);
-            CropLeftOffset = new(0.1, GridUnitType.Star);
-            CropWidth = new(0.8, GridUnitType.Star);
-            CropRightOffset = new(0.1, GridUnitType.Star);
+            Width = _imageWidth * imageScale;
+            Height = _imageHeight * imageScale;
+            var imageWidthHeightRatio = (double)imageWidth / imageHeight;
+            if (cropWidthHeightRatio > 0) 
+            {
+                _widthHeightRatio = cropWidthHeightRatio;
+                var cropScale = Math.Min(Width / _widthHeightRatio, Height);
+
+                var cropRegionWidth = _widthHeightRatio * cropScale;
+                CropLeftOffset = new((Width - cropRegionWidth) / 2, GridUnitType.Star);
+                CropWidth = new(cropRegionWidth, GridUnitType.Star);
+                CropRightOffset = CropLeftOffset;
+                var cropRegionHeight = cropScale;
+                CropTopOffset = new((Height - cropRegionHeight) / 2, GridUnitType.Star);
+                CropHeight = new(cropRegionHeight, GridUnitType.Star);
+                CropBottomOffset = CropTopOffset;
+            }
+            else
+            {
+                _widthHeightRatio = imageWidthHeightRatio;
+                CropLeftOffset = new(0.05, GridUnitType.Star);
+                CropWidth = new(0.9, GridUnitType.Star);
+                CropRightOffset = new(0.05, GridUnitType.Star);
+                CropTopOffset = new(0.05, GridUnitType.Star);
+                CropHeight = new(0.9, GridUnitType.Star);
+                CropBottomOffset = new(0.05, GridUnitType.Star);
+            }
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(RatioText)));
         }
 
@@ -88,7 +109,7 @@ namespace PhotoLocator.Helpers
             get
             {
                 if (_imageWidth == 0 || _imageHeight == 0)
-                    return "0";
+                    return null;
                 var rect = CropRectangle;
                 return $"{rect.Width:F0}x{rect.Height:F0} {rect.Width / rect.Height:F2}";
             }
@@ -129,11 +150,39 @@ namespace PhotoLocator.Helpers
             var verticalSum = CropTopOffset.Value + CropHeight.Value + CropBottomOffset.Value;
             var dx = (mousePosition.X - _previousMousePosition.X) / ActualWidth * horizontalSum;
 
-            double GetDyFromWidth()
+            void DragLeft()
+            {
+                dx = RealMath.EnsureRange(dx, -CropLeftOffset.Value, CropWidth.Value);
+                CropLeftOffset = new GridLength(CropLeftOffset.Value + dx, CropLeftOffset.GridUnitType);
+                CropWidth = new GridLength(CropWidth.Value - dx, CropWidth.GridUnitType);
+            }
+
+            void DragRight()
+            {
+                dx = RealMath.EnsureRange(dx, -CropWidth.Value, CropRightOffset.Value);
+                CropRightOffset = new GridLength(CropRightOffset.Value - dx, CropRightOffset.GridUnitType);
+                CropWidth = new GridLength(CropWidth.Value + dx, CropWidth.GridUnitType);
+            }
+
+            double dyFromWidth()
             {
                 var newHeightInImage = CropWidth.Value / horizontalSum * _imageWidth / _widthHeightRatio;
                 var newHeightInGrid = newHeightInImage / _imageHeight * verticalSum;
                 return CropHeight.Value - newHeightInGrid;
+            }
+
+            void DragTop()
+            {
+                var dy = RealMath.EnsureRange(dyFromWidth(), -CropTopOffset.Value, CropHeight.Value);
+                CropTopOffset = new GridLength(CropTopOffset.Value + dy, CropTopOffset.GridUnitType);
+                CropHeight = new GridLength(CropHeight.Value - dy, CropHeight.GridUnitType);
+            }
+
+            void DragBottom()
+            {
+                var dy = RealMath.EnsureRange(dyFromWidth(), -CropBottomOffset.Value, CropHeight.Value);
+                CropBottomOffset = new GridLength(CropBottomOffset.Value + dy, CropBottomOffset.GridUnitType);
+                CropHeight = new GridLength(CropHeight.Value - dy, CropHeight.GridUnitType);
             }
 
             if (_mouseOperation == "Move")
@@ -149,43 +198,23 @@ namespace PhotoLocator.Helpers
             }
             else if (_mouseOperation == "TopLeft")
             {
-                dx = RealMath.EnsureRange(dx, -CropLeftOffset.Value, CropWidth.Value);
-                CropLeftOffset = new GridLength(CropLeftOffset.Value + dx, CropLeftOffset.GridUnitType);
-                CropWidth = new GridLength(CropWidth.Value - dx, CropWidth.GridUnitType);
-
-                var dy = RealMath.EnsureRange(GetDyFromWidth(), -CropTopOffset.Value, CropHeight.Value);
-                CropTopOffset = new GridLength(CropTopOffset.Value + dy, CropTopOffset.GridUnitType);
-                CropHeight = new GridLength(CropHeight.Value - dy, CropHeight.GridUnitType);
+                DragLeft();
+                DragTop();
             }
             else if (_mouseOperation == "TopRight")
             {
-                dx = RealMath.EnsureRange(dx, -CropWidth.Value, CropRightOffset.Value);
-                CropRightOffset = new GridLength(CropRightOffset.Value - dx, CropRightOffset.GridUnitType);
-                CropWidth = new GridLength(CropWidth.Value + dx, CropWidth.GridUnitType);
-
-                var dy = RealMath.EnsureRange(GetDyFromWidth(), -CropTopOffset.Value, CropHeight.Value);
-                CropTopOffset = new GridLength(CropTopOffset.Value + dy, CropTopOffset.GridUnitType);
-                CropHeight = new GridLength(CropHeight.Value - dy, CropHeight.GridUnitType);
+                DragRight();
+                DragTop();
             }
             else if (_mouseOperation == "BottomLeft")
             {
-                dx = RealMath.EnsureRange(dx, -CropLeftOffset.Value, CropWidth.Value);
-                CropLeftOffset = new GridLength(CropLeftOffset.Value + dx, CropLeftOffset.GridUnitType);
-                CropWidth = new GridLength(CropWidth.Value - dx, CropWidth.GridUnitType);
-
-                var dy = RealMath.EnsureRange(GetDyFromWidth(), -CropBottomOffset.Value, CropHeight.Value);
-                CropBottomOffset = new GridLength(CropBottomOffset.Value + dy, CropBottomOffset.GridUnitType);
-                CropHeight = new GridLength(CropHeight.Value - dy, CropHeight.GridUnitType);
+                DragLeft();
+                DragBottom();
             }
             else if (_mouseOperation == "BottomRight")
             {
-                dx = RealMath.EnsureRange(dx, -CropWidth.Value, CropRightOffset.Value);
-                CropRightOffset = new GridLength(CropRightOffset.Value - dx, CropRightOffset.GridUnitType);
-                CropWidth = new GridLength(CropWidth.Value + dx, CropWidth.GridUnitType);
-
-                var dy = RealMath.EnsureRange(GetDyFromWidth(), -CropBottomOffset.Value, CropHeight.Value);
-                CropBottomOffset = new GridLength(CropBottomOffset.Value + dy, CropBottomOffset.GridUnitType);
-                CropHeight = new GridLength(CropHeight.Value - dy, CropHeight.GridUnitType);
+                DragRight();
+                DragBottom();
             }
 
             _previousMousePosition = mousePosition;

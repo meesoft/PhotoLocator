@@ -206,7 +206,15 @@ namespace PhotoLocator
         private string? _previewPictureTitle;
 
         /// <summary> Zoom level or 0 for auto </summary>
-        public int PreviewZoom { get => _previewZoom; set => SetProperty(ref _previewZoom, value); }
+        public int PreviewZoom 
+        { 
+            get => _previewZoom;
+            set
+            {
+                if (SetProperty(ref _previewZoom, value) && value > 0)
+                    IsCropControlVisible = false;
+            } 
+        }
         private int _previewZoom;
 
         public ObservableCollection<PictureItemViewModel> Pictures { get; } = new ObservableCollection<PictureItemViewModel>();
@@ -441,7 +449,7 @@ namespace PhotoLocator
             await RunProcessWithProgressBarAsync(async progressCallback =>
             {
                 int i = 0;
-                await Parallel.ForEachAsync(updatedPictures, new ParallelOptions { MaxDegreeOfParallelism = 2 }, async (item, ct) =>
+                await Parallel.ForEachAsync(updatedPictures, new ParallelOptions { MaxDegreeOfParallelism = 1 }, async (item, ct) =>
                 {
                     await item.SaveGeoTagAsync();
                     progressCallback((double)Interlocked.Increment(ref i) / updatedPictures.Length);
@@ -766,7 +774,7 @@ namespace PhotoLocator
             {
                 try
                 {
-                    if (SelectedPicture is not null && CropControl is not null && (o is true || 
+                    if (SelectedPicture is not null && CropControl is not null && (o is true ||
                         MessageBox.Show("Crop to selection?", "Crop", MessageBoxButton.OKCancel, MessageBoxImage.Question) == MessageBoxResult.OK))
                     {
                         await RunProcessWithProgressBarAsync(progressCallback => Task.Run(() =>
@@ -783,8 +791,12 @@ namespace PhotoLocator
                     IsCropControlVisible = false;
                 }
             }
-            else 
+            else
+            {
                 IsCropControlVisible = SelectedPicture?.IsDirectory == false && JpegTransformations.IsFileTypeSupported(SelectedPicture.Name);
+                if (IsCropControlVisible)
+                    PreviewZoom = 0;
+            }
         });
         
         public ICommand RotateLeftCommand => new RelayCommand(async o => await RotateSelectedAsync(270));

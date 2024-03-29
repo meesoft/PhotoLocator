@@ -317,10 +317,8 @@ namespace PhotoLocator
                 _viewModel.IsCropControlVisible = false;
             else
             {
-                var scale = Math.Min(PreviewCanvas.ActualWidth / sourceImage.PixelWidth, PreviewCanvas.ActualHeight / sourceImage.PixelHeight);
-                CropGrid.Width = sourceImage.PixelWidth * scale;
-                CropGrid.Height = sourceImage.PixelHeight * scale;
-                CropGrid.Reset(sourceImage.PixelWidth, sourceImage.PixelHeight);
+                var imageScale = Math.Min(PreviewCanvas.ActualWidth / sourceImage.PixelWidth, PreviewCanvas.ActualHeight / sourceImage.PixelHeight);
+                CropGrid.Reset(sourceImage.PixelWidth, sourceImage.PixelHeight, imageScale, _viewModel.Settings.CropWidthHeightRatio);
                 _viewModel.CropControl = CropGrid;
             }
         }
@@ -357,6 +355,8 @@ namespace PhotoLocator
 
         private void HandlePreviewMouseWheel(object sender, MouseWheelEventArgs e)
         {
+            if (_viewModel.IsCropControlVisible)
+                return;
             if (e.Delta > 0)
             {
                 if (Keyboard.Modifiers == ModifierKeys.Control)
