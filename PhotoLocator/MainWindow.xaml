@@ -140,17 +140,20 @@
                         <MenuItem Header="None (Num-)" Command="{Binding DeselectAllCommand}" />
                         <MenuItem Header="Search (Ctrl+F)" Command="{Binding QuickSearchCommand}" />
                     </MenuItem>
+                    <Separator />
                     <MenuItem Header="Open file (Enter)" Command="{Binding ExecuteSelectedCommand}" />
                     <MenuItem Header="Open in Google maps" Command="{Binding OpenInMapsCommand}" />
                     <MenuItem Header="Open Explorer (Ctrl+E)" Command="{Binding ExploreCommand}" />
                     <MenuItem Header="Shell context menu (Shift+right click)" Command="{Binding ShellContextMenuCommand}" />
                     <MenuItem Header="Show metadata" Command="{Binding ShowMetadataCommand}" />
+                    <Separator />
                     <MenuItem Header="Transform jpeg" >
                         <MenuItem Header="Rotate left" Command="{Binding RotateLeftCommand}" />
                         <MenuItem Header="Rotate right" Command="{Binding RotateRightCommand}" />
                         <MenuItem Header="Rotate 180°" Command="{Binding Rotate180Command}" />
                         <MenuItem Header="Crop (Alt-C)" Command="{Binding CropCommand}" IsChecked="{Binding IsCropControlVisible}" />
                     </MenuItem>
+                    <Separator />
                     <MenuItem Header="Rename (F2)" Command="{Binding RenameCommand}" />
                     <MenuItem Header="Move selected (F6)" Command="{Binding MoveSelectedCommand}" />
                     <MenuItem Header="Delete selected (Del)" Command="{Binding DeleteSelectedCommand}" />
@@ -212,6 +215,7 @@
                         <MenuItem Header="100% (Ctrl+2)" IsCheckable="True" Name="Zoom100Item" Command="{Binding Zoom100Command}"/>
                         <MenuItem Header="200% (Ctrl+3)" IsCheckable="True" Name="Zoom200Item" Command="{Binding Zoom200Command}" />
                         <MenuItem Header="400% (Ctrl+4)" IsCheckable="True" Name="Zoom400Item" Command="{Binding Zoom400Command}"  />
+                        <Separator />
                         <MenuItem Header="Transform jpeg" >
                             <MenuItem Header="Rotate left" Command="{Binding RotateLeftCommand}" />
                             <MenuItem Header="Rotate right" Command="{Binding RotateRightCommand}" />

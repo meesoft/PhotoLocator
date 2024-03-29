@@ -780,7 +780,7 @@ namespace PhotoLocator
                         await RunProcessWithProgressBarAsync(progressCallback => Task.Run(() =>
                         {
                             progressCallback(-1);
-                            JpegTransformations.Crop(SelectedPicture.FullPath, CropControl.CropRectangle);
+                            JpegTransformations.Crop(SelectedPicture.FullPath, SelectedPicture.GetProcessedFileName(), CropControl.CropRectangle);
                         }), "Cropping");
                         if (SelectedPicture is not null)
                             SelectItem(SelectedPicture);
@@ -813,7 +813,7 @@ namespace PhotoLocator
                 int i = 0;
                 foreach (var item in allSelected)
                 {
-                    JpegTransformations.Rotate(item.FullPath, angle);
+                    JpegTransformations.Rotate(item.FullPath, item.GetProcessedFileName(), angle);
                     item.IsChecked = false;
                     progressCallback((double)(++i) / allSelected.Length);
                 }

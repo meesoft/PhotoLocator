@@ -15,28 +15,28 @@ namespace PhotoLocator.PictureFileFormats
             return Path.GetExtension(fileName).ToUpperInvariant() is ".JPG" or ".JPEG";
         }
 
-        public static void Rotate(string fileName, int angleDegrees)
+        public static void Rotate(string sourceFileName, string newFileName, int angleDegrees)
         {
-            ProcessFile(fileName, angleDegrees.ToString(CultureInfo.InvariantCulture));
+            ProcessFile(sourceFileName, newFileName, angleDegrees.ToString(CultureInfo.InvariantCulture));
         }
 
-        public static void Crop(string fileName, int left, int top, int width, int height)
+        public static void Crop(string sourceFileName, string newFileName, int left, int top, int width, int height)
         {
-            ProcessFile(fileName, $"{left} {top} {width} {height}");
+            ProcessFile(sourceFileName, newFileName, $"{left} {top} {width} {height}");
         }
 
-        public static void Crop(string fileName, Rect cropRect)
+        public static void Crop(string sourceFileName, string newFileName, Rect cropRect)
         {
-            Crop(fileName, IntMath.Round(cropRect.Left), IntMath.Round(cropRect.Top),
+            Crop(sourceFileName, newFileName, IntMath.Round(cropRect.Left), IntMath.Round(cropRect.Top),
                 Math.Max(1, IntMath.Round(cropRect.Width)), Math.Max(1, IntMath.Round(cropRect.Height)));
         }
 
         private static readonly char[] _lineSeparators = new[] { '\n', '\r' };
 
-        private static void ProcessFile(string fileName, string args)
+        private static void ProcessFile(string sourceFileName, string newFileName, string args)
         {
             var startInfo = new ProcessStartInfo(Path.Combine(Path.GetDirectoryName(typeof(JpegTransformations).Assembly.Location)!, "JpegTransform.exe"),
-                $"\"{fileName}\" \"{fileName}\" {args}");
+                $"\"{sourceFileName}\" \"{newFileName}\" {args}");
             startInfo.CreateNoWindow = true;
             startInfo.RedirectStandardOutput = true;
             startInfo.RedirectStandardError = true;

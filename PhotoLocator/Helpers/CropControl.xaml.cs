@@ -34,12 +34,11 @@ namespace PhotoLocator.Helpers
             Width = _imageWidth * imageScale;
             Height = _imageHeight * imageScale;
             var imageWidthHeightRatio = (double)imageWidth / imageHeight;
-            if (cropWidthHeightRatio > 0) 
+            if (cropWidthHeightRatio > 0 && Math.Abs(cropWidthHeightRatio - imageWidthHeightRatio) > 0.01)
             {
                 _widthHeightRatio = cropWidthHeightRatio;
-                var cropScale = Math.Min(Width / _widthHeightRatio, Height);
-
-                var cropRegionWidth = _widthHeightRatio * cropScale;
+                var cropScale = Math.Min(Width / cropWidthHeightRatio, Height);
+                var cropRegionWidth = cropWidthHeightRatio * cropScale;
                 CropLeftOffset = new((Width - cropRegionWidth) / 2, GridUnitType.Star);
                 CropWidth = new(cropRegionWidth, GridUnitType.Star);
                 CropRightOffset = CropLeftOffset;

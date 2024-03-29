@@ -345,11 +345,8 @@ namespace PhotoLocator
             {
                 await Task.Run(() =>
                 {
-                    var postfix = _settings?.SavedFilePostfix;
-                    var newFileName = string.IsNullOrEmpty(postfix) ? FullPath :
-                        Path.Combine(Path.GetDirectoryName(FullPath)!, Path.GetFileNameWithoutExtension(FullPath)) + postfix + Path.GetExtension(FullPath);
-                    ExifHandler.SetGeotag(FullPath, newFileName, 
-                        GeoTag ?? throw new InvalidOperationException(nameof(GeoTag) + " not set"), 
+                    ExifHandler.SetGeotag(FullPath, GetProcessedFileName(),
+                        GeoTag ?? throw new InvalidOperationException(nameof(GeoTag) + " not set"),
                         _settings?.ExifToolPath);
                 });
                 GeoTagSaved = true;
@@ -362,6 +359,17 @@ namespace PhotoLocator
             {
                 ErrorMessage = ex.ToString();
             }
+        }
+
+        public string GetProcessedFileName()
+        {
+            var postfix = _settings?.SavedFilePostfix;
+            if (string.IsNullOrEmpty(postfix))
+                return FullPath;
+            var baseName = Path.GetFileNameWithoutExtension(Name);
+            if (baseName.EndsWith(postfix, StringComparison.Ordinal))
+                return FullPath;
+            return Path.Combine(Path.GetDirectoryName(FullPath)!, baseName) + postfix + Path.GetExtension(Name);
         }
 
         public async Task RenameAsync(string newName, string newFullPath, bool renameSidecar)
