@@ -7,7 +7,7 @@
              mc:Ignorable="d" 
              PreviewMouseDown="HandleMouseDown" PreviewMouseUp="HandleMouseUp" PreviewMouseMove="HandleMouseMove"
              d:DataContext="{d:DesignInstance Type=local:CropControl, IsDesignTimeCreatable=True}"
-             d:DesignHeight="450" d:DesignWidth="800">
+             d:DesignHeight="450" d:DesignWidth="800" UseLayoutRounding="True">
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Name="TopRow" Height="{Binding CropTopOffset, Mode=TwoWay}"/>
@@ -23,6 +23,22 @@
         <Rectangle Grid.Column="0" Grid.Row="1" Fill="#7F000000"/>
         <Rectangle Grid.Column="0" Grid.Row="2" Fill="#7F000000"/>
         <Rectangle Grid.Column="1" Grid.Row="0" Fill="#7F000000"/>
+        <Grid Grid.Column="1" Grid.Row="1" >
+            <Grid.RowDefinitions>
+                <RowDefinition Height="0.382*"/>
+                <RowDefinition Height="0.236*"/>
+                <RowDefinition Height="0.382*"/>
+            </Grid.RowDefinitions>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="0.382*"/>
+                <ColumnDefinition Width="0.236*"/>
+                <ColumnDefinition Width="0.382*"/>
+            </Grid.ColumnDefinitions>
+            <Rectangle Grid.Row="1" Grid.ColumnSpan="3" VerticalAlignment="Top" Fill="#7F000000" Height="1" />
+            <Rectangle Grid.Row="1" Grid.ColumnSpan="3" VerticalAlignment="Bottom" Fill="#7F000000" Height="1" />
+            <Rectangle Grid.Column="1" Grid.RowSpan="3" HorizontalAlignment="Left" Fill="#7F000000" Width="1" />
+            <Rectangle Grid.Column="1" Grid.RowSpan="3" HorizontalAlignment="Right" Fill="#7F000000" Width="1" />
+        </Grid>
         <Rectangle Grid.Column="1" Grid.Row="1" Fill="#01000000" Cursor="SizeAll" Tag="Move" />
         <Rectangle Grid.Column="1" Grid.Row="2" Fill="#7F000000"/>
         <Rectangle Grid.Column="2" Grid.Row="0" Fill="#7F000000"/>

@@ -781,6 +781,7 @@ namespace PhotoLocator
                         {
                             progressCallback(-1);
                             JpegTransformations.Crop(SelectedPicture.FullPath, SelectedPicture.GetProcessedFileName(), CropControl.CropRectangle);
+                            SelectedPicture.Rotation = Rotation.Rotate0;
                         }), "Cropping");
                         if (SelectedPicture is not null)
                             SelectItem(SelectedPicture);
@@ -814,6 +815,7 @@ namespace PhotoLocator
                 foreach (var item in allSelected)
                 {
                     JpegTransformations.Rotate(item.FullPath, item.GetProcessedFileName(), angle);
+                    item.Rotation = Rotation.Rotate0;
                     item.IsChecked = false;
                     progressCallback((double)(++i) / allSelected.Length);
                 }
