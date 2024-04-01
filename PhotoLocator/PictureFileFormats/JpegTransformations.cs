@@ -43,11 +43,12 @@ namespace PhotoLocator.PictureFileFormats
             var process = Process.Start(startInfo) ?? throw new IOException("Failed to start JpegTransform");
             if (!process.WaitForExit(60000))
                 throw new TimeoutException();
-            //if (process.ExitCode != 0)
-            var output = process.StandardOutput.ReadToEnd() + '\n' + process.StandardError.ReadToEnd();
-            var lines = output.Split(_lineSeparators, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.RemoveEmptyEntries);
-            if (lines.Length > 0)
-                throw new UserMessageException(lines.Last());
+            if (process.ExitCode != 0)
+            {
+                var output = process.StandardOutput.ReadToEnd();
+                var lines = output.Split(_lineSeparators, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+                throw new UserMessageException(lines.First());
+            }
         }      
     }
 }

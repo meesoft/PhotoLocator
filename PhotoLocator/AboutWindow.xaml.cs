@@ -61,7 +61,12 @@ namespace PhotoLocator
                 text.AppendLine("____");
                 using var contextMenuLicenseStream = new StreamReader(typeof(AboutWindow).Assembly.GetManifestResourceStream(
                     "PhotoLocator.Resources.ExplorerShellContextMenuLicense.txt")!, Encoding.Latin1);
-                text.AppendLine(contextMenuLicenseStream.ReadToEnd());                
+                text.AppendLine(contextMenuLicenseStream.ReadToEnd());
+                text.AppendLine();
+                text.AppendLine("____");
+                using var jpegTransformLicenseStream = new StreamReader(typeof(AboutWindow).Assembly.GetManifestResourceStream(
+                    "PhotoLocator.Resources.JpegTransformLicense.txt")!, Encoding.Latin1);
+                text.AppendLine(jpegTransformLicenseStream.ReadToEnd());
 
                 return text.ToString();
             }

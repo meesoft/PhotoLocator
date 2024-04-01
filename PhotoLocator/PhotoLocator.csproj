@@ -41,4 +41,13 @@
 	</AssemblyAttribute>
   </ItemGroup>
 
+  <ItemGroup>
+    <EmbeddedResource Include="..\JpegTransform\JpegTransformLicense.txt" Link="Resources\JpegTransformLicense.txt" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="..\JpegTransform\JpegTransform.exe" Link="JpegTransform.exe">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
 </Project>
