@@ -39,7 +39,6 @@ namespace PhotoLocator.PictureFileFormats
                 $"\"{sourceFileName}\" \"{newFileName}\" {args}");
             startInfo.CreateNoWindow = true;
             startInfo.RedirectStandardOutput = true;
-            startInfo.RedirectStandardError = true;
             var process = Process.Start(startInfo) ?? throw new IOException("Failed to start JpegTransform");
             if (!process.WaitForExit(60000))
                 throw new TimeoutException();
