@@ -85,6 +85,7 @@ namespace PhotoLocator.Settings
             get => (BitmapScalingMode)(Key.GetValue(nameof(BitmapScalingMode)) as int? ?? (int)BitmapScalingMode.Linear);
             set => Key.SetValue(nameof(BitmapScalingMode), (int)value);
         }
+
         public ResamplingOptions ResamplingOptions
         {
             get => (ResamplingOptions)(Key.GetValue(nameof(ResamplingOptions)) as int? ?? (int)ResamplingOptions.LanczosUpscaling);
@@ -107,6 +108,18 @@ namespace PhotoLocator.Settings
         {
             get => Key.GetValue(nameof(RenameMasks)) as string ?? "|DT| [|*:4|]|ext|";
             set => Key.SetValue(nameof(RenameMasks), value);
+        }
+
+        public int CropRatioNominator
+        {
+            get => Key.GetValue(nameof(CropRatioNominator)) as int? ?? 0;
+            set => Key.SetValue(nameof(CropRatioNominator), value);
+        }
+
+        public int CropRatioDenominator
+        {
+            get => Key.GetValue(nameof(CropRatioDenominator)) as int? ?? 0;
+            set => Key.SetValue(nameof(CropRatioDenominator), value);
         }
 
         public void Dispose()

@@ -1,0 +1,7 @@
+JpegTransform command line utility was written by Michael Vinther
+
+JpegEx was created by Gabriel Corneanu
+
+This software is based, in part, on the work of Gerry McGuire.
+
+FastMM4 was created by Pierre le Riche and is licensed under Mozilla Public License 1.1.

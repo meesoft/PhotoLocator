@@ -29,5 +29,9 @@ namespace PhotoLocator.Settings
         BitmapScalingMode BitmapScalingMode { get; set; }
 
         ResamplingOptions ResamplingOptions { get; set; }
+
+        int CropRatioNominator { get; set; }
+
+        int CropRatioDenominator { get; set; }
     }
 }

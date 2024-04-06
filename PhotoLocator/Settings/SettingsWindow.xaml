@@ -31,6 +31,8 @@
             <RowDefinition Height="35"/>
             <RowDefinition Height="35"/>
             <RowDefinition Height="20"/>
+            <RowDefinition Height="25"/>
+            <RowDefinition Height="20"/>
             <RowDefinition Height="20"/>
         </Grid.RowDefinitions>
 
@@ -75,7 +77,21 @@
 
         <CheckBox Grid.Row="12" Content="Rename and delete sidecar files" IsChecked="{Binding IncludeSidecarFiles}" VerticalAlignment="Center" />
 
-        <StackPanel Grid.Row="14" Orientation="Horizontal" HorizontalAlignment="Right">
+        <TextBlock Grid.Row="13" Foreground="#FFEEEEEE" VerticalAlignment="Bottom" 
+                   Text="Default crop ratio (0 for none):" />
+        <Grid Grid.Row="14">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="70"/>
+                <ColumnDefinition Width="20"/>
+                <ColumnDefinition Width="70"/>
+                <ColumnDefinition/>
+            </Grid.ColumnDefinitions>
+            <TextBox Grid.Column="0" Text="{Binding CropRatioNominator}"/>
+            <TextBlock Grid.Column="1" Foreground="#FFEEEEEE" Text="/" HorizontalAlignment="Center"/>
+            <TextBox Grid.Column="2" Text="{Binding CropRatioDenominator}"/>
+        </Grid>
+
+        <StackPanel Grid.Row="16" Orientation="Horizontal" HorizontalAlignment="Right">
             <Button Content="Save" Width="80" Click="HandleOkButtonClick" IsDefault="True" Name="OkButton" />
             <Button Content="Cancel" Margin="10,0,0,0" Width="80" IsCancel="True" />
         </StackPanel>

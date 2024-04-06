@@ -51,5 +51,7 @@ The source code is available at https://github.com/meesoft/PhotoLocator
 
 Released binaries will be made available at http://meesoft.com/PhotoLocator
 
+Note that the source code for JpegTransform will not build. It is only included to document the command line interface.
+
 ## License
 [Ms-PL](LICENSE)

@@ -95,5 +95,21 @@ namespace PhotoLocator.Settings
                 ? _resamplingOptions | ResamplingOptions.LanczosDownscaling
                 : _resamplingOptions & ~ResamplingOptions.LanczosDownscaling);
         }
+
+        public int CropRatioNominator
+        {
+            get => _cropRatioNominator;
+            set => SetProperty(ref _cropRatioNominator, value);
+        }
+        int _cropRatioNominator;
+
+        public int CropRatioDenominator
+        {
+            get => _cropRatioDenominator;
+            set => SetProperty(ref _cropRatioDenominator, value);
+        }
+        int _cropRatioDenominator;
+
+        public double CropWidthHeightRatio => CropRatioDenominator > 0 ? (double)CropRatioNominator / CropRatioDenominator : 0;
     }
 }
