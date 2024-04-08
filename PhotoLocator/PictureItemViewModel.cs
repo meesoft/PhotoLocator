@@ -418,6 +418,13 @@ namespace PhotoLocator
             Name = Path.GetFileName(newFullPath);
         }
 
+        internal void CopyTo(string destination)
+        {
+            if (IsDirectory)
+                throw new UserMessageException("Copying directories is not supported");
+            File.Copy(FullPath, destination);
+        }
+
         internal void MoveTo(string destination)
         {
             if (IsDirectory)

@@ -224,14 +224,13 @@ namespace PhotoLocator
             get => _selectedPicture;
             set
             {
-                if (SetProperty(ref _selectedPicture, value))
-                {
-                    if (value?.GeoTag != null)
-                        MapCenter = value.GeoTag;
-                    UpdatePushpins();
-                    UpdatePoints();
-                    UpdatePreviewPictureAsync().WithExceptionLogging();
-                }
+                if (!SetProperty(ref _selectedPicture, value))
+                    return;
+                if (value?.GeoTag != null)
+                    MapCenter = value.GeoTag;
+                UpdatePushpins();
+                UpdatePoints();
+                UpdatePreviewPictureAsync().WithExceptionLogging();
             }
         }
         private PictureItemViewModel? _selectedPicture;
@@ -623,11 +622,8 @@ namespace PhotoLocator
                 (Settings.IncludeSidecarFiles ? "\nSidecar files will be included." : string.Empty), 
                 "Confirm", MessageBoxButton.OKCancel, MessageBoxImage.Question) != MessageBoxResult.OK)
                 return;
-
             var selectedIndex = Pictures.IndexOf(SelectedPicture!);
             SelectedPicture = null;
-            PreviewPictureSource = null;
-            PreviewPictureTitle = null;
             await RunProcessWithProgressBarAsync(progressCallback => Task.Run(() =>
             {
                 int i = 0;
@@ -642,26 +638,52 @@ namespace PhotoLocator
                 SelectItem(focusedItem);
         });
 
-        public ICommand MoveSelectedCommand => new RelayCommand(o =>
+        public ICommand CopySelectedCommand => new RelayCommand(async o =>
         {
             var focusedItem = SelectedPicture;
             var allSelected = GetSelectedItems().ToArray();
             if (allSelected.Length == 0)
                 return;
             focusedItem = GetNearestUnchecked(focusedItem, allSelected);
-            var destination = Interaction.InputBox($"Move {allSelected.Length} selected item(s).\n\nDestination:", "Confirm", (PhotoFolderPath ?? string.Empty).Trim('\\'));
+            var destination = Interaction.InputBox($"Copy {allSelected.Length} selected item(s).\n\nDestination:", "Copy files", (PhotoFolderPath ?? string.Empty).Trim('\\'));
             if (string.IsNullOrEmpty(destination) || destination == PhotoFolderPath || destination == ".")
                 return;
-            using var cursor = new CursorOverride();
-            SelectedPicture = null;
-            PreviewPictureSource = null;
-            PreviewPictureTitle = null;
-            Directory.SetCurrentDirectory(Path.GetDirectoryName(allSelected[0].FullPath)!);
-            foreach (var item in allSelected)
+            await RunProcessWithProgressBarAsync(progressCallback => Task.Run(() =>
             {
-                item.MoveTo(Path.Combine(destination, item.Name));
-                Pictures.Remove(item);
-            }
+                Directory.SetCurrentDirectory(Path.GetDirectoryName(allSelected[0].FullPath)!);
+                int i = 0;
+                foreach (var item in allSelected)
+                {
+                    item.CopyTo(Path.Combine(destination, item.Name));
+                    progressCallback((double)(++i) / allSelected.Length);
+                }
+            }), "Copying...");
+            if (focusedItem != null)
+                SelectItem(focusedItem);
+        });
+
+        public ICommand MoveSelectedCommand => new RelayCommand(async o =>
+        {
+            var focusedItem = SelectedPicture;
+            var allSelected = GetSelectedItems().ToArray();
+            if (allSelected.Length == 0)
+                return;
+            focusedItem = GetNearestUnchecked(focusedItem, allSelected);
+            var destination = Interaction.InputBox($"Move {allSelected.Length} selected item(s).\n\nDestination:", "Move files", (PhotoFolderPath ?? string.Empty).Trim('\\'));
+            if (string.IsNullOrEmpty(destination) || destination == PhotoFolderPath || destination == ".")
+                return;
+            SelectedPicture = null;
+            await RunProcessWithProgressBarAsync(progressCallback => Task.Run(() =>
+            {
+                Directory.SetCurrentDirectory(Path.GetDirectoryName(allSelected[0].FullPath)!);
+                int i = 0;
+                foreach (var item in allSelected)
+                {
+                    item.MoveTo(Path.Combine(destination, item.Name));
+                    Application.Current.Dispatcher.Invoke(() => Pictures.Remove(item));
+                    progressCallback((double)(++i) / allSelected.Length);
+                }
+            }), "Moving...");
             if (focusedItem != null)
                 SelectItem(focusedItem);
         });
