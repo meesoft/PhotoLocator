@@ -39,7 +39,8 @@
         <KeyBinding Key="F1" Command="{Binding AboutCommand}" />
         <KeyBinding Key="F2" Command="{Binding RenameCommand}" />
         <KeyBinding Key="F3" Command="{Binding SlideShowCommand}" />
-        <KeyBinding Key="F5" Command="{Binding RefreshFolderCommand}" />
+        <KeyBinding Key="F5" Command="{Binding CopySelectedCommand}" />
+        <KeyBinding Key="F5" Modifiers="Ctrl" Command="{Binding RefreshFolderCommand}" />
         <KeyBinding Key="F6" Command="{Binding MoveSelectedCommand}" />
         <KeyBinding Key="F7" Command="{Binding CreateFolderCommand}" />
         <KeyBinding Key="F11" Command="{Binding SlideShowCommand}" />
@@ -155,7 +156,7 @@
                     </MenuItem>
                     <Separator />
                     <MenuItem Header="Rename (F2)" Command="{Binding RenameCommand}" />
-                    <MenuItem Header="Copy selected" Command="{Binding CopySelectedCommand}" />
+                    <MenuItem Header="Copy selected (F5)" Command="{Binding CopySelectedCommand}" />
                     <MenuItem Header="Move selected (F6)" Command="{Binding MoveSelectedCommand}" />
                     <MenuItem Header="Delete selected (Del)" Command="{Binding DeleteSelectedCommand}" />
                     <MenuItem Header="Copy path to clipboard" Command="{Binding CopyPathCommand}" />
