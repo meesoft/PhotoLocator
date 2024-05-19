@@ -816,7 +816,9 @@ namespace PhotoLocator
             }
             else
             {
-                IsCropControlVisible = SelectedPicture?.IsDirectory == false && JpegTransformations.IsFileTypeSupported(SelectedPicture.Name);
+                if (SelectedPicture is null || SelectedPicture.IsDirectory || !JpegTransformations.IsFileTypeSupported(SelectedPicture.Name))
+                    throw new UserMessageException("Unsupported file format");
+                IsCropControlVisible = true;
                 if (IsCropControlVisible)
                     PreviewZoom = 0;
             }
@@ -831,6 +833,8 @@ namespace PhotoLocator
         private async Task RotateSelectedAsync(int angle)
         {
             var allSelected = GetSelectedItems().Where(item => item.IsFile && JpegTransformations.IsFileTypeSupported(item.Name)).ToArray();
+            if (allSelected.Length == 0)
+                throw new UserMessageException("Unsupported file format");
             await RunProcessWithProgressBarAsync(progressCallback => Task.Run(() =>
             {
                 int i = 0;

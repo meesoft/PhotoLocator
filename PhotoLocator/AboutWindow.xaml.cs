@@ -37,9 +37,9 @@ namespace PhotoLocator
             get
             {
                 var text = new StringBuilder();
-                using var popimsLicenseStream = new StreamReader(typeof(AboutWindow).Assembly.GetManifestResourceStream(
+                using var licenseStream = new StreamReader(typeof(AboutWindow).Assembly.GetManifestResourceStream(
                     "PhotoLocator.Resources.LICENSE")!, Encoding.Latin1);
-                text.AppendLine(popimsLicenseStream.ReadToEnd());
+                text.AppendLine(licenseStream.ReadToEnd());
                 text.AppendLine();
                 text.AppendLine("Third party open source licenses:");
                 text.AppendLine();
