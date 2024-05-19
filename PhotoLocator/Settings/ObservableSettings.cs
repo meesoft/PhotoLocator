@@ -52,6 +52,13 @@ namespace PhotoLocator.Settings
         }
         string? _exifToolPath;
 
+        public string? FFmpegPath
+        {
+            get => _ffmpegPath;
+            set => SetProperty(ref _ffmpegPath, value);
+        }
+        string? _ffmpegPath;
+
         public int SlideShowInterval
         {
             get => _slideShowInterval;

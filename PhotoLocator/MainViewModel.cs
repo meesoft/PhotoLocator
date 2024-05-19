@@ -27,7 +27,7 @@ using System.Windows.Threading;
 
 namespace PhotoLocator
 {
-    public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
+    public sealed class MainViewModel : INotifyPropertyChanged, IDisposable, IMainViewModel
     {
 #if DEBUG
         static readonly bool _isInDesignMode = DesignerProperties.GetIsInDesignMode(new DependencyObject());
@@ -40,7 +40,7 @@ namespace PhotoLocator
         CancellationTokenSource? _previewCancellation;
         FileSystemWatcher? _fileSystemWatcher;
         bool _titleUpdatePending;
-        readonly List <(string Path, BitmapSource Picture)> _pictureCache = new ();
+        readonly List<(string Path, BitmapSource Picture)> _pictureCache = new();
 
         public event PropertyChangedEventHandler? PropertyChanged;
 
@@ -107,8 +107,9 @@ namespace PhotoLocator
         private bool _isWindowEnabled = true;
 
         public IEnumerable<string> PhotoFileExtensions { get; set; } = Enumerable.Empty<string>();
-       
+
         public ObservableSettings Settings { get; }
+        ISettings IMainViewModel.Settings => Settings;
 
         public string? PhotoFolderPath
         {
@@ -191,10 +192,10 @@ namespace PhotoLocator
         public GridLength PreviewRowHeight { get => _previewRowHeight; set => SetProperty(ref _previewRowHeight, value); }
         private GridLength _previewRowHeight = new(0, GridUnitType.Star);
 
-        public BitmapSource? PreviewPictureSource 
-        { 
-            get => _previewPictureSource; 
-            set 
+        public BitmapSource? PreviewPictureSource
+        {
+            get => _previewPictureSource;
+            set
             {
                 if (SetProperty(ref _previewPictureSource, value))
                     IsCropControlVisible = false;
@@ -206,14 +207,14 @@ namespace PhotoLocator
         private string? _previewPictureTitle;
 
         /// <summary> Zoom level or 0 for auto </summary>
-        public int PreviewZoom 
-        { 
+        public int PreviewZoom
+        {
             get => _previewZoom;
             set
             {
                 if (SetProperty(ref _previewZoom, value) && value > 0)
                     IsCropControlVisible = false;
-            } 
+            }
         }
         private int _previewZoom;
 
@@ -370,7 +371,7 @@ namespace PhotoLocator
             var autoTagWin = new AutoTagWindow();
             using var registrySettings = new RegistrySettings();
             var autoTagViewModel = new AutoTagViewModel(Pictures, selectedItems, Polylines,
-                () => { autoTagWin.DialogResult = true; }, 
+                () => { autoTagWin.DialogResult = true; },
                 registrySettings);
             autoTagWin.Owner = App.Current.MainWindow;
             autoTagWin.DataContext = autoTagViewModel;
@@ -406,7 +407,7 @@ namespace PhotoLocator
             MapCenter = SavedLocation;
         });
 
-        async Task RunProcessWithProgressBarAsync(Func<Action<double>, Task> body, string text)
+        public async Task RunProcessWithProgressBarAsync(Func<Action<double>, Task> body, string text)
         {
             using var cursor = new CursorOverride();
             ProgressBarIsIndeterminate = false;
@@ -618,8 +619,8 @@ namespace PhotoLocator
             if (allSelected.Length == 0)
                 return;
             focusedItem = GetNearestUnchecked(focusedItem, allSelected);
-            if (MessageBox.Show($"Delete {allSelected.Length} selected item(s)?" + 
-                (Settings.IncludeSidecarFiles ? "\nSidecar files will be included." : string.Empty), 
+            if (MessageBox.Show($"Delete {allSelected.Length} selected item(s)?" +
+                (Settings.IncludeSidecarFiles ? "\nSidecar files will be included." : string.Empty),
                 "Confirm", MessageBoxButton.OKCancel, MessageBoxImage.Question) != MessageBoxResult.OK)
                 return;
             var selectedIndex = Pictures.IndexOf(SelectedPicture!);
@@ -796,18 +797,17 @@ namespace PhotoLocator
             {
                 try
                 {
-                    if (SelectedPicture is not null && CropControl is not null && (o is true ||
-                        MessageBox.Show("Crop to selection?", "Crop", MessageBoxButton.OKCancel, MessageBoxImage.Question) == MessageBoxResult.OK))
+                    if (SelectedPicture is null || CropControl is null || o is not true &&
+                        MessageBox.Show("Crop to selection?", "Crop", MessageBoxButton.OKCancel, MessageBoxImage.Question) != MessageBoxResult.OK)
+                        return;
+                    await RunProcessWithProgressBarAsync(progressCallback => Task.Run(() =>
                     {
-                        await RunProcessWithProgressBarAsync(progressCallback => Task.Run(() =>
-                        {
-                            progressCallback(-1);
-                            JpegTransformations.Crop(SelectedPicture.FullPath, SelectedPicture.GetProcessedFileName(), CropControl.CropRectangle);
-                            SelectedPicture.Rotation = Rotation.Rotate0;
-                        }), "Cropping");
-                        if (SelectedPicture is not null)
-                            SelectItem(SelectedPicture);
-                    }
+                        progressCallback(-1);
+                        JpegTransformations.Crop(SelectedPicture.FullPath, SelectedPicture.GetProcessedFileName(), CropControl.CropRectangle);
+                        SelectedPicture.Rotation = Rotation.Rotate0;
+                    }), "Cropping");
+                    if (SelectedPicture is not null)
+                        SelectItem(SelectedPicture);
                 }
                 finally
                 {
@@ -823,30 +823,10 @@ namespace PhotoLocator
                     PreviewZoom = 0;
             }
         });
-        
-        public ICommand RotateLeftCommand => new RelayCommand(async o => await RotateSelectedAsync(270));
 
-        public ICommand RotateRightCommand => new RelayCommand(async o => await RotateSelectedAsync(90));
+        public JpegTransformCommands JpegTransformCommands => new(this);
 
-        public ICommand Rotate180Command => new RelayCommand(async o => await RotateSelectedAsync(180));
-
-        private async Task RotateSelectedAsync(int angle)
-        {
-            var allSelected = GetSelectedItems().Where(item => item.IsFile && JpegTransformations.IsFileTypeSupported(item.Name)).ToArray();
-            if (allSelected.Length == 0)
-                throw new UserMessageException("Unsupported file format");
-            await RunProcessWithProgressBarAsync(progressCallback => Task.Run(() =>
-            {
-                int i = 0;
-                foreach (var item in allSelected)
-                {
-                    JpegTransformations.Rotate(item.FullPath, item.GetProcessedFileName(), angle);
-                    item.Rotation = Rotation.Rotate0;
-                    item.IsChecked = false;
-                    progressCallback((double)(++i) / allSelected.Length);
-                }
-            }), "Rotating...");
-        }
+        public VideoTransformCommands VideoTransformCommands => new(this);
 
         private async Task LoadFolderContentsAsync(bool keepSelection, string? selectItemFullPath = null)
         {
@@ -922,7 +902,7 @@ namespace PhotoLocator
                     var removed = Pictures.FirstOrDefault(item => item.FullPath == e.FullPath);
                     if (removed != null)
                         Pictures.Remove(removed);
-                    }
+                }
                 else if (e.ChangeType is WatcherChangeTypes.Created or WatcherChangeTypes.Renamed)
                 {
                     await Task.Delay(1000);

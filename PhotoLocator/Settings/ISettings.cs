@@ -22,6 +22,8 @@ namespace PhotoLocator.Settings
 
         string? ExifToolPath { get; set; }
 
+        string? FFmpegPath { get; set; }
+
         int SlideShowInterval { get; set; }
 
         bool ShowMetadataInSlideShow { get; set; }

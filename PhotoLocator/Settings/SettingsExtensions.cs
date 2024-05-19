@@ -11,6 +11,7 @@ namespace PhotoLocator.Settings
             target.IncludeSidecarFiles = source.IncludeSidecarFiles;
             target.SavedFilePostfix = source.SavedFilePostfix;
             target.ExifToolPath = source.ExifToolPath;
+            target.FFmpegPath = source.FFmpegPath;
             target.SlideShowInterval = source.SlideShowInterval;
             target.BitmapScalingMode = source.BitmapScalingMode;
             target.ResamplingOptions = source.ResamplingOptions;

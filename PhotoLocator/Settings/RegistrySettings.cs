@@ -62,6 +62,12 @@ namespace PhotoLocator.Settings
             set => Key.SetValue(nameof(ExifToolPath), value ?? string.Empty);
         }
 
+        public string? FFmpegPath
+        {
+            get => Key.GetValue(nameof(FFmpegPath)) as string;
+            set => Key.SetValue(nameof(FFmpegPath), value ?? string.Empty);
+        }
+
         public string? SelectedLayer
         {
             get => Key.GetValue(nameof(SelectedLayer)) as string;
