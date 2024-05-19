@@ -119,10 +119,11 @@ namespace PhotoLocator.Metadata
             startInfo.RedirectStandardOutput = true;
             startInfo.RedirectStandardError = true;
             var process = Process.Start(startInfo) ?? throw new IOException("Failed to start ExifTool");
+            var output = process.StandardOutput.ReadToEnd() + '\n' + process.StandardError.ReadToEnd();  // We must read before waiting
             if (!process.WaitForExit(60000))
                 throw new TimeoutException();
             if (process.ExitCode != 0)
-                throw new UserMessageException(process.StandardOutput.ReadToEnd() + '\n' + process.StandardError.ReadToEnd());
+                throw new UserMessageException(output);
         }
 
         private static void CheckPixels(BitmapFrame frame1, BitmapFrame frame2)

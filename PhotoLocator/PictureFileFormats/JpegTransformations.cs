@@ -40,14 +40,14 @@ namespace PhotoLocator.PictureFileFormats
             startInfo.CreateNoWindow = true;
             startInfo.RedirectStandardOutput = true;
             var process = Process.Start(startInfo) ?? throw new IOException("Failed to start JpegTransform");
+            var output = process.StandardOutput.ReadToEnd(); // We must read before waiting
             if (!process.WaitForExit(60000))
                 throw new TimeoutException();
             if (process.ExitCode != 0)
             {
-                var output = process.StandardOutput.ReadToEnd();
                 var lines = output.Split(_lineSeparators, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
                 throw new UserMessageException(lines.First());
             }
-        }      
+        }
     }
 }
