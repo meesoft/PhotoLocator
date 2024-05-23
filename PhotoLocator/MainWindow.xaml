@@ -156,7 +156,9 @@
                     </MenuItem>
                     <MenuItem Header="Transform video" >
                         <MenuItem Header="Extract frames" Command="{Binding VideoTransformCommands.ExtractFrames}" />
-                        <MenuItem Header="Stabilize" Command="{Binding VideoTransformCommands.Stabilize}" />
+                        <MenuItem Header="Stabilize and extract frames" Command="{Binding VideoTransformCommands.StabilizeAndExtract}" />
+                        <MenuItem Header="Stabilize video" Command="{Binding VideoTransformCommands.Stabilize}" />
+                        <MenuItem Header="Combine images or videos" Command="{Binding VideoTransformCommands.Combine}" />
                     </MenuItem>
                     <Separator />
                     <MenuItem Header="Rename (F2)" Command="{Binding RenameCommand}" />
