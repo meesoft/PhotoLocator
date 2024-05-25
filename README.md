@@ -32,6 +32,9 @@ Note that it is possible to use Chrome's full screen cast feature to display the
 
 ![Screenshot](./SlideshowScreenshot.jpg)
 
+## Lossless JPEG crop and rotation
+JPEG images can be cropped and rotated without transcoding loss
+
 ## Troubleshooting
 * If PhotoLocator cannot start, you need to install the .NET 6 Desktop Runtime.
 

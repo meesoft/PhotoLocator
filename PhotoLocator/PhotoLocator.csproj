@@ -6,8 +6,8 @@
     <Nullable>enable</Nullable>
     <UseWPF>true</UseWPF>
     <ApplicationManifest>app.manifest</ApplicationManifest>
-	<Version>2023.10.03.0</Version>
-	<Copyright>(c) 2022-2023 Michael Vinther</Copyright>
+	<Version>2024.5.25.0</Version>
+	<Copyright>(c) 2022-2024 Michael Vinther</Copyright>
 	<Company>MeeSoft</Company>
 	<ApplicationIcon>Resources\PhotoLocator.ico</ApplicationIcon>
 	<EnableNETAnalyzers>true</EnableNETAnalyzers>
