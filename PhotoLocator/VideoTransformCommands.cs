@@ -132,6 +132,8 @@ namespace PhotoLocator
             }, "Processing");
         });
 
+        //https://stackoverflow.com/questions/52303867/how-do-i-set-ffmpeg-pipe-output
+
         private async Task ProcessFileAsync(string args, bool redirectStandardError = false)
         {
             if (string.IsNullOrEmpty(_mainViewModel.Settings.FFmpegPath))

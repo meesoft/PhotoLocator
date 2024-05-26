@@ -22,7 +22,7 @@ namespace PhotoLocator
 
         public ICommand Rotate180Command => new RelayCommand(async o => await RotateSelectedAsync(180));
 
-        private async Task RotateSelectedAsync(int angle) //TODO: Make async
+        private async Task RotateSelectedAsync(int angle)
         {
             var allSelected = _mainViewModel.GetSelectedItems().Where(item => item.IsFile && JpegTransformations.IsFileTypeSupported(item.Name)).ToArray();
             if (allSelected.Length == 0)
@@ -32,7 +32,7 @@ namespace PhotoLocator
                 int i = 0;
                 foreach (var item in allSelected)
                 {
-                    JpegTransformations.Rotate(item.FullPath, item.GetProcessedFileName(), angle);
+                    JpegTransformations.Rotate(item.FullPath, item.GetProcessedFileName(), angle); //TODO: Make async
                     item.Rotation = Rotation.Rotate0;
                     item.IsChecked = false;
                     progressCallback((double)(++i) / allSelected.Length);
