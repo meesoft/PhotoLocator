@@ -159,6 +159,7 @@
                         <MenuItem Header="Stabilize and extract frames" Command="{Binding VideoTransformCommands.StabilizeAndExtract}" />
                         <MenuItem Header="Stabilize video" Command="{Binding VideoTransformCommands.Stabilize}" />
                         <MenuItem Header="Combine images or videos" Command="{Binding VideoTransformCommands.Combine}" />
+                        <MenuItem Header="Calculate frame max" Command="{Binding VideoTransformCommands.CalcMax}" />
                     </MenuItem>
                     <Separator />
                     <MenuItem Header="Rename (F2)" Command="{Binding RenameCommand}" />

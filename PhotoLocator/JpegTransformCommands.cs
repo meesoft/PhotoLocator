@@ -29,6 +29,7 @@ namespace PhotoLocator
                 throw new UserMessageException("Unsupported file format");
             await _mainViewModel.RunProcessWithProgressBarAsync(progressCallback => Task.Run(() =>
             {
+                progressCallback(-1);
                 int i = 0;
                 foreach (var item in allSelected)
                 {

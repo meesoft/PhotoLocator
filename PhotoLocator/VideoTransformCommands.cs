@@ -1,21 +1,26 @@
-﻿using Microsoft.VisualBasic;
+﻿using MapControl;
+using Microsoft.VisualBasic;
 using Microsoft.Win32;
 using PhotoLocator.Helpers;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+using System.Windows;
 using System.Windows.Input;
+using System.Windows.Media.Imaging;
 
 namespace PhotoLocator
 {
     public class VideoTransformCommands
     {
-        private readonly IMainViewModel _mainViewModel;
+        readonly IMainViewModel _mainViewModel;
+        readonly VideoTransforms _videoTransforms;
 
         public VideoTransformCommands(IMainViewModel mainViewModel)
         {
             _mainViewModel = mainViewModel;
+            _videoTransforms = new VideoTransforms(mainViewModel.Settings);
         }
 
         public ICommand ExtractFrames => new RelayCommand(async o =>
@@ -31,7 +36,7 @@ namespace PhotoLocator
             {
                 progressCallback(-1);
                 Directory.CreateDirectory(Path.GetDirectoryName(outPath)!);
-                await ProcessFileAsync($"-i \"{inPath}\" \"{outPath}\"");
+                await _videoTransforms.RunFFmpegAsync($"-i \"{inPath}\" \"{outPath}\"");
             }, "Processing");
         });
 
@@ -62,8 +67,8 @@ namespace PhotoLocator
                 Directory.CreateDirectory(Path.GetDirectoryName(outPath)!);
                 File.Delete(outPath);
                 Directory.SetCurrentDirectory(Path.GetDirectoryName(inPath)!);
-                await ProcessFileAsync($"-i \"{inPath}\" -vf vidstabdetect=shakiness=7 -f null -");
-                await ProcessFileAsync($"-i \"{inPath}\" {vfArgs} \"{outPath}\"");
+                await _videoTransforms.RunFFmpegAsync($"-i \"{inPath}\" -vf vidstabdetect=shakiness=7 -f null -");
+                await _videoTransforms.RunFFmpegAsync($"-i \"{inPath}\" {vfArgs} \"{outPath}\"");
                 File.Delete("transforms.trf");
             }, "Processing");
         });
@@ -90,8 +95,8 @@ namespace PhotoLocator
                 Directory.CreateDirectory(Path.GetDirectoryName(outPath)!);
                 File.Delete(outPath);
                 Directory.SetCurrentDirectory(Path.GetDirectoryName(inPath)!);
-                await ProcessFileAsync($"-i \"{inPath}\" -vf vidstabdetect=shakiness=7 -f null -");
-                await ProcessFileAsync($"-i \"{inPath}\" {vfArgs} \"{outPath}\"");
+                await _videoTransforms.RunFFmpegAsync($"-i \"{inPath}\" -vf vidstabdetect=shakiness=7 -f null -");
+                await _videoTransforms.RunFFmpegAsync($"-i \"{inPath}\" {vfArgs} \"{outPath}\"");
                 File.Delete("transforms.trf");
             }, "Processing");
         });
@@ -126,29 +131,48 @@ namespace PhotoLocator
                 Directory.CreateDirectory(Path.GetDirectoryName(outPath)!);
                 File.Delete(outPath);
                 Directory.SetCurrentDirectory(Path.GetDirectoryName(allSelected[0].FullPath)!);
-                File.WriteAllLines(inputFileName, allSelected.Select(f => $"file '{f.Name}'"));
-                await ProcessFileAsync($"-f concat -safe 0 -i {inputFileName} {args} \"{outPath}\"");
+                await File.WriteAllLinesAsync(inputFileName, allSelected.Select(f => $"file '{f.Name}'"));
+                await _videoTransforms.RunFFmpegAsync($"-f concat -safe 0 -i {inputFileName} {args} \"{outPath}\"");
                 File.Delete(inputFileName);
             }, "Processing");
         });
 
-        //https://stackoverflow.com/questions/52303867/how-do-i-set-ffmpeg-pipe-output
-
-        private async Task ProcessFileAsync(string args, bool redirectStandardError = false)
+        public ICommand CalcMax => new RelayCommand(async o =>
         {
-            if (string.IsNullOrEmpty(_mainViewModel.Settings.FFmpegPath))
-                throw new UserMessageException("FFmpeg must be installed and the path configured in Settings");
-            var startInfo = new ProcessStartInfo(_mainViewModel.Settings.FFmpegPath, args);
-            startInfo.RedirectStandardError = redirectStandardError;
-            var process = Process.Start(startInfo) ?? throw new IOException("Failed to start FFmpeg");
-            var output = redirectStandardError ? process.StandardError.ReadToEnd() : string.Empty; // We must read before waiting
-            await process.WaitForExitAsync();
-            if (process.ExitCode != 0)
+            if (_mainViewModel.SelectedPicture is null)
+                return;
+            var inPath = _mainViewModel.SelectedPicture.FullPath;
+            var args = $" -i \"{inPath}\" -c:v bmp -f image2pipe -";
+
+            var dlg = new SaveFileDialog();
+            dlg.Title = "Max";
+            dlg.InitialDirectory = Path.GetDirectoryName(inPath);
+            dlg.FileName = Path.Combine(dlg.InitialDirectory!, Path.GetFileNameWithoutExtension(inPath) + "[max].png");
+            dlg.DefaultExt = ".png";
+            dlg.CheckPathExists = false;
+            if (dlg.ShowDialog() != true)
+                return;
+            var outPath = dlg.FileName;
+
+            var process = new CombineFramesOperation(10, default);
+
+            await _mainViewModel.RunProcessWithProgressBarAsync(async progressCallback =>
             {
-                if (redirectStandardError) 
-                    throw new UserMessageException(output);
-                throw new UserMessageException("Unable to process video. Command line:\n" + args);
-            }
-        }
+                progressCallback(-1);
+                Directory.CreateDirectory(Path.GetDirectoryName(outPath)!);
+                File.Delete(outPath);
+                Directory.SetCurrentDirectory(Path.GetDirectoryName(outPath)!);
+                await _videoTransforms.RunFFmpegWithStreamOutputImagesAsync(args, process.ProcessImage);
+                var result = process.GetResult();
+                using (var fileStream = new FileStream(outPath, FileMode.Create))
+                {
+                    var encoder = new PngBitmapEncoder();
+                    encoder.Frames.Add(BitmapFrame.Create(result));
+                    encoder.Save(fileStream);
+                }
+            }, "Processing");
+
+            MessageBox.Show($"{process.ProcessedImages} frames was processed");
+        });
     }
 }
