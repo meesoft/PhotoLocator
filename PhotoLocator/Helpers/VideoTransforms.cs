@@ -23,37 +23,35 @@ namespace PhotoLocator.Helpers
             return _settings.FFmpegPath;
         }
 
-        public async Task RunFFmpegAsync(string args, bool redirectStandardError = false)
+        public async Task RunFFmpegAsync(string args, Action<string> stdErrorCallback)
         {
             var startInfo = new ProcessStartInfo(GetFFmpegPath(), args);
-            startInfo.RedirectStandardError = redirectStandardError;
+            startInfo.RedirectStandardError = true;
             var process = Process.Start(startInfo) ?? throw new IOException("Failed to start FFmpeg");
-            var output = redirectStandardError ? await process.StandardError.ReadToEndAsync() : string.Empty; // We must read before waiting
+            var stdErrorTask = ProcessOutputAsync(process.StandardError, stdErrorCallback);
+            await stdErrorTask;
             await process.WaitForExitAsync();
             if (process.ExitCode != 0)
-            {
-                if (redirectStandardError)
-                    throw new UserMessageException(output);
                 throw new UserMessageException("Unable to process video. Command line:\n" + args);
-            }
-        }       
+        }
 
-        public async Task RunFFmpegWithStreamOutputImagesAsync(string args, Action<BitmapSource> imageCallback)
+        public async Task RunFFmpegWithStreamOutputImagesAsync(string args, Action<BitmapSource> imageCallback, Action<string> stdErrorCallback)
         {
             var startInfo = new ProcessStartInfo(GetFFmpegPath(), args);
             startInfo.RedirectStandardOutput = true;
             startInfo.RedirectStandardError = true;
+            startInfo.CreateNoWindow = true;
             var process = Process.Start(startInfo) ?? throw new IOException("Failed to start FFmpeg");
-
-            var processImagesTask = Task.Run(() => ProcessImagesAsync(process.StandardOutput, imageCallback));
-            var stdErrorTask = process.StandardError.ReadToEndAsync();
+            var processImagesTask = Task.Run(() => ProcessImages(process.StandardOutput, imageCallback));
+            var stdErrorTask = ProcessOutputAsync(process.StandardError, stdErrorCallback);
             await processImagesTask;
+            await stdErrorTask;
             await process.WaitForExitAsync();
             if (process.ExitCode != 0)
-                throw new UserMessageException("Unable to process video. Command line:\n" + args + "\n" + await stdErrorTask);
+                throw new UserMessageException("Unable to process video. Command line:\n" + args);
         }
 
-        private static void ProcessImagesAsync(StreamReader standardOutput, Action<BitmapSource> imageCallback)
+        private static void ProcessImages(StreamReader standardOutput, Action<BitmapSource> imageCallback)
         {
             try
             {
@@ -81,6 +79,17 @@ namespace PhotoLocator.Helpers
             var buffer = new byte[size];
             baseStream.ReadExactly(buffer, 0, size);
             return buffer;
+        }
+
+        private static async Task ProcessOutputAsync(StreamReader output, Action<string> lineCallback)
+        {
+            while (true)
+            {
+                var line = await output.ReadLineAsync();
+                if (line is null)
+                    return;
+                lineCallback(line);
+            }
         }
     }
 }

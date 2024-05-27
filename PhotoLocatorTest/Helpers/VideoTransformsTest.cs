@@ -23,7 +23,7 @@ namespace PhotoLocator.Helpers
             {
                 Debug.WriteLine(frame.PixelWidth + "x" + frame.PixelHeight);
                 i++;
-            });
+            }, stdError => Debug.WriteLine(stdError));
             Debug.WriteLine(i);
             Assert.IsTrue(i > 0);
         }

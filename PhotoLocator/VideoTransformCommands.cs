@@ -1,12 +1,10 @@
-﻿using MapControl;
-using Microsoft.VisualBasic;
+﻿using Microsoft.VisualBasic;
 using Microsoft.Win32;
 using PhotoLocator.Helpers;
 using System.Diagnostics;
+using System.Globalization;
 using System.IO;
 using System.Linq;
-using System.Threading.Tasks;
-using System.Windows;
 using System.Windows.Input;
 using System.Windows.Media.Imaging;
 
@@ -23,6 +21,12 @@ namespace PhotoLocator
             _videoTransforms = new VideoTransforms(mainViewModel.Settings);
         }
 
+        private void ProcessStdError(string line)
+        {
+            Debug.WriteLine(line);
+            _mainViewModel.ProgressBarText = line;
+        }
+
         public ICommand ExtractFrames => new RelayCommand(async o =>
         {
             if (_mainViewModel.SelectedPicture is null)
@@ -36,7 +40,7 @@ namespace PhotoLocator
             {
                 progressCallback(-1);
                 Directory.CreateDirectory(Path.GetDirectoryName(outPath)!);
-                await _videoTransforms.RunFFmpegAsync($"-i \"{inPath}\" \"{outPath}\"");
+                await _videoTransforms.RunFFmpegAsync($"-i \"{inPath}\" \"{outPath}\"", ProcessStdError);
             }, "Processing");
         });
 
@@ -64,11 +68,10 @@ namespace PhotoLocator
             await _mainViewModel.RunProcessWithProgressBarAsync(async progressCallback =>
             {
                 progressCallback(-1);
-                Directory.CreateDirectory(Path.GetDirectoryName(outPath)!);
                 File.Delete(outPath);
                 Directory.SetCurrentDirectory(Path.GetDirectoryName(inPath)!);
-                await _videoTransforms.RunFFmpegAsync($"-i \"{inPath}\" -vf vidstabdetect=shakiness=7 -f null -");
-                await _videoTransforms.RunFFmpegAsync($"-i \"{inPath}\" {vfArgs} \"{outPath}\"");
+                await _videoTransforms.RunFFmpegAsync($"-i \"{inPath}\" -vf vidstabdetect=shakiness=7 -f null -", ProcessStdError);
+                await _videoTransforms.RunFFmpegAsync($"-i \"{inPath}\" {vfArgs} \"{outPath}\"", ProcessStdError);
                 File.Delete("transforms.trf");
             }, "Processing");
         });
@@ -85,7 +88,7 @@ namespace PhotoLocator
 
             var inPath = _mainViewModel.SelectedPicture.FullPath;
             var outPath = Path.Combine(Path.GetDirectoryName(inPath)!, Path.GetFileNameWithoutExtension(inPath) + "[stab]", "%06d.jpg");
-            outPath = Interaction.InputBox($"Output path:", "Stabilize and extract frames", outPath);
+            outPath = Interaction.InputBox("Output path:", "Stabilize and extract frames", outPath);
             if (string.IsNullOrEmpty(outPath))
                 return;
 
@@ -95,8 +98,8 @@ namespace PhotoLocator
                 Directory.CreateDirectory(Path.GetDirectoryName(outPath)!);
                 File.Delete(outPath);
                 Directory.SetCurrentDirectory(Path.GetDirectoryName(inPath)!);
-                await _videoTransforms.RunFFmpegAsync($"-i \"{inPath}\" -vf vidstabdetect=shakiness=7 -f null -");
-                await _videoTransforms.RunFFmpegAsync($"-i \"{inPath}\" {vfArgs} \"{outPath}\"");
+                await _videoTransforms.RunFFmpegAsync($"-i \"{inPath}\" -vf vidstabdetect=shakiness=7 -f null -", ProcessStdError);
+                await _videoTransforms.RunFFmpegAsync($"-i \"{inPath}\" {vfArgs} \"{outPath}\"", ProcessStdError);
                 File.Delete("transforms.trf");
             }, "Processing");
         });
@@ -128,16 +131,15 @@ namespace PhotoLocator
             await _mainViewModel.RunProcessWithProgressBarAsync(async progressCallback =>
             {
                 progressCallback(-1);
-                Directory.CreateDirectory(Path.GetDirectoryName(outPath)!);
                 File.Delete(outPath);
                 Directory.SetCurrentDirectory(Path.GetDirectoryName(allSelected[0].FullPath)!);
                 await File.WriteAllLinesAsync(inputFileName, allSelected.Select(f => $"file '{f.Name}'"));
-                await _videoTransforms.RunFFmpegAsync($"-f concat -safe 0 -i {inputFileName} {args} \"{outPath}\"");
+                await _videoTransforms.RunFFmpegAsync($"-f concat -safe 0 -i {inputFileName} {args} \"{outPath}\"", ProcessStdError);
                 File.Delete(inputFileName);
             }, "Processing");
         });
 
-        public ICommand CalcMax => new RelayCommand(async o =>
+        public ICommand GenerateMaxFrame => new RelayCommand(async o =>
         {
             if (_mainViewModel.SelectedPicture is null)
                 return;
@@ -145,7 +147,6 @@ namespace PhotoLocator
             var args = $" -i \"{inPath}\" -c:v bmp -f image2pipe -";
 
             var dlg = new SaveFileDialog();
-            dlg.Title = "Max";
             dlg.InitialDirectory = Path.GetDirectoryName(inPath);
             dlg.FileName = Path.Combine(dlg.InitialDirectory!, Path.GetFileNameWithoutExtension(inPath) + "[max].png");
             dlg.DefaultExt = ".png";
@@ -154,25 +155,55 @@ namespace PhotoLocator
                 return;
             var outPath = dlg.FileName;
 
-            var process = new CombineFramesOperation(10, default);
+            var maxFrames = Interaction.InputBox("Max number of frames:", "Generate Max frame", int.MaxValue.ToString(CultureInfo.CurrentCulture));
+            if (string.IsNullOrEmpty(maxFrames))
+                return;
+            var process = new CombineFramesOperation(int.Parse(maxFrames, CultureInfo.CurrentCulture), default);
 
             await _mainViewModel.RunProcessWithProgressBarAsync(async progressCallback =>
             {
                 progressCallback(-1);
-                Directory.CreateDirectory(Path.GetDirectoryName(outPath)!);
-                File.Delete(outPath);
-                Directory.SetCurrentDirectory(Path.GetDirectoryName(outPath)!);
-                await _videoTransforms.RunFFmpegWithStreamOutputImagesAsync(args, process.ProcessImage);
-                var result = process.GetResult();
-                using (var fileStream = new FileStream(outPath, FileMode.Create))
-                {
-                    var encoder = new PngBitmapEncoder();
-                    encoder.Frames.Add(BitmapFrame.Create(result));
-                    encoder.Save(fileStream);
-                }
+                await _videoTransforms.RunFFmpegWithStreamOutputImagesAsync(args, process.UpdateMax, ProcessStdError);
+                SaveImage(process.GetAverageResult(), outPath);
             }, "Processing");
-
-            MessageBox.Show($"{process.ProcessedImages} frames was processed");
         });
+
+        public ICommand GenerateAverageFrame => new RelayCommand(async o =>
+        {
+            if (_mainViewModel.SelectedPicture is null)
+                return;
+            var inPath = _mainViewModel.SelectedPicture.FullPath;
+            var args = $" -i \"{inPath}\" -c:v bmp -f image2pipe -";
+
+            var dlg = new SaveFileDialog();
+            dlg.InitialDirectory = Path.GetDirectoryName(inPath);
+            dlg.FileName = Path.Combine(dlg.InitialDirectory!, Path.GetFileNameWithoutExtension(inPath) + "[avg].png");
+            dlg.DefaultExt = ".png";
+            dlg.CheckPathExists = false;
+            if (dlg.ShowDialog() != true)
+                return;
+            var outPath = dlg.FileName;
+
+            var maxFrames = Interaction.InputBox("Max number of frames:", "Generate Average frame", int.MaxValue.ToString(CultureInfo.CurrentCulture));
+            if (string.IsNullOrEmpty(maxFrames))
+                return;
+            var process = new CombineFramesOperation(int.Parse(maxFrames, CultureInfo.CurrentCulture), default);
+
+            await _mainViewModel.RunProcessWithProgressBarAsync(async progressCallback =>
+            {
+                progressCallback(-1);
+                await _videoTransforms.RunFFmpegWithStreamOutputImagesAsync(args, process.UpdateSum, ProcessStdError);
+                SaveImage(process.GetAverageResult(), outPath);
+            }, "Processing");
+        });
+
+        private static void SaveImage(BitmapSource result, string outPath)
+        {
+            var ext = Path.GetExtension(outPath).ToUpperInvariant();
+            using var fileStream = new FileStream(outPath, FileMode.Create);
+            BitmapEncoder encoder = ext == ".JPG" ? new JpegBitmapEncoder() : new PngBitmapEncoder();
+            encoder.Frames.Add(BitmapFrame.Create(result));
+            encoder.Save(fileStream);
+        }
     }
 }

@@ -14,7 +14,7 @@ namespace PhotoLocator.Helpers
         int _width, _height, _planes, _pixelSize;
         double _dpiX, _dpiY;
         byte[]? _resultPixels;
-        int _frameCount;
+        uint[]? _sumPixels;
 
         public CombineFramesOperation(int maxFrames, CancellationToken ct)
         {
@@ -22,12 +22,54 @@ namespace PhotoLocator.Helpers
             _ct = ct;
         }
 
-        public int ProcessedImages => _frameCount;
+        public int ProcessedImages { get; private set; }
 
-        public void ProcessImage(BitmapSource source)
+        public void UpdateMax(BitmapSource source)
         {
-            if (_frameCount >= _maxFrames)
+            if (ProcessedImages >= _maxFrames)
                 return;
+
+            var pixels = PrepareFrame(source);
+
+            for (int i = 0; i < pixels.Length; i++)
+                if (pixels[i] > _resultPixels![i])
+                    _resultPixels[i] = pixels[i];
+        }
+
+        internal void UpdateSum(BitmapSource source)
+        {
+            if (ProcessedImages >= _maxFrames)
+                return;
+
+            var pixels = PrepareFrame(source);
+            if (_sumPixels is null)
+                _sumPixels = new uint[pixels.Length];
+
+            for (int i = 0; i < pixels.Length; i++)
+                _sumPixels[i] += pixels[i];
+        }
+
+        public BitmapSource GetResult()
+        {
+            if (_resultPixels is null)
+                throw new UserMessageException("No images received");
+            var result = BitmapSource.Create(_width, _height, _dpiX, _dpiY, _pixelFormat, null, _resultPixels, _width * _pixelSize);
+            result.Freeze();
+            return result;
+        }
+
+        public BitmapSource GetAverageResult()
+        {
+            if (_resultPixels is null || _sumPixels is null)
+                throw new UserMessageException("No images received");
+            for (int i = 0; i < _resultPixels.Length; i++)
+                _resultPixels[i] = (byte)IntMath.Round(_sumPixels[i] / (double)ProcessedImages);
+            return GetResult();
+        }
+
+        private byte[] PrepareFrame(BitmapSource source)
+        {
+            _ct.ThrowIfCancellationRequested();
 
             if (_resultPixels is null)
             {
@@ -62,31 +104,11 @@ namespace PhotoLocator.Helpers
             else if (_width != source.PixelWidth || _height != source.PixelHeight)
                 throw new UserMessageException("Size changes");
 
+            ProcessedImages++;
+
             var pixels = new byte[_width * _height * _pixelSize];
             source.CopyPixels(pixels, _width * _pixelSize, 0);
-            _ct.ThrowIfCancellationRequested();
-
-            ProcessMax(pixels);
-            _frameCount++;
-            _ct.ThrowIfCancellationRequested();
-        }
-
-        public BitmapSource GetResult()
-        {
-            if (_resultPixels is null)
-                throw new UserMessageException("No images received");
-            var result = BitmapSource.Create(_width, _height, _dpiX, _dpiY, _pixelFormat, null, _resultPixels, _width * _pixelSize);
-            result.Freeze();
-            return result;
-
-        }
-
-        private void ProcessMax(byte[] pixels)
-        {
-            for (int i = 0; i < pixels.Length; i++)
-                if (pixels[i] > _resultPixels![i])
-                    _resultPixels[i] = pixels[i];
-
+            return pixels;
         }
     }
 }
