@@ -10,6 +10,7 @@ namespace PhotoLocator.Helpers
     class VideoTransforms
     {
         readonly ISettings _settings;
+        string _lastError;
 
         public VideoTransforms(ISettings settings)
         {
@@ -27,12 +28,13 @@ namespace PhotoLocator.Helpers
         {
             var startInfo = new ProcessStartInfo(GetFFmpegPath(), args);
             startInfo.RedirectStandardError = true;
+            startInfo.CreateNoWindow = true;
             var process = Process.Start(startInfo) ?? throw new IOException("Failed to start FFmpeg");
             var stdErrorTask = ProcessOutputAsync(process.StandardError, stdErrorCallback);
             await stdErrorTask;
             await process.WaitForExitAsync();
             if (process.ExitCode != 0)
-                throw new UserMessageException("Unable to process video. Command line:\n" + args);
+                throw new UserMessageException($"Unable to process video. {_lastError}\nCommand line: {args}");
         }
 
         public async Task RunFFmpegWithStreamOutputImagesAsync(string args, Action<BitmapSource> imageCallback, Action<string> stdErrorCallback)
@@ -48,7 +50,7 @@ namespace PhotoLocator.Helpers
             await stdErrorTask;
             await process.WaitForExitAsync();
             if (process.ExitCode != 0)
-                throw new UserMessageException("Unable to process video. Command line:\n" + args);
+                throw new UserMessageException($"Unable to process video. {_lastError}\nCommand line: {args}");
         }
 
         private static void ProcessImages(StreamReader standardOutput, Action<BitmapSource> imageCallback)
@@ -81,13 +83,14 @@ namespace PhotoLocator.Helpers
             return buffer;
         }
 
-        private static async Task ProcessOutputAsync(StreamReader output, Action<string> lineCallback)
+        private async Task ProcessOutputAsync(StreamReader output, Action<string> lineCallback)
         {
             while (true)
             {
                 var line = await output.ReadLineAsync();
                 if (line is null)
                     return;
+                _lastError = line;
                 lineCallback(line);
             }
         }
