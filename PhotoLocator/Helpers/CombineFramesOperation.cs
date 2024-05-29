@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Threading;
+using System.Threading.Tasks;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 
@@ -31,9 +32,11 @@ namespace PhotoLocator.Helpers
 
             var pixels = PrepareFrame(source);
 
-            for (int i = 0; i < pixels.Length; i++)
+            Parallel.For(0, pixels.Length, i =>
+            {
                 if (pixels[i] > _resultPixels![i])
                     _resultPixels[i] = pixels[i];
+            });
         }
 
         internal void UpdateSum(BitmapSource source)
@@ -45,8 +48,7 @@ namespace PhotoLocator.Helpers
             if (_sumPixels is null)
                 _sumPixels = new uint[pixels.Length];
 
-            for (int i = 0; i < pixels.Length; i++)
-                _sumPixels[i] += pixels[i];
+            Parallel.For(0, pixels.Length, i => _sumPixels[i] += pixels[i]);
         }
 
         public BitmapSource GetResult()
@@ -62,8 +64,7 @@ namespace PhotoLocator.Helpers
         {
             if (_resultPixels is null || _sumPixels is null)
                 throw new UserMessageException("No images received");
-            for (int i = 0; i < _resultPixels.Length; i++)
-                _resultPixels[i] = (byte)IntMath.Round(_sumPixels[i] / (double)ProcessedImages);
+            Parallel.For(0, _resultPixels.Length, i => _resultPixels[i] = (byte)IntMath.Round(_sumPixels[i] / (double)ProcessedImages));
             return GetResult();
         }
 

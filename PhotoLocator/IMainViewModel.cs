@@ -15,6 +15,6 @@ namespace PhotoLocator
 
         public string? ProgressBarText { get; set; }
 
-        Task RunProcessWithProgressBarAsync(Func<Action<double>, Task> body, string text);
+        Task RunProcessWithProgressBarAsync(Func<Action<double>, Task> body, string text, PictureItemViewModel? focusItem = null);
     }
 }

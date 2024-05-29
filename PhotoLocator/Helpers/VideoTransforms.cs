@@ -10,7 +10,7 @@ namespace PhotoLocator.Helpers
     class VideoTransforms
     {
         readonly ISettings _settings;
-        string _lastError;
+        string? _lastError;
 
         public VideoTransforms(ISettings settings)
         {
@@ -57,15 +57,20 @@ namespace PhotoLocator.Helpers
         {
             try
             {
+                var header = new byte[6];
+                var theRest = Array.Empty<byte>();
+                var memStream = new MemoryStream();
                 while (true)
                 {
-                    var header = ReadBytes(standardOutput.BaseStream, 6);
-                    var size = BitConverter.ToInt32(header, 2);
-                    var theRest = ReadBytes(standardOutput.BaseStream, size - header.Length);
-                    var memStream = new MemoryStream(size);
+                    standardOutput.BaseStream.ReadExactly(header, 0, header.Length);
+                    var remainingSize = BitConverter.ToInt32(header, 2) - header.Length;
+                    if (remainingSize > theRest.Length)
+                        theRest = new byte[remainingSize];
+                    standardOutput.BaseStream.ReadExactly(theRest, 0, remainingSize);
                     memStream.Write(header, 0, header.Length);
-                    memStream.Write(theRest, 0, theRest.Length);
-                    var image = BitmapDecoder.Create(memStream, BitmapCreateOptions.PreservePixelFormat, BitmapCacheOption.None);
+                    memStream.Write(theRest, 0, remainingSize);
+                    var image = BitmapDecoder.Create(memStream, BitmapCreateOptions.PreservePixelFormat, BitmapCacheOption.OnLoad);
+                    memStream.SetLength(0);
                     imageCallback(image.Frames[0]);
                 }
             }
@@ -74,13 +79,6 @@ namespace PhotoLocator.Helpers
             {
                 Debug.WriteLine(ex);
             }
-        }
-
-        private static byte[] ReadBytes(Stream baseStream, int size)
-        {
-            var buffer = new byte[size];
-            baseStream.ReadExactly(buffer, 0, size);
-            return buffer;
         }
 
         private async Task ProcessOutputAsync(StreamReader output, Action<string> lineCallback)

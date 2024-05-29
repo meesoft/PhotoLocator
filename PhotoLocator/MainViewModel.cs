@@ -296,7 +296,8 @@ namespace PhotoLocator
 
         private async Task UpdatePreviewPictureAsync()
         {
-            _previewCancellation?.Cancel();
+            if (_previewCancellation is not null)
+                await _previewCancellation.CancelAsync();
             _previewCancellation?.Dispose();
             _previewCancellation = null;
             if (SelectedPicture is null || !IsPreviewVisible)
@@ -407,7 +408,7 @@ namespace PhotoLocator
             MapCenter = SavedLocation;
         });
 
-        public async Task RunProcessWithProgressBarAsync(Func<Action<double>, Task> body, string text)
+        public async Task RunProcessWithProgressBarAsync(Func<Action<double>, Task> body, string text, PictureItemViewModel? focusItem = null)
         {
             using var cursor = new CursorOverride();
             ProgressBarIsIndeterminate = false;
@@ -436,6 +437,10 @@ namespace PhotoLocator
                 IsWindowEnabled = true;
                 IsProgressBarVisible = false;
                 TaskbarProgressState = TaskbarItemProgressState.None;
+                if (focusItem is not null)
+                    SelectItem(focusItem);
+                else if (SelectedPicture != null)
+                    SelectItem(SelectedPicture);
             }
         }
 
@@ -456,8 +461,6 @@ namespace PhotoLocator
                 });
                 await Task.Delay(10);
             }, "Saving...");
-            if (SelectedPicture != null)
-                SelectItem(SelectedPicture);
             if (_fileSystemWatcher is not null)
                 _fileSystemWatcher.EnableRaisingEvents = true;
         });
@@ -634,18 +637,14 @@ namespace PhotoLocator
                     Application.Current.Dispatcher.Invoke(() => Pictures.Remove(item));
                     progressCallback((double)(++i) / allSelected.Length);
                 }
-            }), "Deleting...");
-            if (focusedItem != null)
-                SelectItem(focusedItem);
+            }), "Deleting...", focusedItem);
         });
 
         public ICommand CopySelectedCommand => new RelayCommand(async o =>
         {
-            var focusedItem = SelectedPicture;
             var allSelected = GetSelectedItems().ToArray();
             if (allSelected.Length == 0)
                 return;
-            focusedItem = GetNearestUnchecked(focusedItem, allSelected);
             var destination = Interaction.InputBox($"Copy {allSelected.Length} selected item(s).\n\nDestination:", "Copy files", (PhotoFolderPath ?? string.Empty).Trim('\\'));
             if (string.IsNullOrEmpty(destination) || destination == PhotoFolderPath || destination == ".")
                 return;
@@ -659,8 +658,6 @@ namespace PhotoLocator
                     progressCallback((double)(++i) / allSelected.Length);
                 }
             }), "Copying...");
-            if (focusedItem != null)
-                SelectItem(focusedItem);
         });
 
         public ICommand MoveSelectedCommand => new RelayCommand(async o =>
@@ -684,9 +681,7 @@ namespace PhotoLocator
                     Application.Current.Dispatcher.Invoke(() => Pictures.Remove(item));
                     progressCallback((double)(++i) / allSelected.Length);
                 }
-            }), "Moving...");
-            if (focusedItem != null)
-                SelectItem(focusedItem);
+            }), "Moving...", focusedItem);
         });
 
         public ICommand CreateFolderCommand => new RelayCommand(o =>
@@ -806,8 +801,6 @@ namespace PhotoLocator
                         JpegTransformations.Crop(SelectedPicture.FullPath, SelectedPicture.GetProcessedFileName(), CropControl.CropRectangle);
                         SelectedPicture.Rotation = Rotation.Rotate0;
                     }), "Cropping");
-                    if (SelectedPicture is not null)
-                        SelectItem(SelectedPicture);
                 }
                 finally
                 {
