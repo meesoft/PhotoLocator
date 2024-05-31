@@ -44,7 +44,7 @@ namespace PhotoLocator
             }, "Processing");
         });
 
-        public ICommand Stabilize => new RelayCommand(async o =>
+        public ICommand StabilizeVideo => new RelayCommand(async o =>
         {
             if (_mainViewModel.SelectedPicture is null)
                 return;
@@ -70,8 +70,10 @@ namespace PhotoLocator
                 progressCallback(-1);
                 File.Delete(outPath);
                 Directory.SetCurrentDirectory(Path.GetDirectoryName(inPath)!);
-                await _videoTransforms.RunFFmpegAsync($"-i \"{inPath}\" -vf \"crop=2000:2160:0:0\" -vf vidstabdetect=shakiness=7:result=transforms.trf:show=1 dummy.mp4", ProcessStdError);
-                await _videoTransforms.RunFFmpegAsync($"-i \"{inPath}\" {vfArgs} \"{outPath}\"", ProcessStdError);
+                await _videoTransforms.RunFFmpegAsync(
+                    $"-i \"{inPath}\" -vf \"crop=2000:2160:0:0, vidstabdetect=shakiness=7:result=transforms.trf:show=1\" dummy.mp4", ProcessStdError);
+                await _videoTransforms.RunFFmpegAsync(
+                    $"-i \"{inPath}\" {vfArgs} \"{outPath}\"", ProcessStdError);
                 File.Delete("transforms.trf");
             }, "Processing");
         });
