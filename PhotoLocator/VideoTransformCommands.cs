@@ -49,7 +49,7 @@ namespace PhotoLocator
             if (_mainViewModel.SelectedPicture is null)
                 return;
 
-            var vfArgs = "-vf \"vidstabtransform=smoothing=10:zoom=0:input=transforms.trf, setpts=1*PTS\"";
+            var vfArgs = "-vf \"vidstabtransform=smoothing=10:zoom=0, setpts=1*PTS\"";
             vfArgs = Interaction.InputBox($"Video filter arguments:", "Stabilize", vfArgs);
             if (string.IsNullOrEmpty(vfArgs))
                 return;
@@ -70,7 +70,7 @@ namespace PhotoLocator
                 progressCallback(-1);
                 File.Delete(outPath);
                 Directory.SetCurrentDirectory(Path.GetDirectoryName(inPath)!);
-                await _videoTransforms.RunFFmpegAsync($"-i \"{inPath}\" -vf vidstabdetect=shakiness=7 -f null -", ProcessStdError);
+                await _videoTransforms.RunFFmpegAsync($"-i \"{inPath}\" -vf \"crop=2000:2160:0:0\" -vf vidstabdetect=shakiness=7:result=transforms.trf:show=1 dummy.mp4", ProcessStdError);
                 await _videoTransforms.RunFFmpegAsync($"-i \"{inPath}\" {vfArgs} \"{outPath}\"", ProcessStdError);
                 File.Delete("transforms.trf");
             }, "Processing");
