@@ -71,10 +71,6 @@ namespace PhotoLocator
             {
                 if (SetProperty(ref _isTripodChecked, value))
                 {
-                    if (IsTripodChecked)
-                        SmoothFrames = 0;
-                    else if (SmoothFrames == 0)
-                        SmoothFrames = 10;
                     UpdateStabilizeArgs();
                     UpdateProcessArgs();
                 }
@@ -87,11 +83,8 @@ namespace PhotoLocator
             get => _smoothFrames;
             set
             {
-                if (SetProperty(ref _smoothFrames, value) && SmoothFrames > 0)
-                {
-                    IsTripodChecked = false;
+                if (SetProperty(ref _smoothFrames, value))
                     UpdateProcessArgs();
-                }
             }
         }
         int _smoothFrames = 10;
@@ -165,7 +158,10 @@ namespace PhotoLocator
             set
             {
                 if (SetProperty(ref _outputMode, value))
+                {
+                    UpdateProcessArgs();
                     UpdateOutputArgs();
+                }
             }
         }
         OutputMode _outputMode;
@@ -185,7 +181,7 @@ namespace PhotoLocator
         ComboBoxItem _selectedVideoFormat = VideoFormats.First();
 
         public static IEnumerable<ComboBoxItem> VideoFormats { get; } = [
-            new ComboBoxItem { Content = "Default", Tag = "",  },
+            new ComboBoxItem { Content = "Default", Tag = "" },
             new ComboBoxItem { Content = "Copy", Tag = "-c copy" },
             new ComboBoxItem { Content = "libx264", Tag = "-c:v libx264 -r 30" },
             new ComboBoxItem { Content = "libx265", Tag = "-c:v libx265" },
@@ -255,9 +251,9 @@ namespace PhotoLocator
                 filters.Add($"crop={CropWindow}");
             if (IsStabilizeChecked)
             {
-                var vfArg = $"vidstabtransform=smoothing={SmoothFrames}:zoom=0";
+                var vfArg = $"vidstabtransform=smoothing={SmoothFrames}";
                 if (IsTripodChecked)
-                    vfArg += ":tripod=1:zoomspeed=0";
+                    vfArg += ":tripod=1";
                 filters.Add(vfArg);
             }
             if (OutputMode == OutputMode.Video && SelectedVideoFormat.Content.ToString() != "Copy")
@@ -318,8 +314,7 @@ namespace PhotoLocator
             {
                 progressCallback(-1);
                 Directory.CreateDirectory(Path.GetDirectoryName(outFileName)!);
-                File.Delete(outFileName);
-                var args = $"{InputArguments} -filter_complex \"[0:v:0]pad=iw*2:ih[bg]; [bg][1:v:0]overlay=w\" \"{outFileName}\"";
+                var args = $"{InputArguments} -filter_complex \"[0:v:0]pad=iw*2:ih[bg]; [bg][1:v:0]overlay=w\" -y \"{outFileName}\"";
                 await _videoTransforms.RunFFmpegAsync(args, ProcessStdError);
             }, "Processing");
         });
@@ -413,9 +408,7 @@ namespace PhotoLocator
                 }
                 else
                 {
-                    if (OutputMode == OutputMode.Video)
-                        File.Delete(outFileName);
-                    await _videoTransforms.RunFFmpegAsync(args + $" \"{outFileName}\"", ProcessStdError);
+                    await _videoTransforms.RunFFmpegAsync(args + $" -y \"{outFileName}\"", ProcessStdError);
                 }
                 if (allSelected.Length > 1)
                     File.Delete(InputFileName);

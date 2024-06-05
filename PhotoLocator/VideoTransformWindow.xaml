@@ -35,9 +35,9 @@
         <TextBlock Text="Output" Margin="0,4,0,0"/>
 
         <StackPanel Orientation="Horizontal" >
-            <RadioButton Content="Video" Margin="10,4,100,0"
+            <RadioButton Content="Video" Margin="10,4,10,0" Width="130"
                          IsChecked="{Binding Path=OutputMode, Converter={StaticResource ComparisonConverter}, ConverterParameter={x:Static local:OutputMode.Video}}"/>
-            <ComboBox ItemsSource="{Binding VideoFormats}" SelectedItem="{Binding SelectedVideoFormat}" />
+            <ComboBox ItemsSource="{Binding VideoFormats}" SelectedItem="{Binding SelectedVideoFormat}" Width="140"/>
         </StackPanel>
         <RadioButton Content="Image sequence" Margin="10,0,0,0"
                      IsChecked="{Binding Path=OutputMode, Converter={StaticResource ComparisonConverter}, ConverterParameter={x:Static local:OutputMode.ImageSequence}}"/>

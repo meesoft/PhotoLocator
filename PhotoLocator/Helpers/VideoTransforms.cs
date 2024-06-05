@@ -34,7 +34,7 @@ namespace PhotoLocator.Helpers
             await stdErrorTask;
             await process.WaitForExitAsync();
             if (process.ExitCode != 0)
-                throw new UserMessageException($"Unable to process video. {_lastError}\nCommand line: {args}");
+                throw new UserMessageException($"Unable to process video. {_lastError}\nCommand line: ffmpeg {args}");
         }
 
         public async Task RunFFmpegWithStreamOutputImagesAsync(string args, Action<BitmapSource> imageCallback, Action<string> stdErrorCallback)
@@ -51,7 +51,7 @@ namespace PhotoLocator.Helpers
             await stdErrorTask;
             await process.WaitForExitAsync();
             if (process.ExitCode != 0)
-                throw new UserMessageException($"Unable to process video. {_lastError}\nCommand line: {args}");
+                throw new UserMessageException($"Unable to process video. {_lastError}\nCommand line: ffmpeg {args}");
         }
 
         private static void ProcessImages(StreamReader standardOutput, Action<BitmapSource> imageCallback)
