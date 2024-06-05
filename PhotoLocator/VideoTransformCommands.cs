@@ -5,7 +5,6 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
-using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Runtime.CompilerServices;
@@ -297,6 +296,32 @@ namespace PhotoLocator
             else
                 SelectedVideoFormat = VideoFormats.First(f => f.Content.ToString() == "libx264");
             ProcessSelected.Execute(null);
+        });
+
+        public ICommand Compare => new RelayCommand(async o =>
+        {
+            var allSelected = _mainViewModel.GetSelectedItems().Where(item => item.IsFile).ToArray();
+            if (allSelected.Length != 2)
+                throw new UserMessageException("Select exactly 2 files");
+            InputArguments = $"-i \"{allSelected[0].FullPath}\" -i \"{allSelected[1].FullPath}\"";
+
+            var dlg = new SaveFileDialog();
+            dlg.InitialDirectory = Path.GetDirectoryName(allSelected[0].FullPath);
+            dlg.FileName = Path.GetFileNameWithoutExtension(allSelected[0].Name) + "[compare].mp4";
+            dlg.DefaultExt = ".mp4";
+            dlg.CheckPathExists = false;
+            if (dlg.ShowDialog() != true)
+                return;
+            var outFileName = dlg.FileName;
+
+            await _mainViewModel.RunProcessWithProgressBarAsync(async progressCallback =>
+            {
+                progressCallback(-1);
+                Directory.CreateDirectory(Path.GetDirectoryName(outFileName)!);
+                File.Delete(outFileName);
+                var args = $"{InputArguments} -filter_complex \"[0:v:0]pad=iw*2:ih[bg]; [bg][1:v:0]overlay=w\" \"{outFileName}\"";
+                await _videoTransforms.RunFFmpegAsync(args, ProcessStdError);
+            }, "Processing");
         });
 
         public ICommand GenerateMaxFrame => new RelayCommand(o =>
