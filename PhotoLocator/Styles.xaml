@@ -160,6 +160,10 @@
         <Setter Property="Foreground" Value="#FFEEEEEE" />
     </Style>
 
+    <Style TargetType="RadioButton">
+        <Setter Property="Foreground" Value="#FFEEEEEE" />
+    </Style>
+
     <Style TargetType="TextBox">
         <Setter Property="Background" Value="#FF222222" />
         <Setter Property="Foreground" Value="#FFEEEEEE" />

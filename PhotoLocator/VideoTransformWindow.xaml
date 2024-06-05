@@ -1,0 +1,59 @@
+﻿<Window x:Class="PhotoLocator.VideoTransformWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:helpers="clr-namespace:PhotoLocator.Helpers" 
+        xmlns:local="clr-namespace:PhotoLocator"
+        mc:Ignorable="d"
+        d:DataContext="{d:DesignInstance Type=local:VideoTransformCommands, IsDesignTimeCreatable=false}"
+        Background="Black"
+        Title="Video transform" Width="400" SizeToContent="Height" ResizeMode="NoResize"
+        WindowStartupLocation="CenterOwner" ShowInTaskbar="False">
+
+    <Window.Resources>
+        <helpers:ComparisonConverter x:Key="ComparisonConverter" />
+        <Style TargetType="TextBlock">
+            <Setter Property="Foreground" Value="#FFEEEEEE" />
+        </Style>
+    </Window.Resources>    
+    
+    <StackPanel Margin="10">
+        <CheckBox Content="Stabilize" IsChecked="{Binding IsStabilizeChecked}"/>
+        <CheckBox Content="Tripod mode" IsChecked="{Binding IsTripodChecked}" Margin="10,4,0,0" IsEnabled="{Binding IsStabilizeChecked}"/>
+        <TextBlock Text="Smooth frames:" Margin="10,4,0,0" IsEnabled="{Binding IsStabilizeChecked}"/>
+        <TextBox Text="{Binding SmoothFrames}" Margin="10,0,0,0" IsEnabled="{Binding IsStabilizeChecked}"/>
+        <TextBlock Text="Stabilize arguments:" Margin="10,4,0,0" IsEnabled="{Binding IsStabilizeChecked}"/>
+        <TextBox Text="{Binding StabilizeArguments}" Margin="10,0,0,0" IsEnabled="{Binding IsStabilizeChecked}"/>
+
+        <TextBlock Text="Video filters:" Margin="0,4,0,0"/>
+        <CheckBox Content="Trim:" IsChecked="{Binding IsTrimChecked}" Margin="10,4,0,0"/>
+        <TextBox Text="{Binding TrimRange}" Margin="10,4,0,0" IsEnabled="{Binding IsTrimChecked}"/>
+        <CheckBox Content="Crop:" IsChecked="{Binding IsCropChecked}" Margin="10,4,0,0"/>
+        <TextBox Text="{Binding CropWindow}" Margin="10,4,0,0" IsEnabled="{Binding IsCropChecked}"/>
+
+        <TextBlock Text="Output" Margin="0,4,0,0"/>
+
+        <StackPanel Orientation="Horizontal" >
+            <RadioButton Content="Video" Margin="10,4,100,0"
+                         IsChecked="{Binding Path=OutputMode, Converter={StaticResource ComparisonConverter}, ConverterParameter={x:Static local:OutputMode.Video}}"/>
+            <ComboBox ItemsSource="{Binding VideoFormats}" SelectedItem="{Binding SelectedVideoFormat}" />
+        </StackPanel>
+        <RadioButton Content="Image sequence" Margin="10,0,0,0"
+                     IsChecked="{Binding Path=OutputMode, Converter={StaticResource ComparisonConverter}, ConverterParameter={x:Static local:OutputMode.ImageSequence}}"/>
+        <RadioButton Content="Frame average" Margin="10,0,0,0"
+                     IsChecked="{Binding Path=OutputMode, Converter={StaticResource ComparisonConverter}, ConverterParameter={x:Static local:OutputMode.Average}}"/>
+        <RadioButton Content="Frame max" Margin="10,0,0,0"
+                     IsChecked="{Binding Path=OutputMode, Converter={StaticResource ComparisonConverter}, ConverterParameter={x:Static local:OutputMode.Max}}"/>
+
+        <TextBlock Text="Process arguments:" Margin="0,4,0,0"/>
+        <TextBox Text="{Binding InputArguments}" Margin="10,0,0,0"/>
+        <TextBox Text="{Binding ProcessArguments}" Margin="10,0,0,0"/>
+        <TextBox Text="{Binding OutputArguments}" Margin="10,0,0,0"/>
+
+        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right"  Margin="0,10,0,0">
+            <Button Content="OK" Width="80" IsDefault="True" Click="HandleOkButtonClick" />
+            <Button Content="Cancel" Margin="10,0,0,0" Width="80" IsCancel="True" />
+        </StackPanel>
+    </StackPanel>
+</Window>

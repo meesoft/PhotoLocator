@@ -155,10 +155,11 @@
                         <MenuItem Header="Crop (Alt-C)" Command="{Binding CropCommand}" IsChecked="{Binding IsCropControlVisible}" />
                     </MenuItem>
                     <MenuItem Header="Transform video" >
-                        <MenuItem Header="Extract frames" Command="{Binding VideoTransformCommands.ExtractFrames}" />
-                        <MenuItem Header="Stabilize and extract frames" Command="{Binding VideoTransformCommands.StabilizeAndExtract}" />
+                        <MenuItem Header="Process selected" Command="{Binding VideoTransformCommands.ProcessSelected}" />
+                        <Separator />
                         <MenuItem Header="Stabilize video" Command="{Binding VideoTransformCommands.StabilizeVideo}" />
                         <MenuItem Header="Combine images or videos" Command="{Binding VideoTransformCommands.Combine}" />
+                        <MenuItem Header="Extract frames" Command="{Binding VideoTransformCommands.ExtractFrames}" />
                         <MenuItem Header="Generate Max frame" Command="{Binding VideoTransformCommands.GenerateMaxFrame}" />
                         <MenuItem Header="Generate Average frame" Command="{Binding VideoTransformCommands.GenerateAverageFrame}" />
                     </MenuItem>

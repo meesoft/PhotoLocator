@@ -17,7 +17,7 @@ namespace PhotoLocator.Helpers
         byte[]? _resultPixels;
         uint[]? _sumPixels;
 
-        public CombineFramesOperation(int maxFrames, CancellationToken ct)
+        public CombineFramesOperation(int maxFrames = int.MaxValue, CancellationToken ct = default)
         {
             _maxFrames = maxFrames;
             _ct = ct;
@@ -31,7 +31,6 @@ namespace PhotoLocator.Helpers
                 return;
 
             var pixels = PrepareFrame(source);
-
             Parallel.For(0, pixels.Length, i =>
             {
                 if (pixels[i] > _resultPixels![i])
@@ -45,8 +44,7 @@ namespace PhotoLocator.Helpers
                 return;
 
             var pixels = PrepareFrame(source);
-            if (_sumPixels is null)
-                _sumPixels = new uint[pixels.Length];
+            _sumPixels ??= new uint[pixels.Length];
 
             Parallel.For(0, pixels.Length, i => _sumPixels[i] += pixels[i]);
         }

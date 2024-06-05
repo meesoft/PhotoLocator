@@ -39,6 +39,7 @@ namespace PhotoLocator.Helpers
 
         public async Task RunFFmpegWithStreamOutputImagesAsync(string args, Action<BitmapSource> imageCallback, Action<string> stdErrorCallback)
         {
+            args += " -c:v bmp -f image2pipe -";
             var startInfo = new ProcessStartInfo(GetFFmpegPath(), args);
             startInfo.RedirectStandardOutput = true;
             startInfo.RedirectStandardError = true;

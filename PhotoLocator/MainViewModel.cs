@@ -40,7 +40,7 @@ namespace PhotoLocator
         CancellationTokenSource? _previewCancellation;
         FileSystemWatcher? _fileSystemWatcher;
         bool _titleUpdatePending;
-        readonly List<(string Path, BitmapSource Picture)> _pictureCache = new();
+        readonly List<(string Path, BitmapSource Picture)> _pictureCache = [];
 
         public event PropertyChangedEventHandler? PropertyChanged;
 
@@ -106,7 +106,7 @@ namespace PhotoLocator
         public bool IsWindowEnabled { get => _isWindowEnabled; set => SetProperty(ref _isWindowEnabled, value); }
         private bool _isWindowEnabled = true;
 
-        public IEnumerable<string> PhotoFileExtensions { get; set; } = Enumerable.Empty<string>();
+        public IEnumerable<string> PhotoFileExtensions { get; set; } = [];
 
         public ObservableSettings Settings { get; }
         ISettings IMainViewModel.Settings => Settings;
@@ -126,9 +126,9 @@ namespace PhotoLocator
             await LoadFolderContentsAsync(false, selectItemFullPath);
         }
 
-        public ObservableCollection<PointItem> Points { get; } = new ObservableCollection<PointItem>();
-        public ObservableCollection<PointItem> Pushpins { get; } = new ObservableCollection<PointItem>();
-        public ObservableCollection<GpsTrace> Polylines { get; } = new ObservableCollection<GpsTrace>();
+        public ObservableCollection<PointItem> Points { get; } = [];
+        public ObservableCollection<PointItem> Pushpins { get; } = [];
+        public ObservableCollection<GpsTrace> Polylines { get; } = [];
         public static Visibility MapToolsVisibility => Visibility.Visible;
 
         public Location? MapCenter
@@ -218,7 +218,7 @@ namespace PhotoLocator
         }
         private int _previewZoom;
 
-        public ObservableCollection<PictureItemViewModel> Pictures { get; } = new ObservableCollection<PictureItemViewModel>();
+        public ObservableCollection<PictureItemViewModel> Pictures { get; } = [];
 
         public PictureItemViewModel? SelectedPicture
         {

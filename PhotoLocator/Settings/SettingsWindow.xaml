@@ -13,6 +13,9 @@
 
     <Window.Resources>
         <helpers:ComparisonConverter x:Key="ComparisonConverter" />
+        <Style TargetType="TextBlock">
+            <Setter Property="Foreground" Value="#FFEEEEEE" />
+        </Style>
     </Window.Resources>
 
     <Grid Margin="10">
@@ -38,29 +41,29 @@
             <RowDefinition Height="20"/>
         </Grid.RowDefinitions>
 
-        <TextBlock Grid.Row="0" Foreground="#FFEEEEEE" VerticalAlignment="Bottom"
+        <TextBlock Grid.Row="0" VerticalAlignment="Bottom"
                    Text="Show photo files with extensions:" />
         <TextBox Grid.Row="1" Text="{Binding PhotoFileExtensions}"/>
 
         <CheckBox Grid.Row="2" Content="Show folders" IsChecked="{Binding ShowFolders}" VerticalAlignment="Center" />
 
-        <TextBlock Grid.Row="3" Foreground="#FFEEEEEE" VerticalAlignment="Bottom"
+        <TextBlock Grid.Row="3" VerticalAlignment="Bottom"
                    Text="Saved file postfix (empty to overwrite files):" />
         <TextBox Grid.Row="4" Text="{Binding SavedFilePostfix}"/>
 
-        <TextBlock Grid.Row="5" Foreground="#FFEEEEEE" VerticalAlignment="Bottom"
+        <TextBlock Grid.Row="5" VerticalAlignment="Bottom"
                    Text="ExifTool path (required for tagging other that JPEGs):" />
         <TextBox Grid.Row="6" Text="{Binding ExifToolPath}"/>
-        
-        <TextBlock Grid.Row="7" Foreground="#FFEEEEEE" VerticalAlignment="Bottom"
+
+        <TextBlock Grid.Row="7" VerticalAlignment="Bottom"
                    Text="FFmpeg path (required for video transformations):" />
         <TextBox Grid.Row="8" Text="{Binding FFmpegPath}"/>
 
-        <TextBlock Grid.Row="9" Foreground="#FFEEEEEE" VerticalAlignment="Bottom"
+        <TextBlock Grid.Row="9" VerticalAlignment="Bottom"
                    Text="Slideshow interval in seconds:" />
         <TextBox Grid.Row="10" Text="{Binding SlideShowInterval}"/>
 
-        <TextBlock Grid.Row="11" Foreground="#FFEEEEEE" VerticalAlignment="Bottom"
+        <TextBlock Grid.Row="11" VerticalAlignment="Bottom"
                    Text="Preview scaling mode:" />
         <Grid Grid.Row="12">
             <Grid.ColumnDefinitions>
@@ -69,13 +72,13 @@
                 <ColumnDefinition Width="130"/>
                 <ColumnDefinition/>
             </Grid.ColumnDefinitions>
-            <RadioButton Grid.Column="0" Content="Linear" Foreground="#FFDDDDDD" VerticalAlignment="Center"
+            <RadioButton Grid.Column="0" Content="Linear" VerticalAlignment="Center"
                          IsChecked="{Binding Path=BitmapScalingMode, Converter={StaticResource ComparisonConverter}, ConverterParameter={x:Static BitmapScalingMode.Linear}}"/>
-            <RadioButton Grid.Column="1" Content="Fant" Foreground="#FFDDDDDD" VerticalAlignment="Center"
+            <RadioButton Grid.Column="1" Content="Fant" VerticalAlignment="Center"
                          IsChecked="{Binding Path=BitmapScalingMode, Converter={StaticResource ComparisonConverter}, ConverterParameter={x:Static BitmapScalingMode.Fant}}"/>
-            <CheckBox Grid.Column="2" Content="Lanczos upscaling" Foreground="#FFDDDDDD" VerticalAlignment="Bottom"
+            <CheckBox Grid.Column="2" Content="Lanczos upscaling" VerticalAlignment="Bottom"
                          IsChecked="{Binding Path=LanczosUpscaling}" Margin="0,0,0,5"/>
-            <CheckBox Grid.Column="3" Content="Lanczos downscaling" Foreground="#FFDDDDDD" VerticalAlignment="Center"
+            <CheckBox Grid.Column="3" Content="Lanczos downscaling" VerticalAlignment="Center"
                          IsChecked="{Binding Path=LanczosDownscaling}"/>
         </Grid>
 
@@ -83,9 +86,9 @@
 
         <CheckBox Grid.Row="14" Content="Rename and delete sidecar files" IsChecked="{Binding IncludeSidecarFiles}" VerticalAlignment="Center" />
 
-        <TextBlock Grid.Row="15" Foreground="#FFEEEEEE" VerticalAlignment="Bottom" 
+        <TextBlock Grid.Row="15" VerticalAlignment="Bottom" 
                    Text="Default crop ratio (0 for none):" />
-        <Grid Grid.Row="14">
+        <Grid Grid.Row="16">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="70"/>
                 <ColumnDefinition Width="20"/>
@@ -93,7 +96,7 @@
                 <ColumnDefinition/>
             </Grid.ColumnDefinitions>
             <TextBox Grid.Column="0" Text="{Binding CropRatioNominator}"/>
-            <TextBlock Grid.Column="1" Foreground="#FFEEEEEE" Text="/" HorizontalAlignment="Center"/>
+            <TextBlock Grid.Column="1" Text="/" HorizontalAlignment="Center"/>
             <TextBox Grid.Column="2" Text="{Binding CropRatioDenominator}"/>
         </Grid>
 

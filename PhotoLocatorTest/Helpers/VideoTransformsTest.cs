@@ -17,7 +17,7 @@ namespace PhotoLocator.Helpers
             var settings = new ObservableSettings() { FFmpegPath = FFmpegPath };
             var videoTransforms = new VideoTransforms(settings);
 
-            var args = $" -i \"{VideoPath}\" -c:v bmp -f image2pipe -";
+            var args = $" -i \"{VideoPath}\"";
             int i = 0;
             await videoTransforms.RunFFmpegWithStreamOutputImagesAsync(args, frame =>
             {
