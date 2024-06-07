@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Runtime.CompilerServices;
@@ -29,6 +30,13 @@ namespace PhotoLocator
 
         readonly IMainViewModel _mainViewModel;
         readonly VideoTransforms _videoTransforms;
+        Action<double>? _progressCallback;
+        double _progressOffset, _progressScale;
+        TimeSpan _duration;
+        double _fps;
+        int _frameCount;
+        bool _hasDuration, _hasFps;
+        
 
         public VideoTransformCommands(IMainViewModel mainViewModel)
         {
@@ -313,6 +321,7 @@ namespace PhotoLocator
             await _mainViewModel.RunProcessWithProgressBarAsync(async progressCallback =>
             {
                 progressCallback(-1);
+                PrepareProgressDisplay(progressCallback);
                 Directory.CreateDirectory(Path.GetDirectoryName(outFileName)!);
                 var args = $"{InputArguments} -filter_complex \"[0:v:0]pad=iw*2:ih[bg]; [bg][1:v:0]overlay=w\" -y \"{outFileName}\"";
                 await _videoTransforms.RunFFmpegAsync(args, ProcessStdError);
@@ -382,14 +391,19 @@ namespace PhotoLocator
             await _mainViewModel.RunProcessWithProgressBarAsync(async progressCallback =>
             {
                 progressCallback(-1);
+                PrepareProgressDisplay(allSelected.Length == 1 ? progressCallback : null);
+
                 Directory.SetCurrentDirectory(inPath);
                 if (allSelected.Length > 1)
                     await File.WriteAllLinesAsync(InputFileName, allSelected.Select(f => $"file '{f.Name}'"));
                 
                 if (IsStabilizeChecked)
                 {
+                    _progressScale = 0.5;
                     File.Delete(TransformsFileName);
                     await _videoTransforms.RunFFmpegAsync($"{InputArguments} {StabilizeArguments}", ProcessStdError);
+                    _progressOffset = 0.5;
+                    _progressCallback?.Invoke(0.5);
                 }
 
                 Directory.CreateDirectory(Path.GetDirectoryName(outFileName)!);
@@ -410,6 +424,7 @@ namespace PhotoLocator
                 {
                     await _videoTransforms.RunFFmpegAsync(args + $" -y \"{outFileName}\"", ProcessStdError);
                 }
+                _progressCallback?.Invoke(1);
                 if (allSelected.Length > 1)
                     File.Delete(InputFileName);
                 if (IsStabilizeChecked)
@@ -417,10 +432,56 @@ namespace PhotoLocator
             }, "Processing");
         });
 
+        private void PrepareProgressDisplay(Action<double>? progressCallback)
+        {
+            _progressCallback = progressCallback;
+            _progressOffset = 0;
+            _progressScale = 1;
+            _frameCount = 0;
+            _hasDuration = false;
+            _hasFps = false;
+        }
+
         private void ProcessStdError(string line)
         {
             Debug.WriteLine(line);
             _mainViewModel.ProgressBarText = line;
+
+            if (_progressCallback is not null)
+            {
+                if (_frameCount > 0)
+                {
+                    if (line.StartsWith("frame=", StringComparison.Ordinal))
+                    {
+                        var parts = line.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+                        if (parts.Length > 1)
+                        {
+                            if (int.TryParse(parts[1], out var frame))
+                                _progressCallback(_progressOffset + frame * _progressScale / _frameCount);
+                        }
+                    }
+                }
+                //Duration: 00:00:10.44, start: 0.000000, bitrate: 67364 kb / s
+                //Stream #0:0[0x1](eng): Video: h264 (High) (avc1 / 0x31637661), yuv420p(tv, bt709, progressive), 3840x2160 [SAR 1:1 DAR 16:9], 67360 kb/s, 25 fps, 25 tbr, 12800 tbn (default)
+                else if (!_hasDuration && line.StartsWith("  Duration: ", StringComparison.Ordinal))
+                {
+                    var parts = line.Split([' ', ','], StringSplitOptions.RemoveEmptyEntries);
+                    if (parts.Length > 1)
+                        _hasDuration = TimeSpan.TryParse(parts[1], CultureInfo.InvariantCulture, out _duration);
+                }
+                else if (!_hasFps && line.Contains(" fps, ", StringComparison.Ordinal))
+                {
+                    var parts = line.Split([' ', ','], StringSplitOptions.RemoveEmptyEntries);
+                    for (int i = 1; i < parts.Length; i++)
+                        if (parts[i] == "fps")
+                        {
+                            _hasFps = double.TryParse(parts[i - 1], CultureInfo.InvariantCulture, out _fps);
+                            if (_hasDuration && _hasFps )
+                                _frameCount = (int)(_duration.TotalSeconds * _fps);
+                            break;
+                        }
+                }
+            }
         }
 
         private static void SaveImage(BitmapSource result, string outPath)

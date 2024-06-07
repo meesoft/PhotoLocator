@@ -421,8 +421,7 @@ namespace PhotoLocator
             {
                 await body(progress =>
                 {
-                    if (progress < 0)
-                        ProgressBarIsIndeterminate = true;
+                    ProgressBarIsIndeterminate = progress < 0;
                     ProgressBarValue = Math.Max(ProgressBarValue, progress);
                 });
             }
