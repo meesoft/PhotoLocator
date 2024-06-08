@@ -9,6 +9,7 @@ using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Runtime.CompilerServices;
+using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media.Imaging;
@@ -32,7 +33,7 @@ namespace PhotoLocator
         readonly VideoTransforms _videoTransforms;
         Action<double>? _progressCallback;
         double _progressOffset, _progressScale;
-        TimeSpan _duration;
+        TimeSpan _inputDuration;
         double _fps;
         int _frameCount;
         bool _hasDuration, _hasFps;
@@ -58,51 +59,34 @@ namespace PhotoLocator
             return true;
         }
 
-        public bool IsStabilizeChecked
+        public bool HasSingleInput
         {
-            get => _isStabilizeChecked;
+            get => _hasSingleInput;
+            set => SetProperty(ref _hasSingleInput, value);
+        }
+        bool _hasSingleInput;
+
+        public string SkipTo
+        {
+            get => _skipTo;
             set
             {
-                if (SetProperty(ref _isStabilizeChecked, value))
-                {
-                    UpdateStabilizeArgs();
-                    UpdateProcessArgs();
-                }
+                if (SetProperty(ref _skipTo, value))
+                    UpdateInputArgs();
             }
         }
-        bool _isStabilizeChecked;
+        string _skipTo = "";
 
-        public bool IsTripodChecked
+        public string Duration
         {
-            get => _isTripodChecked;
+            get => _duration;
             set
             {
-                if (SetProperty(ref _isTripodChecked, value))
-                {
-                    UpdateStabilizeArgs();
-                    UpdateProcessArgs();
-                }
+                if (SetProperty(ref _duration, value))
+                    UpdateInputArgs();
             }
         }
-        bool _isTripodChecked;
-
-        public int SmoothFrames
-        {
-            get => _smoothFrames;
-            set
-            {
-                if (SetProperty(ref _smoothFrames, value))
-                    UpdateProcessArgs();
-            }
-        }
-        int _smoothFrames = 10;
-
-        public string StabilizeArguments
-        {
-            get => _stabilizeArguments;
-            set => SetProperty(ref _stabilizeArguments, value);
-        }
-        string _stabilizeArguments = "";
+        string _duration = "";
 
         public bool IsTrimChecked
         {
@@ -159,6 +143,52 @@ namespace PhotoLocator
             }
         }
         string _cropWindow = "w:h:x:y";
+
+        public bool IsStabilizeChecked
+        {
+            get => _isStabilizeChecked;
+            set
+            {
+                if (SetProperty(ref _isStabilizeChecked, value))
+                {
+                    UpdateStabilizeArgs();
+                    UpdateProcessArgs();
+                }
+            }
+        }
+        bool _isStabilizeChecked;
+
+        public bool IsTripodChecked
+        {
+            get => _isTripodChecked;
+            set
+            {
+                if (SetProperty(ref _isTripodChecked, value))
+                {
+                    UpdateStabilizeArgs();
+                    UpdateProcessArgs();
+                }
+            }
+        }
+        bool _isTripodChecked;
+
+        public int SmoothFrames
+        {
+            get => _smoothFrames;
+            set
+            {
+                if (SetProperty(ref _smoothFrames, value))
+                    UpdateProcessArgs();
+            }
+        }
+        int _smoothFrames = 10;
+
+        public string StabilizeArguments
+        {
+            get => _stabilizeArguments;
+            set => SetProperty(ref _stabilizeArguments, value);
+        }
+        string _stabilizeArguments = "";
 
         public OutputMode OutputMode
         {
@@ -218,14 +248,27 @@ namespace PhotoLocator
         }
         string _outputArguments = "";
 
-        private void UpdateInputArgs(PictureItemViewModel[] allSelected)
+        private PictureItemViewModel[] UpdateInputArgs()
         {
+            var allSelected = _mainViewModel.GetSelectedItems().Where(item => item.IsFile).ToArray();
             if (allSelected.Length == 0)
                 throw new UserMessageException("No items selected");
             if (allSelected.Length == 1)
-                InputArguments = $"-i \"{allSelected[0].FullPath}\"";
+            {
+                HasSingleInput = true;
+                var trim = "";
+                if (!string.IsNullOrEmpty(SkipTo))
+                    trim += $"-ss {SkipTo} ";
+                if (!string.IsNullOrEmpty(Duration))
+                    trim += $"-t {Duration} ";
+                InputArguments = trim + $"-i \"{allSelected[0].FullPath}\"";
+            }
             else
+            {
+                HasSingleInput = false;
                 InputArguments = $"-f concat -safe 0 -i {VideoTransformCommands.InputFileName}";
+            }
+            return allSelected;
         }
 
         private void UpdateStabilizeArgs()
@@ -342,8 +385,7 @@ namespace PhotoLocator
 
         public ICommand ProcessSelected => new RelayCommand(async o =>
         {
-            var allSelected = _mainViewModel.GetSelectedItems().Where(item => item.IsFile).ToArray();
-            UpdateInputArgs(allSelected);
+            var allSelected = UpdateInputArgs();
 
             var window = new VideoTransformWindow() { Owner = App.Current.MainWindow, DataContext = this };
             if (window.ShowDialog() != true)
@@ -388,10 +430,17 @@ namespace PhotoLocator
                 outFileName = dlg.FileName;
             }
 
+            string? message = null;
             await _mainViewModel.RunProcessWithProgressBarAsync(async progressCallback =>
             {
                 progressCallback(-1);
-                PrepareProgressDisplay(allSelected.Length == 1 ? progressCallback : null);
+                if (allSelected.All(item => !item.IsVideo))
+                {
+                    PrepareProgressDisplay(progressCallback);
+                    _frameCount = allSelected.Length;
+                }
+                else 
+                    PrepareProgressDisplay(allSelected.Length == 1 ? progressCallback : null);
 
                 Directory.SetCurrentDirectory(inPath);
                 if (allSelected.Length > 1)
@@ -413,12 +462,14 @@ namespace PhotoLocator
                     var process = new CombineFramesOperation();
                     await _videoTransforms.RunFFmpegWithStreamOutputImagesAsync(args, process.UpdateSum, ProcessStdError);
                     SaveImage(process.GetAverageResult(), outFileName);
+                    message = $"Processed {process.ProcessedImages} frames";
                 }
                 else if (OutputMode is OutputMode.Max)
                 {
                     var process = new CombineFramesOperation();
                     await _videoTransforms.RunFFmpegWithStreamOutputImagesAsync(args, process.UpdateMax, ProcessStdError);
                     SaveImage(process.GetResult(), outFileName);
+                    message = $"Processed {process.ProcessedImages} frames";
                 }
                 else
                 {
@@ -430,6 +481,8 @@ namespace PhotoLocator
                 if (IsStabilizeChecked)
                     File.Delete(TransformsFileName);
             }, "Processing");
+            if (!string.IsNullOrEmpty(message))
+                MessageBox.Show(message);
         });
 
         private void PrepareProgressDisplay(Action<double>? progressCallback)
@@ -467,7 +520,7 @@ namespace PhotoLocator
                 {
                     var parts = line.Split([' ', ','], StringSplitOptions.RemoveEmptyEntries);
                     if (parts.Length > 1)
-                        _hasDuration = TimeSpan.TryParse(parts[1], CultureInfo.InvariantCulture, out _duration);
+                        _hasDuration = TimeSpan.TryParse(parts[1], CultureInfo.InvariantCulture, out _inputDuration);
                 }
                 else if (!_hasFps && line.Contains(" fps, ", StringComparison.Ordinal))
                 {
@@ -477,7 +530,7 @@ namespace PhotoLocator
                         {
                             _hasFps = double.TryParse(parts[i - 1], CultureInfo.InvariantCulture, out _fps);
                             if (_hasDuration && _hasFps )
-                                _frameCount = (int)(_duration.TotalSeconds * _fps);
+                                _frameCount = (int)(_inputDuration.TotalSeconds * _fps);
                             break;
                         }
                 }

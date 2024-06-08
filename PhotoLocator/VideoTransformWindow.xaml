@@ -12,6 +12,7 @@
         WindowStartupLocation="CenterOwner" ShowInTaskbar="False">
 
     <Window.Resources>
+        <BooleanToVisibilityConverter x:Key="BooleanToVisibility" />
         <helpers:ComparisonConverter x:Key="ComparisonConverter" />
         <Style TargetType="TextBlock">
             <Setter Property="Foreground" Value="#FFEEEEEE" />
@@ -19,18 +20,25 @@
     </Window.Resources>    
     
     <StackPanel Margin="10">
-        <CheckBox Content="Stabilize" IsChecked="{Binding IsStabilizeChecked}"/>
+        <StackPanel Orientation="Horizontal" Visibility="{Binding HasSingleInput, Converter={StaticResource BooleanToVisibility}}" Margin="0,0,0,4">
+            <TextBlock Text="Skip to:"/>
+            <TextBox Text="{Binding SkipTo}" Width="80" Margin="4,0,20,0" />
+            <TextBlock Text="Duration:"/>
+            <TextBox Text="{Binding Duration}" Width="80" Margin="4,0,0,0" />
+        </StackPanel>
+
+        <TextBlock Text="Video filters:" />
+        <CheckBox Content="Trim:" IsChecked="{Binding IsTrimChecked}" Margin="10,4,0,0"/>
+        <TextBox Text="{Binding TrimRange}" Margin="10,4,0,0" IsEnabled="{Binding IsTrimChecked}"/>
+        <CheckBox Content="Crop:" IsChecked="{Binding IsCropChecked}" Margin="10,4,0,0"/>
+        <TextBox Text="{Binding CropWindow}" Margin="10,4,0,0" IsEnabled="{Binding IsCropChecked}"/>
+
+        <CheckBox Content="Stabilize" IsChecked="{Binding IsStabilizeChecked}" Margin="0,8,0,0"/>
         <CheckBox Content="Tripod mode" IsChecked="{Binding IsTripodChecked}" Margin="10,4,0,0" IsEnabled="{Binding IsStabilizeChecked}"/>
         <TextBlock Text="Smooth frames:" Margin="10,4,0,0" IsEnabled="{Binding IsStabilizeChecked}"/>
         <TextBox Text="{Binding SmoothFrames}" Margin="10,0,0,0" IsEnabled="{Binding IsStabilizeChecked}"/>
         <TextBlock Text="Stabilize arguments:" Margin="10,4,0,0" IsEnabled="{Binding IsStabilizeChecked}"/>
         <TextBox Text="{Binding StabilizeArguments}" Margin="10,0,0,0" IsEnabled="{Binding IsStabilizeChecked}"/>
-
-        <TextBlock Text="Video filters:" Margin="0,4,0,0"/>
-        <CheckBox Content="Trim:" IsChecked="{Binding IsTrimChecked}" Margin="10,4,0,0"/>
-        <TextBox Text="{Binding TrimRange}" Margin="10,4,0,0" IsEnabled="{Binding IsTrimChecked}"/>
-        <CheckBox Content="Crop:" IsChecked="{Binding IsCropChecked}" Margin="10,4,0,0"/>
-        <TextBox Text="{Binding CropWindow}" Margin="10,4,0,0" IsEnabled="{Binding IsCropChecked}"/>
 
         <TextBlock Text="Output" Margin="0,4,0,0"/>
 
