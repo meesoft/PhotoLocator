@@ -144,6 +144,34 @@ namespace PhotoLocator
         }
         string _cropWindow = "w:h:x:y";
 
+        public bool IsScaleChecked
+        {
+            get => _isScaleChecked;
+            set
+            {
+                if (SetProperty(ref _isScaleChecked, value))
+                {
+                    UpdateStabilizeArgs();
+                    UpdateProcessArgs();
+                }
+            }
+        }
+        bool _isScaleChecked;
+
+        public string ScaleTo
+        {
+            get => _scaleTo;
+            set
+            {
+                if (SetProperty(ref _scaleTo, value))
+                {
+                    UpdateStabilizeArgs();
+                    UpdateProcessArgs();
+                }
+            }
+        }
+        string _scaleTo = "w:h";
+
         public bool IsStabilizeChecked
         {
             get => _isStabilizeChecked;
@@ -275,17 +303,15 @@ namespace PhotoLocator
         {
             if (IsStabilizeChecked)
             {
-                var vfArgs = "";
+                var filters = new List<string>();
                 if (IsTrimChecked)
-                    vfArgs += $"trim={TrimRange}, ";
+                    filters.Add($"trim={TrimRange}");
                 if (IsCropChecked)
-                    vfArgs += $"crop={CropWindow}, ";
-
-                vfArgs += $"vidstabdetect=shakiness=7:result={VideoTransformCommands.TransformsFileName}";
-                if (IsTripodChecked)
-                    vfArgs += ":tripod=1";
-
-                StabilizeArguments = $"-vf \"{vfArgs}\" -f null -";
+                    filters.Add($"crop={CropWindow}");
+                if (IsScaleChecked)
+                    filters.Add($"scale={ScaleTo}");
+                filters.Add($"vidstabdetect=shakiness=7{(IsTripodChecked ? ":tripod=1" : "")}:result={VideoTransformCommands.TransformsFileName}");
+                StabilizeArguments = $"-vf \"{string.Join(", ", filters)}\" -f null -";
             }
             else
             {
@@ -300,16 +326,12 @@ namespace PhotoLocator
                 filters.Add($"trim={TrimRange}");
             if (IsCropChecked)
                 filters.Add($"crop={CropWindow}");
+            if (IsScaleChecked)
+                filters.Add($"scale={ScaleTo}");
             if (IsStabilizeChecked)
-            {
-                var vfArg = $"vidstabtransform=smoothing={SmoothFrames}";
-                if (IsTripodChecked)
-                    vfArg += ":tripod=1";
-                filters.Add(vfArg);
-            }
+                filters.Add($"vidstabtransform=smoothing={SmoothFrames}{(IsTripodChecked ? ":tripod=1" : "")}");
             if (OutputMode == OutputMode.Video && SelectedVideoFormat.Content.ToString() != "Copy")
                 filters.Add("setpts=1*PTS");
-
             if (filters.Count == 0)
                 ProcessArguments = "";
             else

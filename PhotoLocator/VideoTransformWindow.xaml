@@ -32,7 +32,9 @@
         <TextBox Text="{Binding TrimRange}" Margin="10,4,0,0" IsEnabled="{Binding IsTrimChecked}"/>
         <CheckBox Content="Crop:" IsChecked="{Binding IsCropChecked}" Margin="10,4,0,0"/>
         <TextBox Text="{Binding CropWindow}" Margin="10,4,0,0" IsEnabled="{Binding IsCropChecked}"/>
-
+        <CheckBox Content="Scale to:" IsChecked="{Binding IsScaleChecked}" Margin="10,4,0,0"/>
+        <TextBox Text="{Binding ScaleTo}" Margin="10,4,0,0" IsEnabled="{Binding IsScaleChecked}"/>
+        
         <CheckBox Content="Stabilize" IsChecked="{Binding IsStabilizeChecked}" Margin="0,8,0,0"/>
         <CheckBox Content="Tripod mode" IsChecked="{Binding IsTripodChecked}" Margin="10,4,0,0" IsEnabled="{Binding IsStabilizeChecked}"/>
         <TextBlock Text="Smooth frames:" Margin="10,4,0,0" IsEnabled="{Binding IsStabilizeChecked}"/>
