@@ -8,7 +8,7 @@
         mc:Ignorable="d"
         d:DataContext="{d:DesignInstance Type=local:VideoTransformCommands, IsDesignTimeCreatable=false}"
         Background="Black"
-        Title="Video transform" Width="400" SizeToContent="Height" ResizeMode="NoResize"
+        Title="Video transform" Width="600" SizeToContent="Height" ResizeMode="NoResize"
         WindowStartupLocation="CenterOwner" ShowInTaskbar="False">
 
     <Window.Resources>
@@ -20,32 +20,40 @@
     </Window.Resources>    
     
     <StackPanel Margin="10">
-        <StackPanel Orientation="Horizontal" Visibility="{Binding HasSingleInput, Converter={StaticResource BooleanToVisibility}}" Margin="0,0,0,4">
-            <TextBlock Text="Skip to:"/>
-            <TextBox Text="{Binding SkipTo}" Width="80" Margin="4,0,20,0" />
-            <TextBlock Text="Duration:"/>
-            <TextBox Text="{Binding Duration}" Width="80" Margin="4,0,0,0" />
+        <DockPanel Visibility="{Binding HasSingleInput, Converter={StaticResource BooleanToVisibility}}" >
+            <TextBlock Text="Skip to:" Width="140"/>
+            <TextBox Text="{Binding SkipTo}" Width="140" />
+            <TextBlock Text="Duration:" Margin="20,0,0,0"/>
+            <TextBox Text="{Binding Duration}" Width="140" HorizontalAlignment="Right" />
+        </DockPanel>
+
+        <TextBlock Text="Video filters:" Margin="0,4,0,0"/>
+        <StackPanel Orientation="Horizontal" Margin="10,4,0,0">
+            <CheckBox Content="Trim:" IsChecked="{Binding IsTrimChecked}" Width="130" />
+            <TextBox Text="{Binding TrimRange}" IsEnabled="{Binding IsTrimChecked}" Width="140"/>
+        </StackPanel>
+        <StackPanel Orientation="Horizontal" Margin="10,4,0,0">
+            <CheckBox Content="Crop:" IsChecked="{Binding IsCropChecked}" Width="130"/>
+            <TextBox Text="{Binding CropWindow}" IsEnabled="{Binding IsCropChecked}" Width="140"/>
+        </StackPanel>
+        <StackPanel Orientation="Horizontal" Margin="10,4,0,0">
+            <CheckBox Content="Scale to:" IsChecked="{Binding IsScaleChecked}" Width="130"/>
+            <TextBox Text="{Binding ScaleTo}" IsEnabled="{Binding IsScaleChecked}" Width="140"/>
         </StackPanel>
 
-        <TextBlock Text="Video filters:" />
-        <CheckBox Content="Trim:" IsChecked="{Binding IsTrimChecked}" Margin="10,4,0,0"/>
-        <TextBox Text="{Binding TrimRange}" Margin="10,4,0,0" IsEnabled="{Binding IsTrimChecked}"/>
-        <CheckBox Content="Crop:" IsChecked="{Binding IsCropChecked}" Margin="10,4,0,0"/>
-        <TextBox Text="{Binding CropWindow}" Margin="10,4,0,0" IsEnabled="{Binding IsCropChecked}"/>
-        <CheckBox Content="Scale to:" IsChecked="{Binding IsScaleChecked}" Margin="10,4,0,0"/>
-        <TextBox Text="{Binding ScaleTo}" Margin="10,4,0,0" IsEnabled="{Binding IsScaleChecked}"/>
-        
         <CheckBox Content="Stabilize" IsChecked="{Binding IsStabilizeChecked}" Margin="0,8,0,0"/>
         <CheckBox Content="Tripod mode" IsChecked="{Binding IsTripodChecked}" Margin="10,4,0,0" IsEnabled="{Binding IsStabilizeChecked}"/>
-        <TextBlock Text="Smooth frames:" Margin="10,4,0,0" IsEnabled="{Binding IsStabilizeChecked}"/>
-        <TextBox Text="{Binding SmoothFrames}" Margin="10,0,0,0" IsEnabled="{Binding IsStabilizeChecked}"/>
+        <StackPanel Orientation="Horizontal" Margin="10,4,0,0">
+            <TextBlock Text="Smooth frames:" IsEnabled="{Binding IsStabilizeChecked}" Width="130"/>
+            <TextBox Text="{Binding SmoothFrames}" IsEnabled="{Binding IsStabilizeChecked}" Width="140"/>
+        </StackPanel>
         <TextBlock Text="Stabilize arguments:" Margin="10,4,0,0" IsEnabled="{Binding IsStabilizeChecked}"/>
         <TextBox Text="{Binding StabilizeArguments}" Margin="10,0,0,0" IsEnabled="{Binding IsStabilizeChecked}"/>
 
         <TextBlock Text="Output" Margin="0,4,0,0"/>
 
-        <StackPanel Orientation="Horizontal" >
-            <RadioButton Content="Video" Margin="10,4,10,0" Width="130"
+        <StackPanel Orientation="Horizontal" Margin="10,0,0,0" >
+            <RadioButton Content="Video" Margin="0,4,0,0" Width="130"
                          IsChecked="{Binding Path=OutputMode, Converter={StaticResource ComparisonConverter}, ConverterParameter={x:Static local:OutputMode.Video}}"/>
             <ComboBox ItemsSource="{Binding VideoFormats}" SelectedItem="{Binding SelectedVideoFormat}" Width="140"/>
         </StackPanel>
