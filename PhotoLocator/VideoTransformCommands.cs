@@ -249,11 +249,25 @@ namespace PhotoLocator
         public static IEnumerable<ComboBoxItem> VideoFormats { get; } = [
             new ComboBoxItem { Content = "Default", Tag = "" },
             new ComboBoxItem { Content = "Copy", Tag = "-c copy" },
-            new ComboBoxItem { Content = "libx264", Tag = "-c:v libx264 -r 30" },
+            new ComboBoxItem { Content = "libx264", Tag = "-c:v libx264" },
             new ComboBoxItem { Content = "libx265", Tag = "-c:v libx265" },
             new ComboBoxItem { Content = "libvpx-vp9", Tag = "-c:v libvpx-vp9" },
             new ComboBoxItem { Content = "libaom-av1", Tag = "-c:v libaom-av1" },
         ];
+
+        public string FrameRate
+        {
+            get => _frameRate;
+            set
+            {
+                if (SetProperty(ref _frameRate, value))
+                {
+                    UpdateInputArgs();
+                    UpdateOutputArgs();
+                }
+            }
+        }
+        string _frameRate = "";
 
         public string InputArguments
         {
@@ -284,17 +298,19 @@ namespace PhotoLocator
             if (allSelected.Length == 1)
             {
                 HasSingleInput = true;
-                var trim = "";
+                var args = "";
                 if (!string.IsNullOrEmpty(SkipTo))
-                    trim += $"-ss {SkipTo} ";
+                    args += $"-ss {SkipTo} ";
                 if (!string.IsNullOrEmpty(Duration))
-                    trim += $"-t {Duration} ";
-                InputArguments = trim + $"-i \"{allSelected[0].FullPath}\"";
+                    args += $"-t {Duration} ";
+                if (!string.IsNullOrEmpty(FrameRate))
+                    args += $"-r {FrameRate} ";
+                InputArguments = args + $"-i \"{allSelected[0].FullPath}\"";
             }
             else
             {
                 HasSingleInput = false;
-                InputArguments = $"-f concat -safe 0 -i {VideoTransformCommands.InputFileName}";
+                InputArguments = (string.IsNullOrEmpty(FrameRate) ? "" : $"-r {FrameRate} ") + $"-f concat -safe 0 -i {VideoTransformCommands.InputFileName}";
             }
             return allSelected;
         }
@@ -330,8 +346,8 @@ namespace PhotoLocator
                 filters.Add($"scale={ScaleTo}");
             if (IsStabilizeChecked)
                 filters.Add($"vidstabtransform=smoothing={SmoothFrames}{(IsTripodChecked ? ":tripod=1" : "")}");
-            if (OutputMode == OutputMode.Video && SelectedVideoFormat.Content.ToString() != "Copy")
-                filters.Add("setpts=1*PTS");
+            //if (OutputMode == OutputMode.Video && SelectedVideoFormat.Content.ToString() != "Copy")
+            //    filters.Add("setpts=1*PTS");
             if (filters.Count == 0)
                 ProcessArguments = "";
             else
@@ -341,8 +357,8 @@ namespace PhotoLocator
         private void UpdateOutputArgs()
         {
             if (OutputMode == OutputMode.Video)
-                OutputArguments = (string)SelectedVideoFormat.Tag;
-            else 
+                OutputArguments = (string)SelectedVideoFormat.Tag + (string.IsNullOrEmpty(FrameRate) ? "" : $" -r {FrameRate}");
+            else
                 OutputArguments = "";
         }
 
@@ -361,9 +377,15 @@ namespace PhotoLocator
         public ICommand Combine => new RelayCommand(o =>
         {
             if (_mainViewModel.GetSelectedItems().All(item => item.IsVideo))
+            {
                 SelectedVideoFormat = VideoFormats.First(f => f.Content.ToString() == "Copy");
+                FrameRate = "";
+            }
             else
+            {
                 SelectedVideoFormat = VideoFormats.First(f => f.Content.ToString() == "libx264");
+                FrameRate = "30";
+            }
             ProcessSelected.Execute(null);
         });
 
@@ -428,7 +450,7 @@ namespace PhotoLocator
                 switch (OutputMode)
                 {
                     case OutputMode.Video:
-                        postfix = IsStabilizeChecked ? "stabilized" : "processed";
+                        postfix = allSelected.Length > 1 ? "combined" : IsStabilizeChecked ? "stabilized" : "processed";
                         ext = ".mp4";
                         break;
                     case OutputMode.Average:
@@ -529,11 +551,8 @@ namespace PhotoLocator
                     if (line.StartsWith("frame=", StringComparison.Ordinal))
                     {
                         var parts = line.Split(' ', StringSplitOptions.RemoveEmptyEntries);
-                        if (parts.Length > 1)
-                        {
-                            if (int.TryParse(parts[1], out var frame))
-                                _progressCallback(_progressOffset + frame * _progressScale / _frameCount);
-                        }
+                        if (parts.Length > 1 && int.TryParse(parts[1], out var frame))
+                            _progressCallback(_progressOffset + frame * _progressScale / _frameCount);
                     }
                 }
                 //Duration: 00:00:10.44, start: 0.000000, bitrate: 67364 kb / s
@@ -544,7 +563,7 @@ namespace PhotoLocator
                     if (parts.Length > 1)
                         _hasDuration = TimeSpan.TryParse(parts[1], CultureInfo.InvariantCulture, out _inputDuration);
                 }
-                else if (!_hasFps && line.Contains(" fps, ", StringComparison.Ordinal))
+                else if (!_hasFps && line.StartsWith("  Stream #0:", StringComparison.Ordinal))
                 {
                     var parts = line.Split([' ', ','], StringSplitOptions.RemoveEmptyEntries);
                     for (int i = 1; i < parts.Length; i++)
