@@ -124,9 +124,8 @@ namespace PhotoLocator
                 name = name[..i].TrimEnd();
             if (Settings.ShowMetadataInSlideShow)
             {
-                var metadata = ExifHandler.GetMetadataString(SelectedPicture.FullPath);
-                if (!string.IsNullOrEmpty(metadata))
-                    name = name + " [" + metadata + "]";
+                if (!string.IsNullOrEmpty(SelectedPicture.MetadataString))
+                    name = name + " [" + SelectedPicture.MetadataString + "]";
             }
             PictureTitle = name;
 

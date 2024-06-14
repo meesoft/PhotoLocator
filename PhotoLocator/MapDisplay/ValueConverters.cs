@@ -27,12 +27,12 @@ namespace PhotoLocator.MapDisplay
 
         public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
         {
-            return Convert(value, targetType, parameter, "");
+            return Convert(value, targetType, parameter, string.Empty);
         }
 
         public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
         {
-            return ConvertBack(value, targetType, parameter, "");
+            return ConvertBack(value, targetType, parameter, string.Empty);
         }
     }
 }

@@ -314,21 +314,7 @@ namespace PhotoLocator
             }
             _previewCancellation = new CancellationTokenSource();
             var ct = _previewCancellation.Token;
-            var textTask = Task.Run(() =>
-            {
-                var title = selected.Name;
-                try
-                {
-                    var metadata = ExifHandler.GetMetadataString(selected.FullPath);
-                    if (!string.IsNullOrEmpty(metadata))
-                        title += " [" + metadata + "]";
-                }
-                catch
-                {
-                }
-                ct.ThrowIfCancellationRequested();
-                return title;
-            }, ct);
+            var cacheMetadataTask = Task.Run(() => { var metadata = selected.MetadataString; }, ct);
             try
             {
                 var cached = _pictureCache.Where(item => item.Path == selected.FullPath).FirstOrDefault();
@@ -343,7 +329,8 @@ namespace PhotoLocator
                 }
                 else
                     PreviewPictureSource = cached.Picture;
-                PreviewPictureTitle = await textTask;
+                await cacheMetadataTask;
+                PreviewPictureTitle = selected.Name + (string.IsNullOrEmpty(selected.MetadataString) ? null : " [" + selected.MetadataString + "]");
             }
             catch (OperationCanceledException)
             {

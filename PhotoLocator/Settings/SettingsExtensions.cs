@@ -23,7 +23,7 @@ namespace PhotoLocator.Settings
         public static string[] CleanPhotoFileExtensions(this ISettings settings)
         {
             var extensions = settings.PhotoFileExtensions!.
-                Replace("*", "", StringComparison.Ordinal).
+                Replace("*", string.Empty, StringComparison.Ordinal).
                 Replace(" ", ",", StringComparison.Ordinal).
                 Replace(";", ",", StringComparison.Ordinal).
                 ToLowerInvariant().

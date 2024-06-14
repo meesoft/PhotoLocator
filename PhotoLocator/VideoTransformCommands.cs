@@ -75,7 +75,7 @@ namespace PhotoLocator
                     UpdateInputArgs();
             }
         }
-        string _skipTo = "";
+        string _skipTo = string.Empty;
 
         public string Duration
         {
@@ -86,7 +86,7 @@ namespace PhotoLocator
                     UpdateInputArgs();
             }
         }
-        string _duration = "";
+        string _duration = string.Empty;
 
         public bool IsTrimChecked
         {
@@ -216,7 +216,7 @@ namespace PhotoLocator
             get => _stabilizeArguments;
             set => SetProperty(ref _stabilizeArguments, value);
         }
-        string _stabilizeArguments = "";
+        string _stabilizeArguments = string.Empty;
 
         public OutputMode OutputMode
         {
@@ -247,7 +247,7 @@ namespace PhotoLocator
         ComboBoxItem _selectedVideoFormat = VideoFormats.First();
 
         public static IEnumerable<ComboBoxItem> VideoFormats { get; } = [
-            new ComboBoxItem { Content = "Default", Tag = "" },
+            new ComboBoxItem { Content = "Default", Tag = string.Empty },
             new ComboBoxItem { Content = "Copy", Tag = "-c copy" },
             new ComboBoxItem { Content = "libx264", Tag = "-c:v libx264" },
             new ComboBoxItem { Content = "libx265", Tag = "-c:v libx265" },
@@ -267,28 +267,28 @@ namespace PhotoLocator
                 }
             }
         }
-        string _frameRate = "";
+        string _frameRate = string.Empty;
 
         public string InputArguments
         {
             get => _inputArguments;
             set => SetProperty(ref _inputArguments, value);
         }
-        string _inputArguments = "";
+        string _inputArguments = string.Empty;
 
         public string ProcessArguments
         {
             get => _processArguments;
             set => SetProperty(ref _processArguments, value);
         }
-        string _processArguments = "";
+        string _processArguments = string.Empty;
 
         public string OutputArguments
         {
             get => _outputArguments;
             set => SetProperty(ref _outputArguments, value);
         }
-        string _outputArguments = "";
+        string _outputArguments = string.Empty;
 
         private PictureItemViewModel[] UpdateInputArgs()
         {
@@ -298,7 +298,7 @@ namespace PhotoLocator
             if (allSelected.Length == 1)
             {
                 HasSingleInput = true;
-                var args = "";
+                var args = string.Empty;
                 if (!string.IsNullOrEmpty(SkipTo))
                     args += $"-ss {SkipTo} ";
                 if (!string.IsNullOrEmpty(Duration))
@@ -331,7 +331,7 @@ namespace PhotoLocator
             }
             else
             {
-                StabilizeArguments = "";
+                StabilizeArguments = string.Empty;
             }
         }
 
@@ -349,7 +349,7 @@ namespace PhotoLocator
             //if (OutputMode == OutputMode.Video && SelectedVideoFormat.Content.ToString() != "Copy")
             //    filters.Add("setpts=1*PTS");
             if (filters.Count == 0)
-                ProcessArguments = "";
+                ProcessArguments = string.Empty;
             else
                 ProcessArguments = $"-vf \"{string.Join(", ", filters)}\"";
         }
@@ -359,7 +359,7 @@ namespace PhotoLocator
             if (OutputMode == OutputMode.Video)
                 OutputArguments = (string)SelectedVideoFormat.Tag + (string.IsNullOrEmpty(FrameRate) ? "" : $" -r {FrameRate}");
             else
-                OutputArguments = "";
+                OutputArguments = string.Empty;
         }
 
         public ICommand ExtractFrames => new RelayCommand(o =>
@@ -557,13 +557,13 @@ namespace PhotoLocator
                 }
                 //Duration: 00:00:10.44, start: 0.000000, bitrate: 67364 kb / s
                 //Stream #0:0[0x1](eng): Video: h264 (High) (avc1 / 0x31637661), yuv420p(tv, bt709, progressive), 3840x2160 [SAR 1:1 DAR 16:9], 67360 kb/s, 25 fps, 25 tbr, 12800 tbn (default)
-                else if (!_hasDuration && line.StartsWith("  Duration: ", StringComparison.Ordinal))
+                else if (!_hasDuration && line.StartsWith(VideoTransforms.DurationOutputPrefix, StringComparison.Ordinal))
                 {
                     var parts = line.Split([' ', ','], StringSplitOptions.RemoveEmptyEntries);
                     if (parts.Length > 1)
                         _hasDuration = TimeSpan.TryParse(parts[1], CultureInfo.InvariantCulture, out _inputDuration);
                 }
-                else if (!_hasFps && line.StartsWith("  Stream #0:", StringComparison.Ordinal))
+                else if (!_hasFps && line.StartsWith(VideoTransforms.EncodingOutputPrefix, StringComparison.Ordinal))
                 {
                     var parts = line.Split([' ', ','], StringSplitOptions.RemoveEmptyEntries);
                     for (int i = 1; i < parts.Length; i++)

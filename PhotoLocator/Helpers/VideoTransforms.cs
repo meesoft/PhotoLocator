@@ -9,6 +9,9 @@ namespace PhotoLocator.Helpers
 {
     class VideoTransforms
     {
+        public const string DurationOutputPrefix = "  Duration:";
+        public const string EncodingOutputPrefix = "  Stream #0:";
+
         readonly ISettings _settings;
         string? _lastError;
 

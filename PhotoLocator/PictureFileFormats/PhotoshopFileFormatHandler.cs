@@ -9,7 +9,7 @@ using System.Windows.Media.Imaging;
 
 namespace PhotoLocator.PictureFileFormats
 {
-    public static class PhotoshopFileFormatHandler
+    static class PhotoshopFileFormatHandler
     {
         /// <summary>
         /// Takes extension in lower case including .

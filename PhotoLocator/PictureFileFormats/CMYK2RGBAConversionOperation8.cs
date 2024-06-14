@@ -4,7 +4,7 @@ using System.Threading.Tasks;
 
 namespace PhotoLocator.PictureFileFormats
 {
-    public static class CMYK2RGBAConversionOperation8
+    static class CMYK2RGBAConversionOperation8
     {
         public static void Apply(byte[] source, byte[] dest, int width, int height)
         {

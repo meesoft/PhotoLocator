@@ -152,17 +152,38 @@ namespace PhotoLocator
         }
         DateTime? _timeStamp;
 
-        public ImageSource? ThumbnailImage 
-        { 
-            get => _thumbnailImage; 
+        public ImageSource? ThumbnailImage
+        {
+            get => _thumbnailImage;
             set => SetProperty(ref _thumbnailImage, value);
         }
         ImageSource? _thumbnailImage;
 
-        public string? ErrorMessage 
-        { 
-            get => _errorMessage; 
-            set => SetProperty(ref _errorMessage, value); 
+        public string MetadataString
+        {
+            get => _metadataString ??= GetMetadataString();
+            set => SetProperty(ref _metadataString, value);
+        }
+
+        private string GetMetadataString()
+        {
+            try
+            {
+                return ExifHandler.GetMetadataString(FullPath);
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine(ex);
+                return string.Empty;
+            }
+        }
+
+        string? _metadataString;
+
+        public string? ErrorMessage
+        {
+            get => _errorMessage;
+            set => SetProperty(ref _errorMessage, value);
         }
         string? _errorMessage;
 
@@ -198,7 +219,7 @@ namespace PhotoLocator
                     return false;
                 collection.Insert(newIndex, this);
             }
-            else 
+            else
             {
                 var list = collection.Where(item => item.IsDirectory).ToList();
                 var newIndex = ~list.BinarySearch(this, new SelectorComparer<PictureItemViewModel>(item => item.Name));
@@ -294,6 +315,23 @@ namespace PhotoLocator
 
         private BitmapSource LoadPreviewInternal(int maxWidth, CancellationToken ct)
         {
+            if (IsVideo && !string.IsNullOrEmpty(_settings?.FFmpegPath))
+            {
+                try
+                {
+                    var (result, metadata) = VideoFileFormatHandler.LoadFromFile(FullPath, maxWidth, _settings, ct);
+                    if (metadata != null)
+                        MetadataString = metadata;
+                    return result;
+                }
+                catch (OperationCanceledException)
+                {
+                    throw;
+                }
+                catch
+                {
+                }
+            }
             using var fileStream = File.OpenRead(FullPath);
             try
             {
