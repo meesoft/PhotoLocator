@@ -7,13 +7,13 @@ namespace PhotoLocator
 {
     public interface IMainViewModel
     {
-        public ISettings Settings { get; }
+        ISettings Settings { get; }
 
         PictureItemViewModel? SelectedPicture { get; set; }
 
         IEnumerable<PictureItemViewModel> GetSelectedItems();
-
-        public string? ProgressBarText { get; set; }
+        
+        string? ProgressBarText { get; set; }
 
         Task RunProcessWithProgressBarAsync(Func<Action<double>, Task> body, string text, PictureItemViewModel? focusItem = null);
     }

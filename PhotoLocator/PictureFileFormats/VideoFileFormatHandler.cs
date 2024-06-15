@@ -22,7 +22,7 @@ namespace PhotoLocator.PictureFileFormats
                 frame => result = frame, 
                 line =>
                 {
-                    Debug.WriteLine(line);
+                    //Debug.WriteLine(line);
                     if (duration is null && line.StartsWith(VideoTransforms.DurationOutputPrefix, StringComparison.Ordinal))
                     {
                         var parts = line.Split([' ', ','], StringSplitOptions.RemoveEmptyEntries);

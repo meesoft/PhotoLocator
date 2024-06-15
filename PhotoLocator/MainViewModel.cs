@@ -433,8 +433,7 @@ namespace PhotoLocator
             var updatedPictures = Pictures.Where(i => i.GeoTagUpdated).ToArray();
             if (updatedPictures.Length == 0)
                 return;
-            if (_fileSystemWatcher is not null)
-                _fileSystemWatcher.EnableRaisingEvents = false;
+            PauseFileSystemWatcher();
             await RunProcessWithProgressBarAsync(async progressCallback =>
             {
                 int i = 0;
@@ -445,10 +444,9 @@ namespace PhotoLocator
                 });
                 await Task.Delay(10);
             }, "Saving...");
-            if (_fileSystemWatcher is not null)
-                _fileSystemWatcher.EnableRaisingEvents = true;
+            ResumeFileSystemWatcher();
         });
-
+       
         public ICommand RenameCommand => new RelayCommand(async o =>
         {
             var selectedItems = GetSelectedItems().ToList();
@@ -461,11 +459,9 @@ namespace PhotoLocator
             renameWin.Owner = App.Current.MainWindow;
             renameWin.DataContext = renameWin;
             PreviewPictureSource = null;
-            if (_fileSystemWatcher != null)
-                _fileSystemWatcher.EnableRaisingEvents = false;
+            PauseFileSystemWatcher();
             renameWin.ShowDialog();
-            if (_fileSystemWatcher != null)
-                _fileSystemWatcher.EnableRaisingEvents = true;
+            ResumeFileSystemWatcher();
             _pictureCache.Clear();
             if (focused != null)
                 FocusListBoxItem?.Invoke(focused);
@@ -612,6 +608,7 @@ namespace PhotoLocator
                 return;
             var selectedIndex = Pictures.IndexOf(SelectedPicture!);
             SelectedPicture = null;
+            PauseFileSystemWatcher();
             await RunProcessWithProgressBarAsync(progressCallback => Task.Run(() =>
             {
                 int i = 0;
@@ -622,6 +619,7 @@ namespace PhotoLocator
                     progressCallback((double)(++i) / allSelected.Length);
                 }
             }), "Deleting...", focusedItem);
+            ResumeFileSystemWatcher();
         });
 
         public ICommand CopySelectedCommand => new RelayCommand(async o =>
@@ -807,7 +805,7 @@ namespace PhotoLocator
 
         private async Task LoadFolderContentsAsync(bool keepSelection, string? selectItemFullPath = null)
         {
-            DisableFileSystemWatcher();
+            DisposeFileSystemWatcher();
             var selectedName = SelectedPicture?.Name;
             CancelPictureLoading();
             if (string.IsNullOrEmpty(PhotoFolderPath))
@@ -836,13 +834,7 @@ namespace PhotoLocator
             if (SelectedPicture is null && Pictures.Count > 0)
                 SelectItem(Pictures.FirstOrDefault(item => item.IsFile) ?? Pictures[0]);
             await LoadPicturesAsync();
-        }
-
-        private void DisableFileSystemWatcher()
-        {
-            _fileSystemWatcher?.Dispose();
-            _fileSystemWatcher = null;
-        }
+        }       
 
         private void SetupFileSystemWatcher()
         {
@@ -853,6 +845,25 @@ namespace PhotoLocator
             _fileSystemWatcher.Renamed += HandleFileSystemWatcherRename;
             _fileSystemWatcher.NotifyFilter = NotifyFilters.LastWrite | NotifyFilters.FileName | NotifyFilters.DirectoryName;
             _fileSystemWatcher.EnableRaisingEvents = true;
+        }
+
+        private void DisposeFileSystemWatcher()
+        {
+            _fileSystemWatcher?.Dispose();
+            _fileSystemWatcher = null;
+        }
+
+        /// <summary> Note that events during pause will be lost </summary>
+        public void PauseFileSystemWatcher()
+        {
+            if (_fileSystemWatcher is not null)
+                _fileSystemWatcher.EnableRaisingEvents = false;
+        }
+
+        public void ResumeFileSystemWatcher()
+        {
+            if (_fileSystemWatcher is not null)
+                _fileSystemWatcher.EnableRaisingEvents = true;
         }
 
         private void HandleFileSystemWatcherRename(object sender, RenamedEventArgs e)
@@ -1013,7 +1024,7 @@ namespace PhotoLocator
             _previewCancellation?.Cancel();
             _previewCancellation?.Dispose();
             _previewCancellation = null;
-            DisableFileSystemWatcher();
+            DisposeFileSystemWatcher();
         }
     }
 
