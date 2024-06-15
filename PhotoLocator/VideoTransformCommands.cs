@@ -237,6 +237,8 @@ namespace PhotoLocator
             get => _selectedVideoFormat;
             set
             {
+                if (value is null)
+                    return;
                 if (SetProperty(ref _selectedVideoFormat, value))
                 {
                     UpdateProcessArgs();
@@ -249,10 +251,10 @@ namespace PhotoLocator
         public static IEnumerable<ComboBoxItem> VideoFormats { get; } = [
             new ComboBoxItem { Content = "Default", Tag = string.Empty },
             new ComboBoxItem { Content = "Copy", Tag = "-c copy" },
-            new ComboBoxItem { Content = "libx264", Tag = "-c:v libx264" },
-            new ComboBoxItem { Content = "libx265", Tag = "-c:v libx265" },
-            new ComboBoxItem { Content = "libvpx-vp9", Tag = "-c:v libvpx-vp9" },
-            new ComboBoxItem { Content = "libaom-av1", Tag = "-c:v libaom-av1" },
+            new ComboBoxItem { Content = "libx264", Tag = "-c:v libx264 -pix_fmt yuv420p" },  //-b:v 80M
+            new ComboBoxItem { Content = "libx265", Tag = "-c:v libx265 -pix_fmt yuv420p" },
+            new ComboBoxItem { Content = "libvpx-vp9", Tag = "-c:v libvpx-vp9 -pix_fmt yuv420p" },
+            new ComboBoxItem { Content = "libaom-av1", Tag = "-c:v libaom-av1 -pix_fmt yuv420p" },
         ];
 
         public string FrameRate

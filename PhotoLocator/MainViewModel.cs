@@ -314,7 +314,6 @@ namespace PhotoLocator
             }
             _previewCancellation = new CancellationTokenSource();
             var ct = _previewCancellation.Token;
-            var cacheMetadataTask = Task.Run(() => { var metadata = selected.MetadataString; }, ct);
             try
             {
                 var cached = _pictureCache.Where(item => item.Path == selected.FullPath).FirstOrDefault();
@@ -329,7 +328,6 @@ namespace PhotoLocator
                 }
                 else
                     PreviewPictureSource = cached.Picture;
-                await cacheMetadataTask;
                 PreviewPictureTitle = selected.Name + (string.IsNullOrEmpty(selected.MetadataString) ? null : " [" + selected.MetadataString + "]");
             }
             catch (OperationCanceledException)

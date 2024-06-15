@@ -159,11 +159,20 @@ namespace PhotoLocator
         }
         ImageSource? _thumbnailImage;
 
-        public string MetadataString
+        public string? MetadataString
         {
-            get => _metadataString ??= GetMetadataString();
+            get
+            {
+                if (_metadataString is null && IsFile)
+                {
+                    var metadataString = GetMetadataString();
+                    _metadataString ??= metadataString;
+                }
+                return _metadataString;
+            }
             set => SetProperty(ref _metadataString, value);
         }
+        string? _metadataString;
 
         private string GetMetadataString()
         {
@@ -177,8 +186,6 @@ namespace PhotoLocator
                 return string.Empty;
             }
         }
-
-        string? _metadataString;
 
         public string? ErrorMessage
         {
@@ -284,6 +291,7 @@ namespace PhotoLocator
                         _ => Rotation.Rotate0
                     };
                     _timeStamp = ExifHandler.GetTimeStamp(metadata);
+                    _metadataString ??= ExifHandler.GetMetadataString(metadata);
                     return ExifHandler.GetGeotag(metadata);
                 }, ct);
                 GeoTagSaved = GeoTag != null;

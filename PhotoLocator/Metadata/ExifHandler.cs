@@ -294,6 +294,11 @@ namespace PhotoLocator.Metadata
             var decoder = BitmapDecoder.Create(file, CreateOptions, BitmapCacheOption.OnDemand);
             if (decoder.Frames[0].Metadata is not BitmapMetadata metadata)
                 return string.Empty;
+            return GetMetadataString(metadata);
+        }
+
+        public static string GetMetadataString(BitmapMetadata metadata)
+        {
             var metadataStrings = new List<string>();
 
             if (!string.IsNullOrEmpty(metadata.CameraModel))
