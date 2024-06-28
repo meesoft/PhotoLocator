@@ -361,7 +361,6 @@ namespace PhotoLocator
                 registrySettings);
             autoTagWin.Owner = App.Current.MainWindow;
             autoTagWin.DataContext = autoTagViewModel;
-            PreviewPictureSource = null;
             if (autoTagWin.ShowDialog() == true)
             {
                 UpdatePushpins();
@@ -458,7 +457,6 @@ namespace PhotoLocator
             var renameWin = new RenameWindow(selectedItems, Pictures, Settings);
             renameWin.Owner = App.Current.MainWindow;
             renameWin.DataContext = renameWin;
-            PreviewPictureSource = null;
             PauseFileSystemWatcher();
             renameWin.ShowDialog();
             ResumeFileSystemWatcher();
