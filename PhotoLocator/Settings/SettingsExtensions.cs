@@ -8,6 +8,7 @@ namespace PhotoLocator.Settings
         {
             target.PhotoFileExtensions = source.PhotoFileExtensions;
             target.ShowFolders = source.ShowFolders;
+            target.ThumbnailSize = source.ThumbnailSize;
             target.IncludeSidecarFiles = source.IncludeSidecarFiles;
             target.SavedFilePostfix = source.SavedFilePostfix;
             target.ExifToolPath = source.ExifToolPath;

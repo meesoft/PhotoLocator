@@ -16,6 +16,8 @@ namespace PhotoLocator.Settings
 
         bool ShowFolders { get; set; }
 
+        int ThumbnailSize { get; set; }
+
         bool IncludeSidecarFiles { get; set; }
 
         string SavedFilePostfix { get; set; }

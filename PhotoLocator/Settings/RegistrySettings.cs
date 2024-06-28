@@ -38,6 +38,12 @@ namespace PhotoLocator.Settings
             set => Key.SetValue(nameof(ShowFolders), value ? 1 : 0);
         }
 
+        public int ThumbnailSize
+        {
+            get => Key.GetValue(nameof(ThumbnailSize)) as int? ?? 150;
+            set => Key.SetValue(nameof(ThumbnailSize), value);
+        }
+
         public string PhotoFolderPath
         {
             get => Key.GetValue(nameof(PhotoFolderPath)) as string ?? Environment.GetFolderPath(Environment.SpecialFolder.MyPictures);

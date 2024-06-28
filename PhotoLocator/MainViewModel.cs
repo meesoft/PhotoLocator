@@ -486,6 +486,7 @@ namespace PhotoLocator
         public ICommand SettingsCommand => new RelayCommand(o =>
         {
             var previousPhotoFileExtensions = Settings.PhotoFileExtensions;
+            var previousThumbnailSize = Settings.ThumbnailSize;
             var previousScalingMode = Settings.BitmapScalingMode;
             var previousResamplingOptions = Settings.ResamplingOptions;
             var settingsWin = new SettingsWindow();
@@ -503,6 +504,7 @@ namespace PhotoLocator
             {
                 bool refresh =
                     settingsWin.Settings.PhotoFileExtensions != previousPhotoFileExtensions ||
+                    settingsWin.Settings.ThumbnailSize != previousThumbnailSize ||
                     settingsWin.Settings.ShowFolders != Settings.ShowFolders;
                 Settings.AssignSettings(settingsWin.Settings);
                 PhotoFileExtensions = Settings.CleanPhotoFileExtensions();
@@ -813,7 +815,7 @@ namespace PhotoLocator
             SetupFileSystemWatcher();
             if (Settings.ShowFolders)
                 foreach (var dir in Directory.EnumerateDirectories(PhotoFolderPath))
-                    Pictures.Add(new PictureItemViewModel(dir, true, HandleFilePropertyChanged, null));
+                    Pictures.Add(new PictureItemViewModel(dir, true, HandleFilePropertyChanged, Settings));
             await AppendFilesAsync(Directory.EnumerateFiles(PhotoFolderPath));
             if (Polylines.Count > 0)
                 MapCenter = Polylines[0].Center;
@@ -902,7 +904,7 @@ namespace PhotoLocator
                     }
                     else if (Directory.Exists(e.FullPath))
                     {
-                        var newItem = new PictureItemViewModel(e.FullPath, true, HandleFilePropertyChanged, null);
+                        var newItem = new PictureItemViewModel(e.FullPath, true, HandleFilePropertyChanged, Settings);
                         if (!newItem.InsertOrdered(Pictures))
                             return;
                     }

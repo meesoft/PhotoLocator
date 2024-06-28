@@ -31,6 +31,13 @@ namespace PhotoLocator.Settings
         }
         bool _showFolders;
 
+        public int ThumbnailSize
+        {
+            get => _thumbnailSize;
+            set => SetProperty(ref _thumbnailSize, value);
+        }
+        int _thumbnailSize;
+
         public bool IncludeSidecarFiles
         {
             get => _includeSidecarFiles;

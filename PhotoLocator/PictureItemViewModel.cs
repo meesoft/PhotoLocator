@@ -159,6 +159,8 @@ namespace PhotoLocator
         }
         ImageSource? _thumbnailImage;
 
+        public int ThumbnailSize => _settings?.ThumbnailSize ?? 256;
+
         public string? MetadataString
         {
             get
@@ -250,11 +252,12 @@ namespace PhotoLocator
                     return thumbnail;
                 try
                 {
-                    thumbnail = LoadPreviewInternal(256, ct);
-                    if (thumbnail.PixelWidth <= 256 && thumbnail.PixelHeight <= 256)
+                    int thumbnailSize = ThumbnailSize;
+                    thumbnail = LoadPreviewInternal(thumbnailSize, ct);
+                    if (thumbnail.PixelWidth <= thumbnailSize && thumbnail.PixelHeight <= thumbnailSize)
                         return thumbnail;
                     ct.ThrowIfCancellationRequested();
-                    var scale = Math.Min(256.0 / thumbnail.PixelWidth, 256.0 / thumbnail.PixelHeight);
+                    var scale = Math.Min((double)thumbnailSize / thumbnail.PixelWidth, (double)thumbnailSize / thumbnail.PixelHeight);
                     thumbnail = new TransformedBitmap(thumbnail, new ScaleTransform(scale, scale));
                     thumbnail.Freeze();
                     return thumbnail;
