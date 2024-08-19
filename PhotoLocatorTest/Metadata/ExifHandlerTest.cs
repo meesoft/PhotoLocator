@@ -1,10 +1,73 @@
-﻿using System.Windows.Media.Imaging;
+﻿using PhotoLocator.PictureFileFormats;
+using System.Diagnostics;
+using System.Globalization;
+using System.Windows.Media;
+using System.Windows.Media.Imaging;
 
 namespace PhotoLocator.Metadata
 {
     [TestClass]
     public class ExifHandlerTest
     {
+        [TestMethod]
+        public void SetMetadata_ShouldSetJpegMetadataOnJpeg()
+        {
+            const string TestFileName = "fromJpeg.jpg";
+
+            using var stream = GetType().Assembly.GetManifestResourceStream(@"PhotoLocator.TestData.2022-06-17_19.03.02.jpg")
+                ?? throw new FileNotFoundException("Resource not found");
+            var source = ExifHandler.LoadMetadata(stream) ?? throw new Exception("Unable to load metadata");
+            Assert.IsFalse(string.IsNullOrEmpty(source.CameraModel));
+
+            var bitmap = BitmapSource.Create(2, 2, 96, 96, PixelFormats.Gray8, null, new byte[4], 2);
+
+            GeneralFileFormatHandler.SaveToFile(bitmap, TestFileName, source);
+
+            var target = ExifHandler.LoadMetadata(File.OpenRead(TestFileName))!;
+            Assert.AreEqual(source.CameraModel, target.CameraModel);
+            Assert.AreEqual(ExifHandler.GetMetadataString(source), ExifHandler.GetMetadataString(target));
+            Assert.AreEqual(ExifHandler.GetGeotag(source), ExifHandler.GetGeotag(target));
+        }
+
+        [TestMethod]
+        public void SetMetadata_ShouldSetJpegMetadataOnTiff()
+        {
+            const string TestFileName = "fromJpeg.tif";
+
+            using var stream = GetType().Assembly.GetManifestResourceStream(@"PhotoLocator.TestData.2022-06-17_19.03.02.jpg")
+                ?? throw new FileNotFoundException("Resource not found");
+            var source = ExifHandler.LoadMetadata(stream) ?? throw new Exception("Unable to load metadata");
+            Assert.IsFalse(string.IsNullOrEmpty(source.CameraModel));
+
+            var bitmap = BitmapSource.Create(2, 2, 96, 96, PixelFormats.Gray8, null, new byte[4], 2);
+
+            GeneralFileFormatHandler.SaveToFile(bitmap, TestFileName, source);
+
+            var target = ExifHandler.LoadMetadata(File.OpenRead(TestFileName))!;
+            Assert.AreEqual(source.CameraModel, target.CameraModel);
+            Assert.AreEqual(ExifHandler.GetMetadataString(source), ExifHandler.GetMetadataString(target));
+            //Assert.AreEqual(ExifHandler.GetGeotag(source), ExifHandler.GetGeotag(target));
+        }
+
+        [TestMethod]
+        public void SetMetadata_ShouldSetTiffMetadataOnJpeg()
+        {
+            const string TestFileName = "fromTiff.jpg";
+
+            using var stream = File.OpenRead(@"TestData\RGB48.tif");
+            var source = ExifHandler.LoadMetadata(stream) ?? throw new Exception("Unable to load metadata");
+            Assert.IsFalse(string.IsNullOrEmpty(source.CameraModel));
+
+            var bitmap = BitmapSource.Create(2, 2, 96, 96, PixelFormats.Gray8, null, new byte[4], 2);
+
+            GeneralFileFormatHandler.SaveToFile(bitmap, TestFileName, source);
+
+            var target = ExifHandler.LoadMetadata(File.OpenRead(TestFileName))!;
+            Assert.AreEqual(source.CameraModel, target.CameraModel);
+            Assert.AreEqual(ExifHandler.GetMetadataString(source), ExifHandler.GetMetadataString(target));
+            Assert.AreEqual(ExifHandler.GetGeotag(source), ExifHandler.GetGeotag(target));
+        }
+
         [TestMethod]
         public void GetTimeStamp_ShouldDecodeTimeStamp()
         {
@@ -110,6 +173,35 @@ namespace PhotoLocator.Metadata
 
             var newValue = ExifHandler.GetGeotag("tagged.cr3");
             Assert.AreEqual(setValue, newValue);
+        }
+
+        [TestMethod]
+        public void GetMetadataString_ShouldFormatMetadata()
+        {
+            Thread.CurrentThread.CurrentCulture = CultureInfo.InvariantCulture;
+
+            using var stream = GetType().Assembly.GetManifestResourceStream(@"PhotoLocator.TestData.2022-06-17_19.03.02.jpg")
+                ?? throw new FileNotFoundException("Resource not found");
+            var metadata = ExifHandler.LoadMetadata(stream);
+            Assert.IsNotNull(metadata);
+            var str = ExifHandler.GetMetadataString(metadata);
+            Assert.AreEqual("FC7303, 100.7m, 1/80s, f/2.8, 4.49mm, ISO100, 06/17/2022 19:03:02", str);
+        }
+
+        [TestMethod, Ignore]
+        public void GetMetadataString_ShouldFormatMetadata_Performance()
+        {
+            Thread.CurrentThread.CurrentCulture = CultureInfo.InvariantCulture;
+            var sw = Stopwatch.StartNew();
+            for (int i = 0; i < 1000; i++)
+            {
+                using var stream = File.OpenRead(@"TestData\2022-06-17_19.03.02.jpg");
+                var metadata = ExifHandler.LoadMetadata(stream);
+                Assert.IsNotNull(metadata);
+                var str = ExifHandler.GetMetadataString(metadata);
+                Assert.AreEqual("FC7303, 100.7m, 1/80s, f/2.8, 4.49mm, ISO100, 06/17/2022 19:03:02", str);
+            }
+            Console.WriteLine(sw.ElapsedMilliseconds);
         }
     }
 }

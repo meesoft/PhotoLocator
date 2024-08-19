@@ -9,7 +9,7 @@ using System.Windows.Media.Imaging;
 
 namespace PhotoLocator.PictureFileFormats
 {
-    public static class PhotoshopFileFormatHandler
+    static class PhotoshopFileFormatHandler
     {
         /// <summary>
         /// Takes extension in lower case including .
@@ -19,7 +19,7 @@ namespace PhotoLocator.PictureFileFormats
             return extension == ".psd";
         }
 
-        public static BitmapSource LoadFromStream(Stream stream, Rotation rotation, int maxWidth, CancellationToken ct)
+        public static BitmapSource LoadFromStream(Stream stream, Rotation rotation, int maxWidth, bool preservePixelFormat, CancellationToken ct)
         {
             var psd = new PsdFile(stream, new LoadContext());
             foreach (var psdLayer in (new[] { psd.BaseLayer }).Concat(psd.Layers))

@@ -1,4 +1,5 @@
-﻿using PhotoLocator.Helpers;
+﻿using PhotoLocator.BitmapOperations;
+using PhotoLocator.Helpers;
 using PhotoLocator.MapDisplay;
 using PhotoLocator.Settings;
 using System;
@@ -119,7 +120,7 @@ namespace PhotoLocator
 
         private void HandlePictureListBoxPreviewMouseButtonDown(object sender, MouseButtonEventArgs e)
         {
-            if (e.ChangedButton == MouseButton.XButton2 && _viewModel.SelectedPicture != null && _viewModel.SelectedPicture.IsDirectory)
+            if (e.ChangedButton == MouseButton.XButton2 && _viewModel.SelectedItem != null && _viewModel.SelectedItem.IsDirectory)
             {
                 _viewModel.ExecuteSelectedCommand.Execute(null);
                 e.Handled = true;
@@ -143,16 +144,16 @@ namespace PhotoLocator
 
         private void HandlePictureListBoxPreviewTextInput(object sender, TextCompositionEventArgs e)
         {
-            if (SelectItem(e.Text, PictureListBox.SelectedIndex + 1, _viewModel.Pictures.Count) ||
+            if (SelectItem(e.Text, PictureListBox.SelectedIndex + 1, _viewModel.Items.Count) ||
                 SelectItem(e.Text, 0, PictureListBox.SelectedIndex))
                 e.Handled = true;
 
             bool SelectItem(string text, int min, int max)
             {
                 for (int i = min; i < max; i++)
-                    if (_viewModel.Pictures[i].Name.StartsWith(text, StringComparison.CurrentCultureIgnoreCase))
+                    if (_viewModel.Items[i].Name.StartsWith(text, StringComparison.CurrentCultureIgnoreCase))
                     {
-                        _viewModel.SelectItem(_viewModel.Pictures[i]);
+                        _viewModel.SelectItem(_viewModel.Items[i]);
                         return true;
                     }
                 return false;
@@ -161,7 +162,7 @@ namespace PhotoLocator
 
         private void HandlePictureListBoxPreviewKeyDown(object sender, KeyEventArgs e)
         {
-            var selectedItem = _viewModel.SelectedPicture;
+            var selectedItem = _viewModel.SelectedItem;
             if (selectedItem is null)
                 return;
             if (e.Key == Key.Space)

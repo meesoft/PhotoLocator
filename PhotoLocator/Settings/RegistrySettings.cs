@@ -6,7 +6,7 @@ namespace PhotoLocator.Settings
 {
     sealed class RegistrySettings : IDisposable, IRegistrySettings
     {
-        public const string DefaultPhotoFileExtensions = ".jpg, .jpeg, .cr2, .cr3, .dng, .psd, .tif, .tiff, .mp4, .mov";
+        public const string DefaultPhotoFileExtensions = ".jpg, .jpeg, .png, .cr2, .cr3, .dng, .psd, .tif, .tiff, .mp4, .mov";
 
         public RegistryKey Key = Registry.CurrentUser.CreateSubKey(@"SOFTWARE\MeeSoft\PhotoLocator");
 
@@ -38,6 +38,12 @@ namespace PhotoLocator.Settings
             set => Key.SetValue(nameof(ShowFolders), value ? 1 : 0);
         }
 
+        public int ThumbnailSize
+        {
+            get => Key.GetValue(nameof(ThumbnailSize)) as int? ?? 150;
+            set => Key.SetValue(nameof(ThumbnailSize), value);
+        }
+
         public string PhotoFolderPath
         {
             get => Key.GetValue(nameof(PhotoFolderPath)) as string ?? Environment.GetFolderPath(Environment.SpecialFolder.MyPictures);
@@ -60,6 +66,12 @@ namespace PhotoLocator.Settings
         {
             get => Key.GetValue(nameof(ExifToolPath)) as string;
             set => Key.SetValue(nameof(ExifToolPath), value ?? string.Empty);
+        }
+
+        public string? FFmpegPath
+        {
+            get => Key.GetValue(nameof(FFmpegPath)) as string;
+            set => Key.SetValue(nameof(FFmpegPath), value ?? string.Empty);
         }
 
         public string? SelectedLayer

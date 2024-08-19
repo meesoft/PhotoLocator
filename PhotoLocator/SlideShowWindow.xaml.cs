@@ -1,7 +1,7 @@
 ﻿using MapControl;
+using PhotoLocator.BitmapOperations;
 using PhotoLocator.Helpers;
 using PhotoLocator.MapDisplay;
-using PhotoLocator.Metadata;
 using PhotoLocator.Settings;
 using System;
 using System.Collections.Generic;
@@ -70,7 +70,7 @@ namespace PhotoLocator
         }
         private Location? _mapCenter;
         
-        public ObservableCollection<PointItem> Points { get; } = new ObservableCollection<PointItem>();
+        public ObservableCollection<PointItem> Points { get; } = [];
 
         public bool IsMapVisible { get => _isMapVisible; set => SetProperty(ref _isMapVisible, value); }
         private bool _isMapVisible;
@@ -124,9 +124,8 @@ namespace PhotoLocator
                 name = name[..i].TrimEnd();
             if (Settings.ShowMetadataInSlideShow)
             {
-                var metadata = ExifHandler.GetMetadataString(SelectedPicture.FullPath);
-                if (!string.IsNullOrEmpty(metadata))
-                    name = name + " [" + metadata + "]";
+                if (!string.IsNullOrEmpty(SelectedPicture.MetadataString))
+                    name = name + " [" + SelectedPicture.MetadataString + "]";
             }
             PictureTitle = name;
 

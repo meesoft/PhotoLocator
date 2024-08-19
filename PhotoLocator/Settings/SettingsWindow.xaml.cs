@@ -38,10 +38,23 @@ namespace PhotoLocator.Settings
                     if (File.Exists(newPath))
                         Settings.ExifToolPath = newPath;
                     else
-                        throw new UserMessageException("ExifTool not found in specified path");
+                        throw new UserMessageException(ExifToolName + " not found in specified path");
                 }
                 else if (Settings.ExifToolPath.EndsWith("(-k).exe", StringComparison.OrdinalIgnoreCase))
-                    throw new UserMessageException($"Invalid ExifTool executable name");
+                    throw new UserMessageException($"Invalid ExifTool executable name (-k means pause before exiting)");
+            }
+            if (!string.IsNullOrEmpty(Settings.FFmpegPath))
+            {
+                const string FFmpegToolName = "ffmpeg.exe";
+
+                if (!File.Exists(Settings.FFmpegPath))
+                {
+                    var newPath = Path.Combine(Settings.FFmpegPath, FFmpegToolName);
+                    if (File.Exists(newPath))
+                        Settings.FFmpegPath = newPath;
+                    else
+                        throw new UserMessageException(FFmpegToolName + " not found in specified path");
+                }
             }
 
             DialogResult = true;

@@ -51,6 +51,9 @@
     <None Update="TestData\RGB16.psd">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
+    <None Update="TestData\RGB48.tif">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
     <None Update="TestData\RGB8.psd">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>

@@ -70,7 +70,7 @@ namespace PhotoLocator
             IsWindowEnabled = false;
             try
             {
-                using var _ = new CursorOverride();
+                using var _ = new MouseCursorOverride();
                 var gpsTraces = LoadAdditionalGpsTraces().ToArray();
                 var (tagged, notTagged) = AutoTag(gpsTraces);
                 if (MessageBox.Show($"{tagged} photos with timestamps were tagged, {notTagged} were not.", "Auto tag", 
@@ -142,6 +142,7 @@ namespace PhotoLocator
             if (string.IsNullOrEmpty(TraceFilePath))
                 return GpsTraces;
             var minDistance = TimeSpan.FromMinutes(MaxTimestampDifference);
+            Directory.SetCurrentDirectory(Path.GetDirectoryName(_selectedItems.First().FullPath)!);
             if (File.Exists(TraceFilePath))
                 return GpsTraces.Concat(GpsTrace.DecodeGpsTraceFile(TraceFilePath, minDistance));
             return GpsTraces.

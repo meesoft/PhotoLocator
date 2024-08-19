@@ -8,9 +8,11 @@ namespace PhotoLocator.Settings
         {
             target.PhotoFileExtensions = source.PhotoFileExtensions;
             target.ShowFolders = source.ShowFolders;
+            target.ThumbnailSize = source.ThumbnailSize;
             target.IncludeSidecarFiles = source.IncludeSidecarFiles;
             target.SavedFilePostfix = source.SavedFilePostfix;
             target.ExifToolPath = source.ExifToolPath;
+            target.FFmpegPath = source.FFmpegPath;
             target.SlideShowInterval = source.SlideShowInterval;
             target.BitmapScalingMode = source.BitmapScalingMode;
             target.ResamplingOptions = source.ResamplingOptions;
@@ -22,7 +24,7 @@ namespace PhotoLocator.Settings
         public static string[] CleanPhotoFileExtensions(this ISettings settings)
         {
             var extensions = settings.PhotoFileExtensions!.
-                Replace("*", "", StringComparison.Ordinal).
+                Replace("*", string.Empty, StringComparison.Ordinal).
                 Replace(" ", ",", StringComparison.Ordinal).
                 Replace(";", ",", StringComparison.Ordinal).
                 ToLowerInvariant().

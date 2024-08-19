@@ -3,14 +3,14 @@ using System.Windows.Input;
 
 namespace PhotoLocator.Helpers
 {
-    public sealed class CursorOverride : IDisposable
+    public sealed class MouseCursorOverride : IDisposable
     {
         private Cursor _previousCursor;
 
         /// <summary>
         /// Set cursor, null for default wait cursor
         /// </summary>
-        public CursorOverride(Cursor? cursor = null)
+        public MouseCursorOverride(Cursor? cursor = null)
         {
             _previousCursor = Mouse.OverrideCursor;
             Mouse.OverrideCursor = cursor ?? Cursors.Wait;

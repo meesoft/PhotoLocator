@@ -27,7 +27,7 @@ using System.Windows.Threading;
 
 namespace PhotoLocator
 {
-    public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
+    public sealed class MainViewModel : INotifyPropertyChanged, IDisposable, IMainViewModel
     {
 #if DEBUG
         static readonly bool _isInDesignMode = DesignerProperties.GetIsInDesignMode(new DependencyObject());
@@ -39,8 +39,9 @@ namespace PhotoLocator
         CancellationTokenSource? _loadCancellation;
         CancellationTokenSource? _previewCancellation;
         FileSystemWatcher? _fileSystemWatcher;
+        DispatcherOperation? _fileSystemWatcherUpdate;
         bool _titleUpdatePending;
-        readonly List <(string Path, BitmapSource Picture)> _pictureCache = new ();
+        readonly List<(string Path, BitmapSource Picture)> _pictureCache = [];
 
         public event PropertyChangedEventHandler? PropertyChanged;
 
@@ -63,13 +64,13 @@ namespace PhotoLocator
 #if DEBUG
             if (_isInDesignMode)
             {
-                Pictures.Add(new PictureItemViewModel());
+                Items.Add(new PictureItemViewModel());
                 MapCenter = new Location(53.5, 8.2);
                 _previewPictureTitle = "Preview";
             }
 #endif
             Settings = new ObservableSettings();
-            Pictures.CollectionChanged += (s, e) => BeginTitleUpdate();
+            Items.CollectionChanged += (s, e) => BeginTitleUpdate();
         }
 
         public string WindowTitle
@@ -79,11 +80,11 @@ namespace PhotoLocator
                 var result = "PhotoLocator";
                 if (!string.IsNullOrEmpty(PhotoFolderPath))
                     result += " - " + PhotoFolderPath;
-                var checkedCount = Pictures.Count(p => p.IsChecked);
+                var checkedCount = Items.Count(p => p.IsChecked);
                 if (checkedCount > 0)
-                    result += $" - {checkedCount} of {Pictures.Count} selected";
+                    result += $" - {checkedCount} of {Items.Count} selected";
                 else
-                    result += $" - {Pictures.Count} items";
+                    result += $" - {Items.Count} items";
                 return result;
             }
         }
@@ -106,9 +107,10 @@ namespace PhotoLocator
         public bool IsWindowEnabled { get => _isWindowEnabled; set => SetProperty(ref _isWindowEnabled, value); }
         private bool _isWindowEnabled = true;
 
-        public IEnumerable<string> PhotoFileExtensions { get; set; } = Enumerable.Empty<string>();
-       
+        public IEnumerable<string> PhotoFileExtensions { get; set; } = [];
+
         public ObservableSettings Settings { get; }
+        ISettings IMainViewModel.Settings => Settings;
 
         public string? PhotoFolderPath
         {
@@ -125,9 +127,9 @@ namespace PhotoLocator
             await LoadFolderContentsAsync(false, selectItemFullPath);
         }
 
-        public ObservableCollection<PointItem> Points { get; } = new ObservableCollection<PointItem>();
-        public ObservableCollection<PointItem> Pushpins { get; } = new ObservableCollection<PointItem>();
-        public ObservableCollection<GpsTrace> Polylines { get; } = new ObservableCollection<GpsTrace>();
+        public ObservableCollection<PointItem> Points { get; } = [];
+        public ObservableCollection<PointItem> Pushpins { get; } = [];
+        public ObservableCollection<GpsTrace> Polylines { get; } = [];
         public static Visibility MapToolsVisibility => Visibility.Visible;
 
         public Location? MapCenter
@@ -191,10 +193,10 @@ namespace PhotoLocator
         public GridLength PreviewRowHeight { get => _previewRowHeight; set => SetProperty(ref _previewRowHeight, value); }
         private GridLength _previewRowHeight = new(0, GridUnitType.Star);
 
-        public BitmapSource? PreviewPictureSource 
-        { 
-            get => _previewPictureSource; 
-            set 
+        public BitmapSource? PreviewPictureSource
+        {
+            get => _previewPictureSource;
+            set
             {
                 if (SetProperty(ref _previewPictureSource, value))
                     IsCropControlVisible = false;
@@ -206,25 +208,25 @@ namespace PhotoLocator
         private string? _previewPictureTitle;
 
         /// <summary> Zoom level or 0 for auto </summary>
-        public int PreviewZoom 
-        { 
+        public int PreviewZoom
+        {
             get => _previewZoom;
             set
             {
                 if (SetProperty(ref _previewZoom, value) && value > 0)
                     IsCropControlVisible = false;
-            } 
+            }
         }
         private int _previewZoom;
 
-        public ObservableCollection<PictureItemViewModel> Pictures { get; } = new ObservableCollection<PictureItemViewModel>();
+        public ObservableCollection<PictureItemViewModel> Items { get; } = [];
 
-        public PictureItemViewModel? SelectedPicture
+        public PictureItemViewModel? SelectedItem
         {
-            get => _selectedPicture;
+            get => _selectedItem;
             set
             {
-                if (!SetProperty(ref _selectedPicture, value))
+                if (!SetProperty(ref _selectedItem, value))
                     return;
                 if (value?.GeoTag != null)
                     MapCenter = value.GeoTag;
@@ -233,12 +235,12 @@ namespace PhotoLocator
                 UpdatePreviewPictureAsync().WithExceptionLogging();
             }
         }
-        private PictureItemViewModel? _selectedPicture;
+        private PictureItemViewModel? _selectedItem;
 
         public IEnumerable<PictureItemViewModel> GetSelectedItems()
         {
-            var firstChecked = SelectedPicture != null && SelectedPicture.IsChecked ? SelectedPicture : null;
-            foreach (var item in Pictures)
+            var firstChecked = SelectedItem != null && SelectedItem.IsChecked ? SelectedItem : null;
+            foreach (var item in Items)
                 if (item.IsChecked)
                 {
                     if (firstChecked is null)
@@ -248,13 +250,13 @@ namespace PhotoLocator
                     }
                     yield return item;
                 }
-            if (firstChecked is null && SelectedPicture != null)
-                yield return SelectedPicture;
+            if (firstChecked is null && SelectedItem != null)
+                yield return SelectedItem;
         }
 
         public void SelectItem(PictureItemViewModel select)
         {
-            SelectedPicture = select;
+            SelectedItem = select;
             FocusListBoxItem?.Invoke(select);
         }
 
@@ -262,7 +264,7 @@ namespace PhotoLocator
         {
             if (eventArgs.Item.Content is not PointItem pointItem)
                 return;
-            var fileItem = Pictures.FirstOrDefault(p => p.Name == pointItem.Name);
+            var fileItem = Items.FirstOrDefault(p => p.Name == pointItem.Name);
             if (fileItem is not null)
                 SelectItem(fileItem);
         }
@@ -271,7 +273,7 @@ namespace PhotoLocator
         {
             if (!IsMapVisible)
                 return;
-            var updatedPoints = Pictures.Where(item => item.IsChecked && item.GeoTag != null && item != SelectedPicture)
+            var updatedPoints = Items.Where(item => item.IsChecked && item.GeoTag != null && item != SelectedItem)
                 .ToDictionary(p => p.Name);
             for (int i = Points.Count - 1; i >= 0; i--)
                 if (!updatedPoints.Remove(Points[i].Name!))
@@ -289,21 +291,22 @@ namespace PhotoLocator
                 Pushpins.Add(new PointItem { Location = trace.Locations[0], Name = trace.Name });
             if (SavedLocation != null)
                 Pushpins.Add(new PointItem { Location = SavedLocation, Name = "Saved location" });
-            if (SelectedPicture?.GeoTag != null)
-                Pushpins.Add(new PointItem { Location = SelectedPicture.GeoTag, Name = SelectedPicture.Name });
+            if (SelectedItem?.GeoTag != null)
+                Pushpins.Add(new PointItem { Location = SelectedItem.GeoTag, Name = SelectedItem.Name });
         }
 
         private async Task UpdatePreviewPictureAsync()
         {
-            _previewCancellation?.Cancel();
+            if (_previewCancellation is not null)
+                await _previewCancellation.CancelAsync();
             _previewCancellation?.Dispose();
             _previewCancellation = null;
-            if (SelectedPicture is null || !IsPreviewVisible)
+            if (SelectedItem is null || !IsPreviewVisible)
             {
                 PreviewPictureSource = null;
                 return;
             }
-            var selected = SelectedPicture;
+            var selected = SelectedItem;
             if (selected.IsDirectory)
             {
                 PreviewPictureSource = null;
@@ -312,21 +315,6 @@ namespace PhotoLocator
             }
             _previewCancellation = new CancellationTokenSource();
             var ct = _previewCancellation.Token;
-            var textTask = Task.Run(() =>
-            {
-                var title = selected.Name;
-                try
-                {
-                    var metadata = ExifHandler.GetMetadataString(selected.FullPath);
-                    if (!string.IsNullOrEmpty(metadata))
-                        title += " [" + metadata + "]";
-                }
-                catch
-                {
-                }
-                ct.ThrowIfCancellationRequested();
-                return title;
-            }, ct);
             try
             {
                 var cached = _pictureCache.Where(item => item.Path == selected.FullPath).FirstOrDefault();
@@ -335,13 +323,15 @@ namespace PhotoLocator
                     while (_pictureCache.Count > 3)
                         _pictureCache.RemoveAt(0);
                     var loaded = await Task.Run(() => selected.LoadPreview(ct), ct);
-                    PreviewPictureSource = loaded;
                     if (loaded is not null)
                         _pictureCache.Add((selected.FullPath, loaded));
+                    if (selected != SelectedItem) // If another item was selected while preview was being loaded
+                        return; 
+                    PreviewPictureSource = loaded;
                 }
                 else
                     PreviewPictureSource = cached.Picture;
-                PreviewPictureTitle = await textTask;
+                PreviewPictureTitle = selected.Name + (string.IsNullOrEmpty(selected.MetadataString) ? null : " [" + selected.MetadataString + "]");
             }
             catch (OperationCanceledException)
             {
@@ -369,18 +359,17 @@ namespace PhotoLocator
             }
             var autoTagWin = new AutoTagWindow();
             using var registrySettings = new RegistrySettings();
-            var autoTagViewModel = new AutoTagViewModel(Pictures, selectedItems, Polylines,
-                () => { autoTagWin.DialogResult = true; }, 
+            var autoTagViewModel = new AutoTagViewModel(Items, selectedItems, Polylines,
+                () => { autoTagWin.DialogResult = true; },
                 registrySettings);
             autoTagWin.Owner = App.Current.MainWindow;
             autoTagWin.DataContext = autoTagViewModel;
-            PreviewPictureSource = null;
             if (autoTagWin.ShowDialog() == true)
             {
                 UpdatePushpins();
                 UpdatePoints();
-                if (SelectedPicture?.GeoTag != null)
-                    MapCenter = SelectedPicture.GeoTag;
+                if (SelectedItem?.GeoTag != null)
+                    MapCenter = SelectedItem.GeoTag;
                 else if (Points.Count > 0)
                     MapCenter = Points[0].Location;
             }
@@ -406,9 +395,9 @@ namespace PhotoLocator
             MapCenter = SavedLocation;
         });
 
-        async Task RunProcessWithProgressBarAsync(Func<Action<double>, Task> body, string text)
+        public async Task RunProcessWithProgressBarAsync(Func<Action<double>, Task> body, string text, PictureItemViewModel? focusItem = null)
         {
-            using var cursor = new CursorOverride();
+            using var cursor = new MouseCursorOverride();
             ProgressBarIsIndeterminate = false;
             ProgressBarValue = 0;
             TaskbarProgressState = TaskbarItemProgressState.Normal;
@@ -419,8 +408,7 @@ namespace PhotoLocator
             {
                 await body(progress =>
                 {
-                    if (progress < 0)
-                        ProgressBarIsIndeterminate = true;
+                    ProgressBarIsIndeterminate = progress < 0;
                     ProgressBarValue = Math.Max(ProgressBarValue, progress);
                 });
             }
@@ -435,16 +423,19 @@ namespace PhotoLocator
                 IsWindowEnabled = true;
                 IsProgressBarVisible = false;
                 TaskbarProgressState = TaskbarItemProgressState.None;
+                if (focusItem is not null)
+                    SelectItem(focusItem);
+                else if (SelectedItem != null)
+                    SelectItem(SelectedItem);
             }
         }
 
         public ICommand SaveCommand => new RelayCommand(async o =>
         {
-            var updatedPictures = Pictures.Where(i => i.GeoTagUpdated).ToArray();
+            var updatedPictures = Items.Where(i => i.GeoTagUpdated).ToArray();
             if (updatedPictures.Length == 0)
                 return;
-            if (_fileSystemWatcher is not null)
-                _fileSystemWatcher.EnableRaisingEvents = false;
+            PauseFileSystemWatcher();
             await RunProcessWithProgressBarAsync(async progressCallback =>
             {
                 int i = 0;
@@ -455,29 +446,23 @@ namespace PhotoLocator
                 });
                 await Task.Delay(10);
             }, "Saving...");
-            if (SelectedPicture != null)
-                SelectItem(SelectedPicture);
-            if (_fileSystemWatcher is not null)
-                _fileSystemWatcher.EnableRaisingEvents = true;
+            ResumeFileSystemWatcher();
         });
-
+       
         public ICommand RenameCommand => new RelayCommand(async o =>
         {
             var selectedItems = GetSelectedItems().ToList();
             if (selectedItems.Count == 0)
                 return;
-            var focused = SelectedPicture;
+            var focused = SelectedItem;
             if (selectedItems.Any(i => i.ThumbnailImage is null))
                 await WaitForPicturesLoadedAsync();
-            var renameWin = new RenameWindow(selectedItems, Pictures, Settings);
+            var renameWin = new RenameWindow(selectedItems, Items, Settings);
             renameWin.Owner = App.Current.MainWindow;
             renameWin.DataContext = renameWin;
-            PreviewPictureSource = null;
-            if (_fileSystemWatcher != null)
-                _fileSystemWatcher.EnableRaisingEvents = false;
+            PauseFileSystemWatcher();
             renameWin.ShowDialog();
-            if (_fileSystemWatcher != null)
-                _fileSystemWatcher.EnableRaisingEvents = true;
+            ResumeFileSystemWatcher();
             _pictureCache.Clear();
             if (focused != null)
                 FocusListBoxItem?.Invoke(focused);
@@ -490,10 +475,10 @@ namespace PhotoLocator
 
         public ICommand SlideShowCommand => new RelayCommand(o =>
         {
-            var pictures = Pictures.Where(item => item.IsFile).ToList();
+            var pictures = Items.Where(item => item.IsFile).ToList();
             if (pictures.Count == 0)
                 return;
-            var slideShowWin = new SlideShowWindow(pictures, SelectedPicture?.IsFile == true ? SelectedPicture : Pictures.First(),
+            var slideShowWin = new SlideShowWindow(pictures, SelectedItem?.IsFile == true ? SelectedItem : Items.First(),
                 GetSelectedMapLayerName?.Invoke(), Settings);
             slideShowWin.Owner = App.Current.MainWindow;
             slideShowWin.ShowDialog();
@@ -504,6 +489,7 @@ namespace PhotoLocator
         public ICommand SettingsCommand => new RelayCommand(o =>
         {
             var previousPhotoFileExtensions = Settings.PhotoFileExtensions;
+            var previousThumbnailSize = Settings.ThumbnailSize;
             var previousScalingMode = Settings.BitmapScalingMode;
             var previousResamplingOptions = Settings.ResamplingOptions;
             var settingsWin = new SettingsWindow();
@@ -521,6 +507,7 @@ namespace PhotoLocator
             {
                 bool refresh =
                     settingsWin.Settings.PhotoFileExtensions != previousPhotoFileExtensions ||
+                    settingsWin.Settings.ThumbnailSize != previousThumbnailSize ||
                     settingsWin.Settings.ShowFolders != Settings.ShowFolders;
                 Settings.AssignSettings(settingsWin.Settings);
                 PhotoFileExtensions = Settings.CleanPhotoFileExtensions();
@@ -567,14 +554,14 @@ namespace PhotoLocator
             var query = Interaction.InputBox("Enter part of the file name (without wildcards):", "Search");
             if (string.IsNullOrEmpty(query))
                 return;
-            var result = Pictures.FirstOrDefault(item => item.Name.Contains(query, StringComparison.CurrentCultureIgnoreCase));
+            var result = Items.FirstOrDefault(item => item.Name.Contains(query, StringComparison.CurrentCultureIgnoreCase));
             if (result != null)
                 SelectItem(result);
         });
 
         public ICommand SelectAllCommand => new RelayCommand(o =>
         {
-            foreach (var item in Pictures)
+            foreach (var item in Items)
                 item.IsChecked = true;
             UpdatePoints();
         });
@@ -582,7 +569,7 @@ namespace PhotoLocator
         public ICommand SelectCandidatesCommand => new RelayCommand(async o =>
         {
             await WaitForPicturesLoadedAsync();
-            foreach (var item in Pictures)
+            foreach (var item in Items)
                 item.IsChecked = item.GeoTag is null && item.TimeStamp.HasValue && item.CanSaveGeoTag;
             _ = GetSelectedItems().FirstOrDefault();
             UpdatePoints();
@@ -590,7 +577,7 @@ namespace PhotoLocator
 
         public ICommand DeselectAllCommand => new RelayCommand(o =>
         {
-            foreach (var item in Pictures)
+            foreach (var item in Items)
                 item.IsChecked = false;
             UpdatePoints();
         });
@@ -599,52 +586,50 @@ namespace PhotoLocator
         {
             if (allSelected.Contains(focusedItem))
             {
-                var focusedIndex = Pictures.IndexOf(focusedItem!);
+                var focusedIndex = Items.IndexOf(focusedItem!);
                 focusedItem = null;
-                for (int i = focusedIndex + 1; i < Pictures.Count; i++)
-                    if (!Pictures[i].IsChecked)
-                        return Pictures[i];
+                for (int i = focusedIndex + 1; i < Items.Count; i++)
+                    if (!Items[i].IsChecked)
+                        return Items[i];
                 for (int i = focusedIndex - 1; i >= 0; i--)
-                    if (!Pictures[i].IsChecked)
-                        return Pictures[i];
+                    if (!Items[i].IsChecked)
+                        return Items[i];
             }
             return focusedItem;
         }
 
         public ICommand DeleteSelectedCommand => new RelayCommand(async o =>
         {
-            var focusedItem = SelectedPicture;
+            var focusedItem = SelectedItem;
             var allSelected = GetSelectedItems().ToArray();
             if (allSelected.Length == 0)
                 return;
             focusedItem = GetNearestUnchecked(focusedItem, allSelected);
-            if (MessageBox.Show($"Delete {allSelected.Length} selected item(s)?" + 
-                (Settings.IncludeSidecarFiles ? "\nSidecar files will be included." : string.Empty), 
+            if (MessageBox.Show($"Delete {allSelected.Length} selected item(s)?" +
+                (Settings.IncludeSidecarFiles ? "\nSidecar files will be included." : string.Empty),
                 "Confirm", MessageBoxButton.OKCancel, MessageBoxImage.Question) != MessageBoxResult.OK)
                 return;
-            var selectedIndex = Pictures.IndexOf(SelectedPicture!);
-            SelectedPicture = null;
+            var selectedIndex = Items.IndexOf(SelectedItem!);
+            SelectedItem = null;
+            PauseFileSystemWatcher();
             await RunProcessWithProgressBarAsync(progressCallback => Task.Run(() =>
             {
                 int i = 0;
                 foreach (var item in allSelected)
                 {
                     item.Recycle(Settings.IncludeSidecarFiles);
-                    Application.Current.Dispatcher.Invoke(() => Pictures.Remove(item));
+                    Application.Current.Dispatcher.Invoke(() => Items.Remove(item));
                     progressCallback((double)(++i) / allSelected.Length);
                 }
-            }), "Deleting...");
-            if (focusedItem != null)
-                SelectItem(focusedItem);
+            }), "Deleting...", focusedItem);
+            ResumeFileSystemWatcher();
         });
 
         public ICommand CopySelectedCommand => new RelayCommand(async o =>
         {
-            var focusedItem = SelectedPicture;
             var allSelected = GetSelectedItems().ToArray();
             if (allSelected.Length == 0)
                 return;
-            focusedItem = GetNearestUnchecked(focusedItem, allSelected);
             var destination = Interaction.InputBox($"Copy {allSelected.Length} selected item(s).\n\nDestination:", "Copy files", (PhotoFolderPath ?? string.Empty).Trim('\\'));
             if (string.IsNullOrEmpty(destination) || destination == PhotoFolderPath || destination == ".")
                 return;
@@ -658,13 +643,11 @@ namespace PhotoLocator
                     progressCallback((double)(++i) / allSelected.Length);
                 }
             }), "Copying...");
-            if (focusedItem != null)
-                SelectItem(focusedItem);
         });
 
         public ICommand MoveSelectedCommand => new RelayCommand(async o =>
         {
-            var focusedItem = SelectedPicture;
+            var focusedItem = SelectedItem;
             var allSelected = GetSelectedItems().ToArray();
             if (allSelected.Length == 0)
                 return;
@@ -672,7 +655,7 @@ namespace PhotoLocator
             var destination = Interaction.InputBox($"Move {allSelected.Length} selected item(s).\n\nDestination:", "Move files", (PhotoFolderPath ?? string.Empty).Trim('\\'));
             if (string.IsNullOrEmpty(destination) || destination == PhotoFolderPath || destination == ".")
                 return;
-            SelectedPicture = null;
+            SelectedItem = null;
             await RunProcessWithProgressBarAsync(progressCallback => Task.Run(() =>
             {
                 Directory.SetCurrentDirectory(Path.GetDirectoryName(allSelected[0].FullPath)!);
@@ -680,12 +663,10 @@ namespace PhotoLocator
                 foreach (var item in allSelected)
                 {
                     item.MoveTo(Path.Combine(destination, item.Name));
-                    Application.Current.Dispatcher.Invoke(() => Pictures.Remove(item));
+                    Application.Current.Dispatcher.Invoke(() => Items.Remove(item));
                     progressCallback((double)(++i) / allSelected.Length);
                 }
-            }), "Moving...");
-            if (focusedItem != null)
-                SelectItem(focusedItem);
+            }), "Moving...", focusedItem);
         });
 
         public ICommand CreateFolderCommand => new RelayCommand(o =>
@@ -700,32 +681,32 @@ namespace PhotoLocator
 
         public ICommand ExecuteSelectedCommand => new RelayCommand(o =>
         {
-            if (SelectedPicture is null)
+            if (SelectedItem is null)
                 return;
-            if (SelectedPicture.IsDirectory)
-                PhotoFolderPath = SelectedPicture.FullPath;
+            if (SelectedItem.IsDirectory)
+                PhotoFolderPath = SelectedItem.FullPath;
             else
-                Process.Start(new ProcessStartInfo(SelectedPicture.FullPath) { UseShellExecute = true });
+                Process.Start(new ProcessStartInfo(SelectedItem.FullPath) { UseShellExecute = true });
         });
 
         public ICommand ExploreCommand => new RelayCommand(o =>
         {
-            if (SelectedPicture is not null)
-                Process.Start(new ProcessStartInfo("explorer.exe", $"/select, \"{SelectedPicture.FullPath}\"") { UseShellExecute = true });
+            if (SelectedItem is not null)
+                Process.Start(new ProcessStartInfo("explorer.exe", $"/select, \"{SelectedItem.FullPath}\"") { UseShellExecute = true });
             else if (!string.IsNullOrEmpty(PhotoFolderPath))
                 Process.Start(new ProcessStartInfo("explorer.exe", PhotoFolderPath) { UseShellExecute = true });
         });
 
         public ICommand CopyPathCommand => new RelayCommand(o =>
         {
-            if (SelectedPicture != null)
-                Clipboard.SetText(SelectedPicture.FullPath);
+            if (SelectedItem != null)
+                Clipboard.SetText(SelectedItem.FullPath);
         });
 
         public ICommand FilePropertiesCommand => new RelayCommand(o =>
         {
-            if (SelectedPicture != null)
-                WinAPI.ShowFileProperties(SelectedPicture.FullPath);
+            if (SelectedItem != null)
+                WinAPI.ShowFileProperties(SelectedItem.FullPath);
         });
 
         public ICommand ShellContextMenuCommand => new RelayCommand(o =>
@@ -748,7 +729,7 @@ namespace PhotoLocator
             {
                 CancelPictureLoading();
                 PhotoFolderPath = parent;
-                var select = Pictures.FirstOrDefault(item => item.FullPath.Equals(currentPath, StringComparison.OrdinalIgnoreCase));
+                var select = Items.FirstOrDefault(item => item.FullPath.Equals(currentPath, StringComparison.OrdinalIgnoreCase));
                 if (select != null)
                     SelectItem(select);
             }
@@ -756,14 +737,14 @@ namespace PhotoLocator
 
         public ICommand ShowMetadataCommand => new RelayCommand(o =>
         {
-            if (SelectedPicture is null || SelectedPicture.IsDirectory)
+            if (SelectedItem is null || SelectedItem.IsDirectory)
                 return;
             var metadataWin = new MetadataWindow();
-            using (new CursorOverride())
+            using (new MouseCursorOverride())
             {
                 metadataWin.Owner = App.Current.MainWindow;
-                metadataWin.Title = SelectedPicture.Name;
-                metadataWin.Metadata = String.Join("\n", ExifHandler.EnumerateMetadata(SelectedPicture.FullPath));
+                metadataWin.Title = SelectedItem.Name;
+                metadataWin.Metadata = String.Join("\n", ExifHandler.EnumerateMetadata(SelectedItem.FullPath));
             }
             if (string.IsNullOrEmpty(metadataWin.Metadata))
                 throw new UserMessageException("Unable to list metadata for file");
@@ -773,15 +754,15 @@ namespace PhotoLocator
 
         public ICommand OpenInMapsCommand => new RelayCommand(o =>
         {
-            if (SelectedPicture?.GeoTag is null)
+            if (SelectedItem?.GeoTag is null)
             {
                 MessageBox.Show("Selected file has no map coordinates.", "Information", MessageBoxButton.OK, MessageBoxImage.Information);
                 return;
             }
-            using var cursor = new CursorOverride();
+            using var cursor = new MouseCursorOverride();
             var url = "http://maps.google.com/maps?q=" +
-                SelectedPicture.GeoTag.Latitude.ToString(CultureInfo.InvariantCulture) + "," +
-                SelectedPicture.GeoTag.Longitude.ToString(CultureInfo.InvariantCulture) + "&t=h";
+                SelectedItem.GeoTag.Latitude.ToString(CultureInfo.InvariantCulture) + "," +
+                SelectedItem.GeoTag.Longitude.ToString(CultureInfo.InvariantCulture) + "&t=h";
             Process.Start(new ProcessStartInfo(url) { UseShellExecute = true });
         });
 
@@ -796,18 +777,15 @@ namespace PhotoLocator
             {
                 try
                 {
-                    if (SelectedPicture is not null && CropControl is not null && (o is true ||
-                        MessageBox.Show("Crop to selection?", "Crop", MessageBoxButton.OKCancel, MessageBoxImage.Question) == MessageBoxResult.OK))
+                    if (SelectedItem is null || CropControl is null || o is not true &&
+                        MessageBox.Show("Crop to selection?", "Crop", MessageBoxButton.OKCancel, MessageBoxImage.Question) != MessageBoxResult.OK)
+                        return;
+                    await RunProcessWithProgressBarAsync(progressCallback => Task.Run(() =>
                     {
-                        await RunProcessWithProgressBarAsync(progressCallback => Task.Run(() =>
-                        {
-                            progressCallback(-1);
-                            JpegTransformations.Crop(SelectedPicture.FullPath, SelectedPicture.GetProcessedFileName(), CropControl.CropRectangle);
-                            SelectedPicture.Rotation = Rotation.Rotate0;
-                        }), "Cropping");
-                        if (SelectedPicture is not null)
-                            SelectItem(SelectedPicture);
-                    }
+                        progressCallback(-1);
+                        JpegTransformations.Crop(SelectedItem.FullPath, SelectedItem.GetProcessedFileName(), CropControl.CropRectangle);
+                        SelectedItem.Rotation = Rotation.Rotate0;
+                    }), "Cropping");
                 }
                 finally
                 {
@@ -816,76 +794,50 @@ namespace PhotoLocator
             }
             else
             {
-                if (SelectedPicture is null || SelectedPicture.IsDirectory || !JpegTransformations.IsFileTypeSupported(SelectedPicture.Name))
+                if (SelectedItem is null || SelectedItem.IsDirectory || !JpegTransformations.IsFileTypeSupported(SelectedItem.Name))
                     throw new UserMessageException("Unsupported file format");
                 IsCropControlVisible = true;
                 if (IsCropControlVisible)
                     PreviewZoom = 0;
             }
         });
-        
-        public ICommand RotateLeftCommand => new RelayCommand(async o => await RotateSelectedAsync(270));
 
-        public ICommand RotateRightCommand => new RelayCommand(async o => await RotateSelectedAsync(90));
+        public JpegTransformCommands JpegTransformCommands => new(this);
 
-        public ICommand Rotate180Command => new RelayCommand(async o => await RotateSelectedAsync(180));
-
-        private async Task RotateSelectedAsync(int angle)
-        {
-            var allSelected = GetSelectedItems().Where(item => item.IsFile && JpegTransformations.IsFileTypeSupported(item.Name)).ToArray();
-            if (allSelected.Length == 0)
-                throw new UserMessageException("Unsupported file format");
-            await RunProcessWithProgressBarAsync(progressCallback => Task.Run(() =>
-            {
-                int i = 0;
-                foreach (var item in allSelected)
-                {
-                    JpegTransformations.Rotate(item.FullPath, item.GetProcessedFileName(), angle);
-                    item.Rotation = Rotation.Rotate0;
-                    item.IsChecked = false;
-                    progressCallback((double)(++i) / allSelected.Length);
-                }
-            }), "Rotating...");
-        }
+        public VideoTransformCommands VideoTransformCommands => new(this);
 
         private async Task LoadFolderContentsAsync(bool keepSelection, string? selectItemFullPath = null)
         {
-            DisableFileSystemWatcher();
-            var selectedName = SelectedPicture?.Name;
+            DisposeFileSystemWatcher();
+            var selectedName = SelectedItem?.Name;
             CancelPictureLoading();
             if (string.IsNullOrEmpty(PhotoFolderPath))
                 return;
-            Pictures.Clear();
+            Items.Clear();
             Polylines.Clear();
             SetupFileSystemWatcher();
             if (Settings.ShowFolders)
                 foreach (var dir in Directory.EnumerateDirectories(PhotoFolderPath))
-                    Pictures.Add(new PictureItemViewModel(dir, true, HandleFilePropertyChanged, null));
+                    Items.Add(new PictureItemViewModel(dir, true, HandleFilePropertyChanged, Settings));
             await AppendFilesAsync(Directory.EnumerateFiles(PhotoFolderPath));
             if (Polylines.Count > 0)
                 MapCenter = Polylines[0].Center;
             if (keepSelection && selectedName != null)
             {
-                var previousSelection = Pictures.FirstOrDefault(item => item.Name == selectedName);
+                var previousSelection = Items.FirstOrDefault(item => item.Name == selectedName);
                 if (previousSelection != null)
                     SelectItem(previousSelection);
             }
             else if (selectItemFullPath is not null)
             {
-                var selectItem = Pictures.FirstOrDefault(item => item.FullPath == selectItemFullPath);
+                var selectItem = Items.FirstOrDefault(item => item.FullPath == selectItemFullPath);
                 if (selectItem != null)
                     SelectItem(selectItem);
             }
-            if (SelectedPicture is null && Pictures.Count > 0)
-                SelectItem(Pictures.FirstOrDefault(item => item.IsFile) ?? Pictures[0]);
+            if (SelectedItem is null && Items.Count > 0)
+                SelectItem(Items.FirstOrDefault(item => item.IsFile) ?? Items[0]);
             await LoadPicturesAsync();
-        }
-
-        private void DisableFileSystemWatcher()
-        {
-            _fileSystemWatcher?.Dispose();
-            _fileSystemWatcher = null;
-        }
+        }       
 
         private void SetupFileSystemWatcher()
         {
@@ -898,11 +850,30 @@ namespace PhotoLocator
             _fileSystemWatcher.EnableRaisingEvents = true;
         }
 
+        private void DisposeFileSystemWatcher()
+        {
+            _fileSystemWatcher?.Dispose();
+            _fileSystemWatcher = null;
+        }
+
+        /// <summary> Note that events during pause will be lost </summary>
+        public void PauseFileSystemWatcher()
+        {
+            if (_fileSystemWatcher is not null)
+                _fileSystemWatcher.EnableRaisingEvents = false;
+        }
+
+        public void ResumeFileSystemWatcher()
+        {
+            if (_fileSystemWatcher is not null)
+                _fileSystemWatcher.EnableRaisingEvents = true;
+        }
+
         private void HandleFileSystemWatcherRename(object sender, RenamedEventArgs e)
         {
             Application.Current.Dispatcher.BeginInvoke(() =>
             {
-                var renamed = Pictures.FirstOrDefault(item => item.FullPath == e.OldFullPath);
+                var renamed = Items.FirstOrDefault(item => item.FullPath == e.OldFullPath);
                 if (renamed != null)
                 {
                     _pictureCache.Clear();
@@ -913,16 +884,25 @@ namespace PhotoLocator
             });
         }
 
+        public async Task WaitForFileSystemWatcherOperation()
+        {
+            if (_fileSystemWatcherUpdate is null)
+                return;
+            await _fileSystemWatcherUpdate;
+            if (_fileSystemWatcherUpdate.Result is Task operationTask)
+                await operationTask;
+        }
+
         private void HandleFileSystemWatcherChange(object sender, FileSystemEventArgs e)
         {
-            Application.Current.Dispatcher.BeginInvoke(async () =>
+            _fileSystemWatcherUpdate = Application.Current.Dispatcher.BeginInvoke(async () =>
             {
                 if (e.ChangeType == WatcherChangeTypes.Deleted)
                 {
-                    var removed = Pictures.FirstOrDefault(item => item.FullPath == e.FullPath);
+                    var removed = Items.FirstOrDefault(item => item.FullPath == e.FullPath);
                     if (removed != null)
-                        Pictures.Remove(removed);
-                    }
+                        Items.Remove(removed);
+                }
                 else if (e.ChangeType is WatcherChangeTypes.Created or WatcherChangeTypes.Renamed)
                 {
                     await Task.Delay(1000);
@@ -931,13 +911,13 @@ namespace PhotoLocator
                     if (File.Exists(e.FullPath) && Settings.PhotoFileExtensions.Contains(ext, StringComparison.OrdinalIgnoreCase))
                     {
                         var newItem = new PictureItemViewModel(e.FullPath, false, HandleFilePropertyChanged, Settings);
-                        if (!newItem.InsertOrdered(Pictures))
+                        if (!newItem.InsertOrdered(Items))
                             return;
                     }
                     else if (Directory.Exists(e.FullPath))
                     {
-                        var newItem = new PictureItemViewModel(e.FullPath, true, HandleFilePropertyChanged, null);
-                        if (!newItem.InsertOrdered(Pictures))
+                        var newItem = new PictureItemViewModel(e.FullPath, true, HandleFilePropertyChanged, Settings);
+                        if (!newItem.InsertOrdered(Items))
                             return;
                     }
                     else
@@ -951,7 +931,7 @@ namespace PhotoLocator
                 else if (e.ChangeType == WatcherChangeTypes.Changed)
                 {
                     await Task.Delay(1000);
-                    var changed = Pictures.FirstOrDefault(item => item.FullPath == e.FullPath);
+                    var changed = Items.FirstOrDefault(item => item.FullPath == e.FullPath);
                     if (changed == null)
                         return;
                     _pictureCache.Clear();
@@ -991,11 +971,11 @@ namespace PhotoLocator
         {
             foreach (var fileName in fileNames)
             {
-                if (Pictures.Any(i => i.FullPath == fileName))
+                if (Items.Any(i => i.FullPath == fileName))
                     continue;
                 var ext = Path.GetExtension(fileName).ToLowerInvariant();
                 if (Settings.PhotoFileExtensions.Contains(ext, StringComparison.OrdinalIgnoreCase))
-                    Pictures.Add(new PictureItemViewModel(fileName, false, HandleFilePropertyChanged, Settings));
+                    Items.Add(new PictureItemViewModel(fileName, false, HandleFilePropertyChanged, Settings));
                 else if (ext is ".gpx" or ".kml")
                 {
                     var traces = await Task.Run(() => GpsTrace.DecodeGpsTraceFile(fileName, TimeSpan.FromMinutes(1)));
@@ -1010,7 +990,7 @@ namespace PhotoLocator
             _loadCancellation?.Dispose();
             _loadCancellation = new CancellationTokenSource();
 
-            var candidates = Pictures.Where(item => item.ThumbnailImage is null).ToArray();
+            var candidates = Items.Where(item => item.ThumbnailImage is null).ToArray();
             // Reorder so that we take alternately one from the top and one from the bottom
             var reordered = new PictureItemViewModel[candidates.Length];
             int iStart = 0;
@@ -1021,7 +1001,7 @@ namespace PhotoLocator
                 new ParallelOptions { MaxDegreeOfParallelism = 2, CancellationToken = _loadCancellation.Token },
                 async (item, ct) =>
                 {
-                    await item.LoadMetadataAndThumbnailAsync(ct);
+                    await item.LoadThumbnailAndMetadataAsync(ct);
                     if (item.IsSelected && item.GeoTag != null)
                         MapCenter = item.GeoTag;
                 });
@@ -1056,7 +1036,7 @@ namespace PhotoLocator
             _previewCancellation?.Cancel();
             _previewCancellation?.Dispose();
             _previewCancellation = null;
-            DisableFileSystemWatcher();
+            DisposeFileSystemWatcher();
         }
     }
 

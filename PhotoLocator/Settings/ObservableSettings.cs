@@ -31,6 +31,13 @@ namespace PhotoLocator.Settings
         }
         bool _showFolders;
 
+        public int ThumbnailSize
+        {
+            get => _thumbnailSize;
+            set => SetProperty(ref _thumbnailSize, value);
+        }
+        int _thumbnailSize;
+
         public bool IncludeSidecarFiles
         {
             get => _includeSidecarFiles;
@@ -51,6 +58,13 @@ namespace PhotoLocator.Settings
             set => SetProperty(ref _exifToolPath, value);
         }
         string? _exifToolPath;
+
+        public string? FFmpegPath
+        {
+            get => _ffmpegPath;
+            set => SetProperty(ref _ffmpegPath, value);
+        }
+        string? _ffmpegPath;
 
         public int SlideShowInterval
         {

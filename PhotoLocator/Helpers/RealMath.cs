@@ -36,5 +36,28 @@ namespace PhotoLocator.Helpers
         {
             return value * value;
         }
+
+        public static double SmoothStep(double x)
+        {
+            return (3.0 - 2.0 * x) * x * x;
+        }
+
+        public static float SmoothStep(float x)
+        {
+            return (3.0f - 2.0f * x) * x * x;
+        }
+
+
+        /// <summary>
+        /// Smooth step edge between xmin and xmax
+        /// </summary>
+        public static float SmoothStep(float xmin, float xmax, float x)
+        {
+            if (x <= xmin)
+                return 0;
+            if (x >= xmax)
+                return 1;
+            return SmoothStep((x - xmin) / (xmax - xmin));
+        }
     }
 }

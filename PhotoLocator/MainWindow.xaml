@@ -29,6 +29,7 @@
         <KeyBinding Key="D3" Modifiers="Ctrl" Command="{Binding Zoom200Command}" />
         <KeyBinding Key="D4" Modifiers="Ctrl" Command="{Binding Zoom400Command}" />
         <KeyBinding Key="E" Modifiers="Ctrl" Command="{Binding ExploreCommand}" />
+        <KeyBinding Key="L" Modifiers="Ctrl" Command="{Binding JpegTransformCommands.LocalContrastCommand}" />
         <KeyBinding Key="O" Modifiers="Ctrl" Command="{Binding BrowseForPhotosCommand}" />
         <KeyBinding Key="Q" Modifiers="Ctrl" Command="{Binding ViewModeCommand}" />
         <KeyBinding Key="S" Modifiers="Ctrl" Command="{Binding SaveCommand}" />
@@ -110,8 +111,8 @@
                     ToolTip="About (F1)" Width="32" />
         </StackPanel>
 
-        <ListBox Grid.Column="0" Grid.Row="1" Margin="0,0,10,0" ItemsSource="{Binding Pictures}" Name="PictureListBox"
-                 SelectionMode="Single" SelectedItem="{Binding SelectedPicture}"
+        <ListBox Grid.Column="0" Grid.Row="1" Margin="0,0,10,0" ItemsSource="{Binding Items}" Name="PictureListBox"
+                 SelectionMode="Single" SelectedItem="{Binding SelectedItem}"
                  PreviewMouseDown="HandlePictureListBoxPreviewMouseButtonDown" 
                  PreviewMouseUp ="HandlePictureListBoxPreviewMouseButtonUp" 
                  PreviewTextInput="HandlePictureListBoxPreviewTextInput"
@@ -149,10 +150,21 @@
                     <MenuItem Header="Show metadata" Command="{Binding ShowMetadataCommand}" />
                     <Separator />
                     <MenuItem Header="Transform jpeg" >
-                        <MenuItem Header="Rotate left" Command="{Binding RotateLeftCommand}" />
-                        <MenuItem Header="Rotate right" Command="{Binding RotateRightCommand}" />
-                        <MenuItem Header="Rotate 180°" Command="{Binding Rotate180Command}" />
+                        <MenuItem Header="Rotate left" Command="{Binding JpegTransformCommands.RotateLeftCommand}" />
+                        <MenuItem Header="Rotate right" Command="{Binding JpegTransformCommands.RotateRightCommand}" />
+                        <MenuItem Header="Rotate 180°" Command="{Binding JpegTransformCommands.Rotate180Command}" />
                         <MenuItem Header="Crop (Alt-C)" Command="{Binding CropCommand}" IsChecked="{Binding IsCropControlVisible}" />
+                        <MenuItem Header="Local contrast, brightness and colors (Ctrl+L)" Command="{Binding JpegTransformCommands.LocalContrastCommand}" />
+                    </MenuItem>
+                    <MenuItem Header="Transform video" >
+                        <MenuItem Header="Process selected" Command="{Binding VideoTransformCommands.ProcessSelected}" />
+                        <Separator />
+                        <MenuItem Header="Stabilize video" Command="{Binding VideoTransformCommands.StabilizeVideo}" />
+                        <MenuItem Header="Combine images or videos" Command="{Binding VideoTransformCommands.Combine}" />
+                        <MenuItem Header="Compare side by side" Command="{Binding VideoTransformCommands.Compare}" />
+                        <MenuItem Header="Extract frames" Command="{Binding VideoTransformCommands.ExtractFrames}" />
+                        <MenuItem Header="Generate Max frame" Command="{Binding VideoTransformCommands.GenerateMaxFrame}" />
+                        <MenuItem Header="Generate Average frame" Command="{Binding VideoTransformCommands.GenerateAverageFrame}" />
                     </MenuItem>
                     <Separator />
                     <MenuItem Header="Rename (F2)" Command="{Binding RenameCommand}" />
@@ -219,9 +231,9 @@
                         <MenuItem Header="400% (Ctrl+4)" IsCheckable="True" Name="Zoom400Item" Command="{Binding Zoom400Command}"  />
                         <Separator />
                         <MenuItem Header="Transform jpeg" >
-                            <MenuItem Header="Rotate left" Command="{Binding RotateLeftCommand}" />
-                            <MenuItem Header="Rotate right" Command="{Binding RotateRightCommand}" />
-                            <MenuItem Header="Rotate 180°" Command="{Binding Rotate180Command}" />
+                            <MenuItem Header="Rotate left" Command="{Binding JpegTransformCommands.RotateLeftCommand}" />
+                            <MenuItem Header="Rotate right" Command="{Binding JpegTransformCommands.RotateRightCommand}" />
+                            <MenuItem Header="Rotate 180°" Command="{Binding JpegTransformCommands.Rotate180Command}" />
                             <MenuItem Header="Crop (Alt-C)" Command="{Binding CropCommand}" IsChecked="{Binding IsCropControlVisible}" />
                         </MenuItem>
                     </ContextMenu>

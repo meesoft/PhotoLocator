@@ -27,6 +27,7 @@ namespace PhotoLocator
 #if DEBUG
         static readonly bool _isInDesignMode = DesignerProperties.GetIsInDesignMode(new DependencyObject());
 #endif
+        static DpiScale _screenDpi;
         readonly ISettings? _settings;
 
         public event PropertyChangedEventHandler? PropertyChanged;
@@ -46,7 +47,7 @@ namespace PhotoLocator
         public PictureItemViewModel(string fileName, bool isDirectory, PropertyChangedEventHandler handleFilePropertyChanged, ISettings? settings)
         {
             _name = Path.GetFileName(fileName);
-            FullPath = fileName;
+            _fullPath = fileName;
             IsDirectory = isDirectory;
             PropertyChanged += handleFilePropertyChanged;
             _settings = settings;
@@ -152,17 +153,47 @@ namespace PhotoLocator
         }
         DateTime? _timeStamp;
 
-        public ImageSource? ThumbnailImage 
-        { 
-            get => _thumbnailImage; 
+        public ImageSource? ThumbnailImage
+        {
+            get => _thumbnailImage;
             set => SetProperty(ref _thumbnailImage, value);
         }
         ImageSource? _thumbnailImage;
 
-        public string? ErrorMessage 
-        { 
-            get => _errorMessage; 
-            set => SetProperty(ref _errorMessage, value); 
+        public int ThumbnailSize => _settings?.ThumbnailSize ?? 256;
+
+        public string? MetadataString
+        {
+            get
+            {
+                if (_metadataString is null && IsFile)
+                {
+                    var metadataString = GetMetadataString();
+                    _metadataString ??= metadataString;
+                }
+                return _metadataString;
+            }
+            set => SetProperty(ref _metadataString, value);
+        }
+        string? _metadataString;
+
+        private string GetMetadataString()
+        {
+            try
+            {
+                return ExifHandler.GetMetadataString(FullPath);
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine(ex);
+                return string.Empty;
+            }
+        }
+
+        public string? ErrorMessage
+        {
+            get => _errorMessage;
+            set => SetProperty(ref _errorMessage, value);
         }
         string? _errorMessage;
 
@@ -198,7 +229,7 @@ namespace PhotoLocator
                     return false;
                 collection.Insert(newIndex, this);
             }
-            else 
+            else
             {
                 var list = collection.Where(item => item.IsDirectory).ToList();
                 var newIndex = ~list.BinarySearch(this, new SelectorComparer<PictureItemViewModel>(item => item.Name));
@@ -209,11 +240,11 @@ namespace PhotoLocator
             return true;
         }
 
-        public async ValueTask LoadMetadataAndThumbnailAsync(CancellationToken ct)
+        public async ValueTask LoadThumbnailAndMetadataAsync(CancellationToken ct)
         {
             if (IsFile)
                 await LoadMetadataAsync(ct);
-            if (ThumbnailImage != null)
+            if (ThumbnailImage is not null)
                 return;
             ThumbnailImage = await Task.Run(() =>
             {
@@ -222,11 +253,16 @@ namespace PhotoLocator
                     return thumbnail;
                 try
                 {
-                    thumbnail = LoadPreviewInternal(256, ct);
-                    if (thumbnail.PixelWidth <= 256 && thumbnail.PixelHeight <= 256)
+                    if (_screenDpi.DpiScaleX == 0)
+                        App.Current.Dispatcher.Invoke(
+                            () => _screenDpi = VisualTreeHelper.GetDpi(App.Current.MainWindow));
+                    var thumbnailPixelSize = ThumbnailSize * _screenDpi.DpiScaleX;
+                    int thumbnailIntPixelSize = IntMath.Round(thumbnailPixelSize);
+                    thumbnail = LoadPreviewInternal(thumbnailIntPixelSize, false, ct);
+                    if (thumbnail.PixelWidth <= thumbnailIntPixelSize && thumbnail.PixelHeight <= thumbnailIntPixelSize)
                         return thumbnail;
                     ct.ThrowIfCancellationRequested();
-                    var scale = Math.Min(256.0 / thumbnail.PixelWidth, 256.0 / thumbnail.PixelHeight);
+                    var scale = Math.Min(thumbnailPixelSize / thumbnail.PixelWidth, thumbnailPixelSize / thumbnail.PixelHeight);
                     thumbnail = new TransformedBitmap(thumbnail, new ScaleTransform(scale, scale));
                     thumbnail.Freeze();
                     return thumbnail;
@@ -251,8 +287,8 @@ namespace PhotoLocator
                 GeoTag = await Task.Run(async () =>
                 {
                     using var file = await FileHelpers.OpenFileWithRetryAsync(FullPath, ct);
-                    var decoder = BitmapDecoder.Create(file, BitmapCreateOptions.IgnoreColorProfile, BitmapCacheOption.None);
-                    if (decoder.Frames[0].Metadata is not BitmapMetadata metadata)
+                    var metadata = ExifHandler.LoadMetadata(file);
+                    if (metadata is null)
                         return null;
                     var orientation = metadata.GetQuery(ExifHandler.OrientationQuery1) as ushort? ?? metadata.GetQuery(ExifHandler.OrientationQuery2) as ushort? ?? 0;
                     Rotation = orientation switch
@@ -263,6 +299,7 @@ namespace PhotoLocator
                         _ => Rotation.Rotate0
                     };
                     _timeStamp = ExifHandler.GetTimeStamp(metadata);
+                    _metadataString ??= ExifHandler.GetMetadataString(metadata);
                     return ExifHandler.GetGeotag(metadata);
                 }, ct);
                 GeoTagSaved = GeoTag != null;
@@ -276,11 +313,11 @@ namespace PhotoLocator
             }
         }
 
-        public BitmapSource? LoadPreview(CancellationToken ct, int maxWidth = int.MaxValue)
+        public BitmapSource? LoadPreview(CancellationToken ct, int maxWidth = int.MaxValue, bool preservePixelFormat = false)
         {
             try
             {
-                return LoadPreviewInternal(maxWidth, ct);
+                return LoadPreviewInternal(maxWidth, preservePixelFormat, ct);
             }
             catch (OperationCanceledException)
             {
@@ -292,18 +329,35 @@ namespace PhotoLocator
             }
         }
 
-        private BitmapSource LoadPreviewInternal(int maxWidth, CancellationToken ct)
+        private BitmapSource LoadPreviewInternal(int maxPixelWidth, bool preservePixelFormat, CancellationToken ct)
         {
+            if (IsVideo && !string.IsNullOrEmpty(_settings?.FFmpegPath))
+            {
+                try
+                {
+                    var (result, metadata) = VideoFileFormatHandler.LoadFromFile(FullPath, maxPixelWidth, _settings, ct);
+                    if (metadata != null)
+                        MetadataString = metadata;
+                    return result;
+                }
+                catch (OperationCanceledException)
+                {
+                    throw;
+                }
+                catch
+                {
+                }
+            }
             using var fileStream = File.OpenRead(FullPath);
             try
             {
                 var ext = Path.GetExtension(Name).ToLowerInvariant();
                 if (CR2FileFormatHandler.CanLoad(ext))
-                    return CR2FileFormatHandler.LoadFromStream(fileStream, Rotation, maxWidth, ct);
+                    return CR2FileFormatHandler.LoadFromStream(fileStream, Rotation, maxPixelWidth, preservePixelFormat, ct);
                 if (CR3FileFormatHandler.CanLoad(ext))
-                    return CR3FileFormatHandler.LoadFromStream(fileStream, Rotation, maxWidth, ct);
+                    return CR3FileFormatHandler.LoadFromStream(fileStream, Rotation, maxPixelWidth, preservePixelFormat, ct);
                 if (PhotoshopFileFormatHandler.CanLoad(ext))
-                    return PhotoshopFileFormatHandler.LoadFromStream(fileStream, Rotation, maxWidth, ct);
+                    return PhotoshopFileFormatHandler.LoadFromStream(fileStream, Rotation, maxPixelWidth, preservePixelFormat, ct);
             }
             catch (OperationCanceledException)
             {
@@ -314,7 +368,7 @@ namespace PhotoLocator
                 fileStream.Position = 0; // Fallback to default reader
             }
             ct.ThrowIfCancellationRequested();
-            return GeneralFileFormatHandler.LoadFromStream(fileStream, Rotation, maxWidth, ct);
+            return GeneralFileFormatHandler.LoadFromStream(fileStream, Rotation, maxPixelWidth, preservePixelFormat, ct);
         }
 
         private BitmapSource? TryLoadShellThumbnail(bool large, ShellThumbnailFormatOption formatOption, CancellationToken ct)

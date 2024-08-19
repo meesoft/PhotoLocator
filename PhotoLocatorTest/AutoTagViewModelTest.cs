@@ -13,7 +13,7 @@ namespace PhotoLocator
         {
             var file = new PictureItemViewModel(@"TestData\2022-06-17_19.03.02.jpg", false, (s, e) => { }, null);
             file.IsSelected = true;
-            await file.LoadMetadataAndThumbnailAsync(CancellationToken.None);
+            await file.LoadThumbnailAndMetadataAsync(CancellationToken.None);
 
             var trace = new GpsTrace();
             var location = new Location(1, 2);

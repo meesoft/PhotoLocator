@@ -122,6 +122,9 @@
             </Setter.Value>
         </Setter>
         <Style.Triggers>
+            <Trigger Property="IsEnabled" Value="False">
+                <Setter Property="Foreground" Value="{DynamicResource {x:Static SystemColors.GrayTextBrushKey}}"/>
+            </Trigger>
         </Style.Triggers>
     </Style>
     <Style TargetType="{x:Type ComboBoxItem}">
@@ -157,6 +160,10 @@
     </Style>
 
     <Style TargetType="CheckBox">
+        <Setter Property="Foreground" Value="#FFEEEEEE" />
+    </Style>
+
+    <Style TargetType="RadioButton">
         <Setter Property="Foreground" Value="#FFEEEEEE" />
     </Style>
 

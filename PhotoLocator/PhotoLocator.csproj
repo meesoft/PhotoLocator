@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
-    <TargetFramework>net6.0-windows</TargetFramework>
+    <TargetFramework>net8.0-windows</TargetFramework>
     <Nullable>enable</Nullable>
     <UseWPF>true</UseWPF>
     <ApplicationManifest>app.manifest</ApplicationManifest>
@@ -12,7 +12,7 @@
 	<ApplicationIcon>Resources\PhotoLocator.ico</ApplicationIcon>
 	<EnableNETAnalyzers>true</EnableNETAnalyzers>
 	<AnalysisMode>All</AnalysisMode>
-	<NoWarn>CA1014,IDE0017</NoWarn>
+	<NoWarn>CA1014,CA1814,CA1819,IDE0017</NoWarn>
 	<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
 

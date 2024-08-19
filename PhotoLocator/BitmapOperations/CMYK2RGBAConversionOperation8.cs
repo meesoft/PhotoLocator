@@ -2,9 +2,9 @@
 using System;
 using System.Threading.Tasks;
 
-namespace PhotoLocator.PictureFileFormats
+namespace PhotoLocator.BitmapOperations
 {
-    public static class CMYK2RGBAConversionOperation8
+    static class CMYK2RGBAConversionOperation8
     {
         public static void Apply(byte[] source, byte[] dest, int width, int height)
         {

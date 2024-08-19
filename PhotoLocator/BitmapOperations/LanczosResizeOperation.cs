@@ -3,11 +3,14 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
+using PhotoLocator.Helpers;
 
-namespace PhotoLocator.Helpers
+namespace PhotoLocator.BitmapOperations
 {
     public class LanczosResizeOperation
     {
+        //TODO: Consider proper gamma correction handling
+
         /// <see cref="http://en.wikipedia.org/wiki/Lanczos_resampling"/>
         public static float Lanczos2(float x)
         {
@@ -121,7 +124,7 @@ namespace PhotoLocator.Helpers
                 }
             }
         }
-      
+
         public byte[] Apply(byte[] pixels, int width, int height, int planes, int pixelSize, int newWidth, int newHeight, CancellationToken ct)
         {
             if (width != newWidth)
@@ -189,9 +192,7 @@ namespace PhotoLocator.Helpers
                 planes = 1; pixelSize = 1;
             }
             else
-            {
                 return null;
-            }
 
             var pixels = new byte[width * height * pixelSize];
             source.CopyPixels(pixels, width * pixelSize, 0);

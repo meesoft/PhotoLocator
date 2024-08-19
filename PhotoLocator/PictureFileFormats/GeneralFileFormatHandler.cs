@@ -1,4 +1,6 @@
-﻿using System.IO;
+﻿using PhotoLocator.Helpers;
+using PhotoLocator.Metadata;
+using System.IO;
 using System.Threading;
 using System.Windows.Media.Imaging;
 
@@ -6,13 +8,15 @@ namespace PhotoLocator.PictureFileFormats
 {
     static class GeneralFileFormatHandler
     {
-        public static BitmapSource LoadFromStream(Stream source, Rotation rotation, int maxWidth, CancellationToken ct)
+        public static BitmapSource LoadFromStream(Stream source, Rotation rotation, int maxPixelWidth, bool preservePixelFormat, CancellationToken ct)
         {
             var bitmap = new BitmapImage();
             bitmap.BeginInit();
             bitmap.StreamSource = source;
-            if (maxWidth < int.MaxValue)
-                bitmap.DecodePixelWidth = maxWidth;
+            if (maxPixelWidth < int.MaxValue)
+                bitmap.DecodePixelWidth = maxPixelWidth;
+            if (preservePixelFormat)
+                bitmap.CreateOptions = BitmapCreateOptions.PreservePixelFormat;
             bitmap.CacheOption = BitmapCacheOption.OnLoad;
             bitmap.Rotation = rotation;
             bitmap.EndInit();
@@ -20,6 +24,30 @@ namespace PhotoLocator.PictureFileFormats
             bitmap.Freeze();
             ct.ThrowIfCancellationRequested();
             return bitmap;
+        }
+
+        public static void SaveToFile(BitmapSource image, string outPath, BitmapMetadata? metadata = null)
+        {
+            var ext = Path.GetExtension(outPath).ToUpperInvariant();
+            BitmapEncoder encoder;
+            if (ext is ".JPG" or ".JPEG")
+                encoder = new JpegBitmapEncoder();
+            else if (ext is ".TIF" or ".TIFF")
+                encoder = new TiffBitmapEncoder();
+            else if (ext is ".PNG")
+                encoder = new PngBitmapEncoder();
+            else if (ext is ".BMP")
+                encoder = new BmpBitmapEncoder();
+            else
+                throw new UserMessageException("Unsupported file format " + ext);
+
+            if (metadata is null)
+                encoder.Frames.Add(BitmapFrame.Create(image));
+            else
+                encoder.Frames.Add(BitmapFrame.Create(image, null, ExifHandler.CreateMetadataForEncoder(metadata, encoder), null));
+            
+            using var fileStream = new FileStream(outPath, FileMode.Create);
+            encoder.Save(fileStream);
         }
     }
 }

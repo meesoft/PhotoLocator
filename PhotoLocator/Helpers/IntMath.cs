@@ -14,6 +14,11 @@ namespace PhotoLocator.Helpers
             return (int)Math.Round(a);
         }
 
+        public static bool InRange(int value, int min, int max)
+        {
+            return (value >= min) && (value <= max);
+        }
+
         public static int EnsureRange(int value, int min, int max)
         {
             if (value <= min)

@@ -17,9 +17,9 @@ namespace PhotoLocator.PictureFileFormats
         }
 
         static readonly byte[] _previewHeader = Encoding.ASCII.GetBytes("mdat");
-        static readonly byte[] _jpegHeader = new byte[] { 0xff, 0xd8, 0xff };
+        static readonly byte[] _jpegHeader = [0xff, 0xd8, 0xff];
 
-        public static BitmapSource LoadFromStream(Stream stream, Rotation rotation, int maxWidth, CancellationToken ct)
+        public static BitmapSource LoadFromStream(Stream stream, Rotation rotation, int maxWidth, bool preservePixelFormat, CancellationToken ct)
         {
             var buffer = new byte[65536];
             var length = stream.Read(buffer, 0, buffer.Length);
@@ -44,7 +44,7 @@ namespace PhotoLocator.PictureFileFormats
                     index = 0;
                 }
                 stream.Position += index + index2 - length;
-                return GeneralFileFormatHandler.LoadFromStream(new OffsetStreamReader(stream), rotation, maxWidth, ct);
+                return GeneralFileFormatHandler.LoadFromStream(new OffsetStreamReader(stream), rotation, maxWidth, preservePixelFormat, ct);
             }
             throw new FileFormatException();
         }

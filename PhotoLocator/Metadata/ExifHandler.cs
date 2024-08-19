@@ -1,4 +1,4 @@
-﻿// Based on example from https://www.codeproject.com/Questions/815338/Inserting-GPS-tags-into-jpeg-EXIF-metadata-using-n
+﻿// Geotagging based on example from https://www.codeproject.com/Questions/815338/Inserting-GPS-tags-into-jpeg-EXIF-metadata-using-n
 
 using MapControl;
 using PhotoLocator.Helpers;
@@ -13,9 +13,10 @@ using System.Windows.Media.Imaging;
 
 namespace PhotoLocator.Metadata
 {
-    internal class ExifHandler
+    internal static class ExifHandler
     {
         // See https://exiv2.org/tags.html
+        // Query1 values seems to be for JPEG and Query2 values for TIFF metadata
  
         public const string FileTimeStampQuery1 = "/app1/{ushort=0}/{ushort=306}"; // String in "yyyy:MM:dd HH:mm:ss" format
         public const string FileTimeStampQuery2 = "/ifd/{ushort=306}";
@@ -39,16 +40,16 @@ namespace PhotoLocator.Metadata
         public const string OrientationQuery1 = "/app1/{ushort=0}/{ushort=274}"; // Short
         public const string OrientationQuery2 = "/ifd/{ushort=274}"; // Short
 
-        // North or South Latitude 
+        // North or South Latitude
         private const string GpsLatitudeRefQuery1 = "/app1/ifd/gps/subifd:{ulong=1}"; // ASCII 2
         private const string GpsLatitudeRefQuery2 = "/ifd/{ushort=34853}/{ushort=1}"; // ASCII 2
-        // Latitude        
+        // Latitude
         private const string GpsLatitudeQuery1 = "/app1/ifd/gps/subifd:{ulong=2}"; // RATIONAL 3
         private const string GpsLatitudeQuery2 = "/ifd/{ushort=34853}/{ushort=2}"; // RATIONAL 3
-        // East or West Longitude 
+        // East or West Longitude
         private const string GpsLongitudeRefQuery1 = "/app1/ifd/gps/subifd:{ulong=3}"; // ASCII 2
         private const string GpsLongitudeRefQuery2 = "/ifd/{ushort=34853}/{ushort=3}"; // ASCII 2
-        // Longitude 
+        // Longitude
         private const string GpsLongitudeQuery1 = "/app1/ifd/gps/subifd:{ulong=4}"; // RATIONAL 3
         private const string GpsLongitudeQuery2 = "/ifd/{ushort=34853}/{ushort=4}"; // RATIONAL 3
         // Altitude reference 
@@ -62,6 +63,94 @@ namespace PhotoLocator.Metadata
 
         public const BitmapCreateOptions CreateOptions = BitmapCreateOptions.PreservePixelFormat | BitmapCreateOptions.IgnoreColorProfile;
 
+        /// <summary> Note that the stream must still be valid when the metadata is used </summary>
+        public static BitmapMetadata? LoadMetadata(Stream stream)
+        {
+            var decoder = BitmapDecoder.Create(stream, CreateOptions, BitmapCacheOption.OnDemand);
+            if (decoder.Frames[0].Metadata is BitmapMetadata metadata)
+                return metadata;
+            return null;
+        }
+
+        public static BitmapMetadata? CreateMetadataForEncoder(BitmapMetadata metadata, BitmapEncoder encoder)
+        {
+            try
+            {
+                BitmapMetadata result;
+                int setValue = 0;
+
+                void TransferValue(string query1, string query2)
+                {
+                    var value = metadata.GetQuery(query1) ?? metadata.GetQuery(query2);
+                    if (value is not null)
+                        try
+                        {
+                            if (setValue == 1)
+                                result.SetQuery(query1, value);
+                            else if (setValue == 2)
+                                result.SetQuery(query2, value);
+                        }
+                        catch { }
+                }
+
+                if (encoder is JpegBitmapEncoder)
+                {
+                    if (metadata.Format == "jpg")
+                        return metadata;
+                    result = new BitmapMetadata("jpg");
+                    setValue = 1;
+
+                }
+                else if (encoder is TiffBitmapEncoder)
+                {
+                    if (metadata.Format == "tiff")
+                        return metadata;
+                    result = new BitmapMetadata("tiff");
+                    setValue = 2;
+                }
+                else
+                    return null;
+
+                var dateTaken = ParseDateTaken(metadata);
+                if (dateTaken.HasValue)
+                    try
+                    {   // Parsing the timestamp string should use current culture but writing must happen in invariant culture
+                        result.DateTaken = dateTaken.Value.ToString(CultureInfo.InvariantCulture);
+                    }
+                    catch { }
+
+                if (!string.IsNullOrEmpty(metadata.CameraManufacturer))
+                    result.CameraManufacturer = metadata.CameraManufacturer;
+                if (!string.IsNullOrEmpty(metadata.CameraModel))
+                    result.CameraModel = metadata.CameraModel;
+                if (!string.IsNullOrEmpty(metadata.Title))
+                    result.Title = metadata.Title;
+                if (!string.IsNullOrEmpty(metadata.Comment))
+                    result.Comment = metadata.Comment;
+
+                if (string.IsNullOrEmpty(metadata.ApplicationName))
+                    result.ApplicationName = nameof(PhotoLocator);
+                else
+                    result.ApplicationName = nameof(PhotoLocator) + ", " + metadata.ApplicationName;
+
+                TransferValue(ExposureTimeQuery1, ExposureTimeQuery2);
+                TransferValue(LensApertureQuery1, LensApertureQuery2);
+                TransferValue(FocalLengthQuery1, FocalLengthQuery2);
+                TransferValue(IsoQuery1, IsoQuery2);
+                TransferValue(GpsLatitudeQuery1, GpsLatitudeQuery2);
+                TransferValue(GpsLongitudeQuery1, GpsLongitudeQuery2);
+                TransferValue(GpsLatitudeRefQuery1, GpsLatitudeRefQuery2);
+                TransferValue(GpsLongitudeRefQuery1, GpsLongitudeRefQuery2);
+                TransferValue(DjiRelativeAltitude1, DjiRelativeAltitude2);
+
+                return result;
+            }
+            catch
+            {
+                return null;
+            }
+        }
+
         public static void SetGeotag(string sourceFileName, string targetFileName, Location location)
         {
             MemoryStream memoryStream;
@@ -69,7 +158,7 @@ namespace PhotoLocator.Metadata
             {
                 // Decode
                 var sourceSize = originalFileStream.Length;
-                var decoder = BitmapDecoder.Create(originalFileStream, CreateOptions, BitmapCacheOption.None);
+                var decoder = BitmapDecoder.Create(originalFileStream, CreateOptions, BitmapCacheOption.None); // Caching needs to be None for geotagging work be lossless
                 var frame = decoder.Frames[0];
 
                 // Tag
@@ -164,8 +253,7 @@ namespace PhotoLocator.Metadata
         public static Location? GetGeotag(string sourceFileName)
         {
             using var file = File.OpenRead(sourceFileName);
-            var decoder = BitmapDecoder.Create(file, CreateOptions, BitmapCacheOption.OnDemand);
-            var metadata = decoder.Frames[0].Metadata as BitmapMetadata;
+            var metadata = LoadMetadata(file);
             return GetGeotag(metadata);
         }
 
@@ -197,9 +285,7 @@ namespace PhotoLocator.Metadata
 
         public static DateTime? GetTimeStamp(BitmapMetadata metadata)
         {
-            DateTime? dateTaken = DateTime.TryParse(metadata.DateTaken, out var dateTakenStr) ?
-                DateTime.SpecifyKind(dateTakenStr, DateTimeKind.Local) :
-                null;
+            var dateTaken = ParseDateTaken(metadata);
 
             if (metadata.CameraManufacturer == "DJI") // Fix for DNG and JPG version of the same picture having different metadata.DateTaken
             {
@@ -216,6 +302,13 @@ namespace PhotoLocator.Metadata
             }
 
             return dateTaken;
+        }
+
+        private static DateTime? ParseDateTaken(BitmapMetadata metadata)
+        {
+            return DateTime.TryParse(metadata.DateTaken, out var dateTakenStr) ?
+                DateTime.SpecifyKind(dateTakenStr, DateTimeKind.Local) :
+                null;
         }
 
         public static double? GetRelativeAltitude(BitmapMetadata metadata)
@@ -240,9 +333,9 @@ namespace PhotoLocator.Metadata
         public static IEnumerable<string> EnumerateMetadata(string fileName)
         {
             using var file = File.OpenRead(fileName);
-            var decoder = BitmapDecoder.Create(file, CreateOptions, BitmapCacheOption.OnDemand);
-            if (decoder.Frames[0].Metadata is not BitmapMetadata metadata)
-                return Enumerable.Empty<string>();
+            var metadata = LoadMetadata(file);
+            if (metadata is null)
+                return [];
             return EnumerateMetadata(metadata, string.Empty).ToArray();
         }
 
@@ -291,9 +384,14 @@ namespace PhotoLocator.Metadata
         public static string GetMetadataString(string fileName)
         {
             using var file = File.OpenRead(fileName);
-            var decoder = BitmapDecoder.Create(file, CreateOptions, BitmapCacheOption.OnDemand);
-            if (decoder.Frames[0].Metadata is not BitmapMetadata metadata)
+            var metadata = LoadMetadata(file);
+            if (metadata is null)
                 return string.Empty;
+            return GetMetadataString(metadata);
+        }
+
+        public static string GetMetadataString(BitmapMetadata metadata)
+        {
             var metadataStrings = new List<string>();
 
             if (!string.IsNullOrEmpty(metadata.CameraModel))

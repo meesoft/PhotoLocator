@@ -1,6 +1,6 @@
 ﻿using System.Diagnostics;
 
-namespace PhotoLocator.Helpers
+namespace PhotoLocator.BitmapOperations
 {
     [TestClass]
     public class LanczosResizeOperationTest

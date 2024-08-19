@@ -115,14 +115,11 @@ namespace Peter
                 ((int)ShellHelper.HiWord(m.WParam) & (int)MFT.SEPARATOR) == 0 &&
                 ((int)ShellHelper.HiWord(m.WParam) & (int)MFT.POPUP) == 0)
             {
-                string info = string.Empty;
-
+                string info;
                 if (ShellHelper.LoWord(m.WParam) == (int)CMD_CUSTOM.ExpandCollapse)
                     info = "Expands or collapses the current selected item";
                 else
-                {
-                    info = "";
-                }
+                    info = string.Empty;
             }
 
             #endregion

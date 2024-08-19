@@ -45,7 +45,7 @@ namespace PhotoLocator
 
         public string? CurrentPath => _mainViewModel.PhotoFolderPath;
 
-        public bool IsIncludeAvailable => DroppedEntries.Any(f => _mainViewModel.Pictures.All(i => i.FullPath != f));
+        public bool IsIncludeAvailable => DroppedEntries.Any(f => _mainViewModel.Items.All(i => i.FullPath != f));
 
         public bool IsCopyAndMoveAvailable => !string.IsNullOrEmpty(CurrentPath) && Path.GetDirectoryName(DroppedEntries[0]) != CurrentPath;
 
@@ -66,7 +66,7 @@ namespace PhotoLocator
         public ICommand IncludeCommand => new RelayCommand(async o =>
         {
             DialogResult = true;
-            if (DroppedEntries.All(f => _mainViewModel.Pictures.Any(i => i.FullPath == f)))
+            if (DroppedEntries.All(f => _mainViewModel.Items.Any(i => i.FullPath == f)))
                 return;
             await _mainViewModel.WaitForPicturesLoadedAsync();
             if (DroppedEntries.Any(f => Path.GetDirectoryName(f) != CurrentPath))
@@ -80,7 +80,7 @@ namespace PhotoLocator
             if (fileNames.Count > 0)
             {
                 await _mainViewModel.AppendFilesAsync(fileNames);
-                var firstDropped = _mainViewModel.Pictures.FirstOrDefault(item => item.FullPath == fileNames[0]);
+                var firstDropped = _mainViewModel.Items.FirstOrDefault(item => item.FullPath == fileNames[0]);
                 if (firstDropped != null)
                     _mainViewModel.SelectItem(firstDropped);
             }
@@ -101,7 +101,7 @@ namespace PhotoLocator
             var path = Path.GetDirectoryName(firstFile);
             if (path == CurrentPath)
             {
-                var selectItem = _mainViewModel.Pictures.FirstOrDefault(item => item.FullPath == firstFile);
+                var selectItem = _mainViewModel.Items.FirstOrDefault(item => item.FullPath == firstFile);
                 if (selectItem != null)
                     _mainViewModel.SelectItem(selectItem);
 
@@ -126,6 +126,7 @@ namespace PhotoLocator
                             FileSystem.CopyFile(DroppedEntries[i], destinationPath, UIOption.AllDialogs);
                         ProgressBarValue = (double)(i + 1) / DroppedEntries.Count;
                     });
+                await SelectFirstDroppedAsync();
             }
             finally
             {
@@ -149,11 +150,21 @@ namespace PhotoLocator
                             FileSystem.MoveFile(DroppedEntries[i], destinationPath, UIOption.AllDialogs);
                         ProgressBarValue = (double)(i + 1) / DroppedEntries.Count;
                     });
+                await SelectFirstDroppedAsync();
             }
             finally
             {
                 DialogResult = true;
             }
         });
+
+        private async Task SelectFirstDroppedAsync()
+        {
+            await _mainViewModel.WaitForFileSystemWatcherOperation();
+            var firstDropped = Path.GetFileName(DroppedEntries.First());
+            var selectItem = _mainViewModel.Items.FirstOrDefault(item => item.Name == firstDropped);
+            if (selectItem != null)
+                _mainViewModel.SelectItem(selectItem);
+        }
     }
 }
