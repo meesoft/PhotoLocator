@@ -24,6 +24,7 @@ namespace PhotoLocator
         readonly IncreaseLocalContrastOperation _localContrastOperation = new() { DstBitmap = new() };
         readonly ColorToneAdjustOperation _colorToneOperation = new();
         Task _previewTask = Task.CompletedTask;
+        bool _laplacianPyramidParamsChanged, _localContrastParamsChanged;
 
         public LocalContrastViewModel()
         {
@@ -310,13 +311,11 @@ namespace PhotoLocator
                 throw new InvalidOperationException("Unexpected number of adjustments");
         });
 
-        private void StartUpdateTimer(bool laplacianPyramidChanged, bool localContrastChanged)
+        private void StartUpdateTimer(bool laplacianPyramidParamsChanged, bool localContrastParamsChanged)
         {
             Mouse.OverrideCursor = Cursors.AppStarting;
-            if (laplacianPyramidChanged)
-                _localContrastOperation.SourceChanged();
-            if (laplacianPyramidChanged || localContrastChanged)
-                _colorToneOperation.SourceChanged();
+            _laplacianPyramidParamsChanged |= laplacianPyramidParamsChanged;
+            _localContrastParamsChanged |= localContrastParamsChanged;
             _updateTimer.Stop();
             _updateTimer.Start();
         }
@@ -325,7 +324,7 @@ namespace PhotoLocator
         {
             if (DetailHandling != 1 || ToneMapping != 1)
             {
-                _laplacianFilterOperation.DstBitmap = new();
+                _laplacianFilterOperation.DstBitmap ??= new();
                 _laplacianFilterOperation.Alpha = (float)Math.Max(0.01, 2 - DetailHandling);
                 _laplacianFilterOperation.Beta = (float)(2 - ToneMapping);
                 _laplacianFilterOperation.Apply();
@@ -357,8 +356,23 @@ namespace PhotoLocator
         {
             _updateTimer.Stop();
             await _previewTask;
+            if (!_previewTask.IsCompleted) // We might have multiple instance of UpdatePreviewAsync running at the same time
+            {
+                await _previewTask;
+                return;
+            }
             await (_previewTask = Task.Run(() =>
             {
+                if (_laplacianPyramidParamsChanged || _localContrastParamsChanged)
+                {
+                    _localContrastParamsChanged = false;
+                    _colorToneOperation.SourceChanged();
+                }
+                if (_laplacianPyramidParamsChanged)
+                {
+                    _localContrastOperation.SourceChanged();
+                    _laplacianPyramidParamsChanged = false;
+                }
                 ApplyLaplacianFilterOperation();
                 if (SourceBitmap is null || _updateTimer.IsEnabled)
                     return;
@@ -388,11 +402,13 @@ namespace PhotoLocator
 
         public async Task FinishPreviewAsync()
         {
-            if (_updateTimer.IsEnabled || !_previewTask.IsCompleted)
+            if (_updateTimer.IsEnabled)
             {
                 Mouse.OverrideCursor = Cursors.Wait;
                 await UpdatePreviewAsync();
             }
+            await _previewTask; // We might have multiple instance of UpdatePreviewAsync running at the same time
+            await _previewTask;
         }
     }
 }

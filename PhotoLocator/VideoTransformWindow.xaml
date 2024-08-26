@@ -22,9 +22,11 @@
     <StackPanel Margin="10">
         <DockPanel Visibility="{Binding HasSingleInput, Converter={StaticResource BooleanToVisibility}}" >
             <TextBlock Text="Skip to:" Width="140"/>
-            <TextBox Text="{Binding SkipTo}" Width="140" />
+            <TextBox Text="{Binding SkipTo}" Width="140" 
+                     ToolTip="Starting position in seconds" />
             <TextBlock Text="Duration:" Margin="20,0,0,0"/>
-            <TextBox Text="{Binding Duration}" Width="140" HorizontalAlignment="Right" />
+            <TextBox Text="{Binding Duration}" Width="140" HorizontalAlignment="Right"
+                     ToolTip="Clip duration in seconds"/>
         </DockPanel>
 
         <TextBlock Text="Video filters:" Margin="0,4,0,0"/>
@@ -34,24 +36,29 @@
         </StackPanel>
         <StackPanel Orientation="Horizontal" Margin="10,4,0,0">
             <CheckBox Content="Rotate:" IsChecked="{Binding IsRotateChecked}" Width="130" />
-            <TextBox Text="{Binding RotationAngle}" IsEnabled="{Binding IsRotateChecked}" Width="140"/>
+            <TextBox Text="{Binding RotationAngle}" IsEnabled="{Binding IsRotateChecked}" Width="140" 
+                     ToolTip="Rotation angle in degrees"/>
             <TextBlock Text="°" IsEnabled="{Binding IsRotateChecked}" Margin="4,0,0,0"/>
         </StackPanel>
         <StackPanel Orientation="Horizontal" Margin="10,4,0,0">
             <CheckBox Content="Crop:" IsChecked="{Binding IsCropChecked}" Width="130"/>
-            <TextBox Text="{Binding CropWindow}" IsEnabled="{Binding IsCropChecked}" Width="140"/>
+            <TextBox Text="{Binding CropWindow}" IsEnabled="{Binding IsCropChecked}" Width="140"
+                     ToolTip="Crop region size and position"/>
         </StackPanel>
         <StackPanel Orientation="Horizontal" Margin="10,4,0,0">
             <CheckBox Content="Scale to:" IsChecked="{Binding IsScaleChecked}" Width="130"/>
-            <TextBox Text="{Binding ScaleTo}" IsEnabled="{Binding IsScaleChecked}" Width="140"/>
+            <TextBox Text="{Binding ScaleTo}" IsEnabled="{Binding IsScaleChecked}" Width="140"
+                     ToolTip="Scale to resolution"/>
         </StackPanel>
 
         <CheckBox Content="Stabilize" IsChecked="{Binding IsStabilizeChecked}" Margin="0,8,0,0"/>
-        <CheckBox Content="Tripod mode" IsChecked="{Binding IsTripodChecked}" Margin="10,4,0,0" IsEnabled="{Binding IsStabilizeChecked}"/>
+        <CheckBox Content="Tripod mode" IsChecked="{Binding IsTripodChecked}" Margin="10,4,0,0" IsEnabled="{Binding IsStabilizeChecked}"
+                  ToolTip="Simulate a fixed camera position"/>
         <StackPanel Orientation="Horizontal" Margin="10,4,0,0">
             <TextBlock Text="Smooth frames:" IsEnabled="{Binding IsStabilizeChecked}" Width="130"/>
             <TextBox Text="{Binding SmoothFrames}" IsEnabled="{Binding IsStabilizeChecked}" Width="140"/>
-            <CheckBox Content="Bicubic interpolation" IsChecked="{Binding IsBicubicStabilizeChecked}" Margin="20,0,0,0" IsEnabled="{Binding IsStabilizeChecked}"/>
+            <CheckBox Content="Bicubic interpolation" IsChecked="{Binding IsBicubicStabilizeChecked}" Margin="20,0,0,0" IsEnabled="{Binding IsStabilizeChecked}"
+                      ToolTip="Better quality but more time consuming"/>
         </StackPanel>
         <TextBlock Text="Stabilize arguments:" Margin="10,4,0,0" IsEnabled="{Binding IsStabilizeChecked}"/>
         <TextBox Text="{Binding StabilizeArguments}" Margin="10,0,0,0" IsEnabled="{Binding IsStabilizeChecked}"/>
@@ -82,15 +89,19 @@
         </DockPanel>
         <RadioButton Content="Image sequence" Margin="10,0,0,0"
                      IsChecked="{Binding Path=OutputMode, Converter={StaticResource ComparisonConverter}, ConverterParameter={x:Static local:OutputMode.ImageSequence}}"/>
-        <DockPanel Margin="10,2,0,0" >
+        <DockPanel Margin="10,4,0,0" >
             <RadioButton Content="Frame average" Width="130"
                      IsChecked="{Binding Path=OutputMode, Converter={StaticResource ComparisonConverter}, ConverterParameter={x:Static local:OutputMode.Average}}"/>
-            <TextBlock Text="Dark frame path:" />
+            <TextBlock Text="Dark frame path:"  Width="160"/>
+            <CheckBox Content="Register frames" IsChecked="{Binding IsRegisterFramesChecked}" IsEnabled="{Binding IsCombineFramesOperation}"
+                      ToolTip="Align all frames with the first to minimize camera movement"/>
+            <TextBox Text="{Binding RegistrationRegion}" Width="140" HorizontalAlignment="Right" IsEnabled="{Binding IsRegisterFramesChecked}" 
+                     ToolTip="Optional registration region of interest"/>
         </DockPanel>
-        <DockPanel Margin="10,0,0,0" >
+        <DockPanel Margin="10,4,0,0" >
             <RadioButton Content="Frame max" Width="130"
                      IsChecked="{Binding Path=OutputMode, Converter={StaticResource ComparisonConverter}, ConverterParameter={x:Static local:OutputMode.Max}}"/>
-            <TextBox Text="{Binding DarkFramePath}" IsEnabled="{Binding IsDarkFrameEnabled}"/>
+            <TextBox Text="{Binding DarkFramePath}" IsEnabled="{Binding IsCombineFramesOperation}"/>
         </DockPanel>
         <TextBlock Text="Process arguments:" Margin="0,4,0,0"/>
         <TextBox Text="{Binding InputArguments}" Margin="10,0,0,0"/>

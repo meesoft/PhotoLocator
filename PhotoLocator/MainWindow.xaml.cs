@@ -46,6 +46,8 @@ namespace PhotoLocator
         {
             using var registrySettings = new RegistrySettings();
             _viewModel.Settings.AssignSettings(registrySettings);
+            CheckToolPaths();
+
             _viewModel.PhotoFileExtensions = _viewModel.Settings.CleanPhotoFileExtensions();
             var leftColumnWidth = registrySettings.LeftColumnWidth;
             if (leftColumnWidth > 10 && leftColumnWidth < Width)
@@ -56,8 +58,8 @@ namespace PhotoLocator
             Map.MapItemSelected += _viewModel.HandleMapItemSelected;
             _viewModel.SelectedViewModeItem = registrySettings.ViewMode switch
             {
-                ViewMode.Preview =>  PreviewViewItem,
-                ViewMode.Split =>  SplitViewItem,
+                ViewMode.Preview => PreviewViewItem,
+                ViewMode.Split => SplitViewItem,
                 _ => MapViewItem
             };
 
@@ -83,6 +85,22 @@ namespace PhotoLocator
             PictureListBox.Focus();
 
             Task.Run(() => CleanupTileCache(MapView.TileCachePath)).WithExceptionLogging();
+        }
+
+        private void CheckToolPaths()
+        {
+            if (string.IsNullOrEmpty(_viewModel.Settings.ExifToolPath))
+            {
+                var exifToolPath = Path.Combine(Path.GetDirectoryName(GetType().Assembly.Location)!, "exiftool");
+                if (Directory.Exists(exifToolPath))
+                    _viewModel.Settings.ExifToolPath = Directory.EnumerateFiles(exifToolPath, "*.exe").FirstOrDefault();
+            }
+            if (string.IsNullOrEmpty(_viewModel.Settings.FFmpegPath))
+            {
+                var ffmpegPath = Path.Combine(Path.GetDirectoryName(GetType().Assembly.Location)!, "ffmpeg", "ffmpeg.exe");
+                if (File.Exists(ffmpegPath))
+                    _viewModel.Settings.FFmpegPath = ffmpegPath;
+            }
         }
 
         private static void CleanupTileCache(string tileCachePath)

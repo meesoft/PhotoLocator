@@ -36,6 +36,7 @@ namespace PhotoLocator
         {
             get
             {
+                var separator = new string('_', 100);
                 var text = new StringBuilder();
                 using var licenseStream = new StreamReader(typeof(AboutWindow).Assembly.GetManifestResourceStream(
                     "PhotoLocator.Resources.LICENSE")!, Encoding.Latin1);
@@ -43,30 +44,56 @@ namespace PhotoLocator
                 text.AppendLine();
                 text.AppendLine("Third party open source licenses:");
                 text.AppendLine();
-                text.AppendLine("____");
+
+                text.AppendLine(separator);
                 using var mapLicenseStream = new StreamReader(typeof(AboutWindow).Assembly.GetManifestResourceStream(
                     "PhotoLocator.Resources.XamlMapControlLicense")!, Encoding.Latin1);
                 text.AppendLine(mapLicenseStream.ReadToEnd());
                 text.AppendLine();
-                text.AppendLine("____");
+
+                text.AppendLine(separator);
                 using var apiLicenseStream = new StreamReader(typeof(AboutWindow).Assembly.GetManifestResourceStream(
                     "PhotoLocator.Resources.Windows-API-Code-PackLicense")!, Encoding.Latin1);
                 text.AppendLine(apiLicenseStream.ReadToEnd());
                 text.AppendLine();
-                text.AppendLine("____");
+
+                text.AppendLine(separator);
                 using var psdLicenseStream = new StreamReader(typeof(AboutWindow).Assembly.GetManifestResourceStream(
                     "PhotoLocator.Resources.PsdLicense")!, Encoding.Latin1);
                 text.AppendLine(psdLicenseStream.ReadToEnd());
                 text.AppendLine();
-                text.AppendLine("____");
+
+                text.AppendLine(separator);
                 using var contextMenuLicenseStream = new StreamReader(typeof(AboutWindow).Assembly.GetManifestResourceStream(
                     "PhotoLocator.Resources.ExplorerShellContextMenuLicense.txt")!, Encoding.Latin1);
                 text.AppendLine(contextMenuLicenseStream.ReadToEnd());
                 text.AppendLine();
-                text.AppendLine("____");
+
+                text.AppendLine(separator);
                 using var jpegTransformLicenseStream = new StreamReader(typeof(AboutWindow).Assembly.GetManifestResourceStream(
                     "PhotoLocator.Resources.JpegTransformLicense.txt")!, Encoding.Latin1);
                 text.AppendLine(jpegTransformLicenseStream.ReadToEnd());
+                text.AppendLine();
+
+                text.AppendLine(separator);
+                text.AppendLine("ExifTool by Phil Harvey is licensed under the Artistic License");
+                using var articticLicenseStream = new StreamReader(typeof(AboutWindow).Assembly.GetManifestResourceStream(
+                    "PhotoLocator.Resources.ArtisticLicense.txt")!, Encoding.Latin1);
+                text.AppendLine(articticLicenseStream.ReadToEnd());
+                text.AppendLine();
+
+                text.AppendLine(separator);
+                text.AppendLine("shimat/opencvsharp and OpenCV is licensed under Apache License 2.0");
+                using var apache2LicenseStream = new StreamReader(typeof(AboutWindow).Assembly.GetManifestResourceStream(
+                    "PhotoLocator.Resources.Apache2License.txt")!, Encoding.Latin1);
+                text.AppendLine(apache2LicenseStream.ReadToEnd());
+                text.AppendLine();
+
+                text.AppendLine(separator);
+                text.AppendLine("ffmpeg binaries are licensed under GPLv3");
+                using var gpl3LicenseStream = new StreamReader(typeof(AboutWindow).Assembly.GetManifestResourceStream(
+                    "PhotoLocator.Resources.GPLv3License.txt")!, Encoding.Latin1);
+                text.AppendLine(gpl3LicenseStream.ReadToEnd());
 
                 return text.ToString();
             }

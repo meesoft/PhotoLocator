@@ -8,19 +8,26 @@ using PhotoLocator.Helpers;
 
 namespace PhotoLocator.BitmapOperations
 {
-    class CombineFramesOperation
+    enum RegistrationMethod { None, BlackBorders, MirrorBorders };
+
+    sealed class CombineFramesOperation : IDisposable
     {
-        readonly CancellationToken _ct;
         readonly BitmapSource? _darkFrame;
+        readonly RegistrationMethod _registrationMethod;
+        readonly ROI? _registrationRegion;
+        readonly CancellationToken _ct;
 
         PixelFormat _pixelFormat;
         int _width, _height, _pixelSize;
         double _dpiX, _dpiY;
         byte[]? _resultPixels, _darkFramePixels;
         uint[]? _sumPixels;
+        RegistrationOperation? _registrationOperation;
 
-        public CombineFramesOperation(string darkFramePath, CancellationToken ct = default)
+        public CombineFramesOperation(string darkFramePath, RegistrationMethod registrationMethod, ROI? registrationRegion, CancellationToken ct = default)
         {
+            _registrationMethod = registrationMethod;
+            _registrationRegion = registrationRegion;
             _ct = ct;
             if (!string.IsNullOrEmpty(darkFramePath))
             {
@@ -137,9 +144,30 @@ namespace PhotoLocator.BitmapOperations
 
             var pixels = new byte[_width * _height * _pixelSize];
             image.CopyPixels(pixels, _width * _pixelSize, 0);
-            if (_darkFramePixels is not null) //TODO: This should be replaced by some proper hole closing where the dark frame has hot pixels
-                Parallel.For(0, pixels.Length, i => pixels[i] = (byte)Math.Max(0, pixels[i] - _darkFramePixels[i]));
+
+            SubtractDarkFrame(pixels);
+
+            if (_registrationMethod > RegistrationMethod.None)
+            {
+                if (_registrationOperation is null)
+                    _registrationOperation = new RegistrationOperation(pixels, _width, _height, _pixelSize, _registrationMethod == RegistrationMethod.MirrorBorders, _registrationRegion);
+                else
+                    _registrationOperation.Apply(pixels);
+            }
+
             return pixels;
+        }
+
+        private void SubtractDarkFrame(byte[] pixels)
+        {
+            //TODO: This should be replaced by some proper hole closing where the dark frame has hot pixels
+            if (_darkFramePixels is not null) 
+                Parallel.For(0, pixels.Length, i => pixels[i] = (byte)Math.Max(0, pixels[i] - _darkFramePixels[i]));
+        }
+
+        public void Dispose()
+        {
+            _registrationOperation?.Dispose();
         }
     }
 }

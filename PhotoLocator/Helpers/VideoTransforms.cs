@@ -85,10 +85,6 @@ namespace PhotoLocator.Helpers
                 }
             }
             catch (EndOfStreamException) { }
-            catch (Exception ex)
-            {
-                Debug.WriteLine(ex);
-            }
         }
 
         /// <summary> Process video with streaming input from images </summary>

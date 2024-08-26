@@ -8,6 +8,8 @@ namespace PhotoLocator.PictureFileFormats
 {
     static class GeneralFileFormatHandler
     {
+        public const string SaveImageFilter = "JPEG|*.jpg|PNG|*.png|TIFF|*.tif|BMP|*.bmp";
+
         public static BitmapSource LoadFromStream(Stream source, Rotation rotation, int maxPixelWidth, bool preservePixelFormat, CancellationToken ct)
         {
             var bitmap = new BitmapImage();

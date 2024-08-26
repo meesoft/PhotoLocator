@@ -332,8 +332,8 @@ namespace MeeSoft.ImageProcessing.Operations
                         int y = i / pyrL[level].Width;
                         var roi = new ROI(x, y);
                         var nextLevelROI = ResizeBilinearOperation.GetSourceROI(remapPyrG[level + 1], remapPyrG[level], roi);
-                        GaussianPyramidRemap(srcPlane, remapPyrG, level + 1, nextLevelROI, level, ref roi, pyrG[level][x, y]);
-                        pyrL[level][x, y] = LaplacianPyramidCoefficient(remapPyrG, level, ref roi);
+                        GaussianPyramidRemap(srcPlane, remapPyrG, level + 1, nextLevelROI, level, roi, pyrG[level][x, y]);
+                        pyrL[level][x, y] = LaplacianPyramidCoefficient(remapPyrG, level, roi);
                         Debug.Assert(!float.IsNaN(pyrL[level][x, y]));
                         return remapPyrG;
                     },
@@ -381,7 +381,7 @@ namespace MeeSoft.ImageProcessing.Operations
                         var roi = new ROI(x, y);
                         var nextLevelROI = ResizeBilinearOperation.GetSourceROI(remapPyrG[level + 1], remapPyrG[level], roi);
                         GaussianPyramidRemap(plane16, remapPyrG, level + 1, nextLevelROI, level, ref roi, pyrG[level][x, y]);
-                        pyrL[level][x, y] = LaplacianPyramidCoefficient(remapPyrG, level, ref roi);
+                        pyrL[level][x, y] = LaplacianPyramidCoefficient(remapPyrG, level, roi);
                         return remapPyrG;
                     },
                     remapPyrG =>
@@ -678,7 +678,7 @@ namespace MeeSoft.ImageProcessing.Operations
         /// <summary>
         /// Construct Gaussian pyramid from remapped image
         /// </summary>
-        void GaussianPyramidRemap(FloatBitmap srcPlane, FloatBitmap[] pyrG, int level, ROI roi, int finalLevel, ref ROI finalLevelROI, float g0)
+        void GaussianPyramidRemap(FloatBitmap srcPlane, FloatBitmap[] pyrG, int level, ROI roi, int finalLevel, in ROI finalLevelROI, float g0)
         {
             if (level == 0)
             {
@@ -713,7 +713,7 @@ namespace MeeSoft.ImageProcessing.Operations
 
                 // Recursively build pyramid
                 var prevLevelROI = ResizeBilinearOperation.GetSourceROI(pyrG[level - 1], pyrG[level], roi);
-                GaussianPyramidRemap(srcPlane, pyrG, level - 1, prevLevelROI, finalLevel, ref finalLevelROI, g0);
+                GaussianPyramidRemap(srcPlane, pyrG, level - 1, prevLevelROI, finalLevel, finalLevelROI, g0);
 
                 // Construct Gaussian pyramid level by downsampling
                 ResizeBilinearOperation.ApplyToPlane(pyrG[level - 1], pyrG[level], roi);
@@ -770,7 +770,7 @@ namespace MeeSoft.ImageProcessing.Operations
         /// <summary>
         /// Determine Laplacian pyramid coefficient for single pixel ROI
         /// </summary>
-        static float LaplacianPyramidCoefficient(FloatBitmap[] pyrG, int level, ref ROI roi)
+        static float LaplacianPyramidCoefficient(FloatBitmap[] pyrG, int level, in ROI roi)
         {
             // Construct Laplacian pyramid level as difference between image and upsampled low pass version
             float g = pyrG[level][roi.Left, roi.Top];
@@ -782,7 +782,7 @@ namespace MeeSoft.ImageProcessing.Operations
         /// <summary>
         /// Determine Laplacian pyramid coefficient for single pixel ROI
         /// </summary>
-        static short LaplacianPyramidCoefficient(BitmapPlaneInt16[] pyrG, int level, ref ROI roi)
+        static short LaplacianPyramidCoefficient(BitmapPlaneInt16[] pyrG, int level, in ROI roi)
         {
             // Construct Laplacian pyramid level as difference between image and upsampled low pass version
             var g = pyrG[level][roi.Left, roi.Top];

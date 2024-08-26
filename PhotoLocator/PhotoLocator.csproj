@@ -6,7 +6,7 @@
     <Nullable>enable</Nullable>
     <UseWPF>true</UseWPF>
     <ApplicationManifest>app.manifest</ApplicationManifest>
-	<Version>2024.5.25.0</Version>
+	<Version>2024.8.26.0</Version>
 	<Copyright>(c) 2022-2024 Michael Vinther</Copyright>
 	<Company>MeeSoft</Company>
 	<ApplicationIcon>Resources\PhotoLocator.ico</ApplicationIcon>
@@ -17,8 +17,15 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <None Remove="Resources\Apache2LICENSE.txt" />
+    <None Remove="Resources\ArtisticLicense.txt" />
+    <None Remove="Resources\GPLv3License.txt" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="Microsoft-WindowsAPICodePack-ShellExtensions" Version="1.1.5" />
-    <PackageReference Include="XAML.MapControl" Version="9.1.0" />
+	<PackageReference Include="OpenCvSharp4.Windows" Version="4.10.0.20240616" />
+	<PackageReference Include="XAML.MapControl" Version="9.1.0" />
   </ItemGroup>
 
   <ItemGroup>
@@ -31,7 +38,10 @@
 	<EmbeddedResource Include="..\PsdPlugin\License.txt" Link="Resources\PsdLicense" />
 	<EmbeddedResource Include="..\XamlMapControlLicense" Link="Resources\XamlMapControlLicense" />
     <EmbeddedResource Include="..\Windows-API-Code-PackLicense" Link="Resources\Windows-API-Code-PackLicense" />
+    <EmbeddedResource Include="Resources\Apache2License.txt" />
+    <EmbeddedResource Include="Resources\ArtisticLicense.txt" />
     <EmbeddedResource Include="Resources\ExplorerShellContextMenuLicense.txt" />
+    <EmbeddedResource Include="Resources\GPLv3License.txt" />
 	<Resource Include="Resources\PhotoLocator.ico" />
   </ItemGroup>
 

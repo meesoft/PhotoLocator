@@ -69,13 +69,14 @@ namespace PhotoLocator
             }
             var window = new LocalContrastView();
             window.Owner = Application.Current.MainWindow;
-            window.OkButton.Content = "Save as...";
+            window.OkButton.Content = "_Save as...";
             window.DataContext = localContrastViewModel;
             if (window.ShowDialog() != true)
                 return;
             var dlg = new SaveFileDialog();
             dlg.InitialDirectory = Path.GetDirectoryName(_mainViewModel.SelectedItem.FullPath);
-            dlg.FileName = Path.GetFileNameWithoutExtension(_mainViewModel.SelectedItem.Name) + $"{_mainViewModel.Settings.SavedFilePostfix}.jpg";
+            dlg.FileName = Path.GetFileNameWithoutExtension(_mainViewModel.SelectedItem.Name) + ".jpg";
+            dlg.Filter = GeneralFileFormatHandler.SaveImageFilter;
             dlg.DefaultExt = "jpg";
             if (dlg.ShowDialog() != true)
                 return;

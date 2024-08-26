@@ -29,9 +29,9 @@ namespace PhotoLocator
 
     public class VideoTransformCommands : INotifyPropertyChanged
     {
-        public const string InputFileName = "input.txt";
-        public const string TransformsFileName = "transforms.trf";
-
+        const string InputFileName = "input.txt";
+        const string TransformsFileName = "transforms.trf";
+        const string SaveVideoFilter = "MP4|*.mp4";
         readonly IMainViewModel _mainViewModel;
         readonly VideoTransforms _videoTransforms;
         Action<double>? _progressCallback;
@@ -160,7 +160,7 @@ namespace PhotoLocator
             get => _cropWindow;
             set
             {
-                if (SetProperty(ref _cropWindow, value.Trim()))
+                if (SetProperty(ref _cropWindow, value.Replace(" ", "", StringComparison.Ordinal)))
                 {
                     UpdateStabilizeArgs();
                     UpdateProcessArgs();
@@ -292,7 +292,7 @@ namespace PhotoLocator
                 {
                     UpdateProcessArgs();
                     UpdateOutputArgs();
-                    PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(IsDarkFrameEnabled)));
+                    PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(IsCombineFramesOperation)));
                 }
             }
         }
@@ -320,7 +320,7 @@ namespace PhotoLocator
             new ComboBoxItem { Content = "libx264", Tag = "-c:v libx264 -pix_fmt yuv420p" },
             new ComboBoxItem { Content = "libx265", Tag = "-c:v libx265 -pix_fmt yuv420p" },
             new ComboBoxItem { Content = "libvpx-vp9", Tag = "-c:v libvpx-vp9 -pix_fmt yuv420p" },
-            new ComboBoxItem { Content = "libaom-av1", Tag = "-c:v libaom-av1 -pix_fmt yuv420p" },
+            new ComboBoxItem { Content = "libsvtav1", Tag = "-c:v libsvtav1 -pix_fmt yuv420p" },
         ];
 
         public static readonly ComboBoxItem DefaultVideoFormat = VideoFormats[3];
@@ -361,16 +361,40 @@ namespace PhotoLocator
         }
         bool _isRemoveAudioChecked;
 
-        public bool IsDarkFrameEnabled => OutputMode is OutputMode.Average or OutputMode.Max;
+        public bool IsCombineFramesOperation => OutputMode is OutputMode.Average or OutputMode.Max;
+
+        public bool IsRegisterFramesChecked
+        {
+            get => _isRegisterFramesChecked;
+            set => SetProperty(ref _isRegisterFramesChecked, value);
+        }
+        bool _isRegisterFramesChecked;
+
+        public string RegistrationRegion
+        {
+            get => _registrationRegion;
+            set => SetProperty(ref _registrationRegion, value.Replace(" ", "", StringComparison.Ordinal));
+        }
+        string _registrationRegion = "w:h:x:y";
+
+        ROI? ParseRegistrationRegion()
+        {
+            if (string.IsNullOrEmpty(RegistrationRegion) || RegistrationRegion[0] == 'w')
+                return null;
+            var parts = RegistrationRegion.Split(':');
+            return new ROI
+            {
+                Left = int.Parse(parts[2], CultureInfo.CurrentCulture),
+                Top = int.Parse(parts[3], CultureInfo.CurrentCulture),
+                Width = int.Parse(parts[0], CultureInfo.CurrentCulture),
+                Height = int.Parse(parts[1], CultureInfo.CurrentCulture),
+            };
+        }
 
         public string DarkFramePath
         {
             get => _darkFramePath;
-            set
-            {
-                if (SetProperty(ref _darkFramePath, value.Trim()))
-                    UpdateOutputArgs();
-            }
+            set => SetProperty(ref _darkFramePath, value.Trim());
         }
         string _darkFramePath = string.Empty;
 
@@ -509,6 +533,7 @@ namespace PhotoLocator
             var dlg = new SaveFileDialog();
             dlg.InitialDirectory = Path.GetDirectoryName(allSelected[0].FullPath);
             dlg.FileName = Path.GetFileNameWithoutExtension(allSelected[0].Name) + "[compare].mp4";
+            dlg.Filter = SaveVideoFilter;
             dlg.DefaultExt = ".mp4";
             dlg.CheckPathExists = false;
             if (dlg.ShowDialog() != true)
@@ -569,24 +594,29 @@ namespace PhotoLocator
             else
             {
                 string postfix, ext;
+                var dlg = new SaveFileDialog();
                 switch (OutputMode)
                 {
                     case OutputMode.Video:
                         postfix = allSelected.Length > 1 ? "combined" : IsStabilizeChecked ? "stabilized" : "processed";
+                        dlg.Filter = SaveVideoFilter;
                         ext = ".mp4";
                         break;
                     case OutputMode.Average:
                         postfix = "avg";
+                        dlg.Filter = GeneralFileFormatHandler.SaveImageFilter;
+                        dlg.FilterIndex = 2;
                         ext = ".png";
                         break;
                     case OutputMode.Max:
                         postfix = "max";
+                        dlg.Filter = GeneralFileFormatHandler.SaveImageFilter;
+                        dlg.FilterIndex = 2;
                         ext = ".png";
                         break;
                     default:
                         throw new ArgumentException("Unknown output mode");
                 }
-                var dlg = new SaveFileDialog();
                 dlg.InitialDirectory = inPath;
                 dlg.FileName = Path.GetFileNameWithoutExtension(allSelected[0].Name) + $"[{postfix}]{ext}";
                 dlg.DefaultExt = ext;
@@ -599,6 +629,7 @@ namespace PhotoLocator
             string? message = null;
             await _mainViewModel.RunProcessWithProgressBarAsync(async progressCallback =>
             {
+                var sw = Stopwatch.StartNew();
                 progressCallback(-1);
                 if (allSelected.All(item => !item.IsVideo))
                 {
@@ -625,20 +656,22 @@ namespace PhotoLocator
                 var args = $"{InputArguments} {ProcessArguments} {OutputArguments}";
                 if (OutputMode is OutputMode.Average)
                 {
-                    var process = new CombineFramesOperation(DarkFramePath);
+                    using var process = new CombineFramesOperation(DarkFramePath, 
+                        IsRegisterFramesChecked ? RegistrationMethod.MirrorBorders : RegistrationMethod.None, ParseRegistrationRegion());
                     await _videoTransforms.RunFFmpegWithStreamOutputImagesAsync(args, process.UpdateSum, ProcessStdError).ConfigureAwait(false);
-                    if (process.Supports16BitAverage() && Path.GetExtension(outFileName).ToUpperInvariant() is ".PNG" or ".TIF" or "TIFF")
+                    if (process.Supports16BitAverage() && Path.GetExtension(outFileName).ToUpperInvariant() is ".PNG" or ".TIF" or ".TIFF")
                         GeneralFileFormatHandler.SaveToFile(process.GetAverageResult16(), outFileName);
                     else
                         GeneralFileFormatHandler.SaveToFile(process.GetAverageResult8(), outFileName);
-                    message = $"Processed {process.ProcessedImages} frames";
+                    message = $"Processed {process.ProcessedImages} frames in {sw.Elapsed.TotalSeconds:N1}s";
                 }
                 else if (OutputMode is OutputMode.Max)
                 {
-                    var process = new CombineFramesOperation(DarkFramePath);
+                    using var process = new CombineFramesOperation(DarkFramePath, 
+                        IsRegisterFramesChecked ? RegistrationMethod.BlackBorders : RegistrationMethod.None, ParseRegistrationRegion());
                     await _videoTransforms.RunFFmpegWithStreamOutputImagesAsync(args, process.UpdateMax, ProcessStdError).ConfigureAwait(false);
                     GeneralFileFormatHandler.SaveToFile(process.GetResult(), outFileName);
-                    message = $"Processed {process.ProcessedImages} frames";
+                    message = $"Processed {process.ProcessedImages} frames in {sw.Elapsed.TotalSeconds:N1}s";
                 }
                 else if (IsLocalContrastChecked && _localContrastSetup is not null)
                 {
@@ -666,7 +699,7 @@ namespace PhotoLocator
                     File.Delete(TransformsFileName);
             }, "Processing");
             if (!string.IsNullOrEmpty(message))
-                MessageBox.Show(message);
+                MessageBox.Show(App.Current.MainWindow, message);
         });
 
         private void PrepareProgressDisplay(Action<double>? progressCallback)

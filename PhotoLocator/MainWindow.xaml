@@ -149,12 +149,12 @@
                     <MenuItem Header="Shell context menu (Shift+right click)" Command="{Binding ShellContextMenuCommand}" />
                     <MenuItem Header="Show metadata" Command="{Binding ShowMetadataCommand}" />
                     <Separator />
+                    <MenuItem Header="Local contrast, brightness and colors (Ctrl+L)" Command="{Binding JpegTransformCommands.LocalContrastCommand}" />
                     <MenuItem Header="Transform jpeg" >
                         <MenuItem Header="Rotate left" Command="{Binding JpegTransformCommands.RotateLeftCommand}" />
                         <MenuItem Header="Rotate right" Command="{Binding JpegTransformCommands.RotateRightCommand}" />
                         <MenuItem Header="Rotate 180°" Command="{Binding JpegTransformCommands.Rotate180Command}" />
                         <MenuItem Header="Crop (Alt-C)" Command="{Binding CropCommand}" IsChecked="{Binding IsCropControlVisible}" />
-                        <MenuItem Header="Local contrast, brightness and colors (Ctrl+L)" Command="{Binding JpegTransformCommands.LocalContrastCommand}" />
                     </MenuItem>
                     <MenuItem Header="Transform video" >
                         <MenuItem Header="Process selected" Command="{Binding VideoTransformCommands.ProcessSelected}" />

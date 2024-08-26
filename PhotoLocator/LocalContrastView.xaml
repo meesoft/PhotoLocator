@@ -121,7 +121,7 @@
                             Command="{Binding ResetCommand}" Margin="10,0,0,0" />
                 </Grid>
                 <Grid Margin="0,10,0,0">
-                    <Button Content="OK" Width="90" IsDefault="True" HorizontalAlignment="Left" 
+                    <Button Content="OK" Width="90" IsDefault="True" HorizontalAlignment="Left"
                             Name="OkButton" Click="HandleOkButtonClick" />
                     <Button Content="Cancel" Width="90" HorizontalAlignment="Right"
                             IsCancel="True" Name="CancelButton" Margin="10,0,0,0" />
