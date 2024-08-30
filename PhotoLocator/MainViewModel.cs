@@ -260,6 +260,21 @@ namespace PhotoLocator
             FocusListBoxItem?.Invoke(select);
         }
 
+        public async Task SelectFileAsync(string outFileName)
+        {
+            for(var i = 0; i < 10; i++) 
+            {
+                var item = Items.FirstOrDefault(x => string.Equals(x.FullPath, outFileName, StringComparison.CurrentCultureIgnoreCase));
+                if (item is null)
+                {
+                    await Task.Delay(100);
+                    continue;
+                }
+                SelectItem(item);
+                break;
+            }
+        }
+
         internal void HandleMapItemSelected(object sender, MapItemEventArgs eventArgs)
         {
             if (eventArgs.Item.Content is not PointItem pointItem)

@@ -215,7 +215,8 @@ namespace PhotoLocator
 
         private void HandlePictureListBoxPreviewKeyUp(object sender, KeyEventArgs e)
         {
-            if ((e.Key == Key.Home || e.Key == Key.End || e.Key == Key.Down || e.Key == Key.Up || e.Key == Key.Left || e.Key == Key.Right ) && 
+            if ((e.Key == Key.Home || e.Key == Key.End || e.Key == Key.PageDown || e.Key == Key.PageUp || 
+                 e.Key == Key.Down || e.Key == Key.Up || e.Key == Key.Left || e.Key == Key.Right) && 
                 (e.KeyboardDevice.IsKeyDown(Key.LeftShift) || e.KeyboardDevice.IsKeyDown(Key.RightShift)) && PictureListBox.SelectedIndex >= 0)
             {
                 var last = Math.Max(_selectStartIndex, PictureListBox.SelectedIndex);
