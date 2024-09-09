@@ -658,8 +658,12 @@ namespace PhotoLocator
                 var args = $"{InputArguments} {ProcessArguments} {OutputArguments}";
                 if (OutputMode is OutputMode.Average)
                 {
+                    BitmapSource? fixedImage = null;
+                    if (HasSingleInput && IsRegisterFramesChecked && int.TryParse(Duration, out var duration) && string.IsNullOrEmpty(SkipTo))
+                        (fixedImage, _, _, _) = VideoFileFormatHandler.LoadFromFile(_mainViewModel.GetSelectedItems().First(item => item.IsFile).FullPath, int.MaxValue, _mainViewModel.Settings, default, duration / 2);
+
                     using var process = new CombineFramesOperation(DarkFramePath, 
-                        IsRegisterFramesChecked ? RegistrationMethod.MirrorBorders : RegistrationMethod.None, ParseRegistrationRegion());
+                        IsRegisterFramesChecked ? RegistrationMethod.MirrorBorders : RegistrationMethod.None, ParseRegistrationRegion(), fixedImage);
                     await _videoTransforms.RunFFmpegWithStreamOutputImagesAsync(args, process.UpdateSum, ProcessStdError).ConfigureAwait(false);
                     if (process.Supports16BitAverage() && Path.GetExtension(outFileName).ToUpperInvariant() is ".PNG" or ".TIF" or ".TIFF")
                         GeneralFileFormatHandler.SaveToFile(process.GetAverageResult16(), outFileName, CreateImageMetadata());
@@ -670,7 +674,7 @@ namespace PhotoLocator
                 else if (OutputMode is OutputMode.Max)
                 {
                     using var process = new CombineFramesOperation(DarkFramePath, 
-                        IsRegisterFramesChecked ? RegistrationMethod.BlackBorders : RegistrationMethod.None, ParseRegistrationRegion());
+                        IsRegisterFramesChecked ? RegistrationMethod.BlackBorders : RegistrationMethod.None, ParseRegistrationRegion(), null);
                     await _videoTransforms.RunFFmpegWithStreamOutputImagesAsync(args, process.UpdateMax, ProcessStdError).ConfigureAwait(false);
                     GeneralFileFormatHandler.SaveToFile(process.GetResult(), outFileName, CreateImageMetadata());
                     message = $"Processed {process.ProcessedImages} frames in {sw.Elapsed.TotalSeconds:N1}s";

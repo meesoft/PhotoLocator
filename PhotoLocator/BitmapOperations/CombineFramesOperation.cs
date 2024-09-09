@@ -24,7 +24,7 @@ namespace PhotoLocator.BitmapOperations
         uint[]? _sumPixels;
         RegistrationOperation? _registrationOperation;
 
-        public CombineFramesOperation(string darkFramePath, RegistrationMethod registrationMethod, ROI? registrationRegion, CancellationToken ct = default)
+        public CombineFramesOperation(string darkFramePath, RegistrationMethod registrationMethod, ROI? registrationRegion, BitmapSource? fixedImage, CancellationToken ct = default)
         {
             _registrationMethod = registrationMethod;
             _registrationRegion = registrationRegion;
@@ -35,6 +35,8 @@ namespace PhotoLocator.BitmapOperations
                 var darkFrameDecoder = BitmapDecoder.Create(darkFrameStream, BitmapCreateOptions.PreservePixelFormat | BitmapCreateOptions.IgnoreColorProfile, BitmapCacheOption.OnLoad);
                 _darkFrame = darkFrameDecoder.Frames[0];
             }
+            if (_registrationMethod > RegistrationMethod.None && fixedImage is not null)
+                PrepareFrame(fixedImage);
         }
 
         public int ProcessedImages { get; private set; }

@@ -12,11 +12,11 @@ namespace PhotoLocator.PictureFileFormats
 {
     static class VideoFileFormatHandler
     {
-        public static (BitmapSource, DateTime?, Location?, string?) LoadFromFile(string fullPath, int maxWidth, ISettings settings, CancellationToken ct)
+        public static (BitmapSource, DateTime?, Location?, string?) LoadFromFile(string fullPath, int maxWidth, ISettings settings, CancellationToken ct, int offsetSeconds = 0)
         {
             var videoTransforms = new VideoTransforms(settings);
             var vf = maxWidth < int.MaxValue ? $"-vf \"scale={maxWidth}:-1\"" : "";
-            var args = $"-i \"{fullPath}\" {vf} -frames:0 1";
+            var args = $"-ss {offsetSeconds} -i \"{fullPath}\" {vf} -frames:0 1";
             BitmapSource? result = null;
             string? metadata = null, duration = null;
             Location? location = null;
