@@ -1,6 +1,7 @@
 ﻿// Geotagging based on example from https://www.codeproject.com/Questions/815338/Inserting-GPS-tags-into-jpeg-EXIF-metadata-using-n
 
 using MapControl;
+using OpenCvSharp;
 using PhotoLocator.Helpers;
 using System;
 using System.Collections.Generic;
@@ -10,6 +11,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Windows.Media.Imaging;
+using System.Windows.Shapes;
 
 namespace PhotoLocator.Metadata
 {
@@ -72,7 +74,65 @@ namespace PhotoLocator.Metadata
             return null;
         }
 
-        public static BitmapMetadata? CreateMetadataForEncoder(BitmapMetadata metadata, BitmapEncoder encoder)
+        public static string? TryGetFormat(this BitmapMetadata metadata)
+        {
+            try
+            {
+                return metadata.Format;
+            }
+            catch
+            {
+                return null;
+            }
+        }
+
+        public static BitmapMetadata EncodePngMetadata(Rational? exposureTime, Location? location, DateTime? dateTaken)
+        {
+            var result = new BitmapMetadata("png");
+            var tags = new List<string>();
+            if (exposureTime is not null)
+                tags.Add(string.Create(CultureInfo.InvariantCulture, $"ExposureTime={exposureTime.Num}/{exposureTime.Denom}"));
+            if (location is not null)
+                tags.Add(string.Create(CultureInfo.InvariantCulture, $"Location={location.Latitude:+0.#####;-0.#####}{location.Longitude:+0.#####;-0.#####}"));
+            if (tags.Count > 0)
+                result.SetQuery("/Text/Description", string.Join(";", tags));
+            if (dateTaken.HasValue)
+                try
+                {   // Parsing the timestamp string should use current culture but writing must happen in invariant culture
+                    result.DateTaken = dateTaken.Value.ToString(CultureInfo.InvariantCulture);
+                }
+                catch { }
+            return result;
+        }
+
+        static (Rational? ExposureTime, Location? Location) DecodePngMetadata(BitmapMetadata metadata)
+        {
+            if (metadata.GetQuery("/Text/Description") is not string str)
+                return (null, null);
+            Rational? exposureTime = null;
+            Location? location = null;
+            var tags = str.Split(';', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+            foreach (var tag in tags)
+            {
+                var parts = tag.Split('=', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+                if (parts.Length == 2)
+                {
+                    if (parts[0] == "ExposureTime")
+                        exposureTime = Rational.Decode(parts[1]);
+                    else if (parts[0] == "Location")
+                    {
+                        var i = parts[1].IndexOfAny(['+', '-'], 1);
+                        if (i > 0 &&
+                            double.TryParse(parts[1].AsSpan(0, i), CultureInfo.InvariantCulture, out var latitude) &&
+                            double.TryParse(parts[1].AsSpan(i), CultureInfo.InvariantCulture, out var longitude))
+                            location = new Location(latitude, longitude);
+                    }
+                }
+            }
+            return (exposureTime, location);
+        }
+
+        public static BitmapMetadata? CreateMetadataForEncoder(BitmapMetadata source, BitmapEncoder encoder)
         {
             try
             {
@@ -81,7 +141,7 @@ namespace PhotoLocator.Metadata
 
                 void TransferValue(string query1, string query2)
                 {
-                    var value = metadata.GetQuery(query1) ?? metadata.GetQuery(query2);
+                    var value = source.GetQuery(query1) ?? source.GetQuery(query2);
                     if (value is not null)
                         try
                         {
@@ -95,23 +155,32 @@ namespace PhotoLocator.Metadata
 
                 if (encoder is JpegBitmapEncoder)
                 {
-                    if (metadata.Format == "jpg")
-                        return metadata;
+                    if (source.TryGetFormat() == "jpg")
+                        return source;
                     result = new BitmapMetadata("jpg");
                     setValue = 1;
 
                 }
                 else if (encoder is TiffBitmapEncoder)
                 {
-                    if (metadata.Format == "tiff")
-                        return metadata;
+                    if (source.TryGetFormat() == "tiff")
+                        return source;
                     result = new BitmapMetadata("tiff");
                     setValue = 2;
+                }
+                else if (encoder is PngBitmapEncoder)
+                {
+                    if (source.TryGetFormat() == "png")
+                        return source;
+                    result = new BitmapMetadata("png");
+                    var exposureTime = Rational.Decode(source.GetQuery(ExposureTimeQuery1) ?? source.GetQuery(ExposureTimeQuery2));
+                    var location = GetGeotag(source);
+                    return EncodePngMetadata(exposureTime, location, ParseDateTaken(source));
                 }
                 else
                     return null;
 
-                var dateTaken = ParseDateTaken(metadata);
+                var dateTaken = ParseDateTaken(source);
                 if (dateTaken.HasValue)
                     try
                     {   // Parsing the timestamp string should use current culture but writing must happen in invariant culture
@@ -119,19 +188,39 @@ namespace PhotoLocator.Metadata
                     }
                     catch { }
 
-                if (!string.IsNullOrEmpty(metadata.CameraManufacturer))
-                    result.CameraManufacturer = metadata.CameraManufacturer;
-                if (!string.IsNullOrEmpty(metadata.CameraModel))
-                    result.CameraModel = metadata.CameraModel;
-                if (!string.IsNullOrEmpty(metadata.Title))
-                    result.Title = metadata.Title;
-                if (!string.IsNullOrEmpty(metadata.Comment))
-                    result.Comment = metadata.Comment;
+                if (source.TryGetFormat() == "png")
+                {
+                    var (exposureTime, location) = DecodePngMetadata(source);
+                    if (exposureTime is not null)
+                    {
+                        if (setValue == 1)
+                            result.SetQuery(ExposureTimeQuery1, exposureTime.Bytes);
+                        else if (setValue == 2)
+                            result.SetQuery(ExposureTimeQuery2, exposureTime.Bytes);
+                    }
+                    if (location is not null)
+                        SetGeotag(result, location);
+                    return result;
+                }
 
-                if (string.IsNullOrEmpty(metadata.ApplicationName))
-                    result.ApplicationName = nameof(PhotoLocator);
-                else
-                    result.ApplicationName = nameof(PhotoLocator) + ", " + metadata.ApplicationName;
+                try
+                {
+                    if (!string.IsNullOrEmpty(source.CameraManufacturer))
+                        result.CameraManufacturer = source.CameraManufacturer;
+                    if (!string.IsNullOrEmpty(source.CameraModel))
+                        result.CameraModel = source.CameraModel;
+                    if (!string.IsNullOrEmpty(source.Title))
+                        result.Title = source.Title;
+                    if (!string.IsNullOrEmpty(source.Comment))
+                        result.Comment = source.Comment;
+                    if (!string.IsNullOrEmpty(source.Copyright))
+                        result.Copyright = source.Copyright;
+                    if (string.IsNullOrEmpty(source.ApplicationName))
+                        result.ApplicationName = nameof(PhotoLocator);
+                    else
+                        result.ApplicationName = nameof(PhotoLocator) + ", " + source.ApplicationName;
+                }
+                catch (NotSupportedException) { }
 
                 TransferValue(ExposureTimeQuery1, ExposureTimeQuery2);
                 TransferValue(LensApertureQuery1, LensApertureQuery2);
@@ -262,6 +351,12 @@ namespace PhotoLocator.Metadata
             if (metadata is null)
                 return null;
 
+            if (metadata.TryGetFormat() == "png")
+            {
+                var (_, location) = DecodePngMetadata(metadata);
+                return location;
+            }
+
             if ((metadata.GetQuery(GpsLatitudeRefQuery1) ?? metadata.GetQuery(GpsLatitudeRefQuery2)) is not string latitudeRef)
                 return null;
             var latitude = GPSRational.Decode(metadata.GetQuery(GpsLatitudeQuery1) ?? metadata.GetQuery(GpsLatitudeQuery2));
@@ -287,19 +382,23 @@ namespace PhotoLocator.Metadata
         {
             var dateTaken = ParseDateTaken(metadata);
 
-            if (metadata.CameraManufacturer == "DJI") // Fix for DNG and JPG version of the same picture having different metadata.DateTaken
+            try
             {
-                var fileTimeStampStr = (metadata.GetQuery(FileTimeStampQuery1) ?? metadata.GetQuery(FileTimeStampQuery2)) as string;
-                if (fileTimeStampStr is not null &&
-                    DateTime.TryParseExact(fileTimeStampStr, "yyyy:MM:dd HH:mm:ss", CultureInfo.InvariantCulture, DateTimeStyles.AssumeLocal, out var fileTimeStamp))
+                if (metadata.CameraManufacturer == "DJI") // Fix for DNG and JPG version of the same picture having different metadata.DateTaken
                 {
-                    if (!dateTaken.HasValue)
-                        return fileTimeStamp;
-                    var diff = dateTaken.Value - fileTimeStamp;
-                    if (diff.Duration() < TimeSpan.FromSeconds(10)) // Only take fileTimeStamp if the file wasn't changed in another program
-                        return fileTimeStamp;
+                    var fileTimeStampStr = (metadata.GetQuery(FileTimeStampQuery1) ?? metadata.GetQuery(FileTimeStampQuery2)) as string;
+                    if (fileTimeStampStr is not null &&
+                        DateTime.TryParseExact(fileTimeStampStr, "yyyy:MM:dd HH:mm:ss", CultureInfo.InvariantCulture, DateTimeStyles.AssumeLocal, out var fileTimeStamp))
+                    {
+                        if (!dateTaken.HasValue)
+                            return fileTimeStamp;
+                        var diff = dateTaken.Value - fileTimeStamp;
+                        if (diff.Duration() < TimeSpan.FromSeconds(10)) // Only take fileTimeStamp if the file wasn't changed in another program
+                            return fileTimeStamp;
+                    }
                 }
             }
+            catch (NotSupportedException) { }
 
             return dateTaken;
         }
@@ -394,14 +493,20 @@ namespace PhotoLocator.Metadata
         {
             var metadataStrings = new List<string>();
 
-            if (!string.IsNullOrEmpty(metadata.CameraModel))
-                metadataStrings.Add(metadata.CameraModel.Trim());
+            try
+            {
+                if (!string.IsNullOrEmpty(metadata.CameraModel))
+                    metadataStrings.Add(metadata.CameraModel.Trim());
+            }
+            catch (NotSupportedException) { }
 
             var altitude = GetRelativeAltitude(metadata);
             if (altitude.HasValue)
                 metadataStrings.Add(altitude.Value.ToString("0.0", CultureInfo.CurrentCulture) + 'm');
 
             var exposureTime = Rational.Decode(metadata.GetQuery(ExposureTimeQuery1) ?? metadata.GetQuery(ExposureTimeQuery2));
+            if (exposureTime is null && metadata.TryGetFormat() == "png")
+                (exposureTime, var _) = DecodePngMetadata(metadata);
             if (exposureTime != null)
             {
                 if (exposureTime.Num == 1 && exposureTime.Denom > 1)

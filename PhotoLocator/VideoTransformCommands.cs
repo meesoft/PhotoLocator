@@ -2,6 +2,7 @@
 using Microsoft.Win32;
 using PhotoLocator.BitmapOperations;
 using PhotoLocator.Helpers;
+using PhotoLocator.Metadata;
 using PhotoLocator.PictureFileFormats;
 using System;
 using System.Collections.Generic;
@@ -661,9 +662,9 @@ namespace PhotoLocator
                         IsRegisterFramesChecked ? RegistrationMethod.MirrorBorders : RegistrationMethod.None, ParseRegistrationRegion());
                     await _videoTransforms.RunFFmpegWithStreamOutputImagesAsync(args, process.UpdateSum, ProcessStdError).ConfigureAwait(false);
                     if (process.Supports16BitAverage() && Path.GetExtension(outFileName).ToUpperInvariant() is ".PNG" or ".TIF" or ".TIFF")
-                        GeneralFileFormatHandler.SaveToFile(process.GetAverageResult16(), outFileName);
+                        GeneralFileFormatHandler.SaveToFile(process.GetAverageResult16(), outFileName, CreateImageMetadata());
                     else
-                        GeneralFileFormatHandler.SaveToFile(process.GetAverageResult8(), outFileName);
+                        GeneralFileFormatHandler.SaveToFile(process.GetAverageResult8(), outFileName, CreateImageMetadata());
                     message = $"Processed {process.ProcessedImages} frames in {sw.Elapsed.TotalSeconds:N1}s";
                 }
                 else if (OutputMode is OutputMode.Max)
@@ -671,7 +672,7 @@ namespace PhotoLocator
                     using var process = new CombineFramesOperation(DarkFramePath, 
                         IsRegisterFramesChecked ? RegistrationMethod.BlackBorders : RegistrationMethod.None, ParseRegistrationRegion());
                     await _videoTransforms.RunFFmpegWithStreamOutputImagesAsync(args, process.UpdateMax, ProcessStdError).ConfigureAwait(false);
-                    GeneralFileFormatHandler.SaveToFile(process.GetResult(), outFileName);
+                    GeneralFileFormatHandler.SaveToFile(process.GetResult(), outFileName, CreateImageMetadata());
                     message = $"Processed {process.ProcessedImages} frames in {sw.Elapsed.TotalSeconds:N1}s";
                 }
                 else if (IsLocalContrastChecked && _localContrastSetup is not null)
@@ -703,6 +704,15 @@ namespace PhotoLocator
             if (!string.IsNullOrEmpty(message))
                 MessageBox.Show(App.Current.MainWindow, message);
         });
+
+        private BitmapMetadata? CreateImageMetadata()
+        {
+            var firstSelected = _mainViewModel.GetSelectedItems().First(item => item.IsFile);
+            return ExifHandler.EncodePngMetadata(
+                _hasDuration && _inputDuration.TotalSeconds >= 0.99 ? new Rational(IntMath.Round(_inputDuration.TotalSeconds), 1) : null,
+                firstSelected.GeoTag,
+                firstSelected.TimeStamp ?? File.GetLastWriteTime(firstSelected.FullPath));
+        }
 
         private void PrepareProgressDisplay(Action<double>? progressCallback)
         {

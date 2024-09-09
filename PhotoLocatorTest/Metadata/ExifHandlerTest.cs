@@ -9,6 +9,8 @@ namespace PhotoLocator.Metadata
     [TestClass]
     public class ExifHandlerTest
     {
+        static readonly string _jpegTestDataTimestamp = new DateTime(2022, 6, 17, 19, 3, 2).ToString();
+
         [TestMethod]
         public void SetMetadata_ShouldSetJpegMetadataOnJpeg()
         {
@@ -46,6 +48,62 @@ namespace PhotoLocator.Metadata
             var target = ExifHandler.LoadMetadata(File.OpenRead(TestFileName))!;
             Assert.AreEqual(source.CameraModel, target.CameraModel);
             Assert.AreEqual(ExifHandler.GetMetadataString(source), ExifHandler.GetMetadataString(target));
+            //Assert.AreEqual(ExifHandler.GetGeotag(source), ExifHandler.GetGeotag(target));
+        }
+
+        [TestMethod]
+        public void SetMetadata_ShouldSetJpegMetadataOnPng()
+        {
+            const string TestFileName = "fromJpeg.png";
+
+            using var stream = GetType().Assembly.GetManifestResourceStream(@"PhotoLocator.TestData.2022-06-17_19.03.02.jpg")
+                ?? throw new FileNotFoundException("Resource not found");
+            var source = ExifHandler.LoadMetadata(stream) ?? throw new Exception("Unable to load metadata");
+
+            var bitmap = BitmapSource.Create(2, 2, 96, 96, PixelFormats.Gray8, null, new byte[4], 2);
+
+            GeneralFileFormatHandler.SaveToFile(bitmap, TestFileName, source);
+
+            var target = ExifHandler.LoadMetadata(File.OpenRead(TestFileName))!;
+            Assert.AreEqual("1/80s, " + _jpegTestDataTimestamp, ExifHandler.GetMetadataString(target));
+            Assert.AreEqual(1e-4, ExifHandler.GetGeotag(source)!.Latitude, ExifHandler.GetGeotag(target)!.Latitude);
+        }
+
+        [TestMethod]
+        public void SetMetadata_ShouldSetPngMetadataOnJpeg()
+        {
+            const string TestFileName = "fromPng.jpg";
+
+            using var stream = GetType().Assembly.GetManifestResourceStream(@"PhotoLocator.TestData.2022-06-17_19.03.02.jpg")
+                ?? throw new FileNotFoundException("Resource not found");
+            var source = ExifHandler.LoadMetadata(stream) ?? throw new Exception("Unable to load metadata");
+            source = ExifHandler.CreateMetadataForEncoder(source, new PngBitmapEncoder());
+
+            var bitmap = BitmapSource.Create(2, 2, 96, 96, PixelFormats.Gray8, null, new byte[4], 2);
+
+            GeneralFileFormatHandler.SaveToFile(bitmap, TestFileName, source);
+
+            var target = ExifHandler.LoadMetadata(File.OpenRead(TestFileName))!;
+            Assert.AreEqual("1/80s, " + _jpegTestDataTimestamp, ExifHandler.GetMetadataString(target));
+            Assert.AreEqual(1e-4, ExifHandler.GetGeotag(source)!.Longitude, ExifHandler.GetGeotag(target)!.Longitude);
+        }
+
+        [TestMethod]
+        public void SetMetadata_ShouldSetPngMetadataOnTiff()
+        {
+            const string TestFileName = "fromPng.tif";
+
+            using var stream = GetType().Assembly.GetManifestResourceStream(@"PhotoLocator.TestData.2022-06-17_19.03.02.jpg")
+                ?? throw new FileNotFoundException("Resource not found");
+            var source = ExifHandler.LoadMetadata(stream) ?? throw new Exception("Unable to load metadata");
+            source = ExifHandler.CreateMetadataForEncoder(source, new PngBitmapEncoder());
+
+            var bitmap = BitmapSource.Create(2, 2, 96, 96, PixelFormats.Gray8, null, new byte[4], 2);
+
+            GeneralFileFormatHandler.SaveToFile(bitmap, TestFileName, source);
+
+            var target = ExifHandler.LoadMetadata(File.OpenRead(TestFileName))!;
+            Assert.AreEqual("1/80s, " + _jpegTestDataTimestamp, ExifHandler.GetMetadataString(target));
             //Assert.AreEqual(ExifHandler.GetGeotag(source), ExifHandler.GetGeotag(target));
         }
 

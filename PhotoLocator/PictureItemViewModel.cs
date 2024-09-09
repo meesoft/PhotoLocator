@@ -335,9 +335,16 @@ namespace PhotoLocator
             {
                 try
                 {
-                    var (result, metadata) = VideoFileFormatHandler.LoadFromFile(FullPath, maxPixelWidth, _settings, ct);
-                    if (metadata != null)
+                    var (result, timestamp, location, metadata) = VideoFileFormatHandler.LoadFromFile(FullPath, maxPixelWidth, _settings, ct);
+                    if (metadata is not null)
                         MetadataString = metadata;
+                    if (location is not null && GeoTag is null)
+                    {
+                        GeoTag = location;
+                        GeoTagSaved = true;
+                    }
+                    if (timestamp.HasValue && !TimeStamp.HasValue)
+                        TimeStamp = timestamp.Value;
                     return result;
                 }
                 catch (OperationCanceledException)
@@ -476,7 +483,7 @@ namespace PhotoLocator
         {
             if (IsDirectory)
                 throw new UserMessageException("Copying directories is not supported");
-            File.Copy(FullPath, destination);
+            File.Copy(FullPath, destination, true);
         }
 
         internal void MoveTo(string destination)
@@ -484,7 +491,7 @@ namespace PhotoLocator
             if (IsDirectory)
                 Directory.Move(FullPath, destination);
             else
-                File.Move(FullPath, destination);
+                File.Move(FullPath, destination, true);
         }
 
         public void Recycle(bool recycleSidecar)

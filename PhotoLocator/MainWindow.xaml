@@ -215,8 +215,14 @@
                            Stretch="None" RenderOptions.BitmapScalingMode="NearestNeighbor" SnapsToDevicePixels="True" />
                 </Canvas>
 
-                <TextBlock VerticalAlignment="Bottom" HorizontalAlignment="Right" Margin="8" FontSize="18" FontWeight="Bold" Foreground="Black"
-                           TextWrapping="Wrap" Text="{Binding PreviewPictureTitle}"/>
+                <TextBlock VerticalAlignment="Bottom" HorizontalAlignment="Right" Margin="10" FontSize="18" FontWeight="Bold" Foreground="Black"
+                           TextWrapping="Wrap" Text="{Binding PreviewPictureTitle}" >
+                    <TextBlock.RenderTransform>
+                        <TransformGroup>
+                            <TranslateTransform X="2" Y="2"/>
+                        </TransformGroup>
+                    </TextBlock.RenderTransform>
+                </TextBlock>
                 <TextBlock VerticalAlignment="Bottom" HorizontalAlignment="Right" Margin="10" FontSize="18" FontWeight="Bold" Foreground="White"
                            TextWrapping="Wrap" Text="{Binding PreviewPictureTitle}"/>
 

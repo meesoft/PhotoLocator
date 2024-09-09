@@ -264,7 +264,9 @@ namespace PhotoLocator
         {
             for(var i = 0; i < 10; i++) 
             {
+#pragma warning disable CA1309 // Use ordinal string comparison
                 var item = Items.FirstOrDefault(x => string.Equals(x.FullPath, outFileName, StringComparison.CurrentCultureIgnoreCase));
+#pragma warning restore CA1309 // Use ordinal string comparison
                 if (item is null)
                 {
                     await Task.Delay(100);
@@ -654,7 +656,19 @@ namespace PhotoLocator
                 int i = 0;
                 foreach (var item in allSelected)
                 {
-                    item.CopyTo(Path.Combine(destination, item.Name));
+                    var destFileName = Path.Combine(destination, item.Name);
+                    if (item.IsFile && File.Exists(destFileName))
+                    {
+                        var dialogResult = Application.Current.Dispatcher.Invoke(
+                            () => MessageBox.Show(destFileName + " already exists, do you want to overwrite it?", "Copy files", MessageBoxButton.YesNoCancel, MessageBoxImage.Question));
+                        switch (dialogResult)
+                        {
+                            case MessageBoxResult.Yes: break;
+                            case MessageBoxResult.No: i++; continue;
+                            default: return;
+                        }
+                    }
+                    item.CopyTo(destFileName);
                     progressCallback((double)(++i) / allSelected.Length);
                 }
             }), "Copying...");
@@ -677,7 +691,19 @@ namespace PhotoLocator
                 int i = 0;
                 foreach (var item in allSelected)
                 {
-                    item.MoveTo(Path.Combine(destination, item.Name));
+                    var destFileName = Path.Combine(destination, item.Name);
+                    if (item.IsFile && File.Exists(destFileName))
+                    {
+                        var dialogResult = Application.Current.Dispatcher.Invoke(
+                            () => MessageBox.Show(destFileName + " already exists, do you want to overwrite it?", "Move files", MessageBoxButton.YesNoCancel, MessageBoxImage.Question));
+                        switch (dialogResult)
+                        {
+                            case MessageBoxResult.Yes: break;
+                            case MessageBoxResult.No: i++; continue;
+                            default: return;
+                        }
+                    }
+                    item.MoveTo(destFileName);
                     Application.Current.Dispatcher.Invoke(() => Items.Remove(item));
                     progressCallback((double)(++i) / allSelected.Length);
                 }

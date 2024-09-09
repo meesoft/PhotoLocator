@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Globalization;
 
 namespace PhotoLocator.Metadata
 {
@@ -57,6 +58,12 @@ namespace PhotoLocator.Metadata
                 return new Rational(value1);
             if (raw is byte[] bytes)
                 return new Rational(bytes);
+            if (raw is string str)
+            {
+                var fields = str.Split('/', StringSplitOptions.TrimEntries);
+                if (int.TryParse(fields[0], CultureInfo.InvariantCulture, out var num) && int.TryParse(fields[1], CultureInfo.InvariantCulture, out var denom))
+                    return new Rational(num, denom);
+            }
             return null;
         }
     }
