@@ -661,7 +661,7 @@ namespace PhotoLocator
                     using var process = new CombineFramesOperation(DarkFramePath, 
                         IsRegisterFramesChecked ? RegistrationMethod.MirrorBorders : RegistrationMethod.None, ParseRegistrationRegion());
                     await _videoTransforms.RunFFmpegWithStreamOutputImagesAsync(args, process.UpdateSum, ProcessStdError).ConfigureAwait(false);
-                    if (process.Supports16BitAverage() && Path.GetExtension(outFileName).ToUpperInvariant() is ".PNG" or ".TIF" or ".TIFF")
+                    if (process.Supports16BitAverage() && Path.GetExtension(outFileName).ToUpperInvariant() is ".PNG" or ".TIF" or ".TIFF" or ".JXR")
                         GeneralFileFormatHandler.SaveToFile(process.GetAverageResult16(), outFileName, CreateImageMetadata());
                     else
                         GeneralFileFormatHandler.SaveToFile(process.GetAverageResult8(), outFileName, CreateImageMetadata());

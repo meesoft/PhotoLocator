@@ -52,6 +52,26 @@ namespace PhotoLocator.Metadata
         }
 
         [TestMethod]
+        public void SetMetadata_ShouldSetJpegMetadataOnJpegXr()
+        {
+            const string TestFileName = "fromJpeg.jxr";
+
+            using var stream = GetType().Assembly.GetManifestResourceStream(@"PhotoLocator.TestData.2022-06-17_19.03.02.jpg")
+                ?? throw new FileNotFoundException("Resource not found");
+            var source = ExifHandler.LoadMetadata(stream) ?? throw new Exception("Unable to load metadata");
+            Assert.IsFalse(string.IsNullOrEmpty(source.CameraModel));
+
+            var bitmap = BitmapSource.Create(2, 2, 96, 96, PixelFormats.Gray8, null, new byte[4], 2);
+
+            GeneralFileFormatHandler.SaveToFile(bitmap, TestFileName, source);
+
+            var target = ExifHandler.LoadMetadata(File.OpenRead(TestFileName))!;
+            Assert.AreEqual(source.CameraModel, target.CameraModel);
+            Assert.AreEqual("FC7303, " + _jpegTestDataTimestamp, ExifHandler.GetMetadataString(target));
+            //Assert.AreEqual(ExifHandler.GetGeotag(source), ExifHandler.GetGeotag(target));
+        }
+
+        [TestMethod]
         public void SetMetadata_ShouldSetJpegMetadataOnPng()
         {
             const string TestFileName = "fromJpeg.png";

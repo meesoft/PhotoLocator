@@ -8,7 +8,7 @@ namespace PhotoLocator.PictureFileFormats
 {
     static class GeneralFileFormatHandler
     {
-        public const string SaveImageFilter = "JPEG|*.jpg|PNG|*.png|TIFF|*.tif|BMP|*.bmp";
+        public const string SaveImageFilter = "JPEG|*.jpg|PNG|*.png|TIFF|*.tif|JPEG XR|*.jxr|BMP|*.bmp";
 
         public static BitmapSource LoadFromStream(Stream source, Rotation rotation, int maxPixelWidth, bool preservePixelFormat, CancellationToken ct)
         {
@@ -40,6 +40,8 @@ namespace PhotoLocator.PictureFileFormats
                 encoder = new PngBitmapEncoder();
             else if (ext is ".BMP")
                 encoder = new BmpBitmapEncoder();
+            else if (ext is ".JXR")
+                encoder = new WmpBitmapEncoder() { Lossless = true };
             else
                 throw new UserMessageException("Unsupported file format " + ext);
 

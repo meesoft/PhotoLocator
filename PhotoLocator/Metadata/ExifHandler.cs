@@ -161,6 +161,14 @@ namespace PhotoLocator.Metadata
                     setValue = 1;
 
                 }
+                else if (encoder is WmpBitmapEncoder)
+                {
+                    if (source.TryGetFormat() == "wmphoto")
+                        return source;
+                    result = new BitmapMetadata("wmphoto");
+                    setValue = 1;
+
+                }
                 else if (encoder is TiffBitmapEncoder)
                 {
                     if (source.TryGetFormat() == "tiff")
