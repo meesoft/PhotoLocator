@@ -64,7 +64,8 @@
         <TextBox Text="{Binding StabilizeArguments}" Margin="10,0,0,0" IsEnabled="{Binding IsStabilizeChecked}"/>
 
         <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
-            <CheckBox Content="Adjust local contrast, brightness and colors" IsChecked="{Binding IsLocalContrastChecked}" Width="300"/>
+            <CheckBox Content="Adjust local contrast, brightness and colors" Width="300"
+                      IsChecked="{Binding IsLocalContrastChecked}" IsEnabled="{Binding IsLocalContrastEnabled}" />
             <Button Content="Setup" Command="{Binding SetupLocalContrastCommand}" Width="80" IsEnabled="{Binding IsLocalContrastChecked}" />
         </StackPanel>
 

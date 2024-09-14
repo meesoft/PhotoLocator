@@ -266,6 +266,8 @@ namespace PhotoLocator
         }
         bool _isLocalContrastChecked;
 
+        public bool IsLocalContrastEnabled => OutputMode is OutputMode.Video or OutputMode.ImageSequence;
+
         public ICommand SetupLocalContrastCommand => new RelayCommand(o =>
         {
             _localContrastSetup ??= new LocalContrastViewModel();
@@ -294,6 +296,7 @@ namespace PhotoLocator
                     UpdateProcessArgs();
                     UpdateOutputArgs();
                     PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(IsCombineFramesOperation)));
+                    PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(IsLocalContrastEnabled)));
                 }
             }
         }
