@@ -963,7 +963,8 @@ namespace PhotoLocator
                     }
                     else
                         return;
-                    _pictureCache.Clear();
+                    if (e.ChangeType == WatcherChangeTypes.Renamed)
+                        _pictureCache.Clear();
                     if (_loadPicturesTask != null)
                         _loadPicturesTask.ContinueWith(_ => Application.Current.Dispatcher.BeginInvoke(LoadPicturesAsync), TaskScheduler.Default).WithExceptionLogging();
                     else
@@ -975,7 +976,7 @@ namespace PhotoLocator
                     var changed = Items.FirstOrDefault(item => item.FullPath == e.FullPath);
                     if (changed == null)
                         return;
-                    _pictureCache.Clear();
+                    _pictureCache.RemoveAll(item => item.Path == changed.FullPath);
                     if (changed.IsSelected)
                         UpdatePreviewPictureAsync().WithExceptionLogging();
                     if (changed.ThumbnailImage != null)

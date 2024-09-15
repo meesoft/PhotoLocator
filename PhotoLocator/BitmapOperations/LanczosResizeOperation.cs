@@ -59,12 +59,12 @@ namespace PhotoLocator.BitmapOperations
                 Parallel.For(0, dstWidth, i =>
                 {
                     float sum = 0;
-                    if (dstWidth < srcWidth)
+                    if (dstWidth < srcWidth) // Downscale
                     {
                         var center = i * scaleWN;
                         var pMin = (int)Math.Floor(center - reduceWindow);
                         var pMax = (int)Math.Ceiling(center + reduceWindow);
-                        _weights[i].SourcePixelWeights = new SourcePixelWeight[pMax - pMin + 1];
+                        var sourceWeights = new SourcePixelWeight[pMax - pMin + 1];
                         for (var p = pMin; p <= pMax; p++)
                         {
                             SourcePixelWeight spw;
@@ -76,15 +76,16 @@ namespace PhotoLocator.BitmapOperations
                                 spw.SourceIndex = p * srcSampleDistance;
                             spw.SourceWeight = filterFunc((p - center) * scaleNW) * scaleNW;
                             sum += spw.SourceWeight;
-                            _weights[i].SourcePixelWeights[p - pMin] = spw;
+                            sourceWeights[p - pMin] = spw;
                         }
+                        _weights[i].SourcePixelWeights = sourceWeights;
                     }
-                    else
+                    else // Upscale
                     {
                         var center = i * scaleWN;
                         var pMin = (int)Math.Floor(center - filterWindow);
                         var pMax = (int)Math.Ceiling(center + filterWindow);
-                        _weights[i].SourcePixelWeights = new SourcePixelWeight[pMax - pMin + 1];
+                        var sourceWeights = new SourcePixelWeight[pMax - pMin + 1];
                         for (var p = pMin; p <= pMax; p++)
                         {
                             SourcePixelWeight spw;
@@ -96,14 +97,16 @@ namespace PhotoLocator.BitmapOperations
                                 spw.SourceIndex = p * srcSampleDistance;
                             spw.SourceWeight = filterFunc(p - center);
                             sum += spw.SourceWeight;
-                            _weights[i].SourcePixelWeights[p - pMin] = spw;
+                            sourceWeights[p - pMin] = spw;
                         }
+                        _weights[i].SourcePixelWeights = sourceWeights;
                     }
                     if (sum > 0)
                     {
                         var scale = 1 / sum;
-                        for (var p = 0; p < _weights[i].SourcePixelWeights.Length; p++)
-                            _weights[i].SourcePixelWeights[p].SourceWeight *= scale;
+                        var sourceWeights = _weights[i].SourcePixelWeights;
+                        for (var p = 0; p < sourceWeights.Length; p++)
+                            sourceWeights[p].SourceWeight *= scale;
                     }
                 });
             }
