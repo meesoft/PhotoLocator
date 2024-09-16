@@ -2,21 +2,26 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Threading;
+using System.Threading.Tasks;
 
 namespace PhotoLocator.Helpers
 {
     sealed class CallbackEnumerable<T> : IEnumerable<T>, IEnumerator<T>
     {
-        AutoResetEvent _nextSet = new(false);
-        AutoResetEvent _nextTaken = new(true);
+        readonly AutoResetEvent _nextSet = new(false);
+        readonly AutoResetEvent _nextTaken = new(true);
+        readonly TaskCompletionSource _gotFirst = new();
         T _next = default!;
         bool _break;
 
         public void ItemCallback(T item)
         {
+            if (_break)
+                return;
             _nextTaken.WaitOne();
             _next = item;
             _nextSet.Set();
+            _gotFirst.TrySetResult();
         }
 
         public void Break()
@@ -27,6 +32,8 @@ namespace PhotoLocator.Helpers
             _break = true;
             _nextSet.Set();
         }
+
+        public Task GotFirst => _gotFirst.Task;
 
         public IEnumerator<T> GetEnumerator() => this;
 

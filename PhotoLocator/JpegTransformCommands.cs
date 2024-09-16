@@ -62,6 +62,12 @@ namespace PhotoLocator
                     image ??= decoder.Frames[0];
                 }
                 catch { }
+                if (metadata is null && _mainViewModel.SelectedItem.GeoTag is not null)
+                {
+                    metadata = new BitmapMetadata("jpg");
+                    ExifHandler.SetDateTaken(metadata, _mainViewModel.SelectedItem.TimeStamp ?? File.GetLastWriteTime(_mainViewModel.SelectedItem.FullPath));
+                    ExifHandler.SetGeotag(metadata, _mainViewModel.SelectedItem.GeoTag);
+                }
                 localContrastViewModel = new LocalContrastViewModel() 
                 { 
                     SourceBitmap = image ?? throw new UserMessageException(_mainViewModel.SelectedItem.ErrorMessage) 

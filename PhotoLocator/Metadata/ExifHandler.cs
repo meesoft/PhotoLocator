@@ -97,11 +97,7 @@ namespace PhotoLocator.Metadata
             if (tags.Count > 0)
                 result.SetQuery("/Text/Description", string.Join(";", tags));
             if (dateTaken.HasValue)
-                try
-                {   // Parsing the timestamp string should use current culture but writing must happen in invariant culture
-                    result.DateTaken = dateTaken.Value.ToString(CultureInfo.InvariantCulture);
-                }
-                catch { }
+                SetDateTaken(result, dateTaken.Value);
             return result;
         }
 
@@ -190,11 +186,7 @@ namespace PhotoLocator.Metadata
 
                 var dateTaken = ParseDateTaken(source);
                 if (dateTaken.HasValue)
-                    try
-                    {   // Parsing the timestamp string should use current culture but writing must happen in invariant culture
-                        result.DateTaken = dateTaken.Value.ToString(CultureInfo.InvariantCulture);
-                    }
-                    catch { }
+                    SetDateTaken(result, dateTaken.Value);
 
                 if (source.TryGetFormat() == "png")
                 {
@@ -246,6 +238,15 @@ namespace PhotoLocator.Metadata
             {
                 return null;
             }
+        }
+
+        public static void SetDateTaken(BitmapMetadata metadata, DateTime dateTaken)
+        {
+            try
+            {   // Parsing the timestamp string should use current culture but writing must happen in invariant culture
+                metadata.DateTaken = dateTaken.ToString(CultureInfo.InvariantCulture);
+            }
+            catch { }
         }
 
         public static void SetGeotag(string sourceFileName, string targetFileName, Location location)

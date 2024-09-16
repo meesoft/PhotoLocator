@@ -12,7 +12,6 @@ using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Runtime.CompilerServices;
-using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -41,7 +40,6 @@ namespace PhotoLocator
         double _fps;
         int _frameCount;
         bool _hasDuration, _hasFps;
-        TaskCompletionSource? _gotFps;
 
         public VideoTransformCommands(IMainViewModel mainViewModel)
         {
@@ -680,13 +678,17 @@ namespace PhotoLocator
                 }
                 else if (IsLocalContrastChecked && _localContrastSetup is not null)
                 {
+                    if (!string.IsNullOrEmpty(FrameRate))
+                    {
+                        _fps = double.Parse(FrameRate, CultureInfo.InvariantCulture);
+                        _hasFps = true;
+                    }
                     using var frameEnumerator = new CallbackEnumerable<BitmapSource>();
-                    _gotFps = new TaskCompletionSource();
                     var readTask = _videoTransforms.RunFFmpegWithStreamOutputImagesAsync($"{InputArguments} {ProcessArguments}", 
-                        source => frameEnumerator.ItemCallback(_localContrastSetup.ApplyOperations(source)), 
-                        ProcessStdError);
+                        source => frameEnumerator.ItemCallback(_localContrastSetup.ApplyOperations(source)), ProcessStdError);
+                    await frameEnumerator.GotFirst.ConfigureAwait(false);
                     if (!_hasFps)
-                        await _gotFps.Task.ConfigureAwait(false);
+                        throw new UserMessageException("Unable to determine frame rate, please specify manually");
                     var writeTask = _videoTransforms.RunFFmpegWithStreamInputImagesAsync(_fps, $"{OutputArguments} -y \"{outFileName}\"", frameEnumerator, 
                         stdError => Debug.WriteLine("Writer: " + stdError));
                     await readTask.ConfigureAwait(false);
@@ -731,7 +733,6 @@ namespace PhotoLocator
             else
                 _hasDuration = false;
             _hasFps = false;
-            _gotFps = null;
         }
 
         private void ProcessStdError(string line)
@@ -767,8 +768,6 @@ namespace PhotoLocator
                             _hasFps = double.TryParse(parts[i - 1], CultureInfo.InvariantCulture, out _fps);
                             if (_hasDuration && _hasFps)
                                 _frameCount = (int)(_inputDuration.TotalSeconds * _fps + 0.9);
-                            if (_hasFps && _gotFps is not null)
-                                _gotFps.TrySetResult();
                             break;
                         }
                 }
