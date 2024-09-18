@@ -38,6 +38,7 @@ namespace PhotoLocator
         Task? _loadPicturesTask;
         CancellationTokenSource? _loadCancellation;
         CancellationTokenSource? _previewCancellation;
+        CancellationTokenSource? _processCancellation;
         FileSystemWatcher? _fileSystemWatcher;
         DispatcherOperation? _fileSystemWatcherUpdate;
         bool _titleUpdatePending;
@@ -71,7 +72,8 @@ namespace PhotoLocator
 #endif
             Settings = new ObservableSettings();
             Items.CollectionChanged += (s, e) => BeginTitleUpdate();
-        }
+            Application.Current.MainWindow.Closing += HandleMainWindowClosing;
+        }     
 
         public string WindowTitle
         {
@@ -90,7 +92,7 @@ namespace PhotoLocator
         }
 
         public bool IsProgressBarVisible { get => _isProgressBarVisible; set => SetProperty(ref _isProgressBarVisible, value); }
-        private bool _isProgressBarVisible;
+        private bool _isProgressBarVisible = _isInDesignMode;
 
         public TaskbarItemProgressState TaskbarProgressState { get => _taskbarProgressState; set => SetProperty(ref _taskbarProgressState, value); }
         TaskbarItemProgressState _taskbarProgressState = TaskbarItemProgressState.None;
@@ -262,7 +264,7 @@ namespace PhotoLocator
 
         public async Task SelectFileAsync(string outFileName)
         {
-            for(var i = 0; i < 10; i++) 
+            for (var i = 0; i < 10; i++)
             {
 #pragma warning disable CA1309 // Use ordinal string comparison
                 var item = Items.FirstOrDefault(x => string.Equals(x.FullPath, outFileName, StringComparison.CurrentCultureIgnoreCase));
@@ -343,7 +345,7 @@ namespace PhotoLocator
                     if (loaded is not null)
                         _pictureCache.Add((selected.FullPath, loaded));
                     if (selected != SelectedItem) // If another item was selected while preview was being loaded
-                        return; 
+                        return;
                     PreviewPictureSource = loaded;
                 }
                 else
@@ -412,7 +414,7 @@ namespace PhotoLocator
             MapCenter = SavedLocation;
         });
 
-        public async Task RunProcessWithProgressBarAsync(Func<Action<double>, Task> body, string text, PictureItemViewModel? focusItem = null)
+        public async Task RunProcessWithProgressBarAsync(Func<Action<double>, CancellationToken, Task> body, string text, PictureItemViewModel? focusItem = null)
         {
             using var cursor = new MouseCursorOverride();
             ProgressBarIsIndeterminate = false;
@@ -421,13 +423,16 @@ namespace PhotoLocator
             ProgressBarText = text;
             IsProgressBarVisible = true;
             IsWindowEnabled = false;
+            _processCancellation = new CancellationTokenSource();
+            var ct = _processCancellation.Token;
             try
             {
                 await body(progress =>
                 {
+                    ct.ThrowIfCancellationRequested();
                     ProgressBarIsIndeterminate = progress < 0;
                     ProgressBarValue = Math.Max(ProgressBarValue, progress);
-                });
+                }, ct);
             }
             catch (Exception ex)
             {
@@ -444,6 +449,18 @@ namespace PhotoLocator
                     SelectItem(focusItem);
                 else if (SelectedItem != null)
                     SelectItem(SelectedItem);
+                await _processCancellation.CancelAsync();
+                _processCancellation.Dispose();
+                _processCancellation = null;
+            }
+        }
+
+        private void HandleMainWindowClosing(object? sender, CancelEventArgs e)
+        {
+            if (IsProgressBarVisible && _processCancellation is not null && !_processCancellation.IsCancellationRequested)
+            {
+                _processCancellation.Cancel();
+                e.Cancel = true;
             }
         }
 
@@ -453,7 +470,7 @@ namespace PhotoLocator
             if (updatedPictures.Length == 0)
                 return;
             PauseFileSystemWatcher();
-            await RunProcessWithProgressBarAsync(async progressCallback =>
+            await RunProcessWithProgressBarAsync(async (progressCallback, ct) =>
             {
                 int i = 0;
                 await Parallel.ForEachAsync(updatedPictures, new ParallelOptions { MaxDegreeOfParallelism = 1 }, async (item, ct) =>
@@ -461,7 +478,7 @@ namespace PhotoLocator
                     await item.SaveGeoTagAsync();
                     progressCallback((double)Interlocked.Increment(ref i) / updatedPictures.Length);
                 });
-                await Task.Delay(10);
+                await Task.Delay(10, ct);
             }, "Saving...");
             ResumeFileSystemWatcher();
         });
@@ -629,7 +646,7 @@ namespace PhotoLocator
             var selectedIndex = Items.IndexOf(SelectedItem!);
             SelectedItem = null;
             PauseFileSystemWatcher();
-            await RunProcessWithProgressBarAsync(progressCallback => Task.Run(() =>
+            await RunProcessWithProgressBarAsync((progressCallback, ct) => Task.Run(() =>
             {
                 int i = 0;
                 foreach (var item in allSelected)
@@ -638,7 +655,7 @@ namespace PhotoLocator
                     Application.Current.Dispatcher.Invoke(() => Items.Remove(item));
                     progressCallback((double)(++i) / allSelected.Length);
                 }
-            }), "Deleting...", focusedItem);
+            }, ct), "Deleting...", focusedItem);
             ResumeFileSystemWatcher();
         });
 
@@ -650,7 +667,7 @@ namespace PhotoLocator
             var destination = Interaction.InputBox($"Copy {allSelected.Length} selected item(s).\n\nDestination:", "Copy files", (PhotoFolderPath ?? string.Empty).Trim('\\'));
             if (string.IsNullOrEmpty(destination) || destination == PhotoFolderPath || destination == ".")
                 return;
-            await RunProcessWithProgressBarAsync(progressCallback => Task.Run(() =>
+            await RunProcessWithProgressBarAsync((progressCallback, ct) => Task.Run(() =>
             {
                 Directory.SetCurrentDirectory(Path.GetDirectoryName(allSelected[0].FullPath)!);
                 int i = 0;
@@ -671,7 +688,7 @@ namespace PhotoLocator
                     item.CopyTo(destFileName);
                     progressCallback((double)(++i) / allSelected.Length);
                 }
-            }), "Copying...");
+            }, ct), "Copying...");
         });
 
         public ICommand MoveSelectedCommand => new RelayCommand(async o =>
@@ -685,7 +702,7 @@ namespace PhotoLocator
             if (string.IsNullOrEmpty(destination) || destination == PhotoFolderPath || destination == ".")
                 return;
             SelectedItem = null;
-            await RunProcessWithProgressBarAsync(progressCallback => Task.Run(() =>
+            await RunProcessWithProgressBarAsync((progressCallback, ct) => Task.Run(() =>
             {
                 Directory.SetCurrentDirectory(Path.GetDirectoryName(allSelected[0].FullPath)!);
                 int i = 0;
@@ -707,7 +724,7 @@ namespace PhotoLocator
                     Application.Current.Dispatcher.Invoke(() => Items.Remove(item));
                     progressCallback((double)(++i) / allSelected.Length);
                 }
-            }), "Moving...", focusedItem);
+            }, ct), "Moving...", focusedItem);
         });
 
         public ICommand CreateFolderCommand => new RelayCommand(o =>
@@ -821,12 +838,12 @@ namespace PhotoLocator
                     if (SelectedItem is null || CropControl is null || o is not true &&
                         MessageBox.Show("Crop to selection?", "Crop", MessageBoxButton.OKCancel, MessageBoxImage.Question) != MessageBoxResult.OK)
                         return;
-                    await RunProcessWithProgressBarAsync(progressCallback => Task.Run(() =>
+                    await RunProcessWithProgressBarAsync((progressCallback, ct) => Task.Run(() =>
                     {
                         progressCallback(-1);
                         JpegTransformations.Crop(SelectedItem.FullPath, SelectedItem.GetProcessedFileName(), CropControl.CropRectangle);
                         SelectedItem.Rotation = Rotation.Rotate0;
-                    }), "Cropping");
+                    }, ct), "Cropping");
                 }
                 finally
                 {
@@ -1054,9 +1071,9 @@ namespace PhotoLocator
         public async Task WaitForPicturesLoadedAsync()
         {
             if (_loadPicturesTask != null)
-                await RunProcessWithProgressBarAsync(async progressUpdate =>
+                await RunProcessWithProgressBarAsync(async (progressCallback, ct) =>
                 {
-                    progressUpdate(-1);
+                    progressCallback(-1);
                     if (_loadPicturesTask != null)
                         await _loadPicturesTask;
                     _loadPicturesTask = null;
@@ -1078,6 +1095,9 @@ namespace PhotoLocator
             _previewCancellation?.Cancel();
             _previewCancellation?.Dispose();
             _previewCancellation = null;
+            _processCancellation?.Cancel();
+            _processCancellation?.Dispose();
+            _processCancellation = null;
             DisposeFileSystemWatcher();
         }
     }

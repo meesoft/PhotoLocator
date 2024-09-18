@@ -542,7 +542,7 @@ namespace PhotoLocator
                 return;
             var outFileName = dlg.FileName;
 
-            await _mainViewModel.RunProcessWithProgressBarAsync(async progressCallback =>
+            await _mainViewModel.RunProcessWithProgressBarAsync(async (progressCallback, ct) =>
             {
                 progressCallback(-1);
                 PrepareProgressDisplay(progressCallback);
@@ -630,7 +630,7 @@ namespace PhotoLocator
             }
 
             string? message = null;
-            await _mainViewModel.RunProcessWithProgressBarAsync(async progressCallback =>
+            await _mainViewModel.RunProcessWithProgressBarAsync(async (progressCallback, ct) =>
             {
                 var sw = Stopwatch.StartNew();
                 progressCallback(-1);
@@ -644,7 +644,7 @@ namespace PhotoLocator
 
                 Directory.SetCurrentDirectory(inPath);
                 if (allSelected.Length > 1)
-                    await File.WriteAllLinesAsync(InputFileName, allSelected.Select(f => $"file '{f.Name}'")).ConfigureAwait(false);
+                    await File.WriteAllLinesAsync(InputFileName, allSelected.Select(f => $"file '{f.Name}'"), ct).ConfigureAwait(false);
 
                 if (IsStabilizeChecked)
                 {
@@ -660,7 +660,7 @@ namespace PhotoLocator
                 if (OutputMode is OutputMode.Average)
                 {
                     using var process = new CombineFramesOperation(DarkFramePath, 
-                        IsRegisterFramesChecked ? RegistrationMethod.MirrorBorders : RegistrationMethod.None, ParseRegistrationRegion());
+                        IsRegisterFramesChecked ? RegistrationMethod.MirrorBorders : RegistrationMethod.None, ParseRegistrationRegion(), ct);
                     await _videoTransforms.RunFFmpegWithStreamOutputImagesAsync(args, process.UpdateSum, ProcessStdError).ConfigureAwait(false);
                     if (process.Supports16BitAverage() && Path.GetExtension(outFileName).ToUpperInvariant() is ".PNG" or ".TIF" or ".TIFF" or ".JXR")
                         GeneralFileFormatHandler.SaveToFile(process.GetAverageResult16(), outFileName, CreateImageMetadata());
@@ -671,7 +671,7 @@ namespace PhotoLocator
                 else if (OutputMode is OutputMode.Max)
                 {
                     using var process = new CombineFramesOperation(DarkFramePath, 
-                        IsRegisterFramesChecked ? RegistrationMethod.BlackBorders : RegistrationMethod.None, ParseRegistrationRegion());
+                        IsRegisterFramesChecked ? RegistrationMethod.BlackBorders : RegistrationMethod.None, ParseRegistrationRegion(), ct);
                     await _videoTransforms.RunFFmpegWithStreamOutputImagesAsync(args, process.UpdateMax, ProcessStdError).ConfigureAwait(false);
                     GeneralFileFormatHandler.SaveToFile(process.GetResult(), outFileName, CreateImageMetadata());
                     message = $"Processed {process.ProcessedImages} frames in {sw.Elapsed.TotalSeconds:N1}s";

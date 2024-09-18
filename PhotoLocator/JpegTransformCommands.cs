@@ -31,7 +31,7 @@ namespace PhotoLocator
             var allSelected = _mainViewModel.GetSelectedItems().Where(item => item.IsFile && JpegTransformations.IsFileTypeSupported(item.Name)).ToArray();
             if (allSelected.Length == 0)
                 throw new UserMessageException("Unsupported file format");
-            await _mainViewModel.RunProcessWithProgressBarAsync(progressCallback => Task.Run(() =>
+            await _mainViewModel.RunProcessWithProgressBarAsync((progressCallback, ct) => Task.Run(() =>
             {
                 progressCallback(-1);
                 int i = 0;
@@ -42,7 +42,7 @@ namespace PhotoLocator
                     item.IsChecked = false;
                     progressCallback((double)(++i) / allSelected.Length);
                 }
-            }), "Rotating...");
+            }, ct), "Rotating...");
         }
 
         public ICommand LocalContrastCommand => new RelayCommand(o =>

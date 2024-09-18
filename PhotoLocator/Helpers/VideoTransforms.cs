@@ -35,7 +35,7 @@ namespace PhotoLocator.Helpers
             var startInfo = new ProcessStartInfo(GetFFmpegPath(), args);
             startInfo.RedirectStandardError = true;
             startInfo.CreateNoWindow = true;
-            var process = Process.Start(startInfo) ?? throw new IOException("Failed to start FFmpeg");
+            using var process = Process.Start(startInfo) ?? throw new IOException("Failed to start FFmpeg");
             var stdErrorTask = ProcessOutputAsync(process.StandardError, stdErrorCallback);
             await stdErrorTask.ConfigureAwait(false);
             await process.WaitForExitAsync().ConfigureAwait(false);
@@ -52,7 +52,7 @@ namespace PhotoLocator.Helpers
             startInfo.RedirectStandardOutput = true;
             startInfo.RedirectStandardError = true;
             startInfo.CreateNoWindow = true;
-            var process = Process.Start(startInfo) ?? throw new IOException("Failed to start FFmpeg");
+            using var process = Process.Start(startInfo) ?? throw new IOException("Failed to start FFmpeg");
             var processImagesTask = Task.Run(() => ProcessImages(process.StandardOutput, imageCallback));
             var stdErrorTask = ProcessOutputAsync(process.StandardError, stdErrorCallback);
             await processImagesTask.ConfigureAwait(false);
@@ -132,7 +132,7 @@ namespace PhotoLocator.Helpers
             startInfo.RedirectStandardInput = true;
             startInfo.RedirectStandardError = true;
             startInfo.CreateNoWindow = true;
-            var process = Process.Start(startInfo) ?? throw new IOException("Failed to start FFmpeg");
+            using var process = Process.Start(startInfo) ?? throw new IOException("Failed to start FFmpeg");
             var stdErrorTask = ProcessOutputAsync(process.StandardError, stdErrorCallback);
             while (true)
             {
