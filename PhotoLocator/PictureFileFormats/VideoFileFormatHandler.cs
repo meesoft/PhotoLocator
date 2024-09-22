@@ -43,7 +43,7 @@ namespace PhotoLocator.PictureFileFormats
                             var i2 = line.IndexOfAny(['-', '+'], i1 + 2);
                             if (i2 > 0 &&
                                 double.TryParse(line.AsSpan(i1, i2 - i1), CultureInfo.InvariantCulture, out var latitude) &&
-                                double.TryParse(line.AsSpan(i2), CultureInfo.InvariantCulture, out var longitude))
+                                double.TryParse(line.AsSpan(i2).TrimEnd('/'), CultureInfo.InvariantCulture, out var longitude))
                                 location = new Location(latitude, longitude);
                         }
                     }
