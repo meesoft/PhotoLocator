@@ -80,7 +80,7 @@
 
         <GridSplitter Grid.Column="0" Grid.RowSpan="2" Background="Black"
                       HorizontalAlignment="Right" VerticalAlignment="Stretch"
-                      ShowsPreview="True" Width="8"/>
+                      ShowsPreview="False" Width="8"/>
 
         <Grid Grid.Column="0" Margin="0,0,10,4" >
             <TextBox Text="{Binding PhotoFolderPath}" Margin="0,0,34,0" PreviewKeyUp="HandlePathEditPreviewKeyUp" Name="PathEdit" />

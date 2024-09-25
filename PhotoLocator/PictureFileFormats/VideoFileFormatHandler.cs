@@ -26,7 +26,7 @@ namespace PhotoLocator.PictureFileFormats
                 frame => result = frame,
                 line =>
                 {
-                    //Debug.WriteLine(line);
+                    //System.Diagnostics.Debug.WriteLine(line);
                     ct.ThrowIfCancellationRequested();
                     if (timeStamp is null && line.Contains("  creation_time", StringComparison.Ordinal))
                     {

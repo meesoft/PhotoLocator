@@ -25,6 +25,7 @@ namespace PhotoLocator
         bool _isDraggingPreview, _isStartingFileItemDrag;
         int _selectStartIndex;
         CancellationTokenSource? _resamplerCancellation;
+        DispatcherTimer? _resamplerTimer;
         string[]? _draggedFiles;
 
         public MainWindow()
@@ -370,7 +371,14 @@ namespace PhotoLocator
         private void HandlePreviewCanvasSizeChanged(object sender, SizeChangedEventArgs e)
         {
             if (_viewModel.PreviewZoom == 0 && (_viewModel.Settings.LanczosUpscaling || _viewModel.Settings.LanczosDownscaling))
-                UpdateResampledImage();
+            {
+                _resamplerTimer ??= new DispatcherTimer(TimeSpan.FromSeconds(0.5), DispatcherPriority.ApplicationIdle, (s, e) =>
+                {
+                    _resamplerTimer?.Stop();
+                    UpdateResampledImage();
+                }, Dispatcher);
+                _resamplerTimer.Start();
+            }
         }
 
         private void HandlePreviewMouseWheel(object sender, MouseWheelEventArgs e)
@@ -441,7 +449,6 @@ namespace PhotoLocator
             Zoom100Item.IsChecked = _viewModel.PreviewZoom == 1;
             Zoom200Item.IsChecked = _viewModel.PreviewZoom == 2;
             Zoom400Item.IsChecked = _viewModel.PreviewZoom == 4;
-            ResampledPreviewImage.Source = null;
             if (_viewModel.PreviewZoom == 0)
             {
                 if (_viewModel.Settings.LanczosUpscaling || _viewModel.Settings.LanczosDownscaling)
@@ -452,18 +459,20 @@ namespace PhotoLocator
                 }
                 else // WPF scaling
                 {
-                    ResampledPreviewImage.Visibility = Visibility.Collapsed;
                     FullPreviewImage.Visibility = Visibility.Visible;
+                    ZoomedPreviewImage.Visibility = Visibility.Collapsed;
+                    ResampledPreviewImage.Visibility = Visibility.Collapsed;
+                    ResampledPreviewImage.Source = null;
                 }
-                ZoomedPreviewImage.Visibility = Visibility.Collapsed;
             }
             else
             {
-                FullPreviewImage.Visibility = Visibility.Collapsed;
-                ResampledPreviewImage.Visibility = Visibility.Collapsed;
                 ZoomedPreviewImage.Visibility = Visibility.Visible;
                 UpdateLayout();
                 InitializePreviewRenderTransform(true);
+                FullPreviewImage.Visibility = Visibility.Collapsed;
+                ResampledPreviewImage.Visibility = Visibility.Collapsed;
+                ResampledPreviewImage.Source = null;
             }
         }
 
@@ -473,7 +482,7 @@ namespace PhotoLocator
             _resamplerCancellation?.Dispose();
             _resamplerCancellation = null;
             var sourceImage = _viewModel.PreviewPictureSource;
-            if (sourceImage is null || PreviewCanvas.ActualWidth < 1 || PreviewCanvas.ActualHeight < 1)
+            if (sourceImage is null || PreviewCanvas.ActualWidth < 1 || PreviewCanvas.ActualHeight < 1 || _viewModel.PreviewZoom > 0)
             {
                 ResampledPreviewImage.Source = null;
                 return;
@@ -507,6 +516,7 @@ namespace PhotoLocator
                         tx, ty);
                     FullPreviewImage.Visibility = Visibility.Collapsed;
                 }
+                ZoomedPreviewImage.Visibility = Visibility.Collapsed;
             }
         }
 

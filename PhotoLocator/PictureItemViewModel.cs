@@ -317,14 +317,17 @@ namespace PhotoLocator
         {
             try
             {
+                Debug.WriteLine("Loading preview of " + Name);
                 return LoadPreviewInternal(maxWidth, preservePixelFormat, ct);
             }
             catch (OperationCanceledException)
             {
+                Debug.WriteLine("Cancelled loading preview of " + Name);
                 throw;
             }
             catch
             {
+                Debug.WriteLine("Loading thumbnail of " + Name);
                 return TryLoadShellThumbnail(large: true, ShellThumbnailFormatOption.Default, ct);
             }
         }

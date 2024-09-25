@@ -382,6 +382,9 @@ namespace PhotoLocator.Metadata
             if (longitudeRef == "W")
                 longitude.AngleInDegrees = -longitude.AngleInDegrees;
 
+            if (latitude.AngleInDegrees == 0 && longitude.AngleInDegrees == 0)
+                return null;
+
             //byte[] altitude = (byte[])metadata.GetQuery(GpsAltitudeQuery);
 
             return new Location(latitude: latitude.AngleInDegrees, longitude: longitude.AngleInDegrees);
