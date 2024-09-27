@@ -33,9 +33,9 @@ namespace PhotoLocator.PictureFileFormats
             var ext = Path.GetExtension(outPath).ToUpperInvariant();
             BitmapEncoder encoder;
             if (ext is ".JPG" or ".JPEG")
-                encoder = new JpegBitmapEncoder();
+                encoder = new JpegBitmapEncoder() { QualityLevel = 95 };
             else if (ext is ".TIF" or ".TIFF")
-                encoder = new TiffBitmapEncoder();
+                encoder = new TiffBitmapEncoder(); // Default is best compression
             else if (ext is ".PNG")
                 encoder = new PngBitmapEncoder();
             else if (ext is ".BMP")
