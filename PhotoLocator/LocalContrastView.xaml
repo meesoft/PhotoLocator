@@ -41,38 +41,73 @@
             
             <StackPanel Margin="0,0,4,0">
                 <TextBlock Text="Local adjustments" FontWeight="Bold" Margin="0,0,0,4"/>
+                
                 <DockPanel>
-                    <TextBlock Text="Highlight"/>
+                    <TextBlock Text="Local brightness">
+                        <TextBlock.InputBindings>
+                            <MouseBinding Command="{Binding ResetHighlightCommand}" MouseAction="LeftClick" />
+                        </TextBlock.InputBindings>
+                    </TextBlock>
                     <TextBox Text="{Binding HighlightStrength,StringFormat=N1,UpdateSourceTrigger=PropertyChanged,Delay=500}" Width="80" HorizontalAlignment="Right" />
                 </DockPanel>
                 <Slider Value="{Binding HighlightStrength}" Minimum="0" Maximum="100" SmallChange="1" LargeChange="10" />
 
                 <DockPanel>
-                    <TextBlock Text="Shadow"/>
+                    <TextBlock Text="Local shadow">
+                        <TextBlock.InputBindings>
+                            <MouseBinding Command="{Binding ResetShadowCommand}" MouseAction="LeftClick" />
+                        </TextBlock.InputBindings>
+                    </TextBlock>
                     <TextBox Text="{Binding ShadowStrength,StringFormat=N1,UpdateSourceTrigger=PropertyChanged,Delay=500}" Width="80" HorizontalAlignment="Right" />
                 </DockPanel>
                 <Slider Value="{Binding ShadowStrength}" Minimum="0" Maximum="100" SmallChange="1" LargeChange="10" />
 
                 <DockPanel>
-                    <TextBlock Text="Maximum stretch"/>
+                    <TextBlock Text="Maximum stretch">
+                        <TextBlock.InputBindings>
+                            <MouseBinding Command="{Binding ResetMaxStretchCommand}" MouseAction="LeftClick" />
+                        </TextBlock.InputBindings>
+                    </TextBlock>
                     <TextBox Text="{Binding MaxStretch,StringFormat=N1,UpdateSourceTrigger=PropertyChanged,Delay=500}" Width="80" HorizontalAlignment="Right" />
                 </DockPanel>
                 <Slider Value="{Binding MaxStretch}" Minimum="0" Maximum="100" SmallChange="1" LargeChange="10" />
 
                 <DockPanel>
-                    <TextBlock Text="Outlier reduction"/>
+                    <TextBlock Text="Outlier reduction">
+                        <TextBlock.InputBindings>
+                            <MouseBinding Command="{Binding ResetOutlierReductionCommand}" MouseAction="LeftClick" />
+                        </TextBlock.InputBindings>
+                    </TextBlock>
                     <TextBox Text="{Binding OutlierReductionStrength,StringFormat=N1,UpdateSourceTrigger=PropertyChanged,Delay=500}" Width="80" HorizontalAlignment="Right" />
                 </DockPanel>
                 <Slider Value="{Binding OutlierReductionStrength}" Minimum="0" Maximum="100" SmallChange="1" LargeChange="10"/>
 
                 <DockPanel>
-                    <TextBlock Text="Tone mapping"/>
+                    <TextBlock Text="Contrast">
+                        <TextBlock.InputBindings>
+                            <MouseBinding Command="{Binding ResetContrastCommand}" MouseAction="LeftClick" />
+                        </TextBlock.InputBindings>
+                    </TextBlock>
+                    <TextBox Text="{Binding Contrast,StringFormat=N2,UpdateSourceTrigger=PropertyChanged,Delay=500}" Width="80" HorizontalAlignment="Right" />
+                </DockPanel>
+                <Slider Value="{Binding Contrast}" Minimum="0.5" Maximum="1.5" SmallChange="0.02" LargeChange="0.1"/>
+
+                <DockPanel>
+                    <TextBlock Text="Tone mapping">
+                        <TextBlock.InputBindings>
+                            <MouseBinding Command="{Binding ResetToneMappingCommand}" MouseAction="LeftClick" />
+                        </TextBlock.InputBindings>
+                    </TextBlock>
                     <TextBox Text="{Binding ToneMapping,StringFormat=N2,UpdateSourceTrigger=PropertyChanged,Delay=500}" Width="80" HorizontalAlignment="Right" />
                 </DockPanel>
                 <Slider Value="{Binding ToneMapping}" Minimum="0" Maximum="2" SmallChange="0.02" LargeChange="0.1"/>
 
                 <DockPanel>
-                    <TextBlock Text="Details"/>
+                    <TextBlock Text="Details">
+                        <TextBlock.InputBindings>
+                            <MouseBinding Command="{Binding ResetDetailHandlingCommand}" MouseAction="LeftClick" />
+                        </TextBlock.InputBindings>
+                    </TextBlock>
                     <TextBox Text="{Binding DetailHandling,StringFormat=N2,UpdateSourceTrigger=PropertyChanged,Delay=500}" Width="80" HorizontalAlignment="Right" />
                 </DockPanel>
                 <Slider Value="{Binding DetailHandling}" Minimum="0" Maximum="2" SmallChange="0.02" LargeChange="0.1"/>
@@ -83,31 +118,51 @@
                 </DockPanel>
 
                 <DockPanel>
-                    <TextBlock Text="Hue"/>
+                    <TextBlock Text="Hue">
+                        <TextBlock.InputBindings>
+                            <MouseBinding Command="{Binding ResetHueAdjustCommand}" MouseAction="LeftClick" />
+                        </TextBlock.InputBindings>
+                    </TextBlock>
                     <TextBox Text="{Binding HueAdjust,StringFormat=N2,UpdateSourceTrigger=PropertyChanged,Delay=500}" Width="80" HorizontalAlignment="Right" />
                 </DockPanel>
                 <Slider Value="{Binding HueAdjust}" Minimum="-0.5" Maximum="0.5" SmallChange="0.02" LargeChange="0.1"/>
 
                 <DockPanel>
-                    <TextBlock Text="Saturation"/>
+                    <TextBlock Text="Saturation">
+                        <TextBlock.InputBindings>
+                            <MouseBinding Command="{Binding ResetSaturationAdjustCommand}" MouseAction="LeftClick" />
+                        </TextBlock.InputBindings>
+                    </TextBlock>
                     <TextBox Text="{Binding SaturationAdjust,StringFormat=N2,UpdateSourceTrigger=PropertyChanged,Delay=500}" Width="80" HorizontalAlignment="Right" />
                 </DockPanel>
                 <Slider Value="{Binding SaturationAdjust}" Minimum="0" Maximum="2" SmallChange="0.02" LargeChange="0.1"/>
 
                 <DockPanel>
-                    <TextBlock Text="Intensity"/>
+                    <TextBlock Text="Intensity">
+                        <TextBlock.InputBindings>
+                            <MouseBinding Command="{Binding ResetIntensityAdjustCommand}" MouseAction="LeftClick" />
+                        </TextBlock.InputBindings>
+                    </TextBlock>
                     <TextBox Text="{Binding IntensityAdjust,StringFormat=N2,UpdateSourceTrigger=PropertyChanged,Delay=500}" Width="80" HorizontalAlignment="Right" />
                 </DockPanel>
                 <Slider Value="{Binding IntensityAdjust}" Minimum="0" Maximum="2" SmallChange="0.02" LargeChange="0.1"/>
 
                 <DockPanel>
-                    <TextBlock Text="Hue uniformity"/>
+                    <TextBlock Text="Hue uniformity">
+                        <TextBlock.InputBindings>
+                            <MouseBinding Command="{Binding ResetHueUniformityCommand}" MouseAction="LeftClick" />
+                        </TextBlock.InputBindings>
+                    </TextBlock>
                     <TextBox Text="{Binding HueUniformity,StringFormat=N2,UpdateSourceTrigger=PropertyChanged,Delay=500}" Width="80" HorizontalAlignment="Right" />
                 </DockPanel>
                 <Slider Value="{Binding HueUniformity}" Minimum="0" Maximum="1" SmallChange="0.02" LargeChange="0.1"/>
 
                 <DockPanel>
-                    <TextBlock Text="Rotation"/>
+                    <TextBlock Text="Rotation">
+                        <TextBlock.InputBindings>
+                            <MouseBinding Command="{Binding ResetToneRotationCommand}" MouseAction="LeftClick" />
+                        </TextBlock.InputBindings>
+                    </TextBlock>
                     <TextBox Text="{Binding ToneRotation,StringFormat=N2,UpdateSourceTrigger=PropertyChanged,Delay=500}" Width="80" HorizontalAlignment="Right" />
                 </DockPanel>
                 <Slider Value="{Binding ToneRotation}" Minimum="-0.2" Maximum="0.2" SmallChange="0.01" LargeChange="0.05"/>

@@ -176,6 +176,7 @@ namespace PhotoLocator.BitmapOperations
             DstBitmap.New(_srcHSI.Width, _srcHSI.Height, 3);
             Parallel.For(0, _srcHSI.Height, y =>
             {
+                var toneAdjustments = ToneAdjustments;
                 unsafe
                 {
                     fixed (float* src = &_srcHSI.Elements[y, 0])
@@ -197,38 +198,38 @@ namespace PhotoLocator.BitmapOperations
                             var toneWeight = 1 - nextToneWeight;
 
                             var hue = src[xx];
-                            if (ToneAdjustments[toneIndex].HueUniformity > 0 || ToneAdjustments[nextToneIndex].HueUniformity > 0)
+                            if (toneAdjustments[toneIndex].HueUniformity > 0 || toneAdjustments[nextToneIndex].HueUniformity > 0)
                             {
-                                var toneHue = ToneAdjustments[toneIndex].ToneHue + Rotation;
+                                var toneHue = toneAdjustments[toneIndex].ToneHue + Rotation;
                                 if (toneHue < hue - 0.5f)
                                     toneHue++;
                                 else if (toneHue > hue + 0.5f)
                                     toneHue--;
-                                var nextToneHue = ToneAdjustments[nextToneIndex].ToneHue + Rotation;
+                                var nextToneHue = toneAdjustments[nextToneIndex].ToneHue + Rotation;
                                 if (nextToneHue < hue - 0.5f)
                                     nextToneHue++;
                                 else if (nextToneHue > hue + 0.5f)
                                     nextToneHue--;
 
-                                var toneHueWeight = ToneAdjustments[toneIndex].HueUniformity * toneWeight;
-                                var nextToneHueWeight = ToneAdjustments[nextToneIndex].HueUniformity * nextToneWeight;
+                                var toneHueWeight = toneAdjustments[toneIndex].HueUniformity * toneWeight;
+                                var nextToneHueWeight = toneAdjustments[nextToneIndex].HueUniformity * nextToneWeight;
                                 hue = hue * (1 - toneHueWeight - nextToneHueWeight) +
                                     toneHue * toneHueWeight +
                                     nextToneHue * nextToneHueWeight;
                             }
                             var h = hue +
-                                ToneAdjustments[toneIndex].AdjustHue * toneWeight +
-                                ToneAdjustments[nextToneIndex].AdjustHue * nextToneWeight;
+                                toneAdjustments[toneIndex].AdjustHue * toneWeight +
+                                toneAdjustments[nextToneIndex].AdjustHue * nextToneWeight;
                             var s = src[xx + 1] *
-                                (1 - toneWeight + ToneAdjustments[toneIndex].AdjustSaturation * toneWeight) *
-                                (1 - nextToneWeight + ToneAdjustments[nextToneIndex].AdjustSaturation * nextToneWeight);
+                                (1 - toneWeight + toneAdjustments[toneIndex].AdjustSaturation * toneWeight) *
+                                (1 - nextToneWeight + toneAdjustments[nextToneIndex].AdjustSaturation * nextToneWeight);
                             if (s > 1)
                                 s = 1;
                             toneWeight *= s;
                             nextToneWeight *= s;
                             var i = src[xx + 2] *
-                                (1 - toneWeight + ToneAdjustments[toneIndex].AdjustIntensity * toneWeight) *
-                                (1 - nextToneWeight + ToneAdjustments[nextToneIndex].AdjustIntensity * nextToneWeight);
+                                (1 - toneWeight + toneAdjustments[toneIndex].AdjustIntensity * toneWeight) *
+                                (1 - nextToneWeight + toneAdjustments[nextToneIndex].AdjustIntensity * nextToneWeight);
                             ColorTransformHSI2RGB(h, s, i, out dst[xx], out dst[xx + 1], out dst[xx + 2]);
                             xx += 3;
                         }

@@ -434,7 +434,7 @@ namespace PhotoLocator
                     ProgressBarValue = Math.Max(ProgressBarValue, progress);
                 }, ct);
             }
-            catch (Exception ex)
+            catch (Exception ex) when (ex is not OperationCanceledException)
             {
                 TaskbarProgressState = TaskbarItemProgressState.Error;
                 IsProgressBarVisible = false;
@@ -1056,6 +1056,7 @@ namespace PhotoLocator
             int iEnd = candidates.Length;
             for (int i = 0; i < candidates.Length; i++)
                 reordered[i] = (i & 1) == 0 ? candidates[iStart++] : candidates[--iEnd];
+            int progress = 0;
             _loadPicturesTask = Parallel.ForEachAsync(reordered,
                 new ParallelOptions { MaxDegreeOfParallelism = 2, CancellationToken = _loadCancellation.Token },
                 async (item, ct) =>
@@ -1063,6 +1064,8 @@ namespace PhotoLocator
                     await item.LoadThumbnailAndMetadataAsync(ct);
                     if (item.IsSelected && item.GeoTag != null)
                         MapCenter = item.GeoTag;
+                    if ((++progress & 7) == 0)
+                        ProgressBarValue = (double)progress / reordered.Length;
                 });
             await _loadPicturesTask;
             _loadPicturesTask = null;
@@ -1073,9 +1076,8 @@ namespace PhotoLocator
             if (_loadPicturesTask != null)
                 await RunProcessWithProgressBarAsync(async (progressCallback, ct) =>
                 {
-                    progressCallback(-1);
-                    if (_loadPicturesTask != null)
-                        await _loadPicturesTask;
+                    while (_loadPicturesTask != null && await Task.WhenAny(_loadPicturesTask, Task.Delay(TimeSpan.FromSeconds(10), ct)) != _loadPicturesTask)
+                        ct.ThrowIfCancellationRequested();
                     _loadPicturesTask = null;
                 }, "Loading");
         }
