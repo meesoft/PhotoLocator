@@ -141,6 +141,10 @@ namespace PhotoLocator
         {
             if (string.IsNullOrEmpty(TraceFilePath))
                 return GpsTraces;
+
+            // Support Windows Copy Full Path string to be used by the user, Example: "C:\temp\file.jpeg"
+            if (TraceFilePath.Contains("\"")) TraceFilePath = TraceFilePath.Replace("\"", "");
+
             var minDistance = TimeSpan.FromMinutes(MaxTimestampDifference);
             Directory.SetCurrentDirectory(Path.GetDirectoryName(_selectedItems.First().FullPath)!);
             if (File.Exists(TraceFilePath))
