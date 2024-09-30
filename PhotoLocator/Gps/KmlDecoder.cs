@@ -1,4 +1,5 @@
 ﻿using MapControl;
+using PhotoLocator.Extensions;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
@@ -44,9 +45,12 @@ namespace PhotoLocator.Gps
                         else if (child.Name == "gx:coord")
                         {
                             var coords = child.InnerText.Split(' ');
+                            var latitudeString = coords[1].ResolveInvalidNumberFormat();
+                            var longitudeString = coords[0].ResolveInvalidNumberFormat();
+
                             placemark.Coordinates.Add(new Location(
-                                double.Parse(coords[1], CultureInfo.InvariantCulture),
-                                double.Parse(coords[0], CultureInfo.InvariantCulture)));
+                                double.Parse(latitudeString, CultureInfo.InvariantCulture),
+                                double.Parse(longitudeString, CultureInfo.InvariantCulture)));
                             if (placemark.StartTime != default)
                             {
                                 placemarks.Add(placemark);
@@ -69,9 +73,12 @@ namespace PhotoLocator.Gps
                     foreach (var coord in coordsNode.InnerText.Split(' ', StringSplitOptions.RemoveEmptyEntries))
                     {
                         var coords = coord.Split(',');
+                        var latitudeString = coords[1].ResolveInvalidNumberFormat();
+                        var longitudeString = coords[0].ResolveInvalidNumberFormat();
+
                         placemark.Coordinates.Add(new Location(
-                            double.Parse(coords[1], CultureInfo.InvariantCulture),
-                            double.Parse(coords[0], CultureInfo.InvariantCulture)));
+                            double.Parse(latitudeString, CultureInfo.InvariantCulture),
+                            double.Parse(longitudeString, CultureInfo.InvariantCulture)));
                     }
                     placemarks.Add(placemark);
                 }

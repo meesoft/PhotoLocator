@@ -1,4 +1,5 @@
 ﻿using MapControl;
+using PhotoLocator.Extensions;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
@@ -29,9 +30,12 @@ namespace PhotoLocator.Gps
                         var time = trkpt["time"];
                         if (lat != null && lon != null && time != null)
                         {
+                            var latitudeString = lat.InnerText.ResolveInvalidNumberFormat();
+                            var longitudeString = lon.InnerText.ResolveInvalidNumberFormat();
+
                             trace.Locations.Add(new Location(
-                                double.Parse(lat.InnerText, CultureInfo.InvariantCulture),
-                                double.Parse(lon.InnerText, CultureInfo.InvariantCulture)));
+                                double.Parse(latitudeString, CultureInfo.InvariantCulture),
+                                double.Parse(longitudeString, CultureInfo.InvariantCulture)));
                             trace.TimeStamps.Add(DateTime.Parse(time.InnerText, CultureInfo.InvariantCulture));
                         }
                     }
