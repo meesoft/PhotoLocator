@@ -145,13 +145,23 @@ namespace PhotoLocator
             // Support Windows Copy Full Path string to be used by the user, Example: "C:\temp\file.jpeg"
             if (TraceFilePath.Contains("\"")) TraceFilePath = TraceFilePath.Replace("\"", "");
 
+            if (!Path.Exists(TraceFilePath))
+                throw new DirectoryNotFoundException("Provided gps trace file or folder not found");
+
             var minDistance = TimeSpan.FromMinutes(MaxTimestampDifference);
             Directory.SetCurrentDirectory(Path.GetDirectoryName(_selectedItems.First().FullPath)!);
-            if (File.Exists(TraceFilePath))
-                return GpsTraces.Concat(GpsTrace.DecodeGpsTraceFile(TraceFilePath, minDistance));
-            return GpsTraces.
-                Concat(Directory.EnumerateFiles(TraceFilePath, "*.gpx").SelectMany(fileName => GpsTrace.DecodeGpsTraceFile(fileName, minDistance))).
-                Concat(Directory.EnumerateFiles(TraceFilePath, "*.kml").SelectMany(fileName => GpsTrace.DecodeGpsTraceFile(fileName, minDistance)));
+
+            var fileAttributes = File.GetAttributes(TraceFilePath);
+            if (fileAttributes.HasFlag(FileAttributes.Directory))
+            {
+                // Folder with possibly multiple gps trace files instead of a single specific file
+                return GpsTraces.
+                    Concat(Directory.EnumerateFiles(TraceFilePath, "*.gpx").SelectMany(fileName => GpsTrace.DecodeGpsTraceFile(fileName, minDistance))).
+                    Concat(Directory.EnumerateFiles(TraceFilePath, "*.kml").SelectMany(fileName => GpsTrace.DecodeGpsTraceFile(fileName, minDistance)));
+            }
+
+            // Specific file
+            return GpsTraces.Concat(GpsTrace.DecodeGpsTraceFile(TraceFilePath, minDistance));
         }
 
         private void SaveSettings()
