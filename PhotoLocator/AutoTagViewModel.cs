@@ -139,7 +139,7 @@ namespace PhotoLocator
         
         private IEnumerable<GpsTrace> LoadAdditionalGpsTraces()
         {
-            if (string.IsNullOrEmpty(TraceFilePath))
+            if (string.IsNullOrWhiteSpace(TraceFilePath))
                 return GpsTraces;
 
             // Support Windows Copy Full Path string to be used by the user, Example: "C:\temp\file.jpeg"

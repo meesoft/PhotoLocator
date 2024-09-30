@@ -90,13 +90,13 @@ namespace PhotoLocator
 
         private void CheckToolPaths()
         {
-            if (string.IsNullOrEmpty(_viewModel.Settings.ExifToolPath))
+            if (string.IsNullOrWhiteSpace(_viewModel.Settings.ExifToolPath))
             {
                 var exifToolPath = Path.Combine(Path.GetDirectoryName(GetType().Assembly.Location)!, "exiftool");
                 if (Directory.Exists(exifToolPath))
                     _viewModel.Settings.ExifToolPath = Directory.EnumerateFiles(exifToolPath, "*.exe").FirstOrDefault();
             }
-            if (string.IsNullOrEmpty(_viewModel.Settings.FFmpegPath))
+            if (string.IsNullOrWhiteSpace(_viewModel.Settings.FFmpegPath))
             {
                 var ffmpegPath = Path.Combine(Path.GetDirectoryName(GetType().Assembly.Location)!, "ffmpeg", "ffmpeg.exe");
                 if (File.Exists(ffmpegPath))
@@ -117,7 +117,7 @@ namespace PhotoLocator
         {
             using var registrySettings = new RegistrySettings();
             registrySettings.AssignSettings(_viewModel.Settings);
-            if (!string.IsNullOrEmpty(_viewModel.PhotoFolderPath))
+            if (!string.IsNullOrWhiteSpace(_viewModel.PhotoFolderPath))
                 registrySettings.PhotoFolderPath = _viewModel.PhotoFolderPath;
             registrySettings.ViewMode = _viewModel.SelectedViewModeItem?.Tag as ViewMode? ?? ViewMode.Map;
             registrySettings.LeftColumnWidth = (int)LeftColumn.Width.Value;
