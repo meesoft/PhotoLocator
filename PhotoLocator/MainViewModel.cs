@@ -41,6 +41,7 @@ namespace PhotoLocator
         CancellationTokenSource? _processCancellation;
         FileSystemWatcher? _fileSystemWatcher;
         DispatcherOperation? _fileSystemWatcherUpdate;
+        double _loadImagesProgress;
         bool _titleUpdatePending;
         readonly List<(string Path, BitmapSource Picture)> _pictureCache = [];
 
@@ -1057,6 +1058,7 @@ namespace PhotoLocator
             for (int i = 0; i < candidates.Length; i++)
                 reordered[i] = (i & 1) == 0 ? candidates[iStart++] : candidates[--iEnd];
             int progress = 0;
+            _loadImagesProgress = 0;
             _loadPicturesTask = Parallel.ForEachAsync(reordered,
                 new ParallelOptions { MaxDegreeOfParallelism = 2, CancellationToken = _loadCancellation.Token },
                 async (item, ct) =>
@@ -1064,8 +1066,7 @@ namespace PhotoLocator
                     await item.LoadThumbnailAndMetadataAsync(ct);
                     if (item.IsSelected && item.GeoTag != null)
                         MapCenter = item.GeoTag;
-                    if ((++progress & 7) == 0)
-                        ProgressBarValue = (double)progress / reordered.Length;
+                    _loadImagesProgress = ++progress / (double)reordered.Length;
                 });
             await _loadPicturesTask;
             _loadPicturesTask = null;
@@ -1076,10 +1077,11 @@ namespace PhotoLocator
             if (_loadPicturesTask != null)
                 await RunProcessWithProgressBarAsync(async (progressCallback, ct) =>
                 {
-                    while (_loadPicturesTask != null && await Task.WhenAny(_loadPicturesTask, Task.Delay(TimeSpan.FromSeconds(10), ct)) != _loadPicturesTask)
-                        ct.ThrowIfCancellationRequested();
+                    progressCallback(_loadImagesProgress);
+                    while (_loadPicturesTask != null && await Task.WhenAny(_loadPicturesTask, Task.Delay(TimeSpan.FromSeconds(1), ct)) != _loadPicturesTask)
+                        progressCallback(_loadImagesProgress);
                     _loadPicturesTask = null;
-                }, "Loading");
+                }, "Loading images");
         }
 
         private void CancelPictureLoading()
