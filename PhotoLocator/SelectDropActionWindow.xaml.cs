@@ -47,7 +47,7 @@ namespace PhotoLocator
 
         public bool IsIncludeAvailable => DroppedEntries.Any(f => _mainViewModel.Items.All(i => i.FullPath != f));
 
-        public bool IsCopyAndMoveAvailable => !string.IsNullOrEmpty(CurrentPath) && Path.GetDirectoryName(DroppedEntries[0]) != CurrentPath;
+        public bool IsCopyAndMoveAvailable => !string.IsNullOrWhiteSpace(CurrentPath) && Path.GetDirectoryName(DroppedEntries[0]) != CurrentPath;
 
         public bool IsProgressBarVisible
         {
