@@ -55,14 +55,14 @@ namespace PhotoLocator.Settings
         public string? ExifToolPath
         {
             get => _exifToolPath;
-            set => SetProperty(ref _exifToolPath, value);
+            set => SetProperty(ref _exifToolPath, value?.Trim(' ', '"'));
         }
         string? _exifToolPath;
 
         public string? FFmpegPath
         {
             get => _ffmpegPath;
-            set => SetProperty(ref _ffmpegPath, value);
+            set => SetProperty(ref _ffmpegPath, value?.Trim(' ', '"'));
         }
         string? _ffmpegPath;
 

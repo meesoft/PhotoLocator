@@ -118,7 +118,7 @@ namespace PhotoLocator
         public string? PhotoFolderPath
         {
             get => _isInDesignMode ? nameof(PhotoFolderPath) : _photoFolderPath;
-            set => SetFolderPathAsync(value).WithExceptionShowing();
+            set => SetFolderPathAsync(value?.Trim(' ', '"')).WithExceptionShowing();
         }
         private string? _photoFolderPath;
 

@@ -36,7 +36,7 @@ namespace PhotoLocator
 
         public IEnumerable<GpsTrace> GpsTraces { get; }
 
-        public string? TraceFilePath { get => _traceFilePath; set => SetProperty(ref _traceFilePath, value); }
+        public string? TraceFilePath { get => _traceFilePath; set => SetProperty(ref _traceFilePath, value?.Trim(' ', '"')); }
         private string? _traceFilePath;
 
         /// <summary>
