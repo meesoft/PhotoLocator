@@ -16,7 +16,7 @@ using System.Windows.Threading;
 
 namespace PhotoLocator
 {
-    class LocalContrastViewModel : INotifyPropertyChanged
+    class LocalContrastViewModel : INotifyPropertyChanged, IImageZoomPreviewViewModel
     {
         static readonly List<double> _adjustmentClipboard = [];
         readonly DispatcherTimer _updateTimer;
@@ -52,8 +52,8 @@ namespace PhotoLocator
             return true;
         }
 
-        public BitmapSource? SourceBitmap 
-        { 
+        public BitmapSource? SourceBitmap
+        {
             get => _sourceBitmap;
             set
             {
@@ -78,6 +78,21 @@ namespace PhotoLocator
             set => SetProperty(ref _previewPictureSource, value);
         }
         private BitmapSource? _previewPictureSource;
+
+        public int PreviewZoom
+        {
+            get => _previewZoom;
+            set => SetProperty(ref _previewZoom, value);
+        }
+        private int _previewZoom;
+
+        public ICommand ToggleZoomCommand => new RelayCommand(o => PreviewZoom = PreviewZoom > 0 ? 0 : 1);
+        public ICommand ZoomToFitCommand => new RelayCommand(o => PreviewZoom = 0);
+        public ICommand Zoom100Command => new RelayCommand(o => PreviewZoom = 1);
+        public ICommand Zoom200Command => new RelayCommand(o => PreviewZoom = 2);
+        public ICommand Zoom400Command => new RelayCommand(o => PreviewZoom = 4);
+        public ICommand ZoomInCommand => new RelayCommand(o => PreviewZoom = Math.Min(PreviewZoom + 1, 4));
+        public ICommand ZoomOutCommand => new RelayCommand(o => PreviewZoom = Math.Max(PreviewZoom - 1, 0));
 
         public double HighlightStrength
         {
@@ -136,7 +151,7 @@ namespace PhotoLocator
         private double _outlierReductionStrength = DefaultOutlierReductionStrength;
 
         public const double DefaultOutlierReductionStrength = 10;
-        
+
         public ICommand ResetOutlierReductionCommand => new RelayCommand(o => OutlierReductionStrength = DefaultOutlierReductionStrength);
 
         public double Contrast
@@ -193,7 +208,7 @@ namespace PhotoLocator
                 UpdateColorTones();
                 for (int i = 0; i < ColorToneAdjustOperation.NumberOfTones; i++)
                 {
-                    yield return new ComboBoxItem { Content = _colorTones[i] };    
+                    yield return new ComboBoxItem { Content = _colorTones[i] };
                 }
                 yield return new ComboBoxItem { Content = "All" };
             }

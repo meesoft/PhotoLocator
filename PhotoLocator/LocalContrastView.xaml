@@ -20,6 +20,11 @@
     <Window.InputBindings>
         <KeyBinding Key="C" Modifiers="Ctrl+Shift" Command="{Binding CopyAdjustmentsCommand}" />
         <KeyBinding Key="V" Modifiers="Ctrl+Shift" Command="{Binding PasteAdjustmentsCommand}" />
+        <KeyBinding Key="D1" Modifiers="Ctrl" Command="{Binding ZoomToFitCommand}" />
+        <KeyBinding Key="D2" Modifiers="Ctrl" Command="{Binding Zoom100Command}" />
+        <KeyBinding Key="D3" Modifiers="Ctrl" Command="{Binding Zoom200Command}" />
+        <KeyBinding Key="D4" Modifiers="Ctrl" Command="{Binding Zoom400Command}" />
+        <KeyBinding Key="A" Modifiers="Alt" Command="{Binding ToggleZoomCommand}" />        
     </Window.InputBindings>
     <Window.ContextMenu>
         <ContextMenu>
@@ -183,7 +188,25 @@
                 </Grid>
             </StackPanel>
         </ScrollViewer>
-        
-        <Image Grid.Column="1" Source="{Binding PreviewPictureSource}" SnapsToDevicePixels="True" />
+
+        <Grid Grid.Column="1" PreviewMouseWheel="HandlePreviewMouseWheel">
+            <Image Name="FullPreviewImage" Source="{Binding PreviewPictureSource}" SnapsToDevicePixels="True" />
+            <Canvas Name="PreviewCanvas" ClipToBounds="True" UseLayoutRounding="True">
+                <Image Name="ZoomedPreviewImage" Source="{Binding PreviewPictureSource}" SnapsToDevicePixels="True"
+                       Stretch="None" RenderOptions.BitmapScalingMode="NearestNeighbor" />
+            </Canvas>
+            
+            <Grid.ContextMenu>
+                <ContextMenu>
+                    <MenuItem Header="Zoom to fit (Ctrl+1)" IsCheckable="True" IsChecked="True" Name="ZoomToFitItem" Command="{Binding ZoomToFitCommand}" />
+                    <MenuItem Header="100% (Ctrl+2)" IsCheckable="True" Name="Zoom100Item" Command="{Binding Zoom100Command}"/>
+                    <MenuItem Header="200% (Ctrl+3)" IsCheckable="True" Name="Zoom200Item" Command="{Binding Zoom200Command}" />
+                    <MenuItem Header="400% (Ctrl+4)" IsCheckable="True" Name="Zoom400Item" Command="{Binding Zoom400Command}"  />
+                    <Separator />
+                    <MenuItem Header="Copy adjustments (Ctrl+Shift+C)" Command="{Binding CopyAdjustmentsCommand}" />
+                    <MenuItem Header="Paste adjustments (Ctrl+Shift+V)" Command="{Binding PasteAdjustmentsCommand}" />
+                </ContextMenu>
+            </Grid.ContextMenu>
+        </Grid>
     </Grid>
 </Window>

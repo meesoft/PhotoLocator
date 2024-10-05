@@ -21,8 +21,9 @@ namespace PhotoLocator
     public sealed partial class MainWindow : Window, IDisposable
     {
         readonly MainViewModel _viewModel;
+        readonly ImageZoomPreviewViewHelper _zoomPreviewViewHelper;
         Point _previousMousePosition;
-        bool _isDraggingPreview, _isStartingFileItemDrag;
+        bool _isStartingFileItemDrag;
         int _selectStartIndex;
         CancellationTokenSource? _resamplerCancellation;
         DispatcherTimer? _resamplerTimer;
@@ -40,6 +41,7 @@ namespace PhotoLocator
             DataContext = _viewModel;
             _viewModel.PropertyChanged += HandleViewModelPropertyChanged;
             _viewModel.Settings.PropertyChanged += HandleViewModelPropertyChanged;
+            _zoomPreviewViewHelper = new ImageZoomPreviewViewHelper(PreviewCanvas, ZoomedPreviewImage, _viewModel);
             CropGrid.DataContext = CropGrid;
         }
 
@@ -315,7 +317,7 @@ namespace PhotoLocator
             if (e.PropertyName == nameof(_viewModel.PreviewPictureSource))
             {
                 if (_viewModel.PreviewZoom > 0)
-                    InitializePreviewRenderTransform(false);
+                    _zoomPreviewViewHelper.InitializePreviewRenderTransform(false);
                 else
                 {
                     if (_viewModel.Settings.LanczosUpscaling || _viewModel.Settings.LanczosDownscaling)
@@ -408,41 +410,6 @@ namespace PhotoLocator
             e.Handled = true;
         }
 
-        private void HandlePreviewImageMouseDown(object sender, MouseButtonEventArgs e)
-        {
-            if (_viewModel.PreviewZoom > 0 && e.ChangedButton is MouseButton.Left or MouseButton.Middle)
-            {
-                _previousMousePosition = e.GetPosition(this);
-                _isDraggingPreview = _viewModel.PreviewZoom != 0;
-                e.Handled = true;
-            }
-        }
-
-        private void HandlePreviewImageMouseMove(object sender, MouseEventArgs e)
-        {
-            if ((e.LeftButton == MouseButtonState.Pressed || e.MiddleButton == MouseButtonState.Pressed) &&
-                _isDraggingPreview && ZoomedPreviewImage.RenderTransform is MatrixTransform transform)
-            {
-                e.Handled = true;
-                var pt = e.GetPosition(this);
-                if (pt.Equals(_previousMousePosition))
-                    return;
-                var tx = transform.Matrix.OffsetX + pt.X - _previousMousePosition.X;
-                var ty = transform.Matrix.OffsetY + pt.Y - _previousMousePosition.Y;
-                if (tx > 0)
-                    tx = transform.Matrix.OffsetX > 0 ? transform.Matrix.OffsetX : 0;
-                if (ty > 0)
-                    ty = transform.Matrix.OffsetY > 0 ? transform.Matrix.OffsetY : 0;
-                ZoomedPreviewImage.RenderTransform = new MatrixTransform(
-                    transform.Matrix.M11, transform.Matrix.M12,
-                    transform.Matrix.M21, transform.Matrix.M22,
-                    tx, ty);
-                _previousMousePosition = pt;
-            }
-            else
-                _isDraggingPreview = false;
-        }
-
         private void UpdatePreviewZoom()
         {
             ZoomToFitItem.IsChecked = _viewModel.PreviewZoom == 0;
@@ -469,7 +436,7 @@ namespace PhotoLocator
             {
                 ZoomedPreviewImage.Visibility = Visibility.Visible;
                 UpdateLayout();
-                InitializePreviewRenderTransform(true);
+                _zoomPreviewViewHelper.InitializePreviewRenderTransform(true);
                 FullPreviewImage.Visibility = Visibility.Collapsed;
                 ResampledPreviewImage.Visibility = Visibility.Collapsed;
                 ResampledPreviewImage.Source = null;
@@ -508,8 +475,8 @@ namespace PhotoLocator
                     FullPreviewImage.Visibility = Visibility.Visible;
                 else
                 {
-                    var tx = CalcCenterTranslation(PreviewCanvas.ActualWidth, resampled.PixelWidth, 1, screenDpi.PixelsPerInchX);
-                    var ty = CalcCenterTranslation(PreviewCanvas.ActualHeight, resampled.PixelHeight, 1, screenDpi.PixelsPerInchY);
+                    var tx = ImageZoomPreviewViewHelper.CalcCenterTranslation(PreviewCanvas.ActualWidth, resampled.PixelWidth, 1, screenDpi.PixelsPerInchX);
+                    var ty = ImageZoomPreviewViewHelper.CalcCenterTranslation(PreviewCanvas.ActualHeight, resampled.PixelHeight, 1, screenDpi.PixelsPerInchY);
                     ResampledPreviewImage.RenderTransform = new MatrixTransform(
                         1, 0,
                         0, 1,
@@ -518,30 +485,6 @@ namespace PhotoLocator
                 }
                 ZoomedPreviewImage.Visibility = Visibility.Collapsed;
             }
-        }
-
-        private void InitializePreviewRenderTransform(bool forceReset)
-        {
-            if (_viewModel.PreviewPictureSource is null)
-                return;
-            var screenDpi = VisualTreeHelper.GetDpi(this);
-            var zoom = _viewModel.PreviewZoom;
-            var sx = _viewModel.PreviewPictureSource.DpiX / screenDpi.PixelsPerInchX * zoom;
-            var sy = _viewModel.PreviewPictureSource.DpiY / screenDpi.PixelsPerInchY * zoom;
-            var tx = CalcCenterTranslation(PreviewCanvas.ActualWidth, _viewModel.PreviewPictureSource.PixelWidth, zoom, screenDpi.PixelsPerInchX);
-            var ty = CalcCenterTranslation(PreviewCanvas.ActualHeight, _viewModel.PreviewPictureSource.PixelHeight, zoom, screenDpi.PixelsPerInchY);
-            if (!forceReset && ZoomedPreviewImage.RenderTransform is MatrixTransform m && 
-                m.Matrix.M11 == sx && m.Matrix.M22 == sy && m.Matrix.OffsetX <= 0 && m.Matrix.OffsetY <= 0 && tx <=0 && ty <= 0)
-                return;
-            ZoomedPreviewImage.RenderTransform = new MatrixTransform(
-                sx, 0,
-                0, sy,
-                tx, ty);
-        }
-
-        static double CalcCenterTranslation(double canvasSizeIn96, int imageSize, int zoom, double screenDpi)
-        {
-            return IntMath.Round((canvasSizeIn96 - imageSize * zoom / screenDpi * 96) / 2) + 0.5;
         }
 
         public void Dispose()

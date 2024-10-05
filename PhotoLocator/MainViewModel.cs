@@ -27,7 +27,7 @@ using System.Windows.Threading;
 
 namespace PhotoLocator
 {
-    public sealed class MainViewModel : INotifyPropertyChanged, IDisposable, IMainViewModel
+    public sealed class MainViewModel : INotifyPropertyChanged, IDisposable, IMainViewModel, IImageZoomPreviewViewModel
     {
 #if DEBUG
         static readonly bool _isInDesignMode = DesignerProperties.GetIsInDesignMode(new DependencyObject());
@@ -210,7 +210,6 @@ namespace PhotoLocator
         public string? PreviewPictureTitle { get => _previewPictureTitle; set => SetProperty(ref _previewPictureTitle, value); }
         private string? _previewPictureTitle;
 
-        /// <summary> Zoom level or 0 for auto </summary>
         public int PreviewZoom
         {
             get => _previewZoom;
