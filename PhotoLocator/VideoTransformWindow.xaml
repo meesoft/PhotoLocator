@@ -62,7 +62,8 @@
             <Button Content="Setup" Command="{Binding SetupLocalContrastCommand}" Width="80" IsEnabled="{Binding IsLocalContrastChecked}" />
         </StackPanel>
         <StackPanel Orientation="Horizontal" Margin="0,4,0,0">
-            <CheckBox Content="Rolling average:" IsChecked="{Binding IsRollingAverageChecked}" Width="140" />
+            <CheckBox Content="Rolling average:" Width="140" 
+                      IsChecked="{Binding IsRollingAverageChecked}" IsEnabled="{Binding IsLocalContrastEnabled}" />
             <TextBox Text="{Binding RollingAverageFrames}" IsEnabled="{Binding IsRollingAverageChecked}" Width="140"/>
         </StackPanel>
 
