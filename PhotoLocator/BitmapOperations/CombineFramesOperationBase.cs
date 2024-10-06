@@ -8,10 +8,10 @@ using System.Windows.Media.Imaging;
 
 namespace PhotoLocator.BitmapOperations
 {
-    enum RegistrationMethod { None, BlackBorders, MirrorBorders };
-
     abstract class CombineFramesOperationBase : IDisposable
     {
+        protected enum RegistrationMethod { None, BlackBorders, MirrorBorders };
+
         protected readonly CancellationToken _ct;
         readonly BitmapSource? _darkFrame;
         readonly RegistrationMethod _registrationMethod;

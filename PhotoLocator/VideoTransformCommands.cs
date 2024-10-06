@@ -90,34 +90,6 @@ namespace PhotoLocator
         }
         string _duration = string.Empty;
 
-        public bool IsTrimChecked
-        {
-            get => _isTrimChecked;
-            set
-            {
-                if (SetProperty(ref _isTrimChecked, value))
-                {
-                    UpdateStabilizeArgs();
-                    UpdateProcessArgs();
-                }
-            }
-        }
-        bool _isTrimChecked;        
-
-        public string TrimRange
-        {
-            get => _trimRange;
-            set
-            {
-                if (SetProperty(ref _trimRange, value.Trim()))
-                {
-                    UpdateStabilizeArgs();
-                    UpdateProcessArgs();
-                }
-            }
-        }
-        string _trimRange = "start:end";
-
         public bool IsRotateChecked
         {
             get => _isRotateChecked;
@@ -253,18 +225,20 @@ namespace PhotoLocator
         }
         string _stabilizeArguments = string.Empty;
 
+        public bool IsLocalContrastEnabled => OutputMode is OutputMode.Video or OutputMode.ImageSequence;
+
         public bool IsLocalContrastChecked
         {
-            get => _isLocalContrastChecked;
+            get => _localContrastSetup is not null;
             set
             {
-                if (SetProperty(ref _isLocalContrastChecked, value) && value)
+                if (value)
                     SetupLocalContrastCommand.Execute(null);
+                else
+                    _localContrastSetup = null;
+                PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(IsLocalContrastChecked)));
             }
         }
-        bool _isLocalContrastChecked;
-
-        public bool IsLocalContrastEnabled => OutputMode is OutputMode.Video or OutputMode.ImageSequence;
 
         public ICommand SetupLocalContrastCommand => new RelayCommand(o =>
         {
@@ -283,6 +257,24 @@ namespace PhotoLocator
             window.DataContext = null;
         });
         LocalContrastViewModel? _localContrastSetup;
+
+        public bool IsRollingAverageChecked
+        {
+            get => _isRollingAverageChecked;
+            set
+            {
+                if (SetProperty(ref _isRollingAverageChecked, value))
+                    PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(IsCombineFramesOperation)));
+            }
+        }
+        bool _isRollingAverageChecked;
+
+        public int RollingAverageFrames
+        {
+            get => _rollingAverageFrames;
+            set => SetProperty(ref _rollingAverageFrames, Math.Max(1, value));
+        }
+        int _rollingAverageFrames = 10;
 
         public OutputMode OutputMode
         {
@@ -363,7 +355,7 @@ namespace PhotoLocator
         }
         bool _isRemoveAudioChecked;
 
-        public bool IsCombineFramesOperation => OutputMode is OutputMode.Average or OutputMode.Max;
+        public bool IsCombineFramesOperation => IsRollingAverageChecked || OutputMode is OutputMode.Average or OutputMode.Max;
 
         public bool IsRegisterFramesChecked
         {
@@ -451,8 +443,6 @@ namespace PhotoLocator
             if (IsStabilizeChecked)
             {
                 var filters = new List<string>();
-                if (IsTrimChecked)
-                    filters.Add($"trim={TrimRange}");
                 if (IsCropChecked)
                     filters.Add($"crop={CropWindow}");
                 if (IsScaleChecked)
@@ -469,8 +459,6 @@ namespace PhotoLocator
         private void UpdateProcessArgs()
         {
             var filters = new List<string>();
-            if (IsTrimChecked)
-                filters.Add($"trim={TrimRange}");
             if (IsRotateChecked)
                 filters.Add($"rotate={RotationAngle}*PI/180");
             if (IsCropChecked)
@@ -659,8 +647,7 @@ namespace PhotoLocator
                 var args = $"{InputArguments} {ProcessArguments} {OutputArguments}";
                 if (OutputMode is OutputMode.Average)
                 {
-                    using var process = new AverageFramesOperation(DarkFramePath, 
-                        IsRegisterFramesChecked ? RegistrationMethod.MirrorBorders : RegistrationMethod.None, ParseRegistrationRegion(), ct);
+                    using var process = new AverageFramesOperation(DarkFramePath, IsRegisterFramesChecked, ParseRegistrationRegion(), ct);
                     await _videoTransforms.RunFFmpegWithStreamOutputImagesAsync(args, process.ProcessImage, ProcessStdError).ConfigureAwait(false);
                     if (process.Supports16BitResult() && Path.GetExtension(outFileName).ToUpperInvariant() is ".PNG" or ".TIF" or ".TIFF" or ".JXR")
                         GeneralFileFormatHandler.SaveToFile(process.GetResult16(), outFileName, CreateImageMetadata());
@@ -670,35 +657,34 @@ namespace PhotoLocator
                 }
                 else if (OutputMode is OutputMode.Max)
                 {
-                    using var process = new MaxFramesOperation(DarkFramePath, 
-                        IsRegisterFramesChecked ? RegistrationMethod.BlackBorders : RegistrationMethod.None, ParseRegistrationRegion(), ct);
+                    using var process = new MaxFramesOperation(DarkFramePath, IsRegisterFramesChecked, ParseRegistrationRegion(), ct);
                     await _videoTransforms.RunFFmpegWithStreamOutputImagesAsync(args, process.ProcessImage, ProcessStdError).ConfigureAwait(false);
                     GeneralFileFormatHandler.SaveToFile(process.GetResult8(), outFileName, CreateImageMetadata());
                     message = $"Processed {process.ProcessedImages} frames in {sw.Elapsed.TotalSeconds:N1}s";
                 }
-                else if (IsLocalContrastChecked && _localContrastSetup is not null)
+                else if (IsLocalContrastChecked || IsRollingAverageChecked)
                 {
                     if (!string.IsNullOrEmpty(FrameRate))
                     {
                         _fps = double.Parse(FrameRate, CultureInfo.InvariantCulture);
                         _hasFps = true;
                     }
-                    //var runningAverage = new RunningAverageOperation(10, DarkFramePath, ct);
+                    var runningAverage = IsRollingAverageChecked ? new RollingAverageOperation(RollingAverageFrames, DarkFramePath, IsRegisterFramesChecked, ParseRegistrationRegion(), ct) : null;
                     using var frameEnumerator = new CallbackEnumerable<BitmapSource>();
                     var readTask = _videoTransforms.RunFFmpegWithStreamOutputImagesAsync($"{InputArguments} {ProcessArguments}", 
                         source =>
                         {
-                            //if (runningAverage is not null)
-                            //{
-                            //    runningAverage.ProcessImage(source);
-                            //    if (_localContrastSetup.IsNoOperation)
-                            //    {
-                            //        frameEnumerator.ItemCallback(runningAverage.GetResult8());
-                            //        return;
-                            //    }
-                            //    source = runningAverage.GetResult16();
-                            //}
-                            frameEnumerator.ItemCallback(_localContrastSetup.ApplyOperations(source));
+                            if (runningAverage is not null)
+                            {
+                                runningAverage.ProcessImage(source);
+                                if (_localContrastSetup is null || _localContrastSetup.IsNoOperation)
+                                {
+                                    frameEnumerator.ItemCallback(runningAverage.GetResult8());
+                                    return;
+                                }
+                                source = runningAverage.GetResult16();
+                            }
+                            frameEnumerator.ItemCallback(_localContrastSetup!.ApplyOperations(source));
                         }, ProcessStdError);
                     await frameEnumerator.GotFirst.ConfigureAwait(false);
                     if (!_hasFps)

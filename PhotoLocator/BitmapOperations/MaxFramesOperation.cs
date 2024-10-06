@@ -7,8 +7,8 @@ namespace PhotoLocator.BitmapOperations
 {
     sealed class MaxFramesOperation : CombineFramesOperationBase, IDisposable
     {
-        public MaxFramesOperation(string? darkFramePath, RegistrationMethod registrationMethod, ROI? registrationRegion, CancellationToken ct)
-            : base(darkFramePath, registrationMethod, registrationRegion, ct)
+        public MaxFramesOperation(string? darkFramePath, bool enableRegistration, ROI? registrationRegion, CancellationToken ct)
+            : base(darkFramePath, enableRegistration ? RegistrationMethod.BlackBorders : RegistrationMethod.None, registrationRegion, ct)
         {
         }
 

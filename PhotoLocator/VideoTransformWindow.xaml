@@ -31,10 +31,6 @@
 
         <TextBlock Text="Video filters:" Margin="0,4,0,0"/>
         <StackPanel Orientation="Horizontal" Margin="10,4,0,0">
-            <CheckBox Content="Trim:" IsChecked="{Binding IsTrimChecked}" Width="130" />
-            <TextBox Text="{Binding TrimRange}" IsEnabled="{Binding IsTrimChecked}" Width="140"/>
-        </StackPanel>
-        <StackPanel Orientation="Horizontal" Margin="10,4,0,0">
             <CheckBox Content="Rotate:" IsChecked="{Binding IsRotateChecked}" Width="130" />
             <TextBox Text="{Binding RotationAngle}" IsEnabled="{Binding IsRotateChecked}" Width="140" 
                      ToolTip="Rotation angle in degrees"/>
@@ -44,21 +40,18 @@
             <CheckBox Content="Crop:" IsChecked="{Binding IsCropChecked}" Width="130"/>
             <TextBox Text="{Binding CropWindow}" IsEnabled="{Binding IsCropChecked}" Width="140"
                      ToolTip="Crop region size and position"/>
-        </StackPanel>
-        <StackPanel Orientation="Horizontal" Margin="10,4,0,0">
-            <CheckBox Content="Scale to:" IsChecked="{Binding IsScaleChecked}" Width="130"/>
+            <CheckBox Content="Scale to:" IsChecked="{Binding IsScaleChecked}" Margin="20,0,0,0" Width="130"/>
             <TextBox Text="{Binding ScaleTo}" IsEnabled="{Binding IsScaleChecked}" Width="140"
                      ToolTip="Scale to resolution"/>
         </StackPanel>
 
         <CheckBox Content="Stabilize" IsChecked="{Binding IsStabilizeChecked}" Margin="0,8,0,0"/>
-        <CheckBox Content="Tripod mode" IsChecked="{Binding IsTripodChecked}" Margin="10,4,0,0" IsEnabled="{Binding IsStabilizeChecked}"
-                  ToolTip="Simulate a fixed camera position"/>
+        
         <StackPanel Orientation="Horizontal" Margin="10,4,0,0">
             <TextBlock Text="Smooth frames:" IsEnabled="{Binding IsStabilizeChecked}" Width="130"/>
             <TextBox Text="{Binding SmoothFrames}" IsEnabled="{Binding IsStabilizeChecked}" Width="140"/>
-            <CheckBox Content="Bicubic interpolation" IsChecked="{Binding IsBicubicStabilizeChecked}" Margin="20,0,0,0" IsEnabled="{Binding IsStabilizeChecked}"
-                      ToolTip="Better quality but more time consuming"/>
+            <CheckBox Content="Tripod mode" IsChecked="{Binding IsTripodChecked}" Margin="20,0,0,0" IsEnabled="{Binding IsStabilizeChecked}"
+          ToolTip="Simulate a fixed camera position"/>
         </StackPanel>
         <TextBlock Text="Stabilize arguments:" Margin="10,4,0,0" IsEnabled="{Binding IsStabilizeChecked}"/>
         <TextBox Text="{Binding StabilizeArguments}" Margin="10,0,0,0" IsEnabled="{Binding IsStabilizeChecked}"/>
@@ -67,6 +60,10 @@
             <CheckBox Content="Adjust local contrast, brightness and colors" Width="300"
                       IsChecked="{Binding IsLocalContrastChecked}" IsEnabled="{Binding IsLocalContrastEnabled}" />
             <Button Content="Setup" Command="{Binding SetupLocalContrastCommand}" Width="80" IsEnabled="{Binding IsLocalContrastChecked}" />
+        </StackPanel>
+        <StackPanel Orientation="Horizontal" Margin="0,4,0,0">
+            <CheckBox Content="Rolling average:" IsChecked="{Binding IsRollingAverageChecked}" Width="140" />
+            <TextBox Text="{Binding RollingAverageFrames}" IsEnabled="{Binding IsRollingAverageChecked}" Width="140"/>
         </StackPanel>
 
         <TextBlock Text="Output" Margin="0,4,0,0"/>

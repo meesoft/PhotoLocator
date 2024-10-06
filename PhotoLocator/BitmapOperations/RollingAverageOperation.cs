@@ -5,13 +5,13 @@ using System.Windows.Media.Imaging;
 
 namespace PhotoLocator.BitmapOperations
 {
-    sealed class RunningAverageOperation : CombineFramesOperationBase
+    sealed class RollingAverageOperation : CombineFramesOperationBase
     {
         readonly int _numberOfFramesToAverage;
         readonly Queue<byte[]> _previousFrames;
 
-        public RunningAverageOperation(int numberOfFramesToAverage, string? darkFramePath, CancellationToken ct)
-            : base(null, RegistrationMethod.None, null, ct)
+        public RollingAverageOperation(int numberOfFramesToAverage, string? darkFramePath, bool enableRegistration, ROI? registrationRegion, CancellationToken ct)
+            : base(darkFramePath, enableRegistration ? RegistrationMethod.MirrorBorders : RegistrationMethod.None, registrationRegion, ct)
         {
             _numberOfFramesToAverage = numberOfFramesToAverage;
             _previousFrames = new Queue<byte[]>(_numberOfFramesToAverage);
