@@ -484,8 +484,13 @@ namespace PhotoLocator
             Mouse.OverrideCursor = null;
         }
 
+        public bool IsNoOperation => DetailHandling == 1 && ToneMapping == 1 && HighlightStrength == 0 && ShadowStrength == 0 && Contrast == DefaultContrast 
+            && !_colorToneOperation.AreToneAdjustmentsChanged;
+
         public BitmapSource ApplyOperations(BitmapSource source)
         {
+            if (IsNoOperation) 
+                return source;
             _laplacianFilterOperation.SrcBitmap.Assign(source, FloatBitmap.DefaultMonitorGamma);
             _laplacianFilterOperation.SourceChanged();
             ApplyLaplacianFilterOperation();

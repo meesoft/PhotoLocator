@@ -1,30 +1,35 @@
-﻿using System;
+﻿using PhotoLocator.Helpers;
+using System;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
-using PhotoLocator.Helpers;
 
 namespace PhotoLocator.BitmapOperations
 {
     enum RegistrationMethod { None, BlackBorders, MirrorBorders };
 
-    sealed class CombineFramesOperation : IDisposable
+    abstract class CombineFramesOperationBase : IDisposable
     {
+        protected readonly CancellationToken _ct;
         readonly BitmapSource? _darkFrame;
         readonly RegistrationMethod _registrationMethod;
         readonly ROI? _registrationRegion;
-        readonly CancellationToken _ct;
+        byte[]? _darkFramePixels;
+        double _dpiX;
+        double _dpiY;
+        int _width;
+        int _height;
 
         PixelFormat _pixelFormat;
-        int _width, _height, _pixelSize;
-        double _dpiX, _dpiY;
-        byte[]? _resultPixels, _darkFramePixels;
-        uint[]? _sumPixels;
+        int _pixelSize;
         RegistrationOperation? _registrationOperation;
+        protected uint[]? _accumulatorPixels;
 
-        public CombineFramesOperation(string darkFramePath, RegistrationMethod registrationMethod, ROI? registrationRegion, CancellationToken ct = default)
+        public int ProcessedImages { get; private set; }
+
+        protected CombineFramesOperationBase(string? darkFramePath, RegistrationMethod registrationMethod, ROI? registrationRegion, CancellationToken ct)
         {
             _registrationMethod = registrationMethod;
             _registrationRegion = registrationRegion;
@@ -37,78 +42,62 @@ namespace PhotoLocator.BitmapOperations
             }
         }
 
-        public int ProcessedImages { get; private set; }
-
-        public void UpdateMax(BitmapSource image)
+        public void Dispose()
         {
-            var pixels = PrepareFrame(image);
-            Parallel.For(0, pixels.Length, i =>
-            {
-                if (pixels[i] > _resultPixels![i])
-                    _resultPixels[i] = pixels[i];
-            });
+            _registrationOperation?.Dispose();
         }
 
-        internal void UpdateSum(BitmapSource image)
-        {
-            var pixels = PrepareFrame(image);
-            _sumPixels ??= new uint[pixels.Length];
+        public abstract void ProcessImage(BitmapSource image);
 
-            Parallel.For(0, pixels.Length, i => _sumPixels[i] += pixels[i]);
+        public bool Supports16BitResult()
+        {
+            return _pixelFormat == PixelFormats.Rgb24 || _pixelFormat == PixelFormats.Bgr24 || _pixelFormat == PixelFormats.Gray8;
         }
 
-        public BitmapSource GetResult()
+        public BitmapSource GetResult8()
         {
-            if (_resultPixels is null)
+            if (_accumulatorPixels is null)
                 throw new UserMessageException("No images received");
-            var result = BitmapSource.Create(_width, _height, _dpiX, _dpiY, _pixelFormat, null, _resultPixels, _width * _pixelSize);
+            var resultPixels = new byte[_accumulatorPixels.Length];
+            var scaling = GetResultScaling();
+            Parallel.For(0, _accumulatorPixels.Length, i => resultPixels[i] = (byte)IntMath.Round(_accumulatorPixels[i] * scaling));
+            var result = BitmapSource.Create(_width, _height, _dpiX, _dpiY, _pixelFormat, null, resultPixels, _width * _pixelSize);
             result.Freeze();
             return result;
         }
 
-        public BitmapSource GetAverageResult8()
+        public BitmapSource GetResult16()
         {
-            if (_resultPixels is null || _sumPixels is null)
-                throw new UserMessageException("No images received");
-            Parallel.For(0, _resultPixels.Length, i => _resultPixels[i] = (byte)IntMath.Round(_sumPixels[i] / (double)ProcessedImages));
-            return GetResult();
-        }
-
-        public BitmapSource GetAverageResult16()
-        {
-            if (_resultPixels is null || _sumPixels is null)
+            if (_accumulatorPixels is null)
                 throw new UserMessageException("No images received");
 
-            var resultPixels16 = new ushort[_resultPixels.Length];
-            var scale = 0xffff / 255.0 / ProcessedImages;
-            Parallel.For(0, resultPixels16.Length, i => resultPixels16[i] = (ushort)IntMath.Round(_sumPixels[i] * scale));
+            var resultPixels = new ushort[_accumulatorPixels.Length];
+            var scaling = GetResultScaling() * 0xffff / 255.0;
+            Parallel.For(0, resultPixels.Length, i => resultPixels[i] = (ushort)IntMath.Round(_accumulatorPixels[i] * scaling));
             PixelFormat pixelFormat16;
             if (_pixelFormat == PixelFormats.Rgb24)
                 pixelFormat16 = PixelFormats.Rgb48;
             else if (_pixelFormat == PixelFormats.Bgr24)
             {
-                Parallel.For(0, _width * _height, i => (resultPixels16[i * 3], resultPixels16[i * 3 + 2]) = (resultPixels16[i * 3 + 2], resultPixels16[i * 3]));
+                Parallel.For(0, _width * _height, i => (resultPixels[i * 3], resultPixels[i * 3 + 2]) = (resultPixels[i * 3 + 2], resultPixels[i * 3]));
                 pixelFormat16 = PixelFormats.Rgb48;
             }
             else if (_pixelFormat == PixelFormats.Gray8)
                 pixelFormat16 = PixelFormats.Gray16;
             else
                 throw new UserMessageException("Unsupported pixel format for 16 bit output" + _pixelFormat);
-            var result = BitmapSource.Create(_width, _height, _dpiX, _dpiY, pixelFormat16, null, resultPixels16, _width * _pixelSize * 2);
+            var result = BitmapSource.Create(_width, _height, _dpiX, _dpiY, pixelFormat16, null, resultPixels, _width * _pixelSize * 2);
             result.Freeze();
             return result;
         }
 
-        public bool Supports16BitAverage()
-        {
-            return _pixelFormat == PixelFormats.Rgb24 || _pixelFormat == PixelFormats.Bgr24 || _pixelFormat == PixelFormats.Gray8;
-        }
+        protected abstract double GetResultScaling();
 
-        private byte[] PrepareFrame(BitmapSource image)
+        protected byte[] PrepareFrame(BitmapSource image)
         {
             _ct.ThrowIfCancellationRequested();
 
-            if (_resultPixels is null)
+            if (_accumulatorPixels is null)
             {
                 _width = image.PixelWidth;
                 _height = image.PixelHeight;
@@ -123,7 +112,7 @@ namespace PhotoLocator.BitmapOperations
                     _pixelSize = 1;
                 else
                     throw new UserMessageException("Unsupported pixel format " + _pixelFormat);
-                _resultPixels = new byte[_width * _height * _pixelSize];
+                _accumulatorPixels = new uint[_width * _height * _pixelSize];
 
                 if (_darkFrame is not null)
                 {
@@ -161,13 +150,8 @@ namespace PhotoLocator.BitmapOperations
         private void SubtractDarkFrame(byte[] pixels)
         {
             //TODO: This should be replaced by some proper hole closing where the dark frame has hot pixels
-            if (_darkFramePixels is not null) 
+            if (_darkFramePixels is not null)
                 Parallel.For(0, pixels.Length, i => pixels[i] = (byte)Math.Max(0, pixels[i] - _darkFramePixels[i]));
-        }
-
-        public void Dispose()
-        {
-            _registrationOperation?.Dispose();
         }
     }
 }

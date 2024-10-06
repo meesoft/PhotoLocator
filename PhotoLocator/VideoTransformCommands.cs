@@ -396,7 +396,7 @@ namespace PhotoLocator
         public string DarkFramePath
         {
             get => _darkFramePath;
-            set => SetProperty(ref _darkFramePath, value.Trim());
+            set => SetProperty(ref _darkFramePath, value.TrimPath());
         }
         string _darkFramePath = string.Empty;
 
@@ -659,21 +659,21 @@ namespace PhotoLocator
                 var args = $"{InputArguments} {ProcessArguments} {OutputArguments}";
                 if (OutputMode is OutputMode.Average)
                 {
-                    using var process = new CombineFramesOperation(DarkFramePath, 
+                    using var process = new AverageFramesOperation(DarkFramePath, 
                         IsRegisterFramesChecked ? RegistrationMethod.MirrorBorders : RegistrationMethod.None, ParseRegistrationRegion(), ct);
-                    await _videoTransforms.RunFFmpegWithStreamOutputImagesAsync(args, process.UpdateSum, ProcessStdError).ConfigureAwait(false);
-                    if (process.Supports16BitAverage() && Path.GetExtension(outFileName).ToUpperInvariant() is ".PNG" or ".TIF" or ".TIFF" or ".JXR")
-                        GeneralFileFormatHandler.SaveToFile(process.GetAverageResult16(), outFileName, CreateImageMetadata());
+                    await _videoTransforms.RunFFmpegWithStreamOutputImagesAsync(args, process.ProcessImage, ProcessStdError).ConfigureAwait(false);
+                    if (process.Supports16BitResult() && Path.GetExtension(outFileName).ToUpperInvariant() is ".PNG" or ".TIF" or ".TIFF" or ".JXR")
+                        GeneralFileFormatHandler.SaveToFile(process.GetResult16(), outFileName, CreateImageMetadata());
                     else
-                        GeneralFileFormatHandler.SaveToFile(process.GetAverageResult8(), outFileName, CreateImageMetadata());
+                        GeneralFileFormatHandler.SaveToFile(process.GetResult8(), outFileName, CreateImageMetadata());
                     message = $"Processed {process.ProcessedImages} frames in {sw.Elapsed.TotalSeconds:N1}s";
                 }
                 else if (OutputMode is OutputMode.Max)
                 {
-                    using var process = new CombineFramesOperation(DarkFramePath, 
+                    using var process = new MaxFramesOperation(DarkFramePath, 
                         IsRegisterFramesChecked ? RegistrationMethod.BlackBorders : RegistrationMethod.None, ParseRegistrationRegion(), ct);
-                    await _videoTransforms.RunFFmpegWithStreamOutputImagesAsync(args, process.UpdateMax, ProcessStdError).ConfigureAwait(false);
-                    GeneralFileFormatHandler.SaveToFile(process.GetResult(), outFileName, CreateImageMetadata());
+                    await _videoTransforms.RunFFmpegWithStreamOutputImagesAsync(args, process.ProcessImage, ProcessStdError).ConfigureAwait(false);
+                    GeneralFileFormatHandler.SaveToFile(process.GetResult8(), outFileName, CreateImageMetadata());
                     message = $"Processed {process.ProcessedImages} frames in {sw.Elapsed.TotalSeconds:N1}s";
                 }
                 else if (IsLocalContrastChecked && _localContrastSetup is not null)
@@ -683,9 +683,23 @@ namespace PhotoLocator
                         _fps = double.Parse(FrameRate, CultureInfo.InvariantCulture);
                         _hasFps = true;
                     }
+                    //var runningAverage = new RunningAverageOperation(10, DarkFramePath, ct);
                     using var frameEnumerator = new CallbackEnumerable<BitmapSource>();
                     var readTask = _videoTransforms.RunFFmpegWithStreamOutputImagesAsync($"{InputArguments} {ProcessArguments}", 
-                        source => frameEnumerator.ItemCallback(_localContrastSetup.ApplyOperations(source)), ProcessStdError);
+                        source =>
+                        {
+                            //if (runningAverage is not null)
+                            //{
+                            //    runningAverage.ProcessImage(source);
+                            //    if (_localContrastSetup.IsNoOperation)
+                            //    {
+                            //        frameEnumerator.ItemCallback(runningAverage.GetResult8());
+                            //        return;
+                            //    }
+                            //    source = runningAverage.GetResult16();
+                            //}
+                            frameEnumerator.ItemCallback(_localContrastSetup.ApplyOperations(source));
+                        }, ProcessStdError);
                     await frameEnumerator.GotFirst.ConfigureAwait(false);
                     if (!_hasFps)
                         throw new UserMessageException("Unable to determine frame rate, please specify manually");

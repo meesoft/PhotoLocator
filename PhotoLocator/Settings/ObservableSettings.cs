@@ -1,4 +1,5 @@
-﻿using System.ComponentModel;
+﻿using PhotoLocator.Helpers;
+using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using System.Windows.Media;
 
@@ -55,14 +56,14 @@ namespace PhotoLocator.Settings
         public string? ExifToolPath
         {
             get => _exifToolPath;
-            set => SetProperty(ref _exifToolPath, value?.Trim(' ', '"'));
+            set => SetProperty(ref _exifToolPath, value?.TrimPath());
         }
         string? _exifToolPath;
 
         public string? FFmpegPath
         {
             get => _ffmpegPath;
-            set => SetProperty(ref _ffmpegPath, value?.Trim(' ', '"'));
+            set => SetProperty(ref _ffmpegPath, value?.TrimPath());
         }
         string? _ffmpegPath;
 

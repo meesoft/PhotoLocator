@@ -118,7 +118,7 @@ namespace PhotoLocator
         public string? PhotoFolderPath
         {
             get => _isInDesignMode ? nameof(PhotoFolderPath) : _photoFolderPath;
-            set => SetFolderPathAsync(value?.Trim(' ', '"')).WithExceptionShowing();
+            set => SetFolderPathAsync(value?.TrimPath()).WithExceptionShowing();
         }
         private string? _photoFolderPath;
 
@@ -998,6 +998,7 @@ namespace PhotoLocator
                         UpdatePreviewPictureAsync().WithExceptionLogging();
                     if (changed.ThumbnailImage != null)
                     {
+                        Debug.WriteLine("Reloading thumbnail for changed file " + changed.Name);
                         changed.ThumbnailImage = null;
                         if (_loadPicturesTask != null)
                             _loadPicturesTask.ContinueWith(_ => Application.Current.Dispatcher.BeginInvoke(LoadPicturesAsync), TaskScheduler.Default).WithExceptionLogging();
