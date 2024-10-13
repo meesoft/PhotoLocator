@@ -79,6 +79,7 @@ namespace PhotoLocator
             window.DataContext = localContrastViewModel;
             if (window.ShowDialog() != true)
                 return;
+            localContrastViewModel.SaveLastUsedValues();
             var dlg = new SaveFileDialog();
             dlg.InitialDirectory = Path.GetDirectoryName(_mainViewModel.SelectedItem.FullPath);
             dlg.FileName = Path.GetFileNameWithoutExtension(_mainViewModel.SelectedItem.Name) + ".jpg";

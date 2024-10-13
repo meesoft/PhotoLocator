@@ -30,6 +30,7 @@
         <ContextMenu>
             <MenuItem Header="Copy adjustments (Ctrl+Shift+C)" Command="{Binding CopyAdjustmentsCommand}" />
             <MenuItem Header="Paste adjustments (Ctrl+Shift+V)" Command="{Binding PasteAdjustmentsCommand}" />
+            <MenuItem Header="Restore last used values" Command="{Binding RestoreLastUsedValuesCommand}" />
         </ContextMenu>
     </Window.ContextMenu>
 
@@ -205,6 +206,7 @@
                     <Separator />
                     <MenuItem Header="Copy adjustments (Ctrl+Shift+C)" Command="{Binding CopyAdjustmentsCommand}" />
                     <MenuItem Header="Paste adjustments (Ctrl+Shift+V)" Command="{Binding PasteAdjustmentsCommand}" />
+                    <MenuItem Header="Restore last used values" Command="{Binding RestoreLastUsedValuesCommand}" />
                 </ContextMenu>
             </Grid.ContextMenu>
         </Grid>

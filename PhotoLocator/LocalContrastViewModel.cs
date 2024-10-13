@@ -19,6 +19,7 @@ namespace PhotoLocator
     class LocalContrastViewModel : INotifyPropertyChanged, IImageZoomPreviewViewModel
     {
         static readonly List<double> _adjustmentClipboard = [];
+        static readonly List<double> _lastUsedValues = [];
         readonly DispatcherTimer _updateTimer;
         readonly LaplacianFilterOperation _laplacianFilterOperation = new() { SrcBitmap = new() };
         readonly IncreaseLocalContrastOperation _localContrastOperation = new() { DstBitmap = new() };
@@ -361,50 +362,59 @@ namespace PhotoLocator
             StartUpdateTimer(false, false);
         });
 
-        public ICommand CopyAdjustmentsCommand => new RelayCommand(o =>
-        {
-            _adjustmentClipboard.Clear();
-            _adjustmentClipboard.Add(HighlightStrength);
-            _adjustmentClipboard.Add(ShadowStrength);
-            _adjustmentClipboard.Add(MaxStretch);
-            _adjustmentClipboard.Add(OutlierReductionStrength);
-            _adjustmentClipboard.Add(ToneMapping);
-            _adjustmentClipboard.Add(DetailHandling);
-            _adjustmentClipboard.Add(ToneRotation);
-            for (int i = 0; i < _colorToneOperation.ToneAdjustments.Length; i++)
-            {
-                _adjustmentClipboard.Add(_colorToneOperation.ToneAdjustments[i].AdjustHue);
-                _adjustmentClipboard.Add(_colorToneOperation.ToneAdjustments[i].AdjustSaturation);
-                _adjustmentClipboard.Add(_colorToneOperation.ToneAdjustments[i].AdjustIntensity);
-                _adjustmentClipboard.Add(_colorToneOperation.ToneAdjustments[i].HueUniformity);
-            }
-        });
+        public ICommand CopyAdjustmentsCommand => new RelayCommand(o => StoreAdjustmentValues(_adjustmentClipboard));
 
-        public ICommand PasteAdjustmentsCommand => new RelayCommand(o =>
+        public ICommand PasteAdjustmentsCommand => new RelayCommand(o => RestoreAdjustmentValues(_adjustmentClipboard), o => _adjustmentClipboard.Count > 0);
+
+        public ICommand RestoreLastUsedValuesCommand => new RelayCommand(o => RestoreAdjustmentValues(_lastUsedValues), o => _lastUsedValues.Count > 0);
+
+        public void SaveLastUsedValues()
         {
-            if (_adjustmentClipboard.Count == 0)
-                return;
-            int a = 0;
-            HighlightStrength = _adjustmentClipboard[a++];
-            ShadowStrength = _adjustmentClipboard[a++];
-            MaxStretch = _adjustmentClipboard[a++];
-            OutlierReductionStrength = _adjustmentClipboard[a++];
-            ToneMapping = _adjustmentClipboard[a++];
-            DetailHandling = _adjustmentClipboard[a++];
-            ToneRotation = _adjustmentClipboard[a++];
+            StoreAdjustmentValues(_lastUsedValues);
+        }
+
+        private void StoreAdjustmentValues(List<double> valueStore)
+        {
+            valueStore.Clear();
+            valueStore.Add(HighlightStrength);
+            valueStore.Add(ShadowStrength);
+            valueStore.Add(MaxStretch);
+            valueStore.Add(OutlierReductionStrength);
+            valueStore.Add(ToneMapping);
+            valueStore.Add(DetailHandling);
+            valueStore.Add(ToneRotation);
             for (int i = 0; i < _colorToneOperation.ToneAdjustments.Length; i++)
             {
-                _colorToneOperation.ToneAdjustments[i].AdjustHue = (float)_adjustmentClipboard[a++];
-                _colorToneOperation.ToneAdjustments[i].AdjustSaturation = (float)_adjustmentClipboard[a++];
-                _colorToneOperation.ToneAdjustments[i].AdjustIntensity = (float)_adjustmentClipboard[a++];
-                _colorToneOperation.ToneAdjustments[i].HueUniformity = (float)_adjustmentClipboard[a++];
+                valueStore.Add(_colorToneOperation.ToneAdjustments[i].AdjustHue);
+                valueStore.Add(_colorToneOperation.ToneAdjustments[i].AdjustSaturation);
+                valueStore.Add(_colorToneOperation.ToneAdjustments[i].AdjustIntensity);
+                valueStore.Add(_colorToneOperation.ToneAdjustments[i].HueUniformity);
+            }
+        }
+
+        private void RestoreAdjustmentValues(List<double> valueStore)
+        {
+            int a = 0;
+            HighlightStrength = valueStore[a++];
+            ShadowStrength = valueStore[a++];
+            MaxStretch = valueStore[a++];
+            OutlierReductionStrength = valueStore[a++];
+            ToneMapping = valueStore[a++];
+            DetailHandling = valueStore[a++];
+            ToneRotation = valueStore[a++];
+            for (int i = 0; i < _colorToneOperation.ToneAdjustments.Length; i++)
+            {
+                _colorToneOperation.ToneAdjustments[i].AdjustHue = (float)valueStore[a++];
+                _colorToneOperation.ToneAdjustments[i].AdjustSaturation = (float)valueStore[a++];
+                _colorToneOperation.ToneAdjustments[i].AdjustIntensity = (float)valueStore[a++];
+                _colorToneOperation.ToneAdjustments[i].HueUniformity = (float)valueStore[a++];
             }
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(null));
             ActiveToneIndex = 0;
             StartUpdateTimer(false, false);
-            if (a != _adjustmentClipboard.Count)
+            if (a != valueStore.Count)
                 throw new InvalidOperationException("Unexpected number of adjustments");
-        });
+        }
 
         private void StartUpdateTimer(bool laplacianPyramidParamsChanged, bool localContrastParamsChanged)
         {

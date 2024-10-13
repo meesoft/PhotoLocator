@@ -255,6 +255,7 @@ namespace PhotoLocator
             window.DataContext = _localContrastSetup;
             window.ShowDialog();
             window.DataContext = null;
+            _localContrastSetup.SaveLastUsedValues();
         });
         LocalContrastViewModel? _localContrastSetup;
 
@@ -309,7 +310,7 @@ namespace PhotoLocator
         ComboBoxItem _selectedVideoFormat = DefaultVideoFormat;
 
         public static ComboBoxItem[] VideoFormats { get; } = [
-            new ComboBoxItem { Content = "Default", Tag = string.Empty },
+            new ComboBoxItem { Content = "Default" },
             new ComboBoxItem { Content = "Copy", Tag = "-c copy" },
             new ComboBoxItem { Content = "libx264", Tag = "-c:v libx264 -pix_fmt yuv420p" },
             new ComboBoxItem { Content = "libx265", Tag = "-c:v libx265 -pix_fmt yuv420p" },
@@ -478,10 +479,20 @@ namespace PhotoLocator
         private void UpdateOutputArgs()
         {
             if (OutputMode == OutputMode.Video)
-                OutputArguments = (string)SelectedVideoFormat.Tag
-                    + (string.IsNullOrEmpty(FrameRate) ? null : $" -r {FrameRate}")
-                    + (string.IsNullOrEmpty(VideoBitRate) ? null : $" -b:v {VideoBitRate}M")
-                    + (IsRemoveAudioChecked ? " -an" : null);
+            {
+                var args = new List<string>();
+                if (SelectedVideoFormat.Tag is not null)
+                    args.Add((string)SelectedVideoFormat.Tag);
+                if (!string.IsNullOrEmpty(FrameRate))
+                    args.Add($"-r {FrameRate}");
+                if (!string.IsNullOrEmpty(VideoBitRate))
+                    args.Add($"-b:v {VideoBitRate}M");
+                else if ((SelectedVideoFormat.Tag as string)?.StartsWith("-c:v", StringComparison.Ordinal) == true)
+                    args.Add("-crf 20");
+                if (IsRemoveAudioChecked)
+                    args.Add("-an");
+                OutputArguments = string.Join(" ", args);
+            }
             else
                 OutputArguments = string.Empty;
         }
