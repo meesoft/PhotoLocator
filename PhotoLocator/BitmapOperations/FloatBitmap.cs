@@ -85,7 +85,8 @@ namespace PhotoLocator.BitmapOperations
                         fixed (float* elements = &_elements[y, 0])
                         fixed (ushort* sourceRow = &sourcePixels[y * Stride])
                         {
-                            for (var x = 0; x < Stride; x++)
+                            var stride = Stride;
+                            for (var x = 0; x < stride; x++)
                                 elements[x] = gammaLUT[sourceRow[x]];
                         }
                     });
@@ -159,7 +160,8 @@ namespace PhotoLocator.BitmapOperations
                         fixed (float* elements = &_elements[y, 0])
                         fixed (byte* sourceRow = &sourcePixels[y * Stride])
                         {
-                            for (var x = 0; x < Stride; x++)
+                            var stride = Stride;
+                            for (var x = 0; x < stride; x++)
                                 elements[x] = gammaLUT[sourceRow[x]];
                         }
                     });
@@ -195,16 +197,20 @@ namespace PhotoLocator.BitmapOperations
                     _ => throw new UserMessageException("Unsupported number of planes: " + PlaneCount)
                 };
             var pixels = new byte[Height * Stride];
+
+            var gammaLut = CreateGammaLookupFloatToByte(gamma);
             unsafe
             {
-                gamma = 1 / gamma;
+                //gamma = 1 / gamma;
                 Parallel.For(0, Height, y =>
                 {
                     fixed (float* elements = &_elements[y, 0])
                     fixed (byte* destRow = &pixels[y * Stride])
                     {
-                        for (var x = 0; x < Stride; x++)
-                            destRow[x] = (byte)IntMath.EnsureRange(IntMath.Round(Math.Pow(elements[x], gamma) * 255), 0, 255);
+                        var stride = Stride;
+                        for (var x = 0; x < stride; x++)
+                            //destRow[x] = (byte)IntMath.EnsureRange((int)(Math.Pow(elements[x], gamma) * 255 + 0.5), 0, 255);
+                            destRow[x] = gammaLut[IntMath.EnsureRange((int)(elements[x] * FloatToByteGammaLutRange + 0.5f), 0, FloatToByteGammaLutRange)];
                     }
                 });
             }
@@ -219,6 +225,17 @@ namespace PhotoLocator.BitmapOperations
             var scale = 1.0 / (range - 1);
             for (int i = 0; i < range; i++)
                 gammaLUT[i] = (float)Math.Pow(i * scale, gamma);
+            return gammaLUT;
+        }
+
+        internal const int FloatToByteGammaLutRange = 100000;
+
+        internal static byte[] CreateGammaLookupFloatToByte(double gamma)
+        {
+            var gammaLUT = new byte[FloatToByteGammaLutRange + 1];
+            gamma = 1 / gamma;
+            Parallel.For(0, FloatToByteGammaLutRange + 1,
+                i => gammaLUT[i] = (byte)(Math.Pow(i / (double)FloatToByteGammaLutRange, gamma) * 255 + 0.5));
             return gammaLUT;
         }
 
@@ -320,7 +337,8 @@ namespace PhotoLocator.BitmapOperations
                 {
                     fixed (float* elements = &_elements[y, 0])
                     {
-                        for (var x = 0; x < Stride; x++)
+                        var stride = Stride;
+                        for (var x = 0; x < stride; x++)
                             elements[x] = operation(x, y);
                     }
                 });
@@ -338,7 +356,8 @@ namespace PhotoLocator.BitmapOperations
                 {
                     fixed (float* elements = &_elements[y, 0])
                     {
-                        for (var x = 0; x < Stride; x++)
+                        var stride = Stride;
+                        for (var x = 0; x < stride; x++)
                             elements[x] = operation(elements[x]);
                     }
                 });
@@ -359,7 +378,8 @@ namespace PhotoLocator.BitmapOperations
                         fixed (float* elements = &_elements[y, 0])
                         fixed (float* otherElements = &other._elements[y, 0])
                         {
-                            for (var x = 0; x < Stride; x++)
+                            var stride = Stride;
+                            for (var x = 0; x < stride; x++)
                                 elements[x] = operation(elements[x], otherElements[x]);
                         }
                     });
@@ -394,7 +414,8 @@ namespace PhotoLocator.BitmapOperations
                 {
                     fixed (float* elements = &_elements[y, 0])
                     {
-                        for (var x = 0; x < Stride; x++)
+                        var stride = Stride;
+                        for (var x = 0; x < stride; x++)
                             elements[x] += value;
                     }
                 });
@@ -412,7 +433,8 @@ namespace PhotoLocator.BitmapOperations
                     fixed (float* elements = &_elements[y, 0])
                     fixed (float* otherElements = &other._elements[y, 0])
                     {
-                        for (var x = 0; x < Stride; x++)
+                        var stride = Stride;
+                        for (var x = 0; x < stride; x++)
                             elements[x] += otherElements[x];
                     }
                 });
@@ -438,7 +460,8 @@ namespace PhotoLocator.BitmapOperations
                         {
                             var otherElement = otherElements;
                             var element = elements;
-                            for (var x = 0; x < Stride; x++)
+                            var stride = Stride;
+                            for (var x = 0; x < stride; x++)
                             {
                                 *element = *otherElement - *element;
                                 otherElement++;

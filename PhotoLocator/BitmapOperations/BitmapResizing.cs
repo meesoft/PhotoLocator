@@ -141,9 +141,9 @@ namespace PhotoLocator.BitmapOperations
                                 var fracX = srcX - intX;
                                 *dstPix = (short)((srcLine[intX] * (1 - fracX) + srcLine[intX + 1] * fracX) * (1 - fracY) +
                                                   (srcNext[intX] * (1 - fracX) + srcNext[intX + 1] * fracX) * fracY + 0.5f);
-                                /*int fracXi = (int)(fracX * 256 + 0.5f);
-                                * dstPix = (short)(((srcLine[intX] * (256 - fracXi) + srcLine[intX + 1] * (fracXi)) * (256 - fracYi) +
-                                                    (srcNext[intX] * (256 - fracXi) + srcNext[intX + 1] * (fracXi)) * (fracYi) + 32768) >> 16);*/
+                                //int fracXi = (int)(fracX * 256 + 0.5f);
+                                //* dstPix = (short)(((srcLine[intX] * (256 - fracXi) + srcLine[intX + 1] * (fracXi)) * (256 - fracYi) +
+                                //                    (srcNext[intX] * (256 - fracXi) + srcNext[intX + 1] * (fracXi)) * (fracYi) + 32768) >> 16);
                             }
                             else // Last pixel in line
                             {

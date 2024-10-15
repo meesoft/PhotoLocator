@@ -60,7 +60,7 @@ namespace PhotoLocator.BitmapOperations
                 throw new UserMessageException("No images received");
             var resultPixels = new byte[_accumulatorPixels.Length];
             var scaling = GetResultScaling();
-            Parallel.For(0, _accumulatorPixels.Length, i => resultPixels[i] = (byte)IntMath.Round(_accumulatorPixels[i] * scaling));
+            Parallel.For(0, _accumulatorPixels.Length, i => resultPixels[i] = (byte)(_accumulatorPixels[i] * scaling + 0.5));
             var result = BitmapSource.Create(_width, _height, _dpiX, _dpiY, _pixelFormat, null, resultPixels, _width * _pixelSize);
             result.Freeze();
             return result;
@@ -73,7 +73,7 @@ namespace PhotoLocator.BitmapOperations
 
             var resultPixels = new ushort[_accumulatorPixels.Length];
             var scaling = GetResultScaling() * 0xffff / 255.0;
-            Parallel.For(0, resultPixels.Length, i => resultPixels[i] = (ushort)IntMath.Round(_accumulatorPixels[i] * scaling));
+            Parallel.For(0, resultPixels.Length, i => resultPixels[i] = (ushort)(_accumulatorPixels[i] * scaling + 0.5));
             PixelFormat pixelFormat16;
             if (_pixelFormat == PixelFormats.Rgb24)
                 pixelFormat16 = PixelFormats.Rgb48;

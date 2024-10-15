@@ -1,5 +1,6 @@
 ﻿using MeeSoft.ImageProcessing.Operations;
 using PhotoLocator.PictureFileFormats;
+using System.Diagnostics;
 using System.Windows.Media.Imaging;
 
 namespace PhotoLocator.BitmapOperations
@@ -13,6 +14,7 @@ namespace PhotoLocator.BitmapOperations
             var source = BitmapDecoder.Create(File.OpenRead(@"TestData\2022-06-17_19.03.02.jpg"), BitmapCreateOptions.PreservePixelFormat, BitmapCacheOption.OnLoad).Frames[0];
             var sourceFloat = new FloatBitmap(source, FloatBitmap.DefaultMonitorGamma);
 
+            var sw = Stopwatch.StartNew();
             var op = new LaplacianFilterOperation()
             {
                 SrcBitmap = sourceFloat,
@@ -22,6 +24,7 @@ namespace PhotoLocator.BitmapOperations
                 OutlierReductionFilterSize = 1,
             };
             op.Apply();
+            Console.WriteLine(sw.ElapsedMilliseconds + "ms");
 
             var result = op.DstBitmap.ToBitmapSource(source.DpiX, source.DpiY, FloatBitmap.DefaultMonitorGamma);
 #if DEBUG

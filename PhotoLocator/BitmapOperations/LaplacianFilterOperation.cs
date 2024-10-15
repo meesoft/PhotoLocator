@@ -586,7 +586,8 @@ namespace MeeSoft.ImageProcessing.Operations
                     fixed (Int16* dstLine = &dstPlane.Elements[y, 0])
                     fixed (short* remapLUT = _remapLUT16)
                     {
-                        for (int x = 0; x < srcPlane.Width; x++)
+                        var width = srcPlane.Width;
+                        for (int x = 0; x < width; x++)
                         {
                             Debug.Assert(IntMath.InRange((srcLine[x] - g0) + IntRange, 0, _remapLUT16.Length - 1));
                             var res = remapLUT[(srcLine[x] - g0) + IntRange] + g0;

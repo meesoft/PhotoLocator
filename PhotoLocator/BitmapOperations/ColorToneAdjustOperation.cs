@@ -148,11 +148,12 @@ namespace PhotoLocator.BitmapOperations
             {
                 unsafe
                 {
+                    var width = source.Width;
                     fixed (float* src = &source.Elements[y, 0])
                     fixed (float* dst = &destination.Elements[y, 0])
                     {
                         int xx = 0;
-                        for (var x = 0; x < source.Width; x++)
+                        for (var x = 0; x < width; x++)
                         {
                             ColorTransformRGB2HSI(src[xx], src[xx + 1], src[xx + 2], out dst[xx], out dst[xx + 1], out dst[xx + 2]);
                             xx += 3;

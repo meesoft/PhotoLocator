@@ -99,12 +99,12 @@ namespace PhotoLocator.BitmapOperations
             unsafe
             {
                 var requiredDiff = 1 - MaxContrast;
-                var width = _minPlane.Width;
                 Parallel.For(0, _minPlane.Height, y =>
                 {
                     fixed (float* min = &_minPlane.Elements[y, 0])
                     fixed (float* max = &_maxPlane.Elements[y, 0])
                     {
+                        var width = _minPlane.Width;
                         for (var x = 0; x < width; x++)
                         {
                             var minMaxDist = max[x] - min[x];
@@ -135,11 +135,13 @@ namespace PhotoLocator.BitmapOperations
                     fixed (float* srcPix = &SrcBitmap.Elements[y, 0])
                     fixed (float* dstPix = &DstBitmap.Elements[y, 0])
                     {
+                        int width = SrcBitmap.Width;
+                        int planeCount = SrcBitmap.PlaneCount;
                         int srcX = 0;
-                        for (var x = 0; x < SrcBitmap.Width; x++)
+                        for (var x = 0; x < width; x++)
                         {
                             var diff = maxPix[x] - minPix[x];
-                            for (int p = 0; p < SrcBitmap.PlaneCount; p++)
+                            for (int p = 0; p < planeCount; p++)
                             {
                                 if (diff > 1e-6f)
                                     dstPix[srcX] = (srcPix[srcX] - minPix[x]) / diff;

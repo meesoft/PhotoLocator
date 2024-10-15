@@ -113,11 +113,12 @@ namespace PhotoLocator.BitmapOperations
 
             public unsafe void Apply(byte* source, int srcOffset, byte* dest, int dstOffset, int dstSampleDistance)
             {
-                for (var i = 0; i < _weights.Length; i++)
+                var weights = _weights;
+                for (var i = 0; i < weights.Length; i++)
                 {
                     float sum = 0.5f;
-                    int length = _weights[i].SourcePixelWeights.Length;
-                    fixed (SourcePixelWeight* sourceWeights = _weights[i].SourcePixelWeights)
+                    int length = weights[i].SourcePixelWeights.Length;
+                    fixed (SourcePixelWeight* sourceWeights = weights[i].SourcePixelWeights)
                     {
                         var sourceWeight = sourceWeights;
                         for (var j = 0; j < length; j++, sourceWeight++)
