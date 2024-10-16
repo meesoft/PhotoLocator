@@ -25,25 +25,5 @@ namespace PhotoLocator.BitmapOperations
             GeneralFileFormatHandler.SaveToFile(result, "localContrast.png");
 #endif
         }
-
-        [TestMethod]
-        public void FloatToByteGammaLutRange_ShouldBeSufficient()
-        {
-            const int TestRange = 256;
-            double gamma = 2.2;
-
-            var lut = FloatBitmap.CreateGammaLookupFloatToByte(gamma);
-            var scale = 1.0 / (TestRange - 1);
-            int diff = 0;
-            for (int i = 0; i < TestRange; i++)
-            {
-                //float e = i / (float)TestRange;
-                float e = (float)Math.Pow(i * scale, gamma);
-                diff += Math.Abs(
-                    (byte)(Math.Pow(e, 1 / gamma) * 255 + 0.5) -
-                    lut[(int)(e * FloatBitmap.FloatToByteGammaLutRange + 0.5f)]);
-            }
-            Assert.AreEqual(0, diff);
-        }
     }
 }

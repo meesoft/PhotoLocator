@@ -336,7 +336,7 @@ namespace PhotoLocator
             var ct = _previewCancellation.Token;
             try
             {
-                var cached = _pictureCache.Where(item => item.Path == selected.FullPath).FirstOrDefault();
+                var cached = _pictureCache.Find(item => item.Path == selected.FullPath);
                 if (cached.Path is null)
                 {
                     while (_pictureCache.Count > 3)

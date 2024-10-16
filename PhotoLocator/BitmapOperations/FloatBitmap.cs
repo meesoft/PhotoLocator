@@ -228,7 +228,7 @@ namespace PhotoLocator.BitmapOperations
             return gammaLUT;
         }
 
-        internal const int FloatToByteGammaLutRange = 100000;
+        internal const int FloatToByteGammaLutRange = 100_000;
 
         internal static byte[] CreateGammaLookupFloatToByte(double gamma)
         {

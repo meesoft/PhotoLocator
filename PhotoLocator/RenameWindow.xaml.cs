@@ -27,7 +27,7 @@ namespace PhotoLocator
         MaskBasedNaming? _exampleNamer;
 
 #if DEBUG
-        public RenameWindow() : this(new List<PictureItemViewModel>(), new ObservableCollection<PictureItemViewModel>(), new ObservableSettings())
+        public RenameWindow() : this([], [], new ObservableSettings())
         {
             RenameMask = nameof(RenameMask);
             ExampleName = nameof(ExampleName);
