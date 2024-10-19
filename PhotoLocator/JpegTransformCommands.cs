@@ -15,16 +15,18 @@ namespace PhotoLocator
     {
         private readonly IMainViewModel _mainViewModel;
 
+        private bool HasFileSelected(object? o) => _mainViewModel.SelectedItem is not null && _mainViewModel.SelectedItem.IsFile;
+
         public JpegTransformCommands(IMainViewModel mainViewModel)
         {
             _mainViewModel = mainViewModel;
         }
 
-        public ICommand RotateLeftCommand => new RelayCommand(async o => await RotateSelectedAsync(270));
+        public ICommand RotateLeftCommand => new RelayCommand(async o => await RotateSelectedAsync(270), HasFileSelected);
 
-        public ICommand RotateRightCommand => new RelayCommand(async o => await RotateSelectedAsync(90));
+        public ICommand RotateRightCommand => new RelayCommand(async o => await RotateSelectedAsync(90), HasFileSelected);
 
-        public ICommand Rotate180Command => new RelayCommand(async o => await RotateSelectedAsync(180));
+        public ICommand Rotate180Command => new RelayCommand(async o => await RotateSelectedAsync(180), HasFileSelected);
 
         private async Task RotateSelectedAsync(int angle)
         {
@@ -47,8 +49,6 @@ namespace PhotoLocator
 
         public ICommand LocalContrastCommand => new RelayCommand(o =>
         {
-            if (_mainViewModel.SelectedItem?.IsDirectory != false)
-                return;
             LocalContrastViewModel localContrastViewModel;
             BitmapMetadata? metadata = null;
             using (var cursor = new MouseCursorOverride())
@@ -68,9 +68,9 @@ namespace PhotoLocator
                     ExifHandler.SetDateTaken(metadata, _mainViewModel.SelectedItem.TimeStamp ?? File.GetLastWriteTime(_mainViewModel.SelectedItem.FullPath));
                     ExifHandler.SetGeotag(metadata, _mainViewModel.SelectedItem.GeoTag);
                 }
-                localContrastViewModel = new LocalContrastViewModel() 
-                { 
-                    SourceBitmap = image ?? throw new UserMessageException(_mainViewModel.SelectedItem.ErrorMessage) 
+                localContrastViewModel = new LocalContrastViewModel()
+                {
+                    SourceBitmap = image ?? throw new UserMessageException(_mainViewModel.SelectedItem.ErrorMessage)
                 };
             }
             var window = new LocalContrastView();
@@ -88,6 +88,6 @@ namespace PhotoLocator
             if (dlg.ShowDialog() != true)
                 return;
             GeneralFileFormatHandler.SaveToFile(localContrastViewModel.PreviewPictureSource!, dlg.FileName, metadata);
-        });
+        }, HasFileSelected);
     }
 }

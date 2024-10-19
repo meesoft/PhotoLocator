@@ -838,11 +838,28 @@ namespace PhotoLocator
                     if (SelectedItem is null || CropControl is null || o is not true &&
                         MessageBox.Show("Crop to selection?", "Crop", MessageBoxButton.OKCancel, MessageBoxImage.Question) != MessageBoxResult.OK)
                         return;
-                    await RunProcessWithProgressBarAsync((progressCallback, ct) => Task.Run(() =>
+                    string sourceFileName, destFileName;
+                    if (JpegTransformations.IsFileTypeSupported(SelectedItem.Name))
+                    {
+                        sourceFileName = SelectedItem.FullPath;
+                        destFileName = SelectedItem.GetProcessedFileName();
+                        SelectedItem.Rotation = Rotation.Rotate0;
+                    }
+                    else
+                    {
+                        sourceFileName = destFileName =  Path.ChangeExtension(SelectedItem.GetProcessedFileName(), "jpg");
+                        if (File.Exists(sourceFileName) && MessageBox.Show($"Do you wish to overwrite the file '{Path.GetFileName(sourceFileName)}'?", "Crop", MessageBoxButton.OKCancel, MessageBoxImage.Question) != MessageBoxResult.OK)
+                            return;
+                    }
+                    await RunProcessWithProgressBarAsync((progressCallback, ct) => Task.Run(async () =>
                     {
                         progressCallback(-1);
-                        JpegTransformations.Crop(SelectedItem.FullPath, SelectedItem.GetProcessedFileName(), CropControl.CropRectangle);
-                        SelectedItem.Rotation = Rotation.Rotate0;
+                        if (sourceFileName != SelectedItem.FullPath)
+                        {
+                            using var file = await FileHelpers.OpenFileWithRetryAsync(SelectedItem.FullPath, ct);
+                            GeneralFileFormatHandler.SaveToFile(PreviewPictureSource!, sourceFileName, ExifHandler.LoadMetadata(file));
+                        }
+                        JpegTransformations.Crop(sourceFileName, destFileName, CropControl.CropRectangle);
                     }, ct), "Cropping");
                 }
                 finally
@@ -852,13 +869,11 @@ namespace PhotoLocator
             }
             else
             {
-                if (SelectedItem is null || SelectedItem.IsDirectory || !JpegTransformations.IsFileTypeSupported(SelectedItem.Name))
-                    throw new UserMessageException("Unsupported file format");
                 IsCropControlVisible = true;
                 if (IsCropControlVisible)
                     PreviewZoom = 0;
             }
-        });
+        }, o => SelectedItem is not null && SelectedItem.IsFile);
 
         public JpegTransformCommands JpegTransformCommands => new(this);
 
