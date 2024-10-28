@@ -192,6 +192,11 @@ namespace PhotoLocator
 
         private void HandleTimerEvent(object? sender, EventArgs e)
         {
+            if (!IsVisible)
+            {
+                _timer.Stop();
+                return;
+            }
             PictureIndex = (PictureIndex + 1) % _pictures.Count;
             UpdatePicture();
         }
@@ -249,6 +254,7 @@ namespace PhotoLocator
             _resamplerCancellation?.Cancel();
             _resamplerCancellation?.Dispose();
             _resamplerCancellation = null;
+            _timer.Stop();
         }
     }
 }

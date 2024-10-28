@@ -380,6 +380,7 @@ namespace PhotoLocator
             valueStore.Add(ShadowStrength);
             valueStore.Add(MaxStretch);
             valueStore.Add(OutlierReductionStrength);
+            valueStore.Add(Contrast);
             valueStore.Add(ToneMapping);
             valueStore.Add(DetailHandling);
             valueStore.Add(ToneRotation);
@@ -399,6 +400,7 @@ namespace PhotoLocator
             ShadowStrength = valueStore[a++];
             MaxStretch = valueStore[a++];
             OutlierReductionStrength = valueStore[a++];
+            Contrast = valueStore[a++];
             ToneMapping = valueStore[a++];
             DetailHandling = valueStore[a++];
             ToneRotation = valueStore[a++];
