@@ -129,11 +129,103 @@ namespace PhotoLocator.BitmapOperations
             }
         }
 
+        class LineResamplerFixedPoint
+        {
+            record struct SourcePixelWeight
+            {
+                public int SourceIndex;
+                public int SourceWeight;
+            }
+
+            record struct Weight
+            {
+                public SourcePixelWeight[] SourcePixelWeights;
+            }
+
+            readonly Weight[] _weights;
+
+            internal LineResamplerFixedPoint(Func<float, float> filterFunc, float filterWindow, int srcWidth, int srcSampleDistance, int dstWidth)
+            {
+                // Compute filter weights for each position along the line
+                _weights = new Weight[dstWidth];
+                var scaleWN = (float)(srcWidth - 1) / Math.Max(dstWidth - 1, 1);
+                var scaleNW = (float)(dstWidth - 1) / Math.Max(srcWidth - 1, 1);
+                var reduceWindow = filterWindow * scaleWN;
+                Parallel.For(0, dstWidth, i =>
+                {
+                    double sum = 0;
+                    float[] rawWeights;
+                    SourcePixelWeight[] sourceWeights;
+                    if (dstWidth < srcWidth) // Downscale
+                    {
+                        var center = i * scaleWN;
+                        var pMin = (int)Math.Floor(center - reduceWindow);
+                        var pMax = (int)Math.Ceiling(center + reduceWindow);
+                        sourceWeights = new SourcePixelWeight[pMax - pMin + 1];
+                        rawWeights = new float[sourceWeights.Length];
+                        for (var p = pMin; p <= pMax; p++)
+                        {
+                            if (p < 0)
+                                sourceWeights[p - pMin].SourceIndex = 0;
+                            else if (p >= srcWidth)
+                                sourceWeights[p - pMin].SourceIndex = (srcWidth - 1) * srcSampleDistance;
+                            else
+                                sourceWeights[p - pMin].SourceIndex = p * srcSampleDistance;
+                            sum += rawWeights[p - pMin] = filterFunc((p - center) * scaleNW) * scaleNW;
+                        }
+                    }
+                    else // Upscale
+                    {
+                        var center = i * scaleWN;
+                        var pMin = (int)Math.Floor(center - filterWindow);
+                        var pMax = (int)Math.Ceiling(center + filterWindow);
+                        sourceWeights = new SourcePixelWeight[pMax - pMin + 1];
+                        rawWeights = new float[sourceWeights.Length];
+                        for (var p = pMin; p <= pMax; p++)
+                        {
+                            if (p < 0)
+                                sourceWeights[p - pMin].SourceIndex = 0;
+                            else if (p >= srcWidth)
+                                sourceWeights[p - pMin].SourceIndex = (srcWidth - 1) * srcSampleDistance;
+                            else
+                                sourceWeights[p - pMin].SourceIndex = p * srcSampleDistance;
+                            sum += rawWeights[p - pMin] = filterFunc(p - center);
+                        }
+                    }
+                    if (sum > 0)
+                    {
+                        var scale = 65536 / sum;
+                        for (var p = 0; p < sourceWeights.Length; p++)
+                            sourceWeights[p].SourceWeight = IntMath.Round(rawWeights[p] * scale);
+                    }
+                    _weights[i].SourcePixelWeights = sourceWeights;
+                });
+            }
+
+            public unsafe void Apply(byte* source, int srcOffset, byte* dest, int dstOffset, int dstSampleDistance)
+            {
+                var weights = _weights;
+                for (var i = 0; i < weights.Length; i++)
+                {
+                    int sum = 32768;
+                    int length = weights[i].SourcePixelWeights.Length;
+                    fixed (SourcePixelWeight* sourceWeights = weights[i].SourcePixelWeights)
+                    {
+                        var sourceWeight = sourceWeights;
+                        for (var j = 0; j < length; j++, sourceWeight++)
+                            sum += source[srcOffset + (*sourceWeight).SourceIndex] * (*sourceWeight).SourceWeight;
+                    }
+                    if (sum > 0)
+                        dest[dstOffset + i * dstSampleDistance] = (byte)Math.Min(sum >> 16, 255);
+                }
+            }
+        }
+
         public byte[] Apply(byte[] pixels, int width, int height, int planes, int pixelSize, int newWidth, int newHeight, CancellationToken ct)
         {
             if (width != newWidth)
             {
-                var resampler = new LineResampler(FilterFunc, FilterWindow, width, pixelSize, newWidth);
+                var resampler = new LineResamplerFixedPoint(FilterFunc, FilterWindow, width, pixelSize, newWidth);
                 var dstPixels = new byte[newWidth * height * pixelSize];
                 Parallel.For(0, height, y =>
                 {
@@ -151,7 +243,7 @@ namespace PhotoLocator.BitmapOperations
             }
             if (height != newHeight)
             {
-                var resampler = new LineResampler(FilterFunc, FilterWindow, height, width * pixelSize, newHeight);
+                var resampler = new LineResamplerFixedPoint(FilterFunc, FilterWindow, height, width * pixelSize, newHeight);
                 var dstPixels = new byte[newWidth * newHeight * pixelSize];
                 Parallel.For(0, width, x =>
                 {
@@ -175,7 +267,7 @@ namespace PhotoLocator.BitmapOperations
         {
             var width = source.PixelWidth;
             var height = source.PixelHeight;
-            if (width == newWidth && height == newHeight)
+            if (width == newWidth && height == newHeight && source.DpiX == newDpiX && source.DpiY == newDpiY)
                 return source;
 
             int planes, pixelSize;
