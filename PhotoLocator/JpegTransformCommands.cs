@@ -53,7 +53,7 @@ namespace PhotoLocator
             BitmapMetadata? metadata = null;
             using (var cursor = new MouseCursorOverride())
             {
-                var image = _mainViewModel.SelectedItem.LoadPreview(default, int.MaxValue, true);
+                var image = _mainViewModel.SelectedItem!.LoadPreview(default, int.MaxValue, true);
                 try
                 {
                     using var file = File.OpenRead(_mainViewModel.SelectedItem.FullPath);

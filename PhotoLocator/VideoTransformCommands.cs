@@ -45,9 +45,6 @@ namespace PhotoLocator
         {
             _mainViewModel = mainViewModel;
             _videoTransforms = new VideoTransforms(mainViewModel.Settings);
-
-            UpdateProcessArgs();
-            UpdateOutputArgs();
         }
 
         public event PropertyChangedEventHandler? PropertyChanged;
@@ -325,7 +322,7 @@ namespace PhotoLocator
             get => _frameRate;
             set
             {
-                if (SetProperty(ref _frameRate, value))
+                if (SetProperty(ref _frameRate, value.Trim()))
                 {
                     UpdateInputArgs();
                     UpdateOutputArgs();
@@ -470,6 +467,8 @@ namespace PhotoLocator
                 filters.Add($"vidstabtransform=smoothing={SmoothFrames}"
                     + (IsTripodChecked ? ":tripod=1" : null)
                     + (IsBicubicStabilizeChecked ? ":interpol=bicubic" : null));
+            if (_mainViewModel.GetSelectedItems().Where(item => item.IsFile).All(item => !item.IsVideo))
+                filters.Add("colorspace=all=bt709:iall=bt601-6-625:fast=1");
             if (filters.Count == 0)
                 ProcessArguments = string.Empty;
             else
@@ -519,7 +518,8 @@ namespace PhotoLocator
             else
             {
                 SelectedVideoFormat = DefaultVideoFormat;
-                FrameRate = "30";
+                if (string.IsNullOrEmpty(FrameRate))
+                    FrameRate = "30";
             }
             ProcessSelected.Execute(null);
         });
@@ -569,6 +569,8 @@ namespace PhotoLocator
         public ICommand ProcessSelected => new RelayCommand(async o =>
         {
             var allSelected = UpdateInputArgs();
+            UpdateProcessArgs();
+            UpdateOutputArgs();
 
             if (_localContrastSetup is not null && _localContrastSetup.SourceBitmap is not null)
                 _localContrastSetup.SourceBitmap = null;
@@ -701,7 +703,11 @@ namespace PhotoLocator
                     if (!_hasFps)
                         throw new UserMessageException("Unable to determine frame rate, please specify manually");
                     var writeTask = _videoTransforms.RunFFmpegWithStreamInputImagesAsync(_fps, $"{OutputArguments} -y \"{outFileName}\"", frameEnumerator, 
-                        stdError => Debug.WriteLine("Writer: " + stdError));
+                        stdError =>
+                        {
+                            Debug.WriteLine("Writer: " + stdError);
+                            ct.ThrowIfCancellationRequested();
+                        });
                     await readTask.ConfigureAwait(false);
                     frameEnumerator.Break();
                     await writeTask.ConfigureAwait(false);
