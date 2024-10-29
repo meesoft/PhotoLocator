@@ -45,6 +45,8 @@ namespace PhotoLocator
         {
             _mainViewModel = mainViewModel;
             _videoTransforms = new VideoTransforms(mainViewModel.Settings);
+            UpdateProcessArgs();
+            UpdateOutputArgs();
         }
 
         public event PropertyChangedEventHandler? PropertyChanged;
@@ -64,6 +66,17 @@ namespace PhotoLocator
             set => SetProperty(ref _hasSingleInput, value);
         }
         bool _hasSingleInput;
+
+        public bool HasOnlyImageInput
+        {
+            get => _hasOnlyImageInput;
+            set
+            {
+                if (SetProperty(ref _hasOnlyImageInput, value))
+                    UpdateProcessArgs();
+            }
+        }
+        bool _hasOnlyImageInput;
 
         public string SkipTo
         {
@@ -433,6 +446,7 @@ namespace PhotoLocator
                 HasSingleInput = false;
                 InputArguments = (string.IsNullOrEmpty(FrameRate) ? "" : $"-r {FrameRate} ") + $"-f concat -safe 0 -i {VideoTransformCommands.InputFileName}";
             }
+            HasOnlyImageInput = !allSelected.Any(item => item.IsVideo);
             return allSelected;
         }
 
@@ -467,7 +481,7 @@ namespace PhotoLocator
                 filters.Add($"vidstabtransform=smoothing={SmoothFrames}"
                     + (IsTripodChecked ? ":tripod=1" : null)
                     + (IsBicubicStabilizeChecked ? ":interpol=bicubic" : null));
-            if (_mainViewModel.GetSelectedItems().Where(item => item.IsFile).All(item => !item.IsVideo))
+            if (HasOnlyImageInput)
                 filters.Add("colorspace=all=bt709:iall=bt601-6-625:fast=1");
             if (filters.Count == 0)
                 ProcessArguments = string.Empty;
@@ -569,8 +583,6 @@ namespace PhotoLocator
         public ICommand ProcessSelected => new RelayCommand(async o =>
         {
             var allSelected = UpdateInputArgs();
-            UpdateProcessArgs();
-            UpdateOutputArgs();
 
             if (_localContrastSetup is not null && _localContrastSetup.SourceBitmap is not null)
                 _localContrastSetup.SourceBitmap = null;
