@@ -12,6 +12,7 @@ using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Runtime.CompilerServices;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -561,7 +562,7 @@ namespace PhotoLocator
                 PrepareProgressDisplay(progressCallback);
                 Directory.CreateDirectory(Path.GetDirectoryName(outFileName)!);
                 var args = $"{InputArguments} -filter_complex \"[0:v:0]pad=iw*2:ih[bg]; [bg][1:v:0]overlay=w\" -y \"{outFileName}\"";
-                await _videoTransforms.RunFFmpegAsync(args, ProcessStdError);
+                await _videoTransforms.RunFFmpegAsync(args, ProcessStdError, ct);
             }, "Processing");
             await _mainViewModel.SelectFileAsync(outFileName);
         });
@@ -663,7 +664,7 @@ namespace PhotoLocator
                 {
                     _progressScale = 0.5;
                     File.Delete(TransformsFileName);
-                    await _videoTransforms.RunFFmpegAsync($"{InputArguments} {StabilizeArguments}", ProcessStdError).ConfigureAwait(false);
+                    await _videoTransforms.RunFFmpegAsync($"{InputArguments} {StabilizeArguments}", ProcessStdError, ct).ConfigureAwait(false);
                     _progressOffset = 0.5;
                     _progressCallback?.Invoke(0.5);
                 }
@@ -673,7 +674,7 @@ namespace PhotoLocator
                 if (OutputMode is OutputMode.Average)
                 {
                     using var process = new AverageFramesOperation(DarkFramePath, IsRegisterFramesChecked, ParseRegistrationRegion(), ct);
-                    await _videoTransforms.RunFFmpegWithStreamOutputImagesAsync(args, process.ProcessImage, ProcessStdError).ConfigureAwait(false);
+                    await _videoTransforms.RunFFmpegWithStreamOutputImagesAsync(args, process.ProcessImage, ProcessStdError, ct).ConfigureAwait(false);
                     if (process.Supports16BitResult() && Path.GetExtension(outFileName).ToUpperInvariant() is ".PNG" or ".TIF" or ".TIFF" or ".JXR")
                         GeneralFileFormatHandler.SaveToFile(process.GetResult16(), outFileName, CreateImageMetadata());
                     else
@@ -683,7 +684,7 @@ namespace PhotoLocator
                 else if (OutputMode is OutputMode.Max)
                 {
                     using var process = new MaxFramesOperation(DarkFramePath, IsRegisterFramesChecked, ParseRegistrationRegion(), ct);
-                    await _videoTransforms.RunFFmpegWithStreamOutputImagesAsync(args, process.ProcessImage, ProcessStdError).ConfigureAwait(false);
+                    await _videoTransforms.RunFFmpegWithStreamOutputImagesAsync(args, process.ProcessImage, ProcessStdError, ct).ConfigureAwait(false);
                     GeneralFileFormatHandler.SaveToFile(process.GetResult8(), outFileName, CreateImageMetadata());
                     message = $"Processed {process.ProcessedImages} frames in {sw.Elapsed.TotalSeconds:N1}s";
                 }
@@ -710,23 +711,19 @@ namespace PhotoLocator
                                 source = runningAverage.GetResult16();
                             }
                             frameEnumerator.ItemCallback(_localContrastSetup!.ApplyOperations(source));
-                        }, ProcessStdError);
-                    await frameEnumerator.GotFirst.ConfigureAwait(false);
+                        }, ProcessStdError, ct);
+                    await Task.WhenAny(frameEnumerator.GotFirst, Task.Delay(TimeSpan.FromSeconds(10), ct)).ConfigureAwait(false);
                     if (!_hasFps)
                         throw new UserMessageException("Unable to determine frame rate, please specify manually");
                     var writeTask = _videoTransforms.RunFFmpegWithStreamInputImagesAsync(_fps, $"{OutputArguments} -y \"{outFileName}\"", frameEnumerator, 
-                        stdError =>
-                        {
-                            Debug.WriteLine("Writer: " + stdError);
-                            ct.ThrowIfCancellationRequested();
-                        });
+                        stdError => Debug.WriteLine("Writer: " + stdError), ct);
                     await readTask.ConfigureAwait(false);
                     frameEnumerator.Break();
                     await writeTask.ConfigureAwait(false);
                 }
                 else
                 {
-                    await _videoTransforms.RunFFmpegAsync(args + $" -y \"{outFileName}\"", ProcessStdError).ConfigureAwait(false);
+                    await _videoTransforms.RunFFmpegAsync(args + $" -y \"{outFileName}\"", ProcessStdError, ct).ConfigureAwait(false);
                 }
                 _progressCallback?.Invoke(1);
                 if (allSelected.Length > 1)

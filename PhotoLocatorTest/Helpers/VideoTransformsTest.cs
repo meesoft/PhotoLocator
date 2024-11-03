@@ -25,7 +25,7 @@ namespace PhotoLocator.Helpers
             {
                 Debug.WriteLine(frame.PixelWidth + "x" + frame.PixelHeight);
                 i++;
-            }, stdError => Debug.WriteLine(stdError));
+            }, stdError => Debug.WriteLine(stdError), default);
             Debug.WriteLine(i);
             Assert.IsTrue(i > 0);
         }      
@@ -41,10 +41,10 @@ namespace PhotoLocator.Helpers
             using var frameEnumerator = new CallbackEnumerable<BitmapSource>();
 
             var readerArgs = $" -i \"{SourceVideoPath}\"";
-            var readTask = videoTransforms.RunFFmpegWithStreamOutputImagesAsync(readerArgs, frameEnumerator.ItemCallback, stdError => { }); // Debug.WriteLine(stdError));
+            var readTask = videoTransforms.RunFFmpegWithStreamOutputImagesAsync(readerArgs, frameEnumerator.ItemCallback, stdError => { }, default); // Debug.WriteLine(stdError));
 
             var writerArgs = $"-pix_fmt yuv420p -y out.mp4";
-            var writeTask = videoTransforms.RunFFmpegWithStreamInputImagesAsync(25, writerArgs, frameEnumerator, stdError => Debug.WriteLine(stdError));
+            var writeTask = videoTransforms.RunFFmpegWithStreamInputImagesAsync(25, writerArgs, frameEnumerator, stdError => Debug.WriteLine(stdError), default);
 
             await readTask;
             frameEnumerator.Break();
@@ -65,10 +65,10 @@ namespace PhotoLocator.Helpers
             var op = new LocalContrastViewModel();
             var readTask = videoTransforms.RunFFmpegWithStreamOutputImagesAsync(readerArgs, 
                 source => frameEnumerator.ItemCallback(op.ApplyOperations(source)),
-                stdError => { }); 
+                stdError => { }, default); 
 
             var writerArgs = $"-pix_fmt yuv420p -y out.mp4";
-            var writeTask = videoTransforms.RunFFmpegWithStreamInputImagesAsync(25, writerArgs, frameEnumerator, stdError => Debug.WriteLine(stdError));
+            var writeTask = videoTransforms.RunFFmpegWithStreamInputImagesAsync(25, writerArgs, frameEnumerator, stdError => Debug.WriteLine(stdError), default);
 
             await readTask;
             frameEnumerator.Break();

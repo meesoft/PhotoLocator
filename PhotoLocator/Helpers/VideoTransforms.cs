@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Globalization;
 using System.IO;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
@@ -30,22 +31,22 @@ namespace PhotoLocator.Helpers
             return _settings.FFmpegPath;
         }
 
-        public async Task RunFFmpegAsync(string args, Action<string> stdErrorCallback)
+        public async Task RunFFmpegAsync(string args, Action<string> stdErrorCallback, CancellationToken ct)
         {
             var startInfo = new ProcessStartInfo(GetFFmpegPath(), args);
             startInfo.RedirectStandardError = true;
             startInfo.CreateNoWindow = true;
             using var process = Process.Start(startInfo) ?? throw new IOException("Failed to start FFmpeg");
-            var stdErrorTask = ProcessOutputAsync(process.StandardError, stdErrorCallback);
+            var stdErrorTask = ProcessStandardErrorAsync(process.StandardError, stdErrorCallback, ct);
             await stdErrorTask.ConfigureAwait(false);
-            await process.WaitForExitAsync().ConfigureAwait(false);
+            await process.WaitForExitAsync(ct).ConfigureAwait(false);
             if (process.ExitCode != 0)
                 throw new UserMessageException($"Unable to process video. {_lastError}\nCommand line: ffmpeg {args}");
         }
 
         /// <summary> Process video with streaming output to images </summary>
         /// <param name="args">Command line arguments excluding output specification</param>
-        public async Task RunFFmpegWithStreamOutputImagesAsync(string args, Action<BitmapSource> imageCallback, Action<string> stdErrorCallback)
+        public async Task RunFFmpegWithStreamOutputImagesAsync(string args, Action<BitmapSource> imageCallback, Action<string> stdErrorCallback, CancellationToken ct)
         {
             args += " -c:v bmp -f image2pipe -";
             var startInfo = new ProcessStartInfo(GetFFmpegPath(), args);
@@ -53,17 +54,7 @@ namespace PhotoLocator.Helpers
             startInfo.RedirectStandardError = true;
             startInfo.CreateNoWindow = true;
             using var process = Process.Start(startInfo) ?? throw new IOException("Failed to start FFmpeg");
-            var processImagesTask = Task.Run(() => ProcessImages(process.StandardOutput, imageCallback));
-            var stdErrorTask = ProcessOutputAsync(process.StandardError, stdErrorCallback);
-            await processImagesTask.ConfigureAwait(false);
-            await stdErrorTask.ConfigureAwait(false);
-            await process.WaitForExitAsync().ConfigureAwait(false);
-            if (process.ExitCode != 0)
-                throw new UserMessageException($"Unable to process video. {_lastError}\nCommand line: ffmpeg {args}");
-        }
-
-        private static void ProcessImages(StreamReader standardOutput, Action<BitmapSource> imageCallback)
-        {
+            var stdErrorTask = ProcessStandardErrorAsync(process.StandardError, stdErrorCallback, ct);
             try
             {
                 var header = new byte[6];
@@ -71,13 +62,15 @@ namespace PhotoLocator.Helpers
                 var memStream = new MemoryStream();
                 while (true)
                 {
-                    standardOutput.BaseStream.ReadExactly(header, 0, header.Length);
+                    await process.StandardOutput.BaseStream.ReadExactlyAsync(header, 0, header.Length, ct).ConfigureAwait(false);
                     var remainingSize = BitConverter.ToInt32(header, 2) - header.Length;
                     if (remainingSize > theRest.Length)
                         theRest = new byte[remainingSize];
-                    standardOutput.BaseStream.ReadExactly(theRest, 0, remainingSize);
-                    memStream.Write(header, 0, header.Length);
+                    await process.StandardOutput.BaseStream.ReadExactlyAsync(theRest, 0, remainingSize, ct).ConfigureAwait(false);
+#pragma warning disable CA1849 // Call async methods when in an async method
+                    memStream.Write(header);
                     memStream.Write(theRest, 0, remainingSize);
+#pragma warning restore CA1849 // Call async methods when in an async method
                     var image = BitmapDecoder.Create(memStream, BitmapCreateOptions.PreservePixelFormat, BitmapCacheOption.OnLoad).Frames[0];
                     image.Freeze();
                     memStream.SetLength(0);
@@ -85,11 +78,15 @@ namespace PhotoLocator.Helpers
                 }
             }
             catch (EndOfStreamException) { }
+            await stdErrorTask.ConfigureAwait(false);
+            await process.WaitForExitAsync(ct).ConfigureAwait(false);
+            if (process.ExitCode != 0)
+                throw new UserMessageException($"Unable to process video. {_lastError}\nCommand line: ffmpeg {args}");
         }
 
         /// <summary> Process video with streaming input from images </summary>
         /// <param name="args">Command line arguments excluding input specification</param>
-        public async Task RunFFmpegWithStreamInputImagesAsync(double inFrameRate, string args, IEnumerable<BitmapSource> images, Action<string> stdErrorCallback)
+        public async Task RunFFmpegWithStreamInputImagesAsync(double inFrameRate, string args, IEnumerable<BitmapSource> images, Action<string> stdErrorCallback, CancellationToken ct)
         {
             var enumerator = images.GetEnumerator();
             enumerator.Reset();
@@ -133,11 +130,11 @@ namespace PhotoLocator.Helpers
             startInfo.RedirectStandardError = true;
             startInfo.CreateNoWindow = true;
             using var process = Process.Start(startInfo) ?? throw new IOException("Failed to start FFmpeg");
-            var stdErrorTask = ProcessOutputAsync(process.StandardError, stdErrorCallback);
+            var stdErrorTask = ProcessStandardErrorAsync(process.StandardError, stdErrorCallback, ct);
             while (true)
             {
                 image.CopyPixels(pixels, width * pixelSize, 0);
-                process.StandardInput.BaseStream.Write(pixels);
+                await process.StandardInput.BaseStream.WriteAsync(pixels, ct).ConfigureAwait(false);
 
                 if (!enumerator.MoveNext())
                     break;
@@ -149,16 +146,16 @@ namespace PhotoLocator.Helpers
             }
             process.StandardInput.Close();
             await stdErrorTask.ConfigureAwait(false);
-            await process.WaitForExitAsync().ConfigureAwait(false);
+            await process.WaitForExitAsync(ct).ConfigureAwait(false);
             if (process.ExitCode != 0)
                 throw new UserMessageException($"Unable to process video. {_lastError}\nCommand line: ffmpeg {args}");
         }
 
-        private async Task ProcessOutputAsync(StreamReader output, Action<string> lineCallback)
+        private async Task ProcessStandardErrorAsync(StreamReader output, Action<string> lineCallback, CancellationToken ct)
         {
             while (true)
             {
-                var line = await output.ReadLineAsync().ConfigureAwait(false);
+                var line = await output.ReadLineAsync(ct).ConfigureAwait(false);
                 if (line is null)
                     return;
                 _lastError = line;

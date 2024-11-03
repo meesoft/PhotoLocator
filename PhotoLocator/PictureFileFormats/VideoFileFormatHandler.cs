@@ -27,7 +27,6 @@ namespace PhotoLocator.PictureFileFormats
                 line =>
                 {
                     //System.Diagnostics.Debug.WriteLine(line);
-                    ct.ThrowIfCancellationRequested();
                     if (timeStamp is null && line.Contains("  creation_time", StringComparison.Ordinal))
                     {
                         var i = line.IndexOf(':', StringComparison.Ordinal);
@@ -59,7 +58,7 @@ namespace PhotoLocator.PictureFileFormats
                             line.IndexOf(": ", VideoTransforms.EncodingOutputPrefix.Length, StringComparison.Ordinal));
                         metadata = (duration is null ? null : duration + ",") + line[(i + 1)..];
                     }
-                }), ct).GetAwaiter().GetResult();
+                }, ct), ct).GetAwaiter().GetResult();
             return (result ?? throw new FileFormatException(), timeStamp, location, metadata);
         }
     }
