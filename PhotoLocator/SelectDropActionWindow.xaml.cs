@@ -81,8 +81,7 @@ namespace PhotoLocator
             {
                 await _mainViewModel.AppendFilesAsync(fileNames);
                 var firstDropped = _mainViewModel.Items.FirstOrDefault(item => item.FullPath == fileNames[0]);
-                if (firstDropped != null)
-                    _mainViewModel.SelectItem(firstDropped);
+                _mainViewModel.SelectIfNotNull(firstDropped);
             }
             await _mainViewModel.LoadPicturesAsync();
         });
@@ -102,8 +101,7 @@ namespace PhotoLocator
             if (path == CurrentPath)
             {
                 var selectItem = _mainViewModel.Items.FirstOrDefault(item => item.FullPath == firstFile);
-                if (selectItem != null)
-                    _mainViewModel.SelectItem(selectItem);
+                _mainViewModel.SelectIfNotNull(selectItem);
 
             }
             else
@@ -163,8 +161,7 @@ namespace PhotoLocator
             await _mainViewModel.WaitForFileSystemWatcherOperation();
             var firstDropped = Path.GetFileName(DroppedEntries.First());
             var selectItem = _mainViewModel.Items.FirstOrDefault(item => item.Name == firstDropped);
-            if (selectItem != null)
-                _mainViewModel.SelectItem(selectItem);
+            _mainViewModel.SelectIfNotNull(selectItem);
         }
     }
 }

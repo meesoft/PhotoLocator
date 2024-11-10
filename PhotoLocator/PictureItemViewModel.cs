@@ -7,7 +7,6 @@ using PhotoLocator.PictureFileFormats;
 using PhotoLocator.Settings;
 using System;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
@@ -211,34 +210,6 @@ namespace PhotoLocator
         }
 
         public Rotation Rotation { get; set; }
-
-        public bool InsertOrdered(ObservableCollection<PictureItemViewModel> collection)
-        {
-            if (IsFile)
-            {
-                var list = collection.ToList();
-                var firstFileIndex = list.FindIndex(item => item.IsFile);
-                if (firstFileIndex < 0)
-                {
-                    collection.Insert(list.Count, this);
-                    return true;
-                }
-                var newIndex = ~list.BinarySearch(firstFileIndex, list.Count - firstFileIndex, this,
-                    new SelectorComparer<PictureItemViewModel>(item => item.Name));
-                if (newIndex < 0)
-                    return false;
-                collection.Insert(newIndex, this);
-            }
-            else
-            {
-                var list = collection.Where(item => item.IsDirectory).ToList();
-                var newIndex = ~list.BinarySearch(this, new SelectorComparer<PictureItemViewModel>(item => item.Name));
-                if (newIndex < 0)
-                    return false;
-                collection.Insert(newIndex, this);
-            }
-            return true;
-        }
 
         public async ValueTask LoadThumbnailAndMetadataAsync(CancellationToken ct)
         {

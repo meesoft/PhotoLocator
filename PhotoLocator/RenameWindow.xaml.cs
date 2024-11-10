@@ -3,7 +3,6 @@ using PhotoLocator.Metadata;
 using PhotoLocator.Settings;
 using System;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.IO;
 using System.Linq;
@@ -22,7 +21,7 @@ namespace PhotoLocator
         private const int RenameHistoryLength = 20;
 
         readonly IList<PictureItemViewModel> _selectedPictures;
-        readonly ObservableCollection<PictureItemViewModel> _allPictures;
+        readonly OrderedCollection _allPictures;
         readonly string[] _previousMasks;
         MaskBasedNaming? _exampleNamer;
 
@@ -35,7 +34,7 @@ namespace PhotoLocator
         }
 #endif
 
-        public RenameWindow(IList<PictureItemViewModel> selectedPictures, ObservableCollection<PictureItemViewModel> allPictures,
+        public RenameWindow(IList<PictureItemViewModel> selectedPictures, OrderedCollection allPictures,
             ISettings settings)
         {
             InitializeComponent();
@@ -200,7 +199,7 @@ namespace PhotoLocator
                     // Allow overwriting when renaming single picture
                     if (_selectedPictures.Count == 1 && item.IsFile)
                     {
-                        var overwritingFile = _allPictures.FirstOrDefault(f => f != item && f.IsFile && f.Name.Equals(newName, StringComparison.OrdinalIgnoreCase));
+                        var overwritingFile = _allPictures.FirstOrDefault(f => f != item && f.IsFile && f.Name.Equals(newName, StringComparison.CurrentCultureIgnoreCase));
                         if (overwritingFile != null &&
                             MessageBox.Show($"The file {newName} already exists, do you want to overwrite it?", "Rename", MessageBoxButton.OKCancel, MessageBoxImage.Question) == MessageBoxResult.OK)
                         {
@@ -212,9 +211,9 @@ namespace PhotoLocator
                         Settings.IncludeSidecarFiles && !IsExtensionWarningVisible);
                     _allPictures.Remove(item);
                     item.IsChecked = false;
-                    item.InsertOrdered(_allPictures);
+                    _allPictures.InsertOrdered(item);
                     _selectedPictures.Remove(item);
-                    ProgressBarValue = (++i) / (double)(selectedPictures.Length);
+                    ProgressBarValue = (double)(++i) / selectedPictures.Length;
                 }
             }
             catch (Exception ex) when (ex is IOException or ArgumentException)

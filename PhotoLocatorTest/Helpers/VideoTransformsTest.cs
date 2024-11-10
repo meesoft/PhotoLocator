@@ -1,5 +1,4 @@
-﻿using PhotoLocator.BitmapOperations;
-using PhotoLocator.Settings;
+﻿using PhotoLocator.Settings;
 using System.Diagnostics;
 using System.Windows.Media.Imaging;
 

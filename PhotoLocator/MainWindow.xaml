@@ -29,6 +29,7 @@
         <KeyBinding Key="D3" Modifiers="Ctrl" Command="{Binding Zoom200Command}" />
         <KeyBinding Key="D4" Modifiers="Ctrl" Command="{Binding Zoom400Command}" />
         <KeyBinding Key="E" Modifiers="Ctrl" Command="{Binding ExploreCommand}" />
+        <KeyBinding Key="F" Modifiers="Ctrl" Command="{Binding QuickSearchCommand}" />
         <KeyBinding Key="L" Modifiers="Ctrl" Command="{Binding JpegTransformCommands.LocalContrastCommand}" />
         <KeyBinding Key="O" Modifiers="Ctrl" Command="{Binding BrowseForPhotosCommand}" />
         <KeyBinding Key="Q" Modifiers="Ctrl" Command="{Binding ViewModeCommand}" />
@@ -43,9 +44,14 @@
         <KeyBinding Key="F5" Command="{Binding CopySelectedCommand}" />
         <KeyBinding Key="F5" Modifiers="Ctrl" Command="{Binding RefreshFolderCommand}" />
         <KeyBinding Key="F6" Command="{Binding MoveSelectedCommand}" />
+        <KeyBinding Key="F6" Modifiers="Ctrl" Command="{Binding SetFilterCommand}" />
         <KeyBinding Key="F7" Command="{Binding CreateFolderCommand}" />
         <KeyBinding Key="F11" Command="{Binding SlideShowCommand}" />
         <KeyBinding Key="F12" Command="{Binding SettingsCommand}" />
+        <KeyBinding Key="Add" Modifiers="Ctrl" Command="{Binding ZoomInCommand}" />
+        <KeyBinding Key="OemPlus" Modifiers="Ctrl" Command="{Binding ZoomInCommand}" />
+        <KeyBinding Key="Subtract" Modifiers="Ctrl" Command="{Binding ZoomOutCommand}" />
+        <KeyBinding Key="OemMinus" Modifiers="Ctrl" Command="{Binding ZoomOutCommand}" />
     </Window.InputBindings>
 
     <Window.TaskbarItemInfo>
@@ -128,11 +134,6 @@
                 <KeyBinding Key="Subtract" Command="{Binding DeselectAllCommand}" />
                 <KeyBinding Key="OemMinus" Command="{Binding DeselectAllCommand}" />
                 <KeyBinding Key="Divide" Command="{Binding QuickSearchCommand}" />
-                <KeyBinding Key="Add" Modifiers="Ctrl" Command="{Binding ZoomInCommand}" />
-                <KeyBinding Key="OemPlus" Modifiers="Ctrl" Command="{Binding ZoomInCommand}" />
-                <KeyBinding Key="Subtract" Modifiers="Ctrl" Command="{Binding ZoomOutCommand}" />
-                <KeyBinding Key="OemMinus" Modifiers="Ctrl" Command="{Binding ZoomOutCommand}" />
-                <KeyBinding Key="F" Modifiers="Ctrl" Command="{Binding QuickSearchCommand}" />
             </ListBox.InputBindings>
             <ListBox.ContextMenu>
                 <ContextMenu>
@@ -141,6 +142,7 @@
                         <MenuItem Header="Non-geotagged (Num+)" Command="{Binding SelectCandidatesCommand}" />
                         <MenuItem Header="None (Num-)" Command="{Binding DeselectAllCommand}" />
                         <MenuItem Header="Search (Ctrl+F)" Command="{Binding QuickSearchCommand}" />
+                        <MenuItem Header="Filter (Ctrl+F6)" Command="{Binding SetFilterCommand}" />
                     </MenuItem>
                     <Separator />
                     <MenuItem Header="Open file (Enter)" Command="{Binding ExecuteSelectedCommand}" />

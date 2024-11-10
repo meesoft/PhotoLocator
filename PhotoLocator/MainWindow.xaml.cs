@@ -174,7 +174,7 @@ namespace PhotoLocator
                 for (int i = min; i < max; i++)
                     if (_viewModel.Items[i].Name.StartsWith(text, StringComparison.CurrentCultureIgnoreCase))
                     {
-                        _viewModel.SelectItem(_viewModel.Items[i]);
+                        _viewModel.SelectIfNotNull(_viewModel.Items[i]);
                         return true;
                     }
                 return false;
