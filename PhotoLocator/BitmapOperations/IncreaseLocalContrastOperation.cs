@@ -130,24 +130,32 @@ namespace PhotoLocator.BitmapOperations
             {
                 Parallel.For(0, SrcBitmap.Height, y =>
                 {
+                    int width = SrcBitmap.Width;
+                    int planeCount = SrcBitmap.PlaneCount;
                     fixed (float* minPix = &_minPlane.Elements[y, 0])
                     fixed (float* maxPix = &_maxPlane.Elements[y, 0])
                     fixed (float* srcPix = &SrcBitmap.Elements[y, 0])
                     fixed (float* dstPix = &DstBitmap.Elements[y, 0])
                     {
-                        int width = SrcBitmap.Width;
-                        int planeCount = SrcBitmap.PlaneCount;
                         int srcX = 0;
                         for (var x = 0; x < width; x++)
                         {
                             var diff = maxPix[x] - minPix[x];
-                            for (int p = 0; p < planeCount; p++)
+                            if (diff > 1e-6f)
                             {
-                                if (diff > 1e-6f)
+                                for (int p = 0; p < planeCount; p++)
+                                {
                                     dstPix[srcX] = (srcPix[srcX] - minPix[x]) / diff;
-                                else
+                                    srcX++;
+                                }
+                            }
+                            else
+                            {
+                                for (int p = 0; p < planeCount; p++)
+                                {
                                     dstPix[srcX] = srcPix[srcX];
-                                srcX++;
+                                    srcX++;
+                                }
                             }
                         }
                     }
@@ -172,17 +180,19 @@ namespace PhotoLocator.BitmapOperations
                 {
                     Parallel.For(0, SrcBitmap.Height, y =>
                     {
+                        int width = SrcBitmap.Width;
+                        int planeCount = SrcBitmap.PlaneCount;
                         fixed (float* srcRow = &SrcBitmap.Elements[y, 0])
                         fixed (float* minRow = &_minSourcePlane.Elements[y, 0])
                         fixed (float* maxRow = &_maxSourcePlane.Elements[y, 0])
                         {
                             int srcX = 0;
-                            for (var x = 0; x < SrcBitmap.Width; x++)
+                            for (var x = 0; x < width; x++)
                             {
                                 float min, max;
                                 min = max = srcRow[srcX];
                                 srcX++;
-                                for (int p = 1; p < SrcBitmap.PlaneCount; p++)
+                                for (int p = 1; p < planeCount; p++)
                                 {
                                     if (srcRow[srcX] < min)
                                         min = srcRow[srcX];
