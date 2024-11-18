@@ -52,7 +52,7 @@ namespace PhotoLocator.BitmapOperations
         /// <summary>
         /// this=Intersect(this, other)
         /// </summary>
-        public void Intersect(in ROI other)
+        public void Intersect(ref ROI other)
         {
             Left = Math.Max(Left, other.Left);
             Top = Math.Max(Top, other.Top);
@@ -63,7 +63,7 @@ namespace PhotoLocator.BitmapOperations
         /// <summary>
         /// this=Union(this, other)
         /// </summary>
-        public void Union(in ROI other)
+        public void Union(ref ROI other)
         {
             if (other.Left < Left)
                 Left = other.Left;
@@ -75,7 +75,7 @@ namespace PhotoLocator.BitmapOperations
                 Bottom = other.Bottom;
         }
 
-        public readonly bool Equals(in ROI other)
+        public readonly bool Equals(ref ROI other)
         {
             return Left == other.Left && Right == other.Right && Top == other.Top && Bottom == other.Bottom;
         }

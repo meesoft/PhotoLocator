@@ -1,5 +1,4 @@
-﻿using MeeSoft.ImageProcessing.Operations;
-using PhotoLocator.BitmapOperations;
+﻿using PhotoLocator.BitmapOperations;
 using PhotoLocator.Helpers;
 using System;
 using System.Collections.Generic;

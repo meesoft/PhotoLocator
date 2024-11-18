@@ -1,5 +1,4 @@
-﻿using MeeSoft.ImageProcessing.Operations;
-using PhotoLocator.PictureFileFormats;
+﻿using PhotoLocator.PictureFileFormats;
 using System.Diagnostics;
 using System.Windows.Media.Imaging;
 
