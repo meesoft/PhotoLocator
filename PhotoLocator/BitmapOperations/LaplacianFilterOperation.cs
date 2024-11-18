@@ -330,9 +330,9 @@ namespace PhotoLocator.BitmapOperations
                         int x = i % pyrL[level].Width;
                         int y = i / pyrL[level].Width;
                         var roi = new ROI(x, y);
-                        var nextLevelROI = ResizeBilinearOperation.GetSourceROI(remapPyrG[level + 1], remapPyrG[level], ref roi);
-                        GaussianPyramidRemap(srcPlane, remapPyrG, level + 1, nextLevelROI, level, ref roi, pyrG[level][x, y]);
-                        pyrL[level][x, y] = LaplacianPyramidCoefficient(remapPyrG, level, ref roi);
+                        var nextLevelROI = ResizeBilinearOperation.GetSourceROI(remapPyrG[level + 1], remapPyrG[level], in roi);
+                        GaussianPyramidRemap(srcPlane, remapPyrG, level + 1, nextLevelROI, level, in roi, pyrG[level][x, y]);
+                        pyrL[level][x, y] = LaplacianPyramidCoefficient(remapPyrG, level, in roi);
                         Debug.Assert(!float.IsNaN(pyrL[level][x, y]));
                         return remapPyrG;
                     },
@@ -378,9 +378,9 @@ namespace PhotoLocator.BitmapOperations
                         int x = i % pyrL[level].Width;
                         int y = i / pyrL[level].Width;
                         var roi = new ROI(x, y);
-                        var nextLevelROI = ResizeBilinearOperation.GetSourceROI(remapPyrG[level + 1], remapPyrG[level], ref roi);
-                        GaussianPyramidRemap(plane16, remapPyrG, level + 1, nextLevelROI, level, ref roi, pyrG[level][x, y]);
-                        pyrL[level][x, y] = LaplacianPyramidCoefficient(remapPyrG, level, ref roi);
+                        var nextLevelROI = ResizeBilinearOperation.GetSourceROI(remapPyrG[level + 1], remapPyrG[level], in roi);
+                        GaussianPyramidRemap(plane16, remapPyrG, level + 1, nextLevelROI, level, in roi, pyrG[level][x, y]);
+                        pyrL[level][x, y] = LaplacianPyramidCoefficient(remapPyrG, level, in roi);
                         return remapPyrG;
                     },
                     remapPyrG =>
@@ -678,7 +678,7 @@ namespace PhotoLocator.BitmapOperations
         /// <summary>
         /// Construct Gaussian pyramid from remapped image
         /// </summary>
-        void GaussianPyramidRemap(FloatBitmap srcPlane, FloatBitmap[] pyrG, int level, ROI roi, int finalLevel, ref ROI finalLevelROI, float g0)
+        void GaussianPyramidRemap(FloatBitmap srcPlane, FloatBitmap[] pyrG, int level, ROI roi, int finalLevel, ref readonly ROI finalLevelROI, float g0)
         {
             if (level == 0)
             {
@@ -709,11 +709,11 @@ namespace PhotoLocator.BitmapOperations
             else
             {
                 if (level == finalLevel)
-                    roi.Union(ref finalLevelROI);
+                    roi.Union(in finalLevelROI);
 
                 // Recursively build pyramid
-                var prevLevelROI = ResizeBilinearOperation.GetSourceROI(pyrG[level - 1], pyrG[level], ref roi);
-                GaussianPyramidRemap(srcPlane, pyrG, level - 1, prevLevelROI, finalLevel, ref finalLevelROI, g0);
+                var prevLevelROI = ResizeBilinearOperation.GetSourceROI(pyrG[level - 1], pyrG[level], in roi);
+                GaussianPyramidRemap(srcPlane, pyrG, level - 1, prevLevelROI, finalLevel, in finalLevelROI, g0);
 
                 // Construct Gaussian pyramid level by downsampling
                 ResizeBilinearOperation.ApplyToPlane(pyrG[level - 1], pyrG[level], roi);
@@ -723,7 +723,7 @@ namespace PhotoLocator.BitmapOperations
         /// <summary>
         /// Construct Gaussian pyramid from remapped image
         /// </summary>
-        void GaussianPyramidRemap(BitmapPlaneInt16 srcPlane, BitmapPlaneInt16[] pyrG, int level, ROI roi, int finalLevel, ref ROI finalLevelROI, short g0)
+        void GaussianPyramidRemap(BitmapPlaneInt16 srcPlane, BitmapPlaneInt16[] pyrG, int level, ROI roi, int finalLevel, ref readonly ROI finalLevelROI, short g0)
         {
             if (level == 0)
             {
@@ -756,11 +756,11 @@ namespace PhotoLocator.BitmapOperations
             else
             {
                 if (level == finalLevel)
-                    roi.Union(ref finalLevelROI);
+                    roi.Union(in finalLevelROI);
 
                 // Recursively build pyramid
-                var prevLevelROI = ResizeBilinearOperation.GetSourceROI(pyrG[level - 1], pyrG[level], ref roi);
-                GaussianPyramidRemap(srcPlane, pyrG, level - 1, prevLevelROI, finalLevel, ref finalLevelROI, g0);
+                var prevLevelROI = ResizeBilinearOperation.GetSourceROI(pyrG[level - 1], pyrG[level], in roi);
+                GaussianPyramidRemap(srcPlane, pyrG, level - 1, prevLevelROI, finalLevel, in finalLevelROI, g0);
 
                 // Construct Gaussian pyramid level by downsampling
                 ResizeBilinearOperation.ApplyToPlane(pyrG[level - 1], pyrG[level], roi);
@@ -770,7 +770,7 @@ namespace PhotoLocator.BitmapOperations
         /// <summary>
         /// Determine Laplacian pyramid coefficient for single pixel ROI
         /// </summary>
-        static float LaplacianPyramidCoefficient(FloatBitmap[] pyrG, int level, ref ROI roi)
+        static float LaplacianPyramidCoefficient(FloatBitmap[] pyrG, int level, ref readonly ROI roi)
         {
             // Construct Laplacian pyramid level as difference between image and upsampled low pass version
             float g = pyrG[level][roi.Left, roi.Top];
@@ -782,7 +782,7 @@ namespace PhotoLocator.BitmapOperations
         /// <summary>
         /// Determine Laplacian pyramid coefficient for single pixel ROI
         /// </summary>
-        static short LaplacianPyramidCoefficient(BitmapPlaneInt16[] pyrG, int level, ref ROI roi)
+        static short LaplacianPyramidCoefficient(BitmapPlaneInt16[] pyrG, int level, ref readonly ROI roi)
         {
             // Construct Laplacian pyramid level as difference between image and upsampled low pass version
             var g = pyrG[level][roi.Left, roi.Top];

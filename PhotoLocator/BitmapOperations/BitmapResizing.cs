@@ -9,7 +9,7 @@ namespace PhotoLocator.BitmapOperations
         /// <summary>
         /// Determine source ROI given destination ROI
         /// </summary>
-        public static ROI GetSourceROI(FloatBitmap src, FloatBitmap dst, ref ROI dstROI)
+        public static ROI GetSourceROI(FloatBitmap src, FloatBitmap dst, ref readonly ROI dstROI)
         {
             float scaleX = 0, scaleY = 0;
             if (dst.Width > 1)
@@ -26,7 +26,7 @@ namespace PhotoLocator.BitmapOperations
         /// <summary>
         /// Determine source ROI given destination ROI
         /// </summary>
-        public static ROI GetSourceROI(BitmapPlaneInt16 src, BitmapPlaneInt16 dst, ref ROI dstROI)
+        public static ROI GetSourceROI(BitmapPlaneInt16 src, BitmapPlaneInt16 dst, ref readonly ROI dstROI)
         {
             float scaleX = 0, scaleY = 0;
             if (dst.Width > 1)
