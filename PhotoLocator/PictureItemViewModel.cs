@@ -69,14 +69,14 @@ namespace PhotoLocator
         public string Name
         {
             get => _name;
-            set => SetProperty(ref _name, value);
+            private set => SetProperty(ref _name, value);
         }
         string _name;
 
         public string FullPath
         {
             get => _fullPath;
-            set => SetProperty(ref _fullPath, value);
+            private set => SetProperty(ref _fullPath, value);
         }
         string _fullPath = String.Empty;
 
