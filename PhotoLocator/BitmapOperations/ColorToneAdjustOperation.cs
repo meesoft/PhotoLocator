@@ -64,7 +64,7 @@ namespace PhotoLocator.BitmapOperations
             _updateSrcHsi = true;
         }
 
-        public static void ColorTransformRGB2HSI(float r, float g, float b, out float h, out float x, out float i)
+        public static void ColorTransformRGB2HSI(float r, float g, float b, out float h, out float s, out float i)
         {
             r = RealMath.EnsureRange(r, 0f, 1f);
             g = RealMath.EnsureRange(g, 0f, 1f);
@@ -72,7 +72,7 @@ namespace PhotoLocator.BitmapOperations
             i = (r + g + b) / 3f;
             if (i == 0)
             {
-                x = 0;
+                s = 0;
                 h = 0;
             }
             else
@@ -82,8 +82,8 @@ namespace PhotoLocator.BitmapOperations
                     D = g;
                 if (b < D)
                     D = b;
-                x = Math.Max(0, 1 - 3f / (r + g + b) * D);
-                if (x == 0)
+                s = Math.Max(0, 1 - 3f / (r + g + b) * D);
+                if (s == 0)
                     h = 0;
                 else
                 {
