@@ -17,9 +17,9 @@ namespace PhotoLocator.Metadata
         {
             Num = num;
             Denom = denom;
-            var bytes = new byte[8];  //create a byte array with 8 bytes
-            BitConverter.GetBytes(Num).CopyTo(bytes, 0);  //copy 4 bytes of num to location 0 in the byte array
-            BitConverter.GetBytes(Denom).CopyTo(bytes, 4);  //copy 4 bytes of denom to location 4 in the byte array
+            Span<byte> bytes = stackalloc byte[8];  //create a byte array with 8 bytes
+            BitConverter.GetBytes(Num).CopyTo(bytes);  //copy 4 bytes of num to location 0 in the byte array
+            BitConverter.GetBytes(Denom).CopyTo(bytes.Slice(4));  //copy 4 bytes of denom to location 4 in the byte array
             Bytes = BitConverter.ToInt64(bytes);
         }
 
@@ -97,7 +97,7 @@ namespace PhotoLocator.Metadata
 
             AngleInDegrees = Degrees.ToDouble() + Minutes.ToDouble() / 60.0 + Seconds.ToDouble() / 3600.0;
 
-            Bytes = new long[3] { Degrees.Bytes, Minutes.Bytes, Seconds.Bytes };
+            Bytes = [Degrees.Bytes, Minutes.Bytes, Seconds.Bytes];
         }
 
         //Form the GPSRational object from an array of 24 bytes
@@ -115,7 +115,7 @@ namespace PhotoLocator.Metadata
 
             AngleInDegrees = Degrees.ToDouble() + Minutes.ToDouble() / 60.0 + Seconds.ToDouble() / 3600.0;
 
-            Bytes = new long[3] { Degrees.Bytes, Minutes.Bytes, Seconds.Bytes };
+            Bytes = [Degrees.Bytes, Minutes.Bytes, Seconds.Bytes];
         }
 
         public GPSRational(long[] bytes)

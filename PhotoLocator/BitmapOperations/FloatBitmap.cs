@@ -1,5 +1,6 @@
 ﻿using PhotoLocator.Helpers;
 using System;
+using System.Buffers;
 using System.Diagnostics;
 using System.Threading.Tasks;
 using System.Windows.Media;
@@ -77,66 +78,75 @@ namespace PhotoLocator.BitmapOperations
                 New(source.PixelWidth, source.PixelHeight, source.Format == PixelFormats.Rgb48 ? 3 : 1);
                 var sourcePixels = new ushort[Height * Stride];
                 source.CopyPixels(sourcePixels, Stride * 2, 0);
-                var gammaLUT = CreateDeGammaLookup(gamma, 65536);
+                var gammaLut = CreateDeGammaLookup(gamma, 65536);
                 unsafe
                 {
                     Parallel.For(0, Height, y =>
                     {
+                        fixed (float* gamma = gammaLut)
                         fixed (float* elements = &_elements[y, 0])
                         fixed (ushort* sourceRow = &sourcePixels[y * Stride])
                         {
                             var stride = Stride;
                             for (var x = 0; x < stride; x++)
-                                elements[x] = gammaLUT[sourceRow[x]];
+                                elements[x] = gamma[sourceRow[x]];
                         }
                     });
                 }
+                ArrayPool<float>.Shared.Return(gammaLut);
             }
             else if (source.Format == PixelFormats.Bgr24)
             {
                 New(source.PixelWidth, source.PixelHeight, 3);
-                var sourcePixels = new byte[Height * Stride];
+                var sourcePixels = ArrayPool<byte>.Shared.Rent(Height * Stride);
                 source.CopyPixels(sourcePixels, Stride, 0);
-                var gammaLUT = CreateDeGammaLookup(gamma, 256);
+                var gammaLut = CreateDeGammaLookup(gamma, 256);
                 unsafe
                 {
                     Parallel.For(0, Height, y =>
                     {
+                        fixed (float* gamma = gammaLut)
                         fixed (float* elements = &_elements[y, 0])
                         fixed (byte* sourceRow = &sourcePixels[y * Stride])
                         {
                             for (var x = 0; x < Width; x++)
                             {
-                                elements[x * 3 + 2] = gammaLUT[sourceRow[x * 3 + 0]];
-                                elements[x * 3 + 1] = gammaLUT[sourceRow[x * 3 + 1]];
-                                elements[x * 3 + 0] = gammaLUT[sourceRow[x * 3 + 2]];
+                                elements[x * 3 + 2] = gamma[sourceRow[x * 3 + 0]];
+                                elements[x * 3 + 1] = gamma[sourceRow[x * 3 + 1]];
+                                elements[x * 3 + 0] = gamma[sourceRow[x * 3 + 2]];
                             }
                         }
                     });
                 }
+                ArrayPool<float>.Shared.Return(gammaLut);
+                ArrayPool<byte>.Shared.Return(sourcePixels);
+
             }
             else if (source.Format == PixelFormats.Bgr32)
             {
                 New(source.PixelWidth, source.PixelHeight, 3);
-                var sourcePixels = new byte[Height * Width * 4];
+                var sourcePixels = ArrayPool<byte>.Shared.Rent(Height * Width * 4);
                 source.CopyPixels(sourcePixels, Width * 4, 0);
-                var gammaLUT = CreateDeGammaLookup(gamma, 256);
+                var gammaLut = CreateDeGammaLookup(gamma, 256);
                 unsafe
                 {
                     Parallel.For(0, Height, y =>
                     {
+                        fixed (float* gamma = gammaLut)
                         fixed (float* elements = &_elements[y, 0])
                         fixed (byte* sourceRow = &sourcePixels[y * Width * 4])
                         {
                             for (var x = 0; x < Width; x++)
                             {
-                                elements[x * 3 + 2] = gammaLUT[sourceRow[x * 4 + 0]];
-                                elements[x * 3 + 1] = gammaLUT[sourceRow[x * 4 + 1]];
-                                elements[x * 3 + 0] = gammaLUT[sourceRow[x * 4 + 2]];
+                                elements[x * 3 + 2] = gamma[sourceRow[x * 4 + 0]];
+                                elements[x * 3 + 1] = gamma[sourceRow[x * 4 + 1]];
+                                elements[x * 3 + 0] = gamma[sourceRow[x * 4 + 2]];
                             }
                         }
                     });
                 }
+                ArrayPool<float>.Shared.Return(gammaLut);
+                ArrayPool<byte>.Shared.Return(sourcePixels);
             }
             else
             {
@@ -150,22 +160,25 @@ namespace PhotoLocator.BitmapOperations
                 else
                     throw new UserMessageException("Unsupported pixel format " + source.Format);
                 New(source.PixelWidth, source.PixelHeight, planes);
-                var sourcePixels = new byte[Height * Stride];
+                var sourcePixels = ArrayPool<byte>.Shared.Rent(Height * Stride);
                 source.CopyPixels(sourcePixels, Stride, 0);
-                var gammaLUT = CreateDeGammaLookup(gamma, 256);
+                var gammaLut = CreateDeGammaLookup(gamma, 256);
                 unsafe
                 {
                     Parallel.For(0, Height, y =>
                     {
+                        fixed (float* gamma = gammaLut)
                         fixed (float* elements = &_elements[y, 0])
                         fixed (byte* sourceRow = &sourcePixels[y * Stride])
                         {
                             var stride = Stride;
                             for (var x = 0; x < stride; x++)
-                                elements[x] = gammaLUT[sourceRow[x]];
+                                elements[x] = gamma[sourceRow[x]];
                         }
                     });
                 }
+                ArrayPool<float>.Shared.Return(gammaLut);
+                ArrayPool<byte>.Shared.Return(sourcePixels);
             }
         }
 
@@ -196,32 +209,34 @@ namespace PhotoLocator.BitmapOperations
                     4 => PixelFormats.Cmyk32,
                     _ => throw new UserMessageException("Unsupported number of planes: " + PlaneCount)
                 };
-            var pixels = new byte[Height * Stride];
-
+            var pixels = ArrayPool<byte>.Shared.Rent(Height * Stride);
             var gammaLut = CreateGammaLookupFloatToByte(gamma);
             unsafe
             {
                 //gamma = 1 / gamma;
                 Parallel.For(0, Height, y =>
                 {
+                    fixed (byte* gamma = gammaLut)
                     fixed (float* elements = &_elements[y, 0])
                     fixed (byte* destRow = &pixels[y * Stride])
                     {
                         var stride = Stride;
                         for (var x = 0; x < stride; x++)
                             //destRow[x] = (byte)IntMath.EnsureRange((int)(Math.Pow(elements[x], gamma) * 255 + 0.5), 0, 255);
-                            destRow[x] = gammaLut[IntMath.EnsureRange((int)(elements[x] * FloatToByteGammaLutRange + 0.5f), 0, FloatToByteGammaLutRange)];
+                            destRow[x] = gamma[IntMath.EnsureRange((int)(elements[x] * FloatToByteGammaLutRange + 0.5f), 0, FloatToByteGammaLutRange)];
                     }
                 });
             }
+            ArrayPool<byte>.Shared.Return(gammaLut);
             var result = BitmapSource.Create(Width, Height, dpiX, dpiY, format.Value, null, pixels, Stride);
             result.Freeze();
+            ArrayPool<byte>.Shared.Return(pixels);
             return result;
         }
 
         static float[] CreateDeGammaLookup(double gamma, int range)
         {
-            var gammaLUT = new float[range];
+            var gammaLUT = ArrayPool<float>.Shared.Rent(range);
             var scale = 1.0 / (range - 1);
             for (int i = 0; i < range; i++)
                 gammaLUT[i] = (float)Math.Pow(i * scale, gamma);
@@ -232,7 +247,7 @@ namespace PhotoLocator.BitmapOperations
 
         internal static byte[] CreateGammaLookupFloatToByte(double gamma)
         {
-            var gammaLUT = new byte[FloatToByteGammaLutRange + 1];
+            var gammaLUT = ArrayPool<byte>.Shared.Rent(FloatToByteGammaLutRange + 1);
             gamma = 1 / gamma;
             Parallel.For(0, FloatToByteGammaLutRange + 1,
                 i => gammaLUT[i] = (byte)(Math.Pow(i / (double)FloatToByteGammaLutRange, gamma) * 255 + 0.5));

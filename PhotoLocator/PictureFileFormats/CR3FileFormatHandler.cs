@@ -21,24 +21,24 @@ namespace PhotoLocator.PictureFileFormats
 
         public static BitmapSource LoadFromStream(Stream stream, Rotation rotation, int maxWidth, bool preservePixelFormat, CancellationToken ct)
         {
-            var buffer = new byte[65536];
-            var length = stream.Read(buffer, 0, buffer.Length);
+            Span<byte> buffer = stackalloc byte[65536];
+            var length = stream.Read(buffer);
             while (length > 10)
             {
                 ct.ThrowIfCancellationRequested();
 
                 //TODO: There is a risk that the headers cross buffer block boundaries in which case we currently fail to find them
-                var index = buffer.AsSpan(0, length).IndexOf(_previewHeader);
+                var index = buffer.Slice(0, length).IndexOf(_previewHeader);
                 if (index < 0)
                 {
-                    length = stream.Read(buffer, 0, buffer.Length);
+                    length = stream.Read(buffer);
                     continue;
                 }
-                var index2 = buffer.AsSpan(index, length - index).IndexOf(_jpegHeader);
+                var index2 = buffer.Slice(index, length - index).IndexOf(_jpegHeader);
                 if (index2 < 0)
                 {
-                    length = stream.Read(buffer, 0, buffer.Length);
-                    index2 = buffer.AsSpan(0, length).IndexOf(_jpegHeader);
+                    length = stream.Read(buffer);
+                    index2 = buffer.Slice(0, length).IndexOf(_jpegHeader);
                     if (index2 < 0)
                         continue;
                     index = 0;
