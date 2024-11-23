@@ -1,5 +1,6 @@
 ﻿using MapControl;
 using PhotoLocator.BitmapOperations;
+using PhotoLocator.Gps;
 using PhotoLocator.Helpers;
 using PhotoLocator.MapDisplay;
 using PhotoLocator.Settings;
@@ -69,8 +70,12 @@ namespace PhotoLocator
             set => SetProperty(ref _mapCenter, value);
         }
         private Location? _mapCenter;
-        
+
         public ObservableCollection<PointItem> Points { get; } = [];
+
+        public ObservableCollection<PointItem> Pushpins { get; } = [];
+
+        public ObservableCollection<GpsTrace> Polylines { get; } = [];
 
         public bool IsMapVisible { get => _isMapVisible; set => SetProperty(ref _isMapVisible, value); }
         private bool _isMapVisible;
@@ -255,6 +260,9 @@ namespace PhotoLocator
             _resamplerCancellation?.Dispose();
             _resamplerCancellation = null;
             _timer.Stop();
+            PictureSource = null;
+            ResampledPictureSource = null;
+            DataContext = null;
         }
     }
 }

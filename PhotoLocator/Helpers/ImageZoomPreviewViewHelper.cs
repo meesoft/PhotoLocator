@@ -46,7 +46,6 @@ namespace PhotoLocator.Helpers
             return IntMath.Round((canvasSizeIn96 - imageSize * zoom / screenDpi * 96) / 2) + 0.5;
         }
 
-
         private void HandlePreviewImageMouseDown(object sender, MouseButtonEventArgs e)
         {
             if (_viewModel.PreviewZoom > 0 && e.ChangedButton is MouseButton.Left or MouseButton.Middle)

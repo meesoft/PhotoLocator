@@ -77,8 +77,15 @@ namespace PhotoLocator
             window.Owner = Application.Current.MainWindow;
             window.OkButton.Content = "_Save as...";
             window.DataContext = localContrastViewModel;
-            if (window.ShowDialog() != true)
-                return;
+            try
+            {
+                if (window.ShowDialog() != true)
+                    return;
+            }
+            finally
+            {
+                window.DataContext = null;
+            }
             localContrastViewModel.SaveLastUsedValues();
             var dlg = new SaveFileDialog();
             dlg.InitialDirectory = Path.GetDirectoryName(_mainViewModel.SelectedItem.FullPath);

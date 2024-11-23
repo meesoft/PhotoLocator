@@ -6,6 +6,7 @@ using PhotoLocator.Metadata;
 using PhotoLocator.PictureFileFormats;
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Globalization;
@@ -44,6 +45,7 @@ namespace PhotoLocator
 
         public VideoTransformCommands(IMainViewModel mainViewModel)
         {
+            _selectedVideoFormat = VideoFormats[DefaultVideoFormatIndex];
             _mainViewModel = mainViewModel;
             _videoTransforms = new VideoTransforms(mainViewModel.Settings);
             UpdateProcessArgs();
@@ -318,9 +320,9 @@ namespace PhotoLocator
                 }
             }
         }
-        ComboBoxItem _selectedVideoFormat = DefaultVideoFormat;
+        ComboBoxItem _selectedVideoFormat;
 
-        public static ComboBoxItem[] VideoFormats { get; } = [
+        public ObservableCollection<ComboBoxItem> VideoFormats { get; } = [
             new ComboBoxItem { Content = "Default" },
             new ComboBoxItem { Content = "Copy", Tag = "-c copy" },
             new ComboBoxItem { Content = "libx264", Tag = "-c:v libx264 -pix_fmt yuv420p" },
@@ -329,7 +331,8 @@ namespace PhotoLocator
             new ComboBoxItem { Content = "libsvtav1", Tag = "-c:v libsvtav1 -pix_fmt yuv420p" },
         ];
 
-        public static readonly ComboBoxItem DefaultVideoFormat = VideoFormats[3];
+        const int DefaultVideoFormatIndex = 3;
+        const int CopyVideoFormatIndex = 1;
 
         public string FrameRate
         {
@@ -527,12 +530,13 @@ namespace PhotoLocator
         {
             if (_mainViewModel.GetSelectedItems().All(item => item.IsVideo))
             {
-                SelectedVideoFormat = VideoFormats.First(f => f.Content.ToString() == "Copy");
+                SelectedVideoFormat = VideoFormats[CopyVideoFormatIndex];
                 FrameRate = "";
             }
             else
             {
-                SelectedVideoFormat = DefaultVideoFormat;
+                if (SelectedVideoFormat == VideoFormats[CopyVideoFormatIndex])
+                    SelectedVideoFormat = VideoFormats[DefaultVideoFormatIndex];
                 if (string.IsNullOrEmpty(FrameRate))
                     FrameRate = "30";
             }
@@ -587,9 +591,9 @@ namespace PhotoLocator
 
             if (_localContrastSetup is not null && _localContrastSetup.SourceBitmap is not null)
                 _localContrastSetup.SourceBitmap = null;
+            var window = new VideoTransformWindow() { Owner = App.Current.MainWindow, DataContext = this };
             try
             {
-                var window = new VideoTransformWindow() { Owner = App.Current.MainWindow, DataContext = this };
                 if (window.ShowDialog() != true)
                     return;
             }
@@ -597,6 +601,7 @@ namespace PhotoLocator
             {
                 if (_localContrastSetup is not null && _localContrastSetup.SourceBitmap is not null)
                     _localContrastSetup.SourceBitmap = null;
+                window.DataContext = null;
             }
 
             var inPath = Path.GetDirectoryName(allSelected[0].FullPath)!;

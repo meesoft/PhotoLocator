@@ -391,6 +391,7 @@ namespace PhotoLocator
                 else if (Points.Count > 0)
                     MapCenter = Points[0].Location;
             }
+            autoTagWin.DataContext = null;
             UpdatePreviewPictureAsync().WithExceptionLogging();
         });
 
@@ -496,6 +497,7 @@ namespace PhotoLocator
             PauseFileSystemWatcher();
             renameWin.ShowDialog();
             ResumeFileSystemWatcher();
+            renameWin.DataContext = null;
             _pictureCache.Clear();
             if (focused != null)
                 FocusListBoxItem?.Invoke(focused);
