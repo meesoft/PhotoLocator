@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace PhotoLocator.Helpers
 {
-    sealed class CallbackEnumerable<T> : IEnumerable<T>, IEnumerator<T>
+    sealed class QueueEnumerable<T> : IEnumerable<T>, IEnumerator<T>
     {
         readonly AutoResetEvent _nextSet = new(false);
         readonly AutoResetEvent _nextTaken = new(true);
@@ -14,7 +14,7 @@ namespace PhotoLocator.Helpers
         T _next = default!;
         bool _break;
 
-        public void ItemCallback(T item)
+        public void AddItem(T item)
         {
             if (_break)
                 return;

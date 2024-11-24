@@ -37,10 +37,10 @@ namespace PhotoLocator.Helpers
             var settings = new ObservableSettings() { FFmpegPath = FFmpegPath };
             var videoTransforms = new VideoTransforms(settings);
 
-            using var frameEnumerator = new CallbackEnumerable<BitmapSource>();
+            using var frameEnumerator = new QueueEnumerable<BitmapSource>();
 
             var readerArgs = $" -i \"{SourceVideoPath}\"";
-            var readTask = videoTransforms.RunFFmpegWithStreamOutputImagesAsync(readerArgs, frameEnumerator.ItemCallback, stdError => { }, default); // Debug.WriteLine(stdError));
+            var readTask = videoTransforms.RunFFmpegWithStreamOutputImagesAsync(readerArgs, frameEnumerator.AddItem, stdError => { }, default); // Debug.WriteLine(stdError));
 
             var writerArgs = $"-pix_fmt yuv420p -y out.mp4";
             var writeTask = videoTransforms.RunFFmpegWithStreamInputImagesAsync(25, writerArgs, frameEnumerator, stdError => Debug.WriteLine(stdError), default);
@@ -58,12 +58,12 @@ namespace PhotoLocator.Helpers
             var settings = new ObservableSettings() { FFmpegPath = FFmpegPath };
             var videoTransforms = new VideoTransforms(settings);
 
-            using var frameEnumerator = new CallbackEnumerable<BitmapSource>();
+            using var frameEnumerator = new QueueEnumerable<BitmapSource>();
 
             var readerArgs = $" -i \"{SourceVideoPath}\"";
             var op = new LocalContrastViewModel();
             var readTask = videoTransforms.RunFFmpegWithStreamOutputImagesAsync(readerArgs, 
-                source => frameEnumerator.ItemCallback(op.ApplyOperations(source)),
+                source => frameEnumerator.AddItem(op.ApplyOperations(source)),
                 stdError => { }, default); 
 
             var writerArgs = $"-pix_fmt yuv420p -y out.mp4";

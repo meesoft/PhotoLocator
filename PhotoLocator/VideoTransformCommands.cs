@@ -87,7 +87,10 @@ namespace PhotoLocator
             set
             {
                 if (SetProperty(ref _skipTo, value.Trim()))
+                {
                     UpdateInputArgs();
+                    UpdateOutputArgs();
+                }
             }
         }
         string _skipTo = string.Empty;
@@ -98,7 +101,10 @@ namespace PhotoLocator
             set
             {
                 if (SetProperty(ref _duration, value.Trim()))
+                {
                     UpdateInputArgs();
+                    UpdateOutputArgs();
+                }
             }
         }
         string _duration = string.Empty;
@@ -250,6 +256,7 @@ namespace PhotoLocator
                 else
                     _localContrastSetup = null;
                 PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(IsLocalContrastChecked)));
+                UpdateOutputArgs();
             }
         }
 
@@ -278,7 +285,10 @@ namespace PhotoLocator
             set
             {
                 if (SetProperty(ref _isRollingAverageChecked, value))
+                {
                     PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(IsCombineFramesOperation)));
+                    UpdateOutputArgs();
+                }
             }
         }
         bool _isRollingAverageChecked;
@@ -498,6 +508,16 @@ namespace PhotoLocator
             if (OutputMode == OutputMode.Video)
             {
                 var args = new List<string>();
+                if (IsRemoveAudioChecked)
+                    args.Add("-an");
+                else if ((IsLocalContrastChecked || IsRollingAverageChecked) && HasSingleInput && !HasOnlyImageInput)
+                {
+                    if (!string.IsNullOrEmpty(SkipTo))
+                        args.Add($"-ss {SkipTo}");
+                    if (!string.IsNullOrEmpty(Duration))
+                        args.Add($"-t {Duration}");
+                    args.Add($"-i \"{_mainViewModel.GetSelectedItems().First(item => item.IsFile).FullPath}\" -map 0:v -map 1:a? -c:a copy");
+                }
                 if (SelectedVideoFormat.Tag is not null)
                     args.Add((string)SelectedVideoFormat.Tag);
                 if (!string.IsNullOrEmpty(FrameRate))
@@ -506,8 +526,6 @@ namespace PhotoLocator
                     args.Add($"-b:v {VideoBitRate}M");
                 else if ((SelectedVideoFormat.Tag as string)?.StartsWith("-c:v", StringComparison.Ordinal) == true)
                     args.Add("-crf 20");
-                if (IsRemoveAudioChecked)
-                    args.Add("-an");
                 OutputArguments = string.Join(" ", args);
             }
             else
@@ -701,7 +719,7 @@ namespace PhotoLocator
                         _hasFps = true;
                     }
                     var runningAverage = IsRollingAverageChecked ? new RollingAverageOperation(RollingAverageFrames, DarkFramePath, IsRegisterFramesChecked, ParseRegistrationRegion(), ct) : null;
-                    using var frameEnumerator = new CallbackEnumerable<BitmapSource>();
+                    using var frameEnumerator = new QueueEnumerable<BitmapSource>();
                     var readTask = _videoTransforms.RunFFmpegWithStreamOutputImagesAsync($"{InputArguments} {ProcessArguments}", 
                         source =>
                         {
@@ -710,19 +728,20 @@ namespace PhotoLocator
                                 runningAverage.ProcessImage(source);
                                 if (_localContrastSetup is null || _localContrastSetup.IsNoOperation)
                                 {
-                                    frameEnumerator.ItemCallback(runningAverage.GetResult8());
+                                    frameEnumerator.AddItem(runningAverage.GetResult8());
                                     return;
                                 }
                                 source = runningAverage.GetResult16();
                             }
-                            frameEnumerator.ItemCallback(_localContrastSetup!.ApplyOperations(source));
+                            frameEnumerator.AddItem(_localContrastSetup!.ApplyOperations(source));
                         }, ProcessStdError, ct);
                     await Task.WhenAny(frameEnumerator.GotFirst, Task.Delay(TimeSpan.FromSeconds(10), ct)).ConfigureAwait(false);
                     if (!_hasFps)
                         throw new UserMessageException("Unable to determine frame rate, please specify manually");
                     var writeTask = _videoTransforms.RunFFmpegWithStreamInputImagesAsync(_fps, $"{OutputArguments} -y \"{outFileName}\"", frameEnumerator, 
                         stdError => Debug.WriteLine("Writer: " + stdError), ct);
-                    await readTask.ConfigureAwait(false);
+                    await Task.WhenAny(readTask, writeTask).ConfigureAwait(false); // Write task is not expected to finish here, only if it fails
+                    ct.ThrowIfCancellationRequested();
                     frameEnumerator.Break();
                     await writeTask.ConfigureAwait(false);
                 }

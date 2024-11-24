@@ -4,7 +4,7 @@ using System.Threading.Tasks;
 
 namespace PhotoLocator.BitmapOperations
 {
-    static class ResizeBilinearOperation
+    static class BilinearResizeOperation
     {
         /// <summary>
         /// Determine source ROI given destination ROI
