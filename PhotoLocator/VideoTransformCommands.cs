@@ -740,8 +740,7 @@ namespace PhotoLocator
                         throw new UserMessageException("Unable to determine frame rate, please specify manually");
                     var writeTask = _videoTransforms.RunFFmpegWithStreamInputImagesAsync(_fps, $"{OutputArguments} -y \"{outFileName}\"", frameEnumerator, 
                         stdError => Debug.WriteLine("Writer: " + stdError), ct);
-                    await Task.WhenAny(readTask, writeTask).ConfigureAwait(false); // Write task is not expected to finish here, only if it fails
-                    ct.ThrowIfCancellationRequested();
+                    await await Task.WhenAny(readTask, writeTask).ConfigureAwait(false); // Write task is not expected to finish here, only if it fails
                     frameEnumerator.Break();
                     await writeTask.ConfigureAwait(false);
                 }
