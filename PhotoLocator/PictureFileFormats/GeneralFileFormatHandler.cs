@@ -10,6 +10,9 @@ namespace PhotoLocator.PictureFileFormats
     {
         public const string SaveImageFilter = "JPEG|*.jpg|PNG|*.png|TIFF|*.tif|JPEG XR lossless|*.jxr|BMP|*.bmp";
 
+        static string? _jpegliPath;
+        static bool _jpegliChecked;
+
         public static BitmapSource LoadFromStream(Stream source, Rotation rotation, int maxPixelWidth, bool preservePixelFormat, CancellationToken ct)
         {
             var bitmap = new BitmapImage();
@@ -28,12 +31,26 @@ namespace PhotoLocator.PictureFileFormats
             return bitmap;
         }
 
-        public static void SaveToFile(BitmapSource image, string outPath, BitmapMetadata? metadata = null)
+        public static void SaveToFile(BitmapSource image, string targetPath, BitmapMetadata? metadata = null, int jpegQuality = 95)
         {
-            var ext = Path.GetExtension(outPath).ToUpperInvariant();
+            var ext = Path.GetExtension(targetPath).ToUpperInvariant();
             BitmapEncoder encoder;
             if (ext is ".JPG" or ".JPEG")
-                encoder = new JpegBitmapEncoder() { QualityLevel = 95 };
+            {
+                if (!_jpegliChecked)
+                {
+                    _jpegliPath = Path.Combine(Path.GetDirectoryName(typeof(GeneralFileFormatHandler).Assembly.Location)!, "cjpegli.exe");
+                    if (!File.Exists(_jpegliPath))
+                        _jpegliPath = null;
+                    _jpegliChecked = true;
+                }
+                if (_jpegliPath is not null)
+                {
+                    JpegliEncoder.SaveToFile(image, targetPath, metadata, jpegQuality, _jpegliPath);
+                    return;
+                }
+                encoder = new JpegBitmapEncoder() { QualityLevel = jpegQuality };
+            }
             else if (ext is ".TIF" or ".TIFF")
                 encoder = new TiffBitmapEncoder(); // Default is best compression
             else if (ext is ".PNG")
@@ -50,7 +67,7 @@ namespace PhotoLocator.PictureFileFormats
             else
                 encoder.Frames.Add(BitmapFrame.Create(image, null, ExifHandler.CreateMetadataForEncoder(metadata, encoder), null));
             
-            using var fileStream = new FileStream(outPath, FileMode.Create);
+            using var fileStream = new FileStream(targetPath, FileMode.Create);
             encoder.Save(fileStream);
         }
     }

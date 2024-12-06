@@ -249,6 +249,36 @@ namespace PhotoLocator.Metadata
             catch { }
         }
 
+        public static void SetMetadata(string sourceFileName, string targetFileName, BitmapMetadata metadata)
+        {
+            MemoryStream memoryStream;
+            using (var originalFileStream = File.OpenRead(sourceFileName))
+            {
+                // Decode
+                var sourceSize = originalFileStream.Length;
+                var decoder = BitmapDecoder.Create(originalFileStream, CreateOptions, BitmapCacheOption.None); // Caching needs to be None for lossless setting metadata
+                var frame = decoder.Frames[0];
+
+                // Encode
+                var encoder = new JpegBitmapEncoder();
+                var jpegMetadata = CreateMetadataForEncoder(metadata, encoder);
+                if (jpegMetadata is null)
+                    throw new NotSupportedException("Unsupported metadata format");
+                encoder.Frames.Add(BitmapFrame.Create(frame, frame.Thumbnail, jpegMetadata, frame.ColorContexts));
+                memoryStream = new MemoryStream();
+                encoder.Save(memoryStream);
+
+                // Check
+                memoryStream.Position = 0;
+                CheckPixels(frame, BitmapDecoder.Create(memoryStream, CreateOptions, BitmapCacheOption.None).Frames[0]);
+            }
+            // Save
+            using var targetFileStream = File.Open(targetFileName, FileMode.Create, FileAccess.Write);
+            memoryStream.Position = 0;
+            memoryStream.CopyTo(targetFileStream);
+            memoryStream.Dispose();
+        }
+
         public static void SetGeotag(string sourceFileName, string targetFileName, Location location)
         {
             MemoryStream memoryStream;
@@ -256,7 +286,7 @@ namespace PhotoLocator.Metadata
             {
                 // Decode
                 var sourceSize = originalFileStream.Length;
-                var decoder = BitmapDecoder.Create(originalFileStream, CreateOptions, BitmapCacheOption.None); // Caching needs to be None for geotagging work be lossless
+                var decoder = BitmapDecoder.Create(originalFileStream, CreateOptions, BitmapCacheOption.None); // Caching needs to be None for lossless setting metadata
                 var frame = decoder.Frames[0];
 
                 // Tag
@@ -324,9 +354,9 @@ namespace PhotoLocator.Metadata
 
             var pixels2 = new byte[bytesPerLine * frame2.PixelHeight];
             frame2.CopyPixels(pixels2, bytesPerLine, 0);
-            for (var i = 0; i < pixels1.Length; i++)
-                if (pixels1[i] != pixels2[i])
-                    throw new InvalidDataException("Pixels have changed");
+
+            if (!pixels1.SequenceEqual(pixels2))
+                throw new InvalidDataException("Pixels have changed");
         }
 
         public static void SetGeotag(BitmapMetadata metadata, Location location)
