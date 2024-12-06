@@ -251,7 +251,7 @@ namespace PhotoLocator.Metadata
 
         public static void SetMetadata(string sourceFileName, string targetFileName, BitmapMetadata metadata)
         {
-            MemoryStream memoryStream;
+            using var memoryStream = new MemoryStream();
             using (var originalFileStream = File.OpenRead(sourceFileName))
             {
                 // Decode
@@ -265,7 +265,6 @@ namespace PhotoLocator.Metadata
                 if (jpegMetadata is null)
                     throw new NotSupportedException("Unsupported metadata format");
                 encoder.Frames.Add(BitmapFrame.Create(frame, frame.Thumbnail, jpegMetadata, frame.ColorContexts));
-                memoryStream = new MemoryStream();
                 encoder.Save(memoryStream);
 
                 // Check
@@ -276,12 +275,11 @@ namespace PhotoLocator.Metadata
             using var targetFileStream = File.Open(targetFileName, FileMode.Create, FileAccess.Write);
             memoryStream.Position = 0;
             memoryStream.CopyTo(targetFileStream);
-            memoryStream.Dispose();
         }
 
         public static void SetGeotag(string sourceFileName, string targetFileName, Location location)
         {
-            MemoryStream memoryStream;
+            using var memoryStream = new MemoryStream();
             using (var originalFileStream = File.OpenRead(sourceFileName))
             {
                 // Decode
@@ -296,7 +294,6 @@ namespace PhotoLocator.Metadata
                 // Encode
                 var encoder = new JpegBitmapEncoder();
                 encoder.Frames.Add(BitmapFrame.Create(frame, frame.Thumbnail, metadata, frame.ColorContexts));
-                memoryStream = new MemoryStream();
                 encoder.Save(memoryStream);
 
                 // Check
@@ -307,7 +304,6 @@ namespace PhotoLocator.Metadata
             using var targetFileStream = File.Open(targetFileName, FileMode.Create, FileAccess.Write);
             memoryStream.Position = 0;
             memoryStream.CopyTo(targetFileStream);
-            memoryStream.Dispose();
         }
 
         public static void SetGeotag(string sourceFileName, string targetFileName, Location location, string? exifToolPath)
