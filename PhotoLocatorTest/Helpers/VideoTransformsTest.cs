@@ -13,7 +13,7 @@ namespace PhotoLocator.Helpers
         [TestMethod]
         public async Task RunFFmpegWithStreamOutputImagesAsync_ShouldProcessImages()
         {
-            if (string.IsNullOrEmpty(FFmpegPath))
+            if (string.IsNullOrWhiteSpace(FFmpegPath))
                 Assert.Inconclusive("FFmpegPath not set");
             var settings = new ObservableSettings() { FFmpegPath = FFmpegPath };
             var videoTransforms = new VideoTransforms(settings);
@@ -32,7 +32,7 @@ namespace PhotoLocator.Helpers
         [TestMethod]
         public async Task RunFFmpegWithStreamInputImagesAsync_ShouldEncodeImages()
         {
-            if (string.IsNullOrEmpty(FFmpegPath))
+            if (string.IsNullOrWhiteSpace(FFmpegPath))
                 Assert.Inconclusive("FFmpegPath not set");
             var settings = new ObservableSettings() { FFmpegPath = FFmpegPath };
             var videoTransforms = new VideoTransforms(settings);
@@ -53,7 +53,7 @@ namespace PhotoLocator.Helpers
         [TestMethod]
         public async Task RunFFmpegWithStreamInputImagesAsync_ShouldProcessImages()
         {
-            if (string.IsNullOrEmpty(FFmpegPath))
+            if (string.IsNullOrWhiteSpace(FFmpegPath))
                 Assert.Inconclusive("FFmpegPath not set");
             var settings = new ObservableSettings() { FFmpegPath = FFmpegPath };
             var videoTransforms = new VideoTransforms(settings);

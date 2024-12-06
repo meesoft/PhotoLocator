@@ -675,7 +675,7 @@ namespace PhotoLocator
             if (allSelected.Length == 0)
                 return;
             var destination = Interaction.InputBox($"Copy {allSelected.Length} selected item(s).\n\nDestination:", "Copy files", (PhotoFolderPath ?? string.Empty).Trim('\\'));
-            if (string.IsNullOrEmpty(destination) || destination == PhotoFolderPath || destination == ".")
+            if (string.IsNullOrWhiteSpace(destination) || destination == PhotoFolderPath || destination == ".")
                 return;
             await RunProcessWithProgressBarAsync((progressCallback, ct) => Task.Run(() =>
             {
@@ -709,7 +709,7 @@ namespace PhotoLocator
                 return;
             focusedItem = GetNearestUnchecked(focusedItem, allSelected);
             var destination = Interaction.InputBox($"Move {allSelected.Length} selected item(s).\n\nDestination:", "Move files", (PhotoFolderPath ?? string.Empty).Trim('\\'));
-            if (string.IsNullOrEmpty(destination) || destination == PhotoFolderPath || destination == ".")
+            if (string.IsNullOrWhiteSpace(destination) || destination == PhotoFolderPath || destination == ".")
                 return;
             SelectedItem = null;
             await RunProcessWithProgressBarAsync((progressCallback, ct) => Task.Run(() =>
@@ -739,10 +739,10 @@ namespace PhotoLocator
 
         public ICommand CreateFolderCommand => new RelayCommand(o =>
         {
-            if (string.IsNullOrEmpty(PhotoFolderPath))
+            if (string.IsNullOrWhiteSpace(PhotoFolderPath))
                 return;
             var folderName = Interaction.InputBox("Folder name:", "Create folder");
-            if (string.IsNullOrEmpty(folderName))
+            if (string.IsNullOrWhiteSpace(folderName))
                 return;
             Directory.CreateDirectory(Path.Combine(PhotoFolderPath, folderName));
         });
@@ -761,7 +761,7 @@ namespace PhotoLocator
         {
             if (SelectedItem is not null)
                 Process.Start(new ProcessStartInfo("explorer.exe", $"/select, \"{SelectedItem.FullPath}\"") { UseShellExecute = true });
-            else if (!string.IsNullOrEmpty(PhotoFolderPath))
+            else if (!string.IsNullOrWhiteSpace(PhotoFolderPath))
                 Process.Start(new ProcessStartInfo("explorer.exe", PhotoFolderPath) { UseShellExecute = true });
         });
 
@@ -893,7 +893,7 @@ namespace PhotoLocator
             DisposeFileSystemWatcher();
             var selectedName = SelectedItem?.Name;
             CancelPictureLoading();
-            if (string.IsNullOrEmpty(PhotoFolderPath))
+            if (string.IsNullOrWhiteSpace(PhotoFolderPath))
                 return;
             Items.Clear();
             Polylines.Clear();

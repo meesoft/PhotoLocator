@@ -21,14 +21,14 @@ namespace PhotoLocator.Settings
         {
             OkButton.Focus();
 
-            if (!string.IsNullOrEmpty(Settings.SavedFilePostfix))
+            if (!string.IsNullOrWhiteSpace(Settings.SavedFilePostfix))
             { 
                 foreach(var ch in Path.GetInvalidFileNameChars())
                     if (Settings.SavedFilePostfix.Contains(ch, StringComparison.Ordinal))
                         throw new UserMessageException($"Postfix contains invalid character '{ch}'");
             }
 
-            if (!string.IsNullOrEmpty(Settings.ExifToolPath))
+            if (!string.IsNullOrWhiteSpace(Settings.ExifToolPath))
             {
                 const string ExifToolName = "exiftool.exe";
 
@@ -43,7 +43,7 @@ namespace PhotoLocator.Settings
                 else if (Settings.ExifToolPath.EndsWith("(-k).exe", StringComparison.OrdinalIgnoreCase))
                     throw new UserMessageException($"Invalid ExifTool executable name (-k means pause before exiting)");
             }
-            if (!string.IsNullOrEmpty(Settings.FFmpegPath))
+            if (!string.IsNullOrWhiteSpace(Settings.FFmpegPath))
             {
                 const string FFmpegToolName = "ffmpeg.exe";
 
