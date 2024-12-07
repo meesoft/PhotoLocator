@@ -123,7 +123,7 @@ namespace MapControl.UiTools
             UpdateCheckedStates();
         }
 
-        private void ToggleMapOverlay(UIElement layer)
+        private void ToggleMapOverlay(FrameworkElement layer)
         {
             if (Map.Children.Contains(layer))
             {
