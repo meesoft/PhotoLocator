@@ -9,14 +9,14 @@ namespace PhotoLocator.PictureFileFormats
 {
     class JpegliEncoder
     {
-        public static void SaveToFile(BitmapSource image, string targetPath, BitmapMetadata? metadata, int Quality, string encoderPath)
+        public static void SaveToFile(BitmapSource image, string targetPath, BitmapMetadata? metadata, int quality, string encoderPath)
         {
             var tempPngPath = Path.Combine(Path.GetTempPath(), Path.GetFileNameWithoutExtension(targetPath) + ".png");
             var encodedJpegPath = metadata is null ? targetPath : Path.Combine(Path.GetTempPath(), Path.GetFileName(targetPath));
             GeneralFileFormatHandler.SaveToFile(image, tempPngPath);
             try
             {
-                var process = Process.Start(new ProcessStartInfo(encoderPath, $"\"{tempPngPath}\" \"{encodedJpegPath}\" -q {Quality}")
+                var process = Process.Start(new ProcessStartInfo(encoderPath, $"\"{tempPngPath}\" \"{encodedJpegPath}\" -q {quality}") // -d 0.8 --chroma_subsampling=422
                 {
                     CreateNoWindow = true,
                     RedirectStandardError = true,
@@ -26,6 +26,7 @@ namespace PhotoLocator.PictureFileFormats
                     throw new TimeoutException();
                 if (process.ExitCode != 0)
                     throw new UserMessageException(output);
+                Debug.WriteLine(output);
                 if (metadata is not null)
                     ExifHandler.SetMetadata(encodedJpegPath, targetPath, metadata);
             }

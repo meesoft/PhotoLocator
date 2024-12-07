@@ -1,5 +1,6 @@
 ﻿using PhotoLocator.Helpers;
 using PhotoLocator.Metadata;
+using System.Diagnostics;
 using System.IO;
 using System.Threading;
 using System.Windows.Media.Imaging;
@@ -46,6 +47,7 @@ namespace PhotoLocator.PictureFileFormats
                 }
                 if (_jpegliPath is not null)
                 {
+                    Debug.WriteLine("Saving using " + _jpegliPath);
                     JpegliEncoder.SaveToFile(image, targetPath, metadata, jpegQuality, _jpegliPath);
                     return;
                 }
