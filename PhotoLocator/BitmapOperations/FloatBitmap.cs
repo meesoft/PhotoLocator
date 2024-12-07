@@ -223,7 +223,7 @@ namespace PhotoLocator.BitmapOperations
                         var stride = Stride;
                         for (var x = 0; x < stride; x++)
                             //destRow[x] = (byte)IntMath.EnsureRange((int)(Math.Pow(elements[x], gamma) * 255 + 0.5), 0, 255);
-                            destRow[x] = gamma[IntMath.EnsureRange((int)(elements[x] * FloatToByteGammaLutRange + 0.5f), 0, FloatToByteGammaLutRange)];
+                            destRow[x] = gamma[Math.Clamp((int)(elements[x] * FloatToByteGammaLutRange + 0.5f), 0, FloatToByteGammaLutRange)];
                     }
                 });
             }

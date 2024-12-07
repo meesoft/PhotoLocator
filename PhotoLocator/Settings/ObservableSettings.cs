@@ -1,4 +1,5 @@
 ﻿using PhotoLocator.Helpers;
+using System;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using System.Windows.Media;
@@ -35,7 +36,7 @@ namespace PhotoLocator.Settings
         public int ThumbnailSize
         {
             get => _thumbnailSize;
-            set => SetProperty(ref _thumbnailSize, value);
+            set => SetProperty(ref _thumbnailSize, Math.Clamp(value, 32, 1024));
         }
         int _thumbnailSize;
 
@@ -56,7 +57,7 @@ namespace PhotoLocator.Settings
         public int JpegQuality
         {
             get => _jpegQuality;
-            set => SetProperty(ref _jpegQuality, value);
+            set => SetProperty(ref _jpegQuality, Math.Clamp(value, 1, 100));
         }
         int _jpegQuality;
 
@@ -77,7 +78,7 @@ namespace PhotoLocator.Settings
         public int SlideShowInterval
         {
             get => _slideShowInterval;
-            set => SetProperty(ref _slideShowInterval, value);
+            set => SetProperty(ref _slideShowInterval, Math.Max(1, value));
         }
         int _slideShowInterval;
 
@@ -121,14 +122,14 @@ namespace PhotoLocator.Settings
         public int CropRatioNominator
         {
             get => _cropRatioNominator;
-            set => SetProperty(ref _cropRatioNominator, value);
+            set => SetProperty(ref _cropRatioNominator, Math.Max(0, value));
         }
         int _cropRatioNominator;
 
         public int CropRatioDenominator
         {
             get => _cropRatioDenominator;
-            set => SetProperty(ref _cropRatioDenominator, value);
+            set => SetProperty(ref _cropRatioDenominator, Math.Max(0, value));
         }
         int _cropRatioDenominator;
 
