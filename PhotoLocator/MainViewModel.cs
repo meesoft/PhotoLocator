@@ -866,7 +866,7 @@ namespace PhotoLocator
                         if (sourceFileName != SelectedItem.FullPath)
                         {
                             using var file = await FileHelpers.OpenFileWithRetryAsync(SelectedItem.FullPath, ct);
-                            GeneralFileFormatHandler.SaveToFile(PreviewPictureSource!, sourceFileName, ExifHandler.LoadMetadata(file));
+                            GeneralFileFormatHandler.SaveToFile(PreviewPictureSource!, sourceFileName, ExifHandler.LoadMetadata(file), Settings.JpegQuality);
                         }
                         JpegTransformations.Crop(sourceFileName, destFileName, CropControl.CropRectangle);
                     }, ct), "Cropping");

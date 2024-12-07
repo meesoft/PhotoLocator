@@ -261,9 +261,7 @@ namespace PhotoLocator.Metadata
 
                 // Encode
                 var encoder = new JpegBitmapEncoder();
-                var jpegMetadata = CreateMetadataForEncoder(metadata, encoder);
-                if (jpegMetadata is null)
-                    throw new NotSupportedException("Unsupported metadata format");
+                var jpegMetadata = CreateMetadataForEncoder(metadata, encoder) ?? throw new NotSupportedException("Unsupported metadata format");
                 encoder.Frames.Add(BitmapFrame.Create(frame, frame.Thumbnail, jpegMetadata, frame.ColorContexts));
                 encoder.Save(memoryStream);
 

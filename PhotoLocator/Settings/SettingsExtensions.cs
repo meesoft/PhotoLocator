@@ -11,6 +11,7 @@ namespace PhotoLocator.Settings
             target.ThumbnailSize = source.ThumbnailSize;
             target.IncludeSidecarFiles = source.IncludeSidecarFiles;
             target.SavedFilePostfix = source.SavedFilePostfix;
+            target.JpegQuality = source.JpegQuality;
             target.ExifToolPath = source.ExifToolPath;
             target.FFmpegPath = source.FFmpegPath;
             target.SlideShowInterval = source.SlideShowInterval;

@@ -61,6 +61,12 @@ namespace PhotoLocator.Settings
             get => Key.GetValue(nameof(SavedFilePostfix)) as string ?? "[geo]";
             set => Key.SetValue(nameof(SavedFilePostfix), value);
         }
+        
+        public int JpegQuality
+        {
+            get => Key.GetValue(nameof(JpegQuality)) as int? ?? 93;
+            set => Key.SetValue(nameof(JpegQuality), value);
+        }
 
         public string? ExifToolPath
         {

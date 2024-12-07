@@ -53,6 +53,13 @@ namespace PhotoLocator.Settings
         }
         string _savedFilePostfix = string.Empty;
 
+        public int JpegQuality
+        {
+            get => _jpegQuality;
+            set => SetProperty(ref _jpegQuality, value);
+        }
+        int _jpegQuality;
+
         public string? ExifToolPath
         {
             get => _exifToolPath;
