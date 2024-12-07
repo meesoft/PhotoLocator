@@ -27,10 +27,10 @@ namespace MapControl.UiTools
     public class MapLayerItem
     {
         public string Text { get; set; }
-        public UIElement Layer { get; set; }
-        public Func<UIElement> LayerFactory { get; set; }
+        public FrameworkElement Layer { get; set; }
+        public Func<FrameworkElement> LayerFactory { get; set; }
 
-        public UIElement GetLayer() => Layer ??= LayerFactory?.Invoke();
+        public FrameworkElement GetLayer() => Layer ??= LayerFactory?.Invoke();
     }
 
 #if WINUI || UWP
@@ -40,7 +40,7 @@ namespace MapControl.UiTools
 #endif
     public class MapLayersMenuButton : MenuButton
     {
-        private UIElement selectedLayer;
+        private FrameworkElement selectedLayer;
 
         public MapLayersMenuButton()
             : base("\uE81E")
@@ -112,7 +112,7 @@ namespace MapControl.UiTools
             ToggleMapOverlay(mapLayerItem.GetLayer());
         }
 
-        private void SetMapLayer(UIElement layer)
+        private void SetMapLayer(FrameworkElement layer)
         {
             if (selectedLayer != layer)
             {
@@ -123,7 +123,7 @@ namespace MapControl.UiTools
             UpdateCheckedStates();
         }
 
-        private void ToggleMapOverlay(UIElement layer)
+        private void ToggleMapOverlay(FrameworkElement layer)
         {
             if (Map.Children.Contains(layer))
             {

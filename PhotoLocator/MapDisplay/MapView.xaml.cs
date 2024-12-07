@@ -49,19 +49,19 @@ namespace PhotoLocator.MapDisplay
                 mapLayersMenuButton.MapLayers.Add(new MapLayerItem
                 {
                     Text = "Bing Maps Road",
-                    Layer = (UIElement)Resources["BingMapsRoad"]
+                    Layer = (FrameworkElement)Resources["BingMapsRoad"]
                 });
 
                 mapLayersMenuButton.MapLayers.Add(new MapLayerItem
                 {
                     Text = "Bing Maps Aerial",
-                    Layer = (UIElement)Resources["BingMapsAerial"]
+                    Layer = (FrameworkElement)Resources["BingMapsAerial"]
                 });
 
                 mapLayersMenuButton.MapLayers.Add(new MapLayerItem
                 {
                     Text = "Bing Maps Aerial with Labels",
-                    Layer = (UIElement)Resources["BingMapsHybrid"]
+                    Layer = (FrameworkElement)Resources["BingMapsHybrid"]
                 });
             }
 
