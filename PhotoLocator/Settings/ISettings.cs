@@ -10,7 +10,7 @@ namespace PhotoLocator.Settings
         LanczosDownscaling = 1 << 2,
     }
 
-    public interface ISettings
+    public interface ISettings // Remember to update SettingsExtensions.AssignSettings when adding settings
     {
         string PhotoFileExtensions { get; set; }
 
@@ -21,6 +21,8 @@ namespace PhotoLocator.Settings
         bool IncludeSidecarFiles { get; set; }
 
         string SavedFilePostfix { get; set; }
+
+        int JpegQuality { get; set; }
 
         string? ExifToolPath { get; set; }
 

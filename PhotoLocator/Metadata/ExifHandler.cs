@@ -249,24 +249,20 @@ namespace PhotoLocator.Metadata
             catch { }
         }
 
-        public static void SetGeotag(string sourceFileName, string targetFileName, Location location)
+        public static void SetMetadata(string sourceFileName, string targetFileName, BitmapMetadata metadata)
         {
-            MemoryStream memoryStream;
+            using var memoryStream = new MemoryStream();
             using (var originalFileStream = File.OpenRead(sourceFileName))
             {
                 // Decode
                 var sourceSize = originalFileStream.Length;
-                var decoder = BitmapDecoder.Create(originalFileStream, CreateOptions, BitmapCacheOption.None); // Caching needs to be None for geotagging work be lossless
+                var decoder = BitmapDecoder.Create(originalFileStream, CreateOptions, BitmapCacheOption.None); // Caching needs to be None for lossless setting metadata
                 var frame = decoder.Frames[0];
-
-                // Tag
-                var metadata = frame.Metadata is null ? new BitmapMetadata("jpg") : (BitmapMetadata)frame.Metadata.Clone();
-                SetGeotag(metadata, location);
 
                 // Encode
                 var encoder = new JpegBitmapEncoder();
-                encoder.Frames.Add(BitmapFrame.Create(frame, frame.Thumbnail, metadata, frame.ColorContexts));
-                memoryStream = new MemoryStream();
+                var jpegMetadata = CreateMetadataForEncoder(metadata, encoder) ?? throw new NotSupportedException("Unsupported metadata format");
+                encoder.Frames.Add(BitmapFrame.Create(frame, frame.Thumbnail, jpegMetadata, frame.ColorContexts));
                 encoder.Save(memoryStream);
 
                 // Check
@@ -277,7 +273,35 @@ namespace PhotoLocator.Metadata
             using var targetFileStream = File.Open(targetFileName, FileMode.Create, FileAccess.Write);
             memoryStream.Position = 0;
             memoryStream.CopyTo(targetFileStream);
-            memoryStream.Dispose();
+        }
+
+        public static void SetGeotag(string sourceFileName, string targetFileName, Location location)
+        {
+            using var memoryStream = new MemoryStream();
+            using (var originalFileStream = File.OpenRead(sourceFileName))
+            {
+                // Decode
+                var sourceSize = originalFileStream.Length;
+                var decoder = BitmapDecoder.Create(originalFileStream, CreateOptions, BitmapCacheOption.None); // Caching needs to be None for lossless setting metadata
+                var frame = decoder.Frames[0];
+
+                // Tag
+                var metadata = frame.Metadata is null ? new BitmapMetadata("jpg") : (BitmapMetadata)frame.Metadata.Clone();
+                SetGeotag(metadata, location);
+
+                // Encode
+                var encoder = new JpegBitmapEncoder();
+                encoder.Frames.Add(BitmapFrame.Create(frame, frame.Thumbnail, metadata, frame.ColorContexts));
+                encoder.Save(memoryStream);
+
+                // Check
+                memoryStream.Position = 0;
+                CheckPixels(frame, BitmapDecoder.Create(memoryStream, CreateOptions, BitmapCacheOption.None).Frames[0]);
+            }
+            // Save
+            using var targetFileStream = File.Open(targetFileName, FileMode.Create, FileAccess.Write);
+            memoryStream.Position = 0;
+            memoryStream.CopyTo(targetFileStream);
         }
 
         public static void SetGeotag(string sourceFileName, string targetFileName, Location location, string? exifToolPath)
@@ -324,9 +348,9 @@ namespace PhotoLocator.Metadata
 
             var pixels2 = new byte[bytesPerLine * frame2.PixelHeight];
             frame2.CopyPixels(pixels2, bytesPerLine, 0);
-            for (var i = 0; i < pixels1.Length; i++)
-                if (pixels1[i] != pixels2[i])
-                    throw new InvalidDataException("Pixels have changed");
+
+            if (!pixels1.SequenceEqual(pixels2))
+                throw new InvalidDataException("Pixels have changed");
         }
 
         public static void SetGeotag(BitmapMetadata metadata, Location location)
