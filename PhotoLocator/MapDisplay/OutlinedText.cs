@@ -10,7 +10,7 @@ namespace PhotoLocator.MapDisplay
     public class OutlinedText : FrameworkElement
     {
         private FormattedText text;
-        private Geometry outline;
+        private PathGeometry outline;
 
         public static readonly DependencyProperty TextProperty = TextBlock.TextProperty.AddOwner(
             typeof(OutlinedText),
