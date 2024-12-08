@@ -6,7 +6,9 @@
         [TestMethod]
         public void LicenseText_ShouldReadAllLicenses()
         {
-            Assert.IsNotNull(AboutWindow.LicenseText);
+            var licenseText = AboutWindow.LicenseText;
+            Assert.IsNotNull(licenseText);
+            StringAssert.Contains(licenseText, "jpegli");
         }
     }
 }
