@@ -99,7 +99,7 @@ namespace PhotoLocator
             get => _highlightStrength;
             set
             {
-                if (SetProperty(ref _highlightStrength, RealMath.EnsureRange(value, 0, 100)))
+                if (SetProperty(ref _highlightStrength, RealMath.Clamp(value, 0, 100)))
                     StartUpdateTimer(false, true);
             }
         }
@@ -114,7 +114,7 @@ namespace PhotoLocator
             get => _shadowStrength;
             set
             {
-                if (SetProperty(ref _shadowStrength, RealMath.EnsureRange(value, 0, 100)))
+                if (SetProperty(ref _shadowStrength, RealMath.Clamp(value, 0, 100)))
                     StartUpdateTimer(false, true);
             }
         }
@@ -129,7 +129,7 @@ namespace PhotoLocator
             get => _maxStretch;
             set
             {
-                if (SetProperty(ref _maxStretch, RealMath.EnsureRange(value, 0, 100)))
+                if (SetProperty(ref _maxStretch, RealMath.Clamp(value, 0, 100)))
                     StartUpdateTimer(false, true);
             }
         }
@@ -329,7 +329,7 @@ namespace PhotoLocator
             get => _toneRotation;
             set
             {
-                if (SetProperty(ref _toneRotation, RealMath.EnsureRange(value, -0.5, 0.5)))
+                if (SetProperty(ref _toneRotation, RealMath.Clamp(value, -0.5, 0.5)))
                 {
                     UpdateColorTones();
                     StartUpdateTimer(false, false);

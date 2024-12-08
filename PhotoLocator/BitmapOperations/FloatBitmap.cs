@@ -222,8 +222,8 @@ namespace PhotoLocator.BitmapOperations
                     {
                         var stride = Stride;
                         for (var x = 0; x < stride; x++)
-                            //destRow[x] = (byte)IntMath.EnsureRange((int)(Math.Pow(elements[x], gamma) * 255 + 0.5), 0, 255);
-                            destRow[x] = gamma[Math.Clamp((int)(elements[x] * FloatToByteGammaLutRange + 0.5f), 0, FloatToByteGammaLutRange)];
+                            //destRow[x] = (byte)IntMath.Clamp((int)(Math.Pow(elements[x], gamma) * 255 + 0.5), 0, 255);
+                            destRow[x] = gamma[IntMath.Clamp((int)(elements[x] * FloatToByteGammaLutRange + 0.5f), 0, FloatToByteGammaLutRange)];
                     }
                 });
             }
@@ -322,9 +322,15 @@ namespace PhotoLocator.BitmapOperations
         public float Min()
         {
             float min = float.PositiveInfinity;
-            for (int y = 0; y < Height; y++)
-                for (int x = 0; x < Stride; x++)
-                    min = Math.Min(min, Elements[y, x]);
+            unsafe
+            {
+                fixed (float* elements = _elements)
+                {
+                    var size = Size;
+                    for (var i = 0; i < size; i++)
+                        min = Math.Min(min, elements[i]);
+                }
+            }
             return min;
         }
 
@@ -332,12 +338,18 @@ namespace PhotoLocator.BitmapOperations
         {
             float min = float.PositiveInfinity;
             float max = float.NegativeInfinity;
-            for (int y = 0; y < Height; y++)
-                for (int x = 0; x < Stride; x++)
+            unsafe
+            {
+                fixed (float* elements = _elements)
                 {
-                    min = Math.Min(min, Elements[y, x]);
-                    max = Math.Max(max, Elements[y, x]);
+                    var size = Size;
+                    for (var i = 0; i < size; i++)
+                    {
+                        min = Math.Min(min, elements[i]);
+                        max = Math.Max(max, elements[i]);
+                    }
                 }
+            }
             return (min, max);
         }
 

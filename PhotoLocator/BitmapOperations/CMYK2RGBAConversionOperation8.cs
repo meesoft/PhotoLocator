@@ -28,9 +28,9 @@ namespace PhotoLocator.BitmapOperations
                             float g = 66 - 0.1961f * c + 0.2745f * m - 0.0627f * y + 0.00215f * c * m + 0.00008f * y * c + 0.00062f * y * m;
                             float b = 86 - 0.3255f * c - 0.1569f * m + 0.1647f * y + 0.00046f * c * m + 0.00123f * y * c + 0.00215f * y * m;
 
-                            dst[p + 0] = (byte)RealMath.EnsureRange(b * k + 0.5f, 0, 255);
-                            dst[p + 1] = (byte)RealMath.EnsureRange(g * k + 0.5f, 0, 255);
-                            dst[p + 2] = (byte)RealMath.EnsureRange(r * k + 0.5f, 0, 255);
+                            dst[p + 0] = (byte)RealMath.Clamp(b * k + 0.5f, 0, 255);
+                            dst[p + 1] = (byte)RealMath.Clamp(g * k + 0.5f, 0, 255);
+                            dst[p + 2] = (byte)RealMath.Clamp(r * k + 0.5f, 0, 255);
                             dst[p + 3] = 255;
 
                             p += 4;

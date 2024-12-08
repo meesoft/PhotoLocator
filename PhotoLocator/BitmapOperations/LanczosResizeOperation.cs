@@ -124,7 +124,7 @@ namespace PhotoLocator.BitmapOperations
                         for (var j = 0; j < length; j++, sourceWeight++)
                             sum += source[srcOffset + (*sourceWeight).SourceIndex] * (*sourceWeight).SourceWeight;
                     }
-                    dest[dstOffset + i * dstSampleDistance] = (byte)RealMath.EnsureRange(sum, 0, 255);
+                    dest[dstOffset + i * dstSampleDistance] = (byte)RealMath.Clamp(sum, 0, 255);
                 }
             }
         }

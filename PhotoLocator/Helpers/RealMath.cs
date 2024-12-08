@@ -1,10 +1,12 @@
 ﻿using System;
+using System.Runtime.CompilerServices;
 
 namespace PhotoLocator.Helpers
 {
     public static class RealMath
     {
-        public static float EnsureRange(float value, float min, float max)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static float Clamp(float value, float min, float max)
         {
             if (value <= min)
                 return min;
@@ -13,7 +15,8 @@ namespace PhotoLocator.Helpers
             return value;
         }
 
-        public static double EnsureRange(double value, double min, double max)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static double Clamp(double value, double min, double max)
         {
             if (value <= min)
                 return min;
@@ -22,6 +25,7 @@ namespace PhotoLocator.Helpers
             return value;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool InRange(double value, double min, double max)
         {
             return value >= min && value <= max;
@@ -49,15 +53,15 @@ namespace PhotoLocator.Helpers
 
 
         /// <summary>
-        /// Smooth step edge between xmin and xmax
+        /// Smooth step edge between min and max
         /// </summary>
-        public static float SmoothStep(float xmin, float xmax, float x)
+        public static float SmoothStep(float x, float min, float max)
         {
-            if (x <= xmin)
+            if (x <= min)
                 return 0;
-            if (x >= xmax)
+            if (x >= max)
                 return 1;
-            return SmoothStep((x - xmin) / (xmax - xmin));
+            return SmoothStep((x - min) / (max - min));
         }
     }
 }

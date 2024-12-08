@@ -66,9 +66,9 @@ namespace PhotoLocator.BitmapOperations
 
         public static void ColorTransformRGB2HSI(float r, float g, float b, out float h, out float s, out float i)
         {
-            r = RealMath.EnsureRange(r, 0f, 1f);
-            g = RealMath.EnsureRange(g, 0f, 1f);
-            b = RealMath.EnsureRange(b, 0f, 1f);
+            r = RealMath.Clamp(r, 0f, 1f);
+            g = RealMath.Clamp(g, 0f, 1f);
+            b = RealMath.Clamp(b, 0f, 1f);
             i = (r + g + b) / 3f;
             if (i == 0)
             {

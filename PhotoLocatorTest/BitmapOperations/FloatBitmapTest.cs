@@ -1,4 +1,6 @@
-﻿namespace PhotoLocator.BitmapOperations
+﻿using System.Diagnostics;
+
+namespace PhotoLocator.BitmapOperations
 {
     [TestClass]
     public class FloatBitmapTest
@@ -33,6 +35,20 @@
             }
             Assert.AreEqual(0, diff, 308.0, "Sum of diffs");
             Console.WriteLine(diff);
+        }
+
+        [TestMethod]
+        public void MinMax_ShouldWork()
+        {
+            var floatBitmap = new FloatBitmap(10, 10, 3);
+            floatBitmap[0, 0] = 1;
+
+            var sw = Stopwatch.StartNew();
+            var minMax = floatBitmap.MinMax();
+            Console.WriteLine(sw.ElapsedMilliseconds);
+
+            Assert.AreEqual(0, minMax.Min);
+            Assert.AreEqual(1, minMax.Max);
         }
     }
 }

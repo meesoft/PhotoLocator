@@ -151,14 +151,14 @@ namespace PhotoLocator.Helpers
 
             void DragLeft()
             {
-                dx = RealMath.EnsureRange(dx, -CropLeftOffset.Value, CropWidth.Value);
+                dx = RealMath.Clamp(dx, -CropLeftOffset.Value, CropWidth.Value);
                 CropLeftOffset = new GridLength(CropLeftOffset.Value + dx, CropLeftOffset.GridUnitType);
                 CropWidth = new GridLength(CropWidth.Value - dx, CropWidth.GridUnitType);
             }
 
             void DragRight()
             {
-                dx = RealMath.EnsureRange(dx, -CropWidth.Value, CropRightOffset.Value);
+                dx = RealMath.Clamp(dx, -CropWidth.Value, CropRightOffset.Value);
                 CropRightOffset = new GridLength(CropRightOffset.Value - dx, CropRightOffset.GridUnitType);
                 CropWidth = new GridLength(CropWidth.Value + dx, CropWidth.GridUnitType);
             }
@@ -172,26 +172,26 @@ namespace PhotoLocator.Helpers
 
             void DragTop()
             {
-                var dy = RealMath.EnsureRange(dyFromWidth(), -CropTopOffset.Value, CropHeight.Value);
+                var dy = RealMath.Clamp(dyFromWidth(), -CropTopOffset.Value, CropHeight.Value);
                 CropTopOffset = new GridLength(CropTopOffset.Value + dy, CropTopOffset.GridUnitType);
                 CropHeight = new GridLength(CropHeight.Value - dy, CropHeight.GridUnitType);
             }
 
             void DragBottom()
             {
-                var dy = RealMath.EnsureRange(dyFromWidth(), -CropBottomOffset.Value, CropHeight.Value);
+                var dy = RealMath.Clamp(dyFromWidth(), -CropBottomOffset.Value, CropHeight.Value);
                 CropBottomOffset = new GridLength(CropBottomOffset.Value + dy, CropBottomOffset.GridUnitType);
                 CropHeight = new GridLength(CropHeight.Value - dy, CropHeight.GridUnitType);
             }
 
             if (_mouseOperation == "Move")
             {
-                dx = RealMath.EnsureRange(dx, -CropLeftOffset.Value, CropRightOffset.Value);
+                dx = RealMath.Clamp(dx, -CropLeftOffset.Value, CropRightOffset.Value);
                 CropLeftOffset = new GridLength(CropLeftOffset.Value + dx, CropLeftOffset.GridUnitType);
                 CropRightOffset = new GridLength(CropRightOffset.Value - dx, CropRightOffset.GridUnitType);
 
                 var dy = (mousePosition.Y - _previousMousePosition.Y) / ActualHeight * verticalSum;
-                dy = RealMath.EnsureRange(dy, -CropTopOffset.Value, CropBottomOffset.Value);
+                dy = RealMath.Clamp(dy, -CropTopOffset.Value, CropBottomOffset.Value);
                 CropTopOffset = new GridLength(CropTopOffset.Value + dy, CropTopOffset.GridUnitType);
                 CropBottomOffset = new GridLength(CropBottomOffset.Value - dy, CropBottomOffset.GridUnitType);
             }

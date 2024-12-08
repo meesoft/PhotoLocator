@@ -606,10 +606,10 @@ namespace PhotoLocator.BitmapOperations
         /// </summary>
         float Fd(float d)
         {
-            float result = (float)Math.Exp(Math.Log(d) * Alpha); // Same as Math.Pow(d, Alpha), but faster
+            float result = (float)Math.Pow(d, Alpha);
             if (Alpha < 1)
             {
-                float tau = RealMath.SmoothStep(NoiseLevel, 2 * NoiseLevel, d * _sigmaR);
+                float tau = RealMath.SmoothStep(d * _sigmaR, NoiseLevel, 2 * NoiseLevel);
                 result = tau * result + (1 - tau) * d;
             }
             return result;
