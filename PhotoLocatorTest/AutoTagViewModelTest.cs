@@ -9,7 +9,7 @@ namespace PhotoLocator
     public class AutoTagViewModelTest
     {
         [TestMethod]
-        public async Task AutoTag()
+        public async Task AutoTag_ShouldSetGeotag()
         {
             var file = new PictureItemViewModel(@"TestData\2022-06-17_19.03.02.jpg", false, (s, e) => { }, null);
             file.IsSelected = true;
@@ -20,7 +20,7 @@ namespace PhotoLocator
             trace.Locations.Add(location);
             trace.TimeStamps.Add(file.TimeStamp!.Value.AddMinutes(1));
             var settings = Mock.Of<IRegistrySettings>();
-            var vm = new AutoTagViewModel(new[] { file }, new[] { file }, new[] { trace }, () => { }, settings);
+            var vm = new AutoTagViewModel([file], [file], [trace], () => { }, settings);
             vm.MaxTimestampDifference = 2;
             vm.AutoTag(vm.GpsTraces);
 

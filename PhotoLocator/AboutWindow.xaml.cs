@@ -95,6 +95,12 @@ namespace PhotoLocator
                     "PhotoLocator.Resources.GPLv3License.txt")!, Encoding.Latin1);
                 text.AppendLine(gpl3LicenseStream.ReadToEnd());
 
+                text.AppendLine(separator);
+                text.AppendLine("jpegli is licensed under the BSD 3-Clause license");
+                using var jpegxlLicenseStream = new StreamReader(typeof(AboutWindow).Assembly.GetManifestResourceStream(
+                    "PhotoLocator.Resources.JPEG-XL-LICENSE.txt")!, Encoding.Latin1);
+                text.AppendLine(jpegxlLicenseStream.ReadToEnd());
+
                 return text.ToString();
             }
         }
