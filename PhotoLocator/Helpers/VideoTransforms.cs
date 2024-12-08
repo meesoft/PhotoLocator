@@ -59,7 +59,7 @@ namespace PhotoLocator.Helpers
             {
                 var header = new byte[6];
                 var theRest = Array.Empty<byte>();
-                var memStream = new MemoryStream();
+                using var memStream = new MemoryStream();
                 while (true)
                 {
                     await process.StandardOutput.BaseStream.ReadExactlyAsync(header, 0, header.Length, ct).ConfigureAwait(false);

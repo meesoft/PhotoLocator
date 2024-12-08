@@ -20,6 +20,7 @@
     <None Remove="Resources\Apache2LICENSE.txt" />
     <None Remove="Resources\ArtisticLicense.txt" />
     <None Remove="Resources\GPLv3License.txt" />
+    <None Remove="Resources\JPEG-XL-LICENSE.txt" />
   </ItemGroup>
 
   <ItemGroup>
@@ -42,6 +43,7 @@
     <EmbeddedResource Include="Resources\ArtisticLicense.txt" />
     <EmbeddedResource Include="Resources\ExplorerShellContextMenuLicense.txt" />
     <EmbeddedResource Include="Resources\GPLv3License.txt" />
+    <EmbeddedResource Include="Resources\JPEG-XL-LICENSE.txt" />
 	<Resource Include="Resources\PhotoLocator.ico" />
   </ItemGroup>
 
