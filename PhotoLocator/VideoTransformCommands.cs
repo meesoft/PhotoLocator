@@ -625,7 +625,8 @@ namespace PhotoLocator
             string outFileName;
             if (OutputMode == OutputMode.ImageSequence)
             {
-                var outputPath = TextInputWindow.Show($"Output path:", "Extract frames", Path.Combine(inPath, Path.GetFileNameWithoutExtension(allSelected[0].Name), "%06d.jpg"));
+                var outputPath = TextInputWindow.Show($"Output path:", text => !string.IsNullOrWhiteSpace(text), "Extract frames", 
+                    Path.Combine(inPath, Path.GetFileNameWithoutExtension(allSelected[0].Name), "%06d.jpg"));
                 if (string.IsNullOrEmpty(outputPath))
                     return;
                 outFileName = outputPath;

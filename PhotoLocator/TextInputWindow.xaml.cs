@@ -42,47 +42,46 @@ namespace PhotoLocator
         public string? Text { get => _text; set => SetProperty(ref _text, value); }
         private string? _text;
 
-        public ICommand OkCommand => new RelayCommand(o => DialogResult = true);
+        public bool IsOkButtonEnabled { get => _isOkButtonEnabled; set => SetProperty(ref _isOkButtonEnabled, value); }
+        private bool _isOkButtonEnabled = true;
 
-        public static string? Show(string label, string? title = null, string? defaultText = null)
-        {
-            var window = new TextInputWindow();
-            window.Owner = App.Current.MainWindow;
-            window.Title = title;
-            window.Label = label;
-            window.Text = defaultText;
-            window.DataContext = window;
-            window.ShowDialog();
-            window.DataContext = null;
-            return window.DialogResult == true ? window.Text : null;
-        }
+        public ICommand OkCommand => new RelayCommand(o => DialogResult = true);
 
         private void InitializeWindow(string label, string? title, string? defaultText)
         {
-            ArgumentNullException.ThrowIfNull(label);
-            Owner = App.Current?.MainWindow ?? throw new InvalidOperationException("No main window found");
+            Owner = App.Current?.MainWindow;
             Title = title;
             Label = label;
             Text = defaultText;
             DataContext = this;
         }
 
-        public static bool Show(string label, Action<string?> textUpdated, string? title = null, string? defaultText = null)
+        public static string? Show(string label, string? title = null, string? defaultText = null)
         {
-            ArgumentNullException.ThrowIfNull(textUpdated);
             var window = new TextInputWindow();
             window.InitializeWindow(label, title, defaultText);
-            
-            PropertyChangedEventHandler handler = (s, e) =>
+            window.ShowDialog();
+            window.DataContext = null;
+            return window.DialogResult == true ? window.Text : null;
+        }
+
+        public static string? Show(string label, Func<string?, bool> textChanged, string? title = null, string? defaultText = null)
+        {
+            ArgumentNullException.ThrowIfNull(textChanged);
+            var window = new TextInputWindow();
+            window.IsOkButtonEnabled = textChanged(defaultText);
+            window.InitializeWindow(label, title, defaultText);
+
+            void HandlePropertyChanged(object? sender, PropertyChangedEventArgs e)
             {
                 if (e.PropertyName == nameof(Text))
-                    textUpdated(window.Text);
-            };
-            window.PropertyChanged += handler;
+                    window.IsOkButtonEnabled = textChanged(window.Text);
+            }
+            window.PropertyChanged += HandlePropertyChanged;
             window.ShowDialog();
-            window.PropertyChanged -= handler;
+            window.PropertyChanged -= HandlePropertyChanged;
             window.DataContext = null;
-            return window.DialogResult == true;
+            return window.DialogResult == true ? window.Text : null;
         }
     }
 }
