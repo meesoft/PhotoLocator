@@ -57,20 +57,30 @@ namespace PhotoLocator
             return window.DialogResult == true ? window.Text : null;
         }
 
+        private void InitializeWindow(string label, string? title, string? defaultText)
+        {
+            ArgumentNullException.ThrowIfNull(label);
+            Owner = App.Current?.MainWindow ?? throw new InvalidOperationException("No main window found");
+            Title = title;
+            Label = label;
+            Text = defaultText;
+            DataContext = this;
+        }
+
         public static bool Show(string label, Action<string?> textUpdated, string? title = null, string? defaultText = null)
         {
+            ArgumentNullException.ThrowIfNull(textUpdated);
             var window = new TextInputWindow();
-            window.Owner = App.Current.MainWindow;
-            window.Title = title;
-            window.Label = label;
-            window.Text = defaultText;
-            window.DataContext = window;
-            window.PropertyChanged += (s, e) =>
+            window.InitializeWindow(label, title, defaultText);
+            
+            PropertyChangedEventHandler handler = (s, e) =>
             {
                 if (e.PropertyName == nameof(Text))
                     textUpdated(window.Text);
             };
+            window.PropertyChanged += handler;
             window.ShowDialog();
+            window.PropertyChanged -= handler;
             window.DataContext = null;
             return window.DialogResult == true;
         }
