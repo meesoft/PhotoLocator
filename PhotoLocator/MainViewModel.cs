@@ -1,5 +1,4 @@
 ﻿using MapControl;
-using Microsoft.VisualBasic;
 using Peter;
 using PhotoLocator.Gps;
 using PhotoLocator.Helpers;
@@ -586,16 +585,22 @@ namespace PhotoLocator
 
         public ICommand QuickSearchCommand => new RelayCommand(o =>
         {
-            var query = Interaction.InputBox("Enter part of the file name (without wildcards):", "Search");
-            if (string.IsNullOrEmpty(query))
-                return;
-            var result = Items.FirstOrDefault(item => item.Name.Contains(query, StringComparison.CurrentCultureIgnoreCase));
-            SelectIfNotNull(result);
+            var previous = SelectedItem;
+            if (TextInputWindow.Show("Enter part of the file name (without wildcards):", query =>
+                {
+                    PictureItemViewModel? result;
+                    if (string.IsNullOrEmpty(query) || 
+                        (result = Items.FirstOrDefault(item => item.Name.Contains(query, StringComparison.CurrentCultureIgnoreCase))) is null)
+                        return false;
+                    SelectIfNotNull(result);
+                    return true;
+                }, "Search") is null)
+                SelectIfNotNull(previous);
         });
 
         public ICommand SetFilterCommand => new RelayCommand(o =>
         {
-            var filter = Interaction.InputBox("Items containing the filter text will be listed first.", "Filter", Items.FilterText ?? string.Empty);
+            var filter = TextInputWindow.Show("Items containing the filter text will be listed first.", "Filter", Items.FilterText ?? string.Empty);
             using (new MouseCursorOverride())
             {
                 Items.FilterText = filter;
@@ -674,8 +679,10 @@ namespace PhotoLocator
             var allSelected = GetSelectedItems().ToArray();
             if (allSelected.Length == 0)
                 return;
-            var destination = Interaction.InputBox($"Copy {allSelected.Length} selected item(s).\n\nDestination:", "Copy files", (PhotoFolderPath ?? string.Empty).Trim('\\'));
-            if (string.IsNullOrEmpty(destination) || destination == PhotoFolderPath || destination == ".")
+            var destination = TextInputWindow.Show($"Copy {allSelected.Length} selected item(s).\n\nDestination:",
+                text => !string.IsNullOrWhiteSpace(text) && text != PhotoFolderPath && text != ".",
+                "Copy files", (PhotoFolderPath ?? string.Empty).Trim('\\'));
+            if (string.IsNullOrEmpty(destination))
                 return;
             await RunProcessWithProgressBarAsync((progressCallback, ct) => Task.Run(() =>
             {
@@ -708,8 +715,10 @@ namespace PhotoLocator
             if (allSelected.Length == 0)
                 return;
             focusedItem = GetNearestUnchecked(focusedItem, allSelected);
-            var destination = Interaction.InputBox($"Move {allSelected.Length} selected item(s).\n\nDestination:", "Move files", (PhotoFolderPath ?? string.Empty).Trim('\\'));
-            if (string.IsNullOrEmpty(destination) || destination == PhotoFolderPath || destination == ".")
+            var destination = TextInputWindow.Show($"Move {allSelected.Length} selected item(s).\n\nDestination:", 
+                text => !string.IsNullOrWhiteSpace(text) && text != PhotoFolderPath && text != ".",
+                "Move files", (PhotoFolderPath ?? string.Empty).Trim('\\'));
+            if (destination is null)
                 return;
             SelectedItem = null;
             await RunProcessWithProgressBarAsync((progressCallback, ct) => Task.Run(() =>
@@ -741,7 +750,9 @@ namespace PhotoLocator
         {
             if (string.IsNullOrEmpty(PhotoFolderPath))
                 return;
-            var folderName = Interaction.InputBox("Folder name:", "Create folder");
+            var folderName = TextInputWindow.Show("Folder name:", 
+                text => !string.IsNullOrWhiteSpace(text) && text.IndexOfAny(Path.GetInvalidFileNameChars()) < 0, 
+                "Create folder" );
             if (string.IsNullOrEmpty(folderName))
                 return;
             Directory.CreateDirectory(Path.Combine(PhotoFolderPath, folderName));

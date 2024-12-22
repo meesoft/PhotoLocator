@@ -1,5 +1,4 @@
-﻿using Microsoft.VisualBasic;
-using Microsoft.Win32;
+﻿using Microsoft.Win32;
 using PhotoLocator.BitmapOperations;
 using PhotoLocator.Helpers;
 using PhotoLocator.Metadata;
@@ -626,10 +625,11 @@ namespace PhotoLocator
             string outFileName;
             if (OutputMode == OutputMode.ImageSequence)
             {
-                outFileName = Path.Combine(inPath, Path.GetFileNameWithoutExtension(allSelected[0].Name), "%06d.jpg");
-                outFileName = Interaction.InputBox($"Output path:", "Extract frames", outFileName);
-                if (string.IsNullOrEmpty(outFileName))
+                var outputPath = TextInputWindow.Show($"Output path:", text => !string.IsNullOrWhiteSpace(text), "Extract frames", 
+                    Path.Combine(inPath, Path.GetFileNameWithoutExtension(allSelected[0].Name), "%06d.jpg"));
+                if (string.IsNullOrEmpty(outputPath))
                     return;
+                outFileName = outputPath;
             }
             else
             {
