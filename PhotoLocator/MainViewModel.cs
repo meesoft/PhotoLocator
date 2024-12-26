@@ -360,7 +360,7 @@ namespace PhotoLocator
             }
         }
 
-        public ICommand AutoTagCommand => new RelayCommand(async o =>
+        public ICommand AutoGeotagCommand => new RelayCommand(async o =>
         {
             await WaitForPicturesLoadedAsync();
             var selectedItems = GetSelectedItems(true).ToArray();
@@ -463,7 +463,7 @@ namespace PhotoLocator
             }
         }
 
-        public ICommand SaveCommand => new RelayCommand(async o =>
+        public ICommand SaveGeotagsCommand => new RelayCommand(async o =>
         {
             var updatedPictures = Items.Where(i => i.GeoTagUpdated).ToArray();
             if (updatedPictures.Length == 0)

@@ -441,7 +441,7 @@ namespace PhotoLocator
         {
             var allSelected = _mainViewModel.GetSelectedItems(true).ToArray();
             if (allSelected.Length == 0)
-                throw new UserMessageException("No files selected");
+                throw new UserMessageException("No files are selected");
             if (allSelected.Length == 1)
             {
                 HasSingleInput = true;

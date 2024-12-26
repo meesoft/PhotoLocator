@@ -33,8 +33,8 @@
         <KeyBinding Key="L" Modifiers="Ctrl" Command="{Binding JpegTransformCommands.LocalContrastCommand}" />
         <KeyBinding Key="O" Modifiers="Ctrl" Command="{Binding BrowseForPhotosCommand}" />
         <KeyBinding Key="Q" Modifiers="Ctrl" Command="{Binding ViewModeCommand}" />
-        <KeyBinding Key="S" Modifiers="Ctrl" Command="{Binding SaveCommand}" />
-        <KeyBinding Key="T" Modifiers="Ctrl" Command="{Binding AutoTagCommand}" />
+        <KeyBinding Key="S" Modifiers="Ctrl" Command="{Binding SaveGeotagsCommand}" />
+        <KeyBinding Key="T" Modifiers="Ctrl" Command="{Binding AutoGeotagCommand}" />
         <KeyBinding Key="V" Modifiers="Ctrl" Command="{Binding PasteLocationCommand}" />
         <KeyBinding Key="A" Modifiers="Alt" Command="{Binding ToggleZoomCommand}" />
         <KeyBinding Key="C" Modifiers="Alt" Command="{Binding CropCommand}" />
@@ -101,13 +101,13 @@
                 <ComboBoxItem Content="Split" Name="SplitViewItem" Tag="{x:Static local:ViewMode.Split}"/>
             </ComboBox>
 
-            <Button Content="Auto geotag" Width="100" Command="{Binding AutoTagCommand}"
+            <Button Content="Auto geotag" Width="100" Command="{Binding AutoGeotagCommand}"
                     ToolTip="Auto assign geotags to selected pictures (Ctrl+T)" />
             <Button Content="Save center" Width="100" Command="{Binding CopyLocationCommand}"
                     ToolTip="Save location of current map center (Ctrl+C)" />
             <Button Content="Apply location" Width="100" Command="{Binding PasteLocationCommand}"
                     ToolTip="Apply saved location to selected photos (Ctrl+V)" />
-            <Button Content="Save changes" Width="100" Command="{Binding SaveCommand}"
+            <Button Content="Save changes" Width="100" Command="{Binding SaveGeotagsCommand}"
                     ToolTip="Save changed geotags to photo files (Ctrl+S)" />
             <Button Content="Slide show" Width="100" Command="{Binding SlideShowCommand}"
                     ToolTip="Full screen slide show with map display (F3)" />
@@ -146,8 +146,8 @@
                     </MenuItem>
                     <MenuItem Header="Metadata / EXIF" >
                         <MenuItem Header="Adjust timestamps" Command="{Binding AdjustTimestampsCommand}"/>
-                        <MenuItem Header="Auto geotag (Ctrl+T)" Command="{Binding AutoTagCommand}"/>
-                        <MenuItem Header="Save changed geotags to files (Strl+S)" Command="{Binding SaveCommand}"/>
+                        <MenuItem Header="Auto geotag (Ctrl+T)" Command="{Binding AutoGeotagCommand}"/>
+                        <MenuItem Header="Save changed geotags to files (Ctrl+S)" Command="{Binding SaveGeotagsCommand}"/>
                         <MenuItem Header="Show metadata" Command="{Binding ShowMetadataCommand}" />
                     </MenuItem>
                     <Separator />

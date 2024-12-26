@@ -24,6 +24,10 @@ some raw image formats you need to install the Raw Image Extension from the Micr
 ## Mask based automatic renaming
 Selected files can be automatically renamed based on timestamp, dimensions and other metadata tags.
 
+## EXIF timestamp adjustment
+Image timestamps can be adjusted if the camera time setting was wrong. 
+This can be used to correct missing daylight saving or time zone adjustment.
+
 ## Slideshow with location map
 There is also a full screen slideshow feature with a small location map display. The slideshow can also play video files.
 You can drag/drop in files and folders to do a slideshow across multiple folders. 
@@ -35,8 +39,21 @@ Note that it is possible to use Chrome's full screen cast feature to display the
 ## Lossless JPEG crop and rotation
 JPG images can be cropped and rotated without transcoding loss
 
+## Basic photo and video editing
+* Local contrast, brightness and color correction got photos and video clips
+
+* Combine or crop video clips
+
+* Combine image files to video for e.g. timelapse
+
+* Extract frames from video to image files
+
+* Stabilize shaky video
+
+* Generate average and max frames for video for e.g. timelapse or long exposure simulation
+
 ## Troubleshooting
-* If PhotoLocator cannot start, you need to install the .NET 6 Desktop Runtime.
+* If PhotoLocator cannot start, you need to install the .NET 8 Desktop Runtime.
 
 * You can make ExifTool ignore minor errors by renaming it to exiftool(-m).exe and updating the path under Settings accordingly.
 
