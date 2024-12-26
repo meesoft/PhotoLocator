@@ -22,11 +22,12 @@ namespace PhotoLocator
 
         readonly IList<PictureItemViewModel> _selectedPictures;
         readonly OrderedCollection _allPictures;
+        readonly PictureItemViewModel _focusedItem;
         readonly string[] _previousMasks;
         MaskBasedNaming? _exampleNamer;
 
 #if DEBUG
-        public RenameWindow() : this([], [], new ObservableSettings())
+        public RenameWindow() : this([], [], null!, new ObservableSettings())
         {
             RenameMask = nameof(RenameMask);
             ExampleName = nameof(ExampleName);
@@ -34,13 +35,13 @@ namespace PhotoLocator
         }
 #endif
 
-        public RenameWindow(IList<PictureItemViewModel> selectedPictures, OrderedCollection allPictures,
-            ISettings settings)
+        public RenameWindow(IList<PictureItemViewModel> selectedPictures, OrderedCollection allPictures, PictureItemViewModel focusedItem, ISettings settings)
         {
             InitializeComponent();
             Title = $"Rename {selectedPictures.Count} file(s)";
             _selectedPictures = selectedPictures;
             _allPictures = allPictures;
+            _focusedItem = focusedItem;
             Settings = settings;
             _renameMask = string.Empty;
 
@@ -92,7 +93,7 @@ namespace PhotoLocator
                 {
                     try
                     {
-                        _exampleNamer ??= new MaskBasedNaming(_selectedPictures[0], 0);
+                        _exampleNamer ??= new MaskBasedNaming(_focusedItem, 0);
                         ExampleName = _exampleNamer.GetFileName(RenameMask);
                         ErrorMessage = null;
                         IsExtensionWarningVisible = !Path.GetExtension(ExampleName).Equals(

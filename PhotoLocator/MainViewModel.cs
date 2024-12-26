@@ -238,11 +238,11 @@ namespace PhotoLocator
         }
         private PictureItemViewModel? _selectedItem;
 
-        public IEnumerable<PictureItemViewModel> GetSelectedItems()
+        public IEnumerable<PictureItemViewModel> GetSelectedItems(bool filesOnly)
         {
             var firstChecked = SelectedItem != null && SelectedItem.IsChecked ? SelectedItem : null;
             foreach (var item in Items)
-                if (item.IsChecked)
+                if (item.IsChecked && (item.IsFile || !filesOnly))
                 {
                     if (firstChecked is null)
                     {
@@ -251,7 +251,7 @@ namespace PhotoLocator
                     }
                     yield return item;
                 }
-            if (firstChecked is null && SelectedItem != null)
+            if (firstChecked is null && SelectedItem != null && (SelectedItem.IsFile || !filesOnly))
                 yield return SelectedItem;
         }
 
@@ -363,15 +363,15 @@ namespace PhotoLocator
         public ICommand AutoTagCommand => new RelayCommand(async o =>
         {
             await WaitForPicturesLoadedAsync();
-            var selectedItems = GetSelectedItems().ToArray();
+            var selectedItems = GetSelectedItems(true).ToArray();
             if (selectedItems.Length == 0)
             {
                 SelectCandidatesCommand.Execute(null);
-                selectedItems = GetSelectedItems().ToArray();
+                selectedItems = GetSelectedItems(true).ToArray();
             }
             if (!selectedItems.Any(item => item.TimeStamp.HasValue && item.CanSaveGeoTag))
             {
-                MessageBox.Show("No supported pictures with timestamp and missing geotag found", "Information", MessageBoxButton.OK, MessageBoxImage.Information);
+                MessageBox.Show("No supported pictures with timestamp and missing geotag found in selection", "Information", MessageBoxButton.OK, MessageBoxImage.Information);
                 return;
             }
             var autoTagWin = new AutoTagWindow();
@@ -403,7 +403,7 @@ namespace PhotoLocator
         {
             if (SavedLocation is null)
                 throw new UserMessageException("You need to save a location before applying");
-            foreach (var item in GetSelectedItems().Where(i => i.CanSaveGeoTag && !Equals(i.GeoTag, SavedLocation)))
+            foreach (var item in GetSelectedItems(true).Where(i => i.CanSaveGeoTag && !Equals(i.GeoTag, SavedLocation)))
             {
                 item.GeoTag = SavedLocation;
                 item.GeoTagSaved = false;
@@ -472,9 +472,9 @@ namespace PhotoLocator
             await RunProcessWithProgressBarAsync(async (progressCallback, ct) =>
             {
                 int i = 0;
-                await Parallel.ForEachAsync(updatedPictures, new ParallelOptions { MaxDegreeOfParallelism = 1 }, async (item, ct) =>
+                await Parallel.ForEachAsync(updatedPictures, new ParallelOptions { MaxDegreeOfParallelism = 1, CancellationToken = ct }, async (item, ct) =>
                 {
-                    await item.SaveGeoTagAsync();
+                    await item.SaveGeoTagAsync(ct);
                     progressCallback((double)Interlocked.Increment(ref i) / updatedPictures.Length);
                 });
                 await Task.Delay(10, ct);
@@ -484,13 +484,13 @@ namespace PhotoLocator
        
         public ICommand RenameCommand => new RelayCommand(async o =>
         {
-            var selectedItems = GetSelectedItems().ToList();
+            var selectedItems = GetSelectedItems(false).ToList();
             if (selectedItems.Count == 0)
                 return;
             var focused = SelectedItem;
             if (selectedItems.Any(i => i.ThumbnailImage is null))
                 await WaitForPicturesLoadedAsync();
-            var renameWin = new RenameWindow(selectedItems, Items, Settings);
+            var renameWin = new RenameWindow(selectedItems, Items, focused!, Settings);
             renameWin.Owner = App.Current.MainWindow;
             renameWin.DataContext = renameWin;
             PauseFileSystemWatcher();
@@ -601,11 +601,9 @@ namespace PhotoLocator
         public ICommand SetFilterCommand => new RelayCommand(o =>
         {
             var filter = TextInputWindow.Show("Items containing the filter text will be listed first.", "Filter", Items.FilterText ?? string.Empty);
-            using (new MouseCursorOverride())
-            {
-                Items.FilterText = filter;
-                SelectIfNotNull(SelectedItem);
-            }
+            using var cursor = new MouseCursorOverride();
+            Items.FilterText = filter;
+            SelectIfNotNull(SelectedItem);
         });
         
         public ICommand SelectAllCommand => new RelayCommand(o =>
@@ -620,7 +618,7 @@ namespace PhotoLocator
             await WaitForPicturesLoadedAsync();
             foreach (var item in Items)
                 item.IsChecked = item.GeoTag is null && item.TimeStamp.HasValue && item.CanSaveGeoTag;
-            _ = GetSelectedItems().FirstOrDefault();
+            _ = GetSelectedItems(true).FirstOrDefault();
             UpdatePoints();
         });
 
@@ -650,7 +648,7 @@ namespace PhotoLocator
         public ICommand DeleteSelectedCommand => new RelayCommand(async o =>
         {
             var focusedItem = SelectedItem;
-            var allSelected = GetSelectedItems().ToArray();
+            var allSelected = GetSelectedItems(false).ToArray();
             if (allSelected.Length == 0)
                 return;
             focusedItem = GetNearestUnchecked(focusedItem, allSelected);
@@ -676,7 +674,7 @@ namespace PhotoLocator
 
         public ICommand CopySelectedCommand => new RelayCommand(async o =>
         {
-            var allSelected = GetSelectedItems().ToArray();
+            var allSelected = GetSelectedItems(false).ToArray();
             if (allSelected.Length == 0)
                 return;
             var destination = TextInputWindow.Show($"Copy {allSelected.Length} selected item(s).\n\nDestination:",
@@ -711,7 +709,7 @@ namespace PhotoLocator
         public ICommand MoveSelectedCommand => new RelayCommand(async o =>
         {
             var focusedItem = SelectedItem;
-            var allSelected = GetSelectedItems().ToArray();
+            var allSelected = GetSelectedItems(false).ToArray();
             if (allSelected.Length == 0)
                 return;
             focusedItem = GetNearestUnchecked(focusedItem, allSelected);
@@ -790,7 +788,7 @@ namespace PhotoLocator
 
         public ICommand ShellContextMenuCommand => new RelayCommand(o =>
         {
-            var allSelected = GetSelectedItems().ToArray();
+            var allSelected = GetSelectedItems(false).ToArray();
             if (allSelected.Length == 0)
                 return;
             var files = allSelected.Select(f => new FileInfo(f.FullPath)).ToArray();
@@ -813,6 +811,26 @@ namespace PhotoLocator
             }
         });
 
+        public ICommand AdjustTimestampsCommand => new RelayCommand(async o =>
+        {
+            var selectedItems = GetSelectedItems(true).ToArray();
+            if (selectedItems.Length == 0)
+                return;
+            var offset = TextInputWindow.Show("Timestamp offset:", text => !string.IsNullOrWhiteSpace(text) && text[0] is '+' or '-', "Adjust timestamps", "+00:00:00");
+            if (string.IsNullOrEmpty(offset))
+                return;
+            await RunProcessWithProgressBarAsync(async (progressCallback, ct) =>
+            {
+                int i = 0;
+                await Parallel.ForEachAsync(selectedItems, new ParallelOptions { MaxDegreeOfParallelism = 1, CancellationToken = ct }, async (item, ct) =>
+                {
+                    await ExifHandler.AdjustTimeStampAsync(item.FullPath, item.GetProcessedFileName(), offset, Settings.ExifToolPath, ct);
+                    progressCallback((double)Interlocked.Increment(ref i) / selectedItems.Length);
+                });
+                await Task.Delay(10, ct);
+            }, "Adjust timestamps");
+        });
+
         public ICommand ShowMetadataCommand => new RelayCommand(o =>
         {
             if (SelectedItem is null || SelectedItem.IsDirectory)
@@ -828,7 +846,7 @@ namespace PhotoLocator
                 throw new UserMessageException("Unable to list metadata for file");
             metadataWin.DataContext = metadataWin;
             metadataWin.ShowDialog();
-        });
+        });        
 
         public ICommand OpenInMapsCommand => new RelayCommand(o =>
         {
@@ -901,34 +919,37 @@ namespace PhotoLocator
 
         private async Task LoadFolderContentsAsync(bool keepSelection, string? selectItemFullPath = null)
         {
-            DisposeFileSystemWatcher();
-            var selectedName = SelectedItem?.Name;
-            CancelPictureLoading();
-            if (string.IsNullOrEmpty(PhotoFolderPath))
-                return;
-            Items.Clear();
-            Polylines.Clear();
-            SetupFileSystemWatcher();
-            if (Settings.ShowFolders)
-                foreach (var dir in Directory.EnumerateDirectories(PhotoFolderPath))
-                    Items.InsertOrdered(new PictureItemViewModel(dir, true, HandleFilePropertyChanged, Settings));
-            await AppendFilesAsync(Directory.EnumerateFiles(PhotoFolderPath));
-            if (Polylines.Count > 0)
-                MapCenter = Polylines[0].Center;
-            if (keepSelection && selectedName != null)
+            using (new MouseCursorOverride())
             {
-                var previousSelection = Items.FirstOrDefault(item => item.Name == selectedName);
-                if (previousSelection != null)
-                    SelectIfNotNull(previousSelection);
+                DisposeFileSystemWatcher();
+                var selectedName = SelectedItem?.Name;
+                CancelPictureLoading();
+                if (string.IsNullOrEmpty(PhotoFolderPath))
+                    return;
+                Items.Clear();
+                Polylines.Clear();
+                SetupFileSystemWatcher();
+                if (Settings.ShowFolders)
+                    foreach (var dir in Directory.EnumerateDirectories(PhotoFolderPath))
+                        Items.InsertOrdered(new PictureItemViewModel(dir, true, HandleFilePropertyChanged, Settings));
+                await AppendFilesAsync(Directory.EnumerateFiles(PhotoFolderPath));
+                if (Polylines.Count > 0)
+                    MapCenter = Polylines[0].Center;
+                if (keepSelection && selectedName != null)
+                {
+                    var previousSelection = Items.FirstOrDefault(item => item.Name == selectedName);
+                    if (previousSelection != null)
+                        SelectIfNotNull(previousSelection);
+                }
+                else if (selectItemFullPath is not null)
+                {
+                    var selectItem = Items.FirstOrDefault(item => item.FullPath == selectItemFullPath);
+                    if (selectItem != null)
+                        SelectIfNotNull(selectItem);
+                }
+                if (SelectedItem is null && Items.Count > 0)
+                    SelectIfNotNull(Items.FirstOrDefault(item => item.IsFile) ?? Items[0]);
             }
-            else if (selectItemFullPath is not null)
-            {
-                var selectItem = Items.FirstOrDefault(item => item.FullPath == selectItemFullPath);
-                if (selectItem != null)
-                    SelectIfNotNull(selectItem);
-            }
-            if (SelectedItem is null && Items.Count > 0)
-                SelectIfNotNull(Items.FirstOrDefault(item => item.IsFile) ?? Items[0]);
             await LoadPicturesAsync();
         }       
 

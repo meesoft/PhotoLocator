@@ -12,7 +12,7 @@ namespace PhotoLocator
 
         PictureItemViewModel? SelectedItem { get; set; }
 
-        IEnumerable<PictureItemViewModel> GetSelectedItems();
+        IEnumerable<PictureItemViewModel> GetSelectedItems(bool filesOnly);
 
         Task SelectFileAsync(string outFileName);
 

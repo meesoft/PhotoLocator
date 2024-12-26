@@ -70,7 +70,7 @@ namespace PhotoLocator
             IsWindowEnabled = false;
             try
             {
-                using var _ = new MouseCursorOverride();
+                using var cursor = new MouseCursorOverride();
                 var gpsTraces = LoadAdditionalGpsTraces().ToArray();
                 var (tagged, notTagged) = AutoTag(gpsTraces);
                 if (MessageBox.Show($"{tagged} photos with timestamps were tagged, {notTagged} were not.", "Auto tag", 

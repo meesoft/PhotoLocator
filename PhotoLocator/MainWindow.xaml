@@ -101,8 +101,8 @@
                 <ComboBoxItem Content="Split" Name="SplitViewItem" Tag="{x:Static local:ViewMode.Split}"/>
             </ComboBox>
 
-            <Button Content="Auto tag" Width="100" Command="{Binding AutoTagCommand}"
-                    ToolTip="Auto assign tags to selected pictures (Ctrl+T)" />
+            <Button Content="Auto geotag" Width="100" Command="{Binding AutoTagCommand}"
+                    ToolTip="Auto assign geotags to selected pictures (Ctrl+T)" />
             <Button Content="Save center" Width="100" Command="{Binding CopyLocationCommand}"
                     ToolTip="Save location of current map center (Ctrl+C)" />
             <Button Content="Apply location" Width="100" Command="{Binding PasteLocationCommand}"
@@ -144,12 +144,17 @@
                         <MenuItem Header="Search (Ctrl+F)" Command="{Binding QuickSearchCommand}" />
                         <MenuItem Header="Filter (Ctrl+F6)" Command="{Binding SetFilterCommand}" />
                     </MenuItem>
+                    <MenuItem Header="Metadata / EXIF" >
+                        <MenuItem Header="Adjust timestamps" Command="{Binding AdjustTimestampsCommand}"/>
+                        <MenuItem Header="Auto geotag (Ctrl+T)" Command="{Binding AutoTagCommand}"/>
+                        <MenuItem Header="Save changed geotags to files (Strl+S)" Command="{Binding SaveCommand}"/>
+                        <MenuItem Header="Show metadata" Command="{Binding ShowMetadataCommand}" />
+                    </MenuItem>
                     <Separator />
                     <MenuItem Header="Open file (Enter)" Command="{Binding ExecuteSelectedCommand}" />
                     <MenuItem Header="Open in Google maps" Command="{Binding OpenInMapsCommand}" />
                     <MenuItem Header="Open Explorer (Ctrl+E)" Command="{Binding ExploreCommand}" />
                     <MenuItem Header="Shell context menu (Shift+right click)" Command="{Binding ShellContextMenuCommand}" />
-                    <MenuItem Header="Show metadata" Command="{Binding ShowMetadataCommand}" />
                     <Separator />
                     <MenuItem Header="Local contrast, brightness and colors (Ctrl+L)" Command="{Binding JpegTransformCommands.LocalContrastCommand}" />
                     <MenuItem Header="Transform jpeg" >

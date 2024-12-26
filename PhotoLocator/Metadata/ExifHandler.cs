@@ -10,6 +10,8 @@ using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
 using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
 
@@ -304,7 +306,7 @@ namespace PhotoLocator.Metadata
             memoryStream.CopyTo(targetFileStream);
         }
 
-        public static void SetGeotag(string sourceFileName, string targetFileName, Location location, string? exifToolPath)
+        public static async Task SetGeotagAsync(string sourceFileName, string targetFileName, Location location, string? exifToolPath, CancellationToken ct)
         {
             if (string.IsNullOrEmpty(exifToolPath))
             {
@@ -330,9 +332,31 @@ namespace PhotoLocator.Metadata
             startInfo.RedirectStandardOutput = true;
             startInfo.RedirectStandardError = true;
             var process = Process.Start(startInfo) ?? throw new IOException("Failed to start ExifTool");
-            var output = process.StandardOutput.ReadToEnd() + '\n' + process.StandardError.ReadToEnd();  // We must read before waiting
-            if (!process.WaitForExit(60000))
-                throw new TimeoutException();
+            var output = await process.StandardOutput.ReadToEndAsync(ct) + '\n' + await process.StandardError.ReadToEndAsync(ct);
+            await process.WaitForExitAsync(ct);
+            if (process.ExitCode != 0)
+                throw new UserMessageException(output);
+        }
+
+        public static async Task AdjustTimeStampAsync(string sourceFileName, string targetFileName, string offset, string? exifToolPath, System.Threading.CancellationToken ct)
+        {
+            var sign = offset[0];
+            offset = offset[1..];
+            var startInfo = new ProcessStartInfo(exifToolPath ?? throw new UserMessageException("ExifTool not configured"),
+               $"\"-AllDates{sign}={offset}\" \"{sourceFileName}\" ");
+            if (targetFileName == sourceFileName)
+                startInfo.Arguments += "-overwrite_original";
+            else
+            {
+                File.Delete(targetFileName);
+                startInfo.Arguments += $"-out \"{targetFileName}\"";
+            }
+            startInfo.CreateNoWindow = true;
+            startInfo.RedirectStandardOutput = true;
+            startInfo.RedirectStandardError = true;
+            var process = Process.Start(startInfo) ?? throw new IOException("Failed to start ExifTool");
+            var output = await process.StandardOutput.ReadToEndAsync(ct) + '\n' + await process.StandardError.ReadToEndAsync(ct);  // We must read before waiting
+            await process.WaitForExitAsync(ct);
             if (process.ExitCode != 0)
                 throw new UserMessageException(output);
         }

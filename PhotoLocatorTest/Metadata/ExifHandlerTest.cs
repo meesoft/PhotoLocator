@@ -160,6 +160,18 @@ namespace PhotoLocator.Metadata
         }
 
         [TestMethod]
+        public async Task AdjustTimestampAsync_ShouldUpdateTimestamp()
+        {
+            const string TargetFileName = @"TestData\2022-06-17_18.03.02.jpg";
+
+            await ExifHandler.AdjustTimeStampAsync(@"TestData\2022-06-17_19.03.02.jpg", TargetFileName, "-01:00:00", ExifToolPath, default);
+
+            var metadata = ExifHandler.LoadMetadata(File.OpenRead(TargetFileName));
+            var tag = ExifHandler.GetTimeStamp(metadata!) ?? throw new FileFormatException("Failed to decode timestamp");
+            Assert.AreEqual(new DateTime(2022, 06, 17, 18, 03, 02, DateTimeKind.Local), tag);
+        }
+
+        [TestMethod]
         public void GetGeotag_ShouldDecodeGpsCoords()
         {
             using var stream = GetType().Assembly.GetManifestResourceStream(@"PhotoLocator.TestData.2022-06-17_19.03.02.jpg")
@@ -200,10 +212,10 @@ namespace PhotoLocator.Metadata
         }
 
         [TestMethod]
-        public void SetGeotag_ShouldSet_UsingBitmapMetadata()
+        public async Task SetGeotag_ShouldSet_UsingBitmapMetadata()
         {
             var setValue = new MapControl.Location(-10, -20);
-            ExifHandler.SetGeotag(@"TestData\2022-06-17_19.03.02.jpg", @"TestData\2022-06-17_19.03.02-out1.jpg", setValue, null);
+            await ExifHandler.SetGeotagAsync(@"TestData\2022-06-17_19.03.02.jpg", @"TestData\2022-06-17_19.03.02-out1.jpg", setValue, null, default);
 
             var newValue = ExifHandler.GetGeotag(@"TestData\2022-06-17_19.03.02-out1.jpg");
             Assert.AreEqual(setValue, newValue);
@@ -212,33 +224,33 @@ namespace PhotoLocator.Metadata
         const string ExifToolPath = @"TestData\exiftool.exe";
       
         [TestMethod]
-        public void SetGeotag_ShouldSet_UsingExifTool()
+        public async Task SetGeotag_ShouldSet_UsingExifTool()
         {
             if (!File.Exists(ExifToolPath))
                 Assert.Inconclusive("ExifTool not found");
 
             var setValue = new MapControl.Location(-10, -20);
-            ExifHandler.SetGeotag(@"TestData\2022-06-17_19.03.02.jpg", @"TestData\2022-06-17_19.03.02-out2.jpg", setValue, ExifToolPath);
+            await ExifHandler.SetGeotagAsync(@"TestData\2022-06-17_19.03.02.jpg", @"TestData\2022-06-17_19.03.02-out2.jpg", setValue, ExifToolPath, default);
 
             var newValue = ExifHandler.GetGeotag(@"TestData\2022-06-17_19.03.02-out2.jpg");
             Assert.AreEqual(setValue, newValue);
         }
 
         [TestMethod]
-        public void SetGeotag_ShouldSet_UsingExifTool_InPlace()
+        public async Task SetGeotag_ShouldSet_UsingExifTool_InPlace()
         {
             if (!File.Exists(ExifToolPath))
                 Assert.Inconclusive("ExifTool not found");
 
             var setValue = new MapControl.Location(-10, -20);
-            ExifHandler.SetGeotag(@"TestData\2022-06-17_19.03.02.jpg", @"TestData\2022-06-17_19.03.02.jpg", setValue, ExifToolPath);
+            await ExifHandler.SetGeotagAsync(@"TestData\2022-06-17_19.03.02.jpg", @"TestData\2022-06-17_19.03.02.jpg", setValue, ExifToolPath, default);
 
             var newValue = ExifHandler.GetGeotag(@"TestData\2022-06-17_19.03.02.jpg");
             Assert.AreEqual(setValue, newValue);
         }
 
         [TestMethod]
-        public void SetGeotag_ShouldSetInCr3_UsingExifTool()
+        public async Task SetGeotag_ShouldSetInCr3_UsingExifTool()
         {
             const string FileName = @"TestData\Test.CR3";
             if (!File.Exists(FileName))
@@ -247,7 +259,7 @@ namespace PhotoLocator.Metadata
                 Assert.Inconclusive("ExifTool not found");
 
             var setValue = new MapControl.Location(-10, -20);
-            ExifHandler.SetGeotag(FileName, "tagged.cr3", setValue, ExifToolPath);
+            await ExifHandler.SetGeotagAsync(FileName, "tagged.cr3", setValue, ExifToolPath, default);
 
             var newValue = ExifHandler.GetGeotag("tagged.cr3");
             Assert.AreEqual(setValue, newValue);
