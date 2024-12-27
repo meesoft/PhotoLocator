@@ -26,7 +26,7 @@ Selected files can be automatically renamed based on timestamp, dimensions and o
 
 ## EXIF timestamp adjustment
 Image timestamps can be adjusted if the camera time setting was wrong. 
-This can be used to correct missing daylight saving or time zone adjustment.
+This can be useful to correct e.g. missing daylight saving or time zone adjustment.
 
 ## Slideshow with location map
 There is also a full screen slideshow feature with a small location map display. The slideshow can also play video files.
@@ -36,10 +36,9 @@ Note that it is possible to use Chrome's full screen cast feature to display the
 
 ![Screenshot](./SlideshowScreenshot.jpg)
 
-## Lossless JPEG crop and rotation
-JPG images can be cropped and rotated without transcoding loss
-
 ## Basic photo and video editing
+* Lossless JPEG crop and rotation.
+
 * Local contrast, brightness and color correction for photos and video clips.
 
 * Combine or crop video clips.
@@ -53,7 +52,7 @@ JPG images can be cropped and rotated without transcoding loss
 * Generate average and max frames for video for e.g. timelapse or long exposure simulation.
 
 ## Troubleshooting
-* If PhotoLocator cannot start, you need to install the .NET 8 Desktop Runtime.
+* If PhotoLocator cannot start, you need to install the [.NET 8 Desktop Runtime](https://dotnet.microsoft.com/download/dotnet/8.0/runtime).
 
 * You can make ExifTool ignore minor errors by renaming it to exiftool(-m).exe and updating the path under Settings accordingly.
 

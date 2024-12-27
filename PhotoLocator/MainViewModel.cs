@@ -28,6 +28,8 @@ namespace PhotoLocator
 {
     public sealed class MainViewModel : INotifyPropertyChanged, IDisposable, IMainViewModel, IImageZoomPreviewViewModel
     {
+        private const int MaxParallelExifToolOperations = 1;
+
 #if DEBUG
         static readonly bool _isInDesignMode = DesignerProperties.GetIsInDesignMode(new DependencyObject());
 #else
@@ -240,19 +242,13 @@ namespace PhotoLocator
 
         public IEnumerable<PictureItemViewModel> GetSelectedItems(bool filesOnly)
         {
-            var firstChecked = SelectedItem != null && SelectedItem.IsChecked ? SelectedItem : null;
-            foreach (var item in Items)
-                if (item.IsChecked && (item.IsFile || !filesOnly))
-                {
-                    if (firstChecked is null)
-                    {
-                        firstChecked = item;
-                        SelectIfNotNull(item);
-                    }
-                    yield return item;
-                }
-            if (firstChecked is null && SelectedItem != null && (SelectedItem.IsFile || !filesOnly))
-                yield return SelectedItem;
+            var items = Items.Where(item => item.IsChecked && (item.IsFile || !filesOnly)).ToArray();
+            if (items.Length > 0)
+            {
+                SelectIfNotNull(items[0]);
+                return items;
+            }
+            return SelectedItem != null && (SelectedItem.IsFile || !filesOnly) ? [SelectedItem] : [];
         }
 
         public void SelectIfNotNull(PictureItemViewModel? select)
@@ -472,11 +468,12 @@ namespace PhotoLocator
             await RunProcessWithProgressBarAsync(async (progressCallback, ct) =>
             {
                 int i = 0;
-                await Parallel.ForEachAsync(updatedPictures, new ParallelOptions { MaxDegreeOfParallelism = 1, CancellationToken = ct }, async (item, ct) =>
-                {
-                    await item.SaveGeoTagAsync(ct);
-                    progressCallback((double)Interlocked.Increment(ref i) / updatedPictures.Length);
-                });
+                await Parallel.ForEachAsync(updatedPictures, new ParallelOptions { MaxDegreeOfParallelism = MaxParallelExifToolOperations, CancellationToken = ct }, 
+                    async (item, ct) =>
+                    {
+                        await item.SaveGeoTagAsync(ct);
+                        progressCallback((double)Interlocked.Increment(ref i) / updatedPictures.Length);
+                    });
                 await Task.Delay(10, ct);
             }, "Saving...");
             ResumeFileSystemWatcher();
@@ -484,8 +481,8 @@ namespace PhotoLocator
        
         public ICommand RenameCommand => new RelayCommand(async o =>
         {
-            var selectedItems = GetSelectedItems(false).ToList();
-            if (selectedItems.Count == 0)
+            var selectedItems = GetSelectedItems(false).ToArray();
+            if (selectedItems.Length == 0)
                 return;
             var focused = SelectedItem;
             if (selectedItems.Any(i => i.ThumbnailImage is null))
@@ -545,7 +542,7 @@ namespace PhotoLocator
                     settingsWin.Settings.ShowFolders != Settings.ShowFolders;
                 Settings.AssignSettings(settingsWin.Settings);
                 PhotoFileExtensions = Settings.CleanPhotoFileExtensions();
-                Settings.PhotoFileExtensions = String.Join(",", PhotoFileExtensions);
+                Settings.PhotoFileExtensions = String.Join(", ", PhotoFileExtensions);
 
                 if (refresh)
                     RefreshFolderCommand.Execute(null);
@@ -823,11 +820,12 @@ namespace PhotoLocator
             await RunProcessWithProgressBarAsync(async (progressCallback, ct) =>
             {
                 int i = 0;
-                await Parallel.ForEachAsync(selectedItems, new ParallelOptions { MaxDegreeOfParallelism = 1, CancellationToken = ct }, async (item, ct) =>
-                {
-                    await ExifHandler.AdjustTimeStampAsync(item.FullPath, item.GetProcessedFileName(), offset, Settings.ExifToolPath, ct);
-                    progressCallback((double)Interlocked.Increment(ref i) / selectedItems.Length);
-                });
+                await Parallel.ForEachAsync(selectedItems, new ParallelOptions { MaxDegreeOfParallelism = MaxParallelExifToolOperations, CancellationToken = ct }, 
+                    async (item, ct) =>
+                    {
+                        await ExifHandler.AdjustTimeStampAsync(item.FullPath, item.GetProcessedFileName(), offset, Settings.ExifToolPath, ct);
+                        progressCallback((double)Interlocked.Increment(ref i) / selectedItems.Length);
+                    });
                 await Task.Delay(10, ct);
             }, "Adjust timestamps");
         });
@@ -1015,15 +1013,16 @@ namespace PhotoLocator
                 if (e.ChangeType == WatcherChangeTypes.Deleted)
                 {
                     var removed = Items.FirstOrDefault(item => item.FullPath == e.FullPath);
-                    if (removed != null)
-                        Items.Remove(removed);
+                    if (removed is null)
+                        return;
+                    Items.Remove(removed);
+                    _pictureCache.RemoveAll(item => item.Path == removed.FullPath);
                 }
                 else if (e.ChangeType is WatcherChangeTypes.Created or WatcherChangeTypes.Renamed)
                 {
                     await Task.Delay(1000);
-                    var name = Path.GetFileName(e.FullPath);
-                    var ext = Path.GetExtension(name).ToLowerInvariant();
-                    if (File.Exists(e.FullPath) && Settings.PhotoFileExtensions.Contains(ext, StringComparison.OrdinalIgnoreCase))
+                    var ext = Path.GetExtension(e.FullPath).ToLowerInvariant();
+                    if (File.Exists(e.FullPath) && PhotoFileExtensions.Contains(ext))
                     {
                         var newItem = new PictureItemViewModel(e.FullPath, false, HandleFilePropertyChanged, Settings);
                         if (!Items.InsertOrdered(newItem))
@@ -1086,12 +1085,13 @@ namespace PhotoLocator
 
         public async Task AppendFilesAsync(IEnumerable<string> fileNames)
         {
+            var extensions = PhotoFileExtensions.ToHashSet();
             foreach (var fileName in fileNames)
             {
                 if (Items.Any(i => i.FullPath == fileName))
                     continue;
                 var ext = Path.GetExtension(fileName).ToLowerInvariant();
-                if (Settings.PhotoFileExtensions.Contains(ext, StringComparison.OrdinalIgnoreCase))
+                if (extensions.Contains(ext))
                     Items.InsertOrdered(new PictureItemViewModel(fileName, false, HandleFilePropertyChanged, Settings));
                 else if (ext is ".gpx" or ".kml")
                 {

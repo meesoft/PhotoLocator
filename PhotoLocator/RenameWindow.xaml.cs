@@ -20,7 +20,7 @@ namespace PhotoLocator
     {
         private const int RenameHistoryLength = 20;
 
-        readonly IList<PictureItemViewModel> _selectedPictures;
+        readonly List<PictureItemViewModel> _selectedPictures;
         readonly OrderedCollection _allPictures;
         readonly PictureItemViewModel _focusedItem;
         readonly string[] _previousMasks;
@@ -35,11 +35,11 @@ namespace PhotoLocator
         }
 #endif
 
-        public RenameWindow(IList<PictureItemViewModel> selectedPictures, OrderedCollection allPictures, PictureItemViewModel focusedItem, ISettings settings)
+        public RenameWindow(IEnumerable<PictureItemViewModel> selectedPictures, OrderedCollection allPictures, PictureItemViewModel focusedItem, ISettings settings)
         {
             InitializeComponent();
-            Title = $"Rename {selectedPictures.Count} file(s)";
-            _selectedPictures = selectedPictures;
+            _selectedPictures = selectedPictures.ToList();
+            Title = $"Rename {_selectedPictures.Count} file(s)";
             _allPictures = allPictures;
             _focusedItem = focusedItem;
             Settings = settings;
@@ -54,8 +54,8 @@ namespace PhotoLocator
                 menuItem.Click += HandleMaskItemClick;
                 MaskMenuButton.ContextMenu.Items.Add(menuItem);
             }
-            if (selectedPictures.Count == 1 || _previousMasks.Length == 0)
-                RenameMask = selectedPictures[0].Name;
+            if (_selectedPictures.Count == 1 || _previousMasks.Length == 0)
+                RenameMask = _selectedPictures[0].Name;
             else
                 RenameMask = _previousMasks[0];
         }

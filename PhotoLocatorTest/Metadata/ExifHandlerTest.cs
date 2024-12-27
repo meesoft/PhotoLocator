@@ -9,6 +9,8 @@ namespace PhotoLocator.Metadata
     [TestClass]
     public class ExifHandlerTest
     {
+        const string ExifToolPath = @"TestData\exiftool.exe";
+
         static readonly string _jpegTestDataTimestamp = new DateTime(2022, 6, 17, 19, 3, 2).ToString();
 
         [TestMethod]
@@ -162,6 +164,9 @@ namespace PhotoLocator.Metadata
         [TestMethod]
         public async Task AdjustTimestampAsync_ShouldUpdateTimestamp()
         {
+            if (!File.Exists(ExifToolPath))
+                Assert.Inconclusive("ExifTool not found");
+
             const string TargetFileName = @"TestData\2022-06-17_18.03.02.jpg";
 
             await ExifHandler.AdjustTimeStampAsync(@"TestData\2022-06-17_19.03.02.jpg", TargetFileName, "-01:00:00", ExifToolPath, default);
@@ -220,8 +225,6 @@ namespace PhotoLocator.Metadata
             var newValue = ExifHandler.GetGeotag(@"TestData\2022-06-17_19.03.02-out1.jpg");
             Assert.AreEqual(setValue, newValue);
         }
-
-        const string ExifToolPath = @"TestData\exiftool.exe";
       
         [TestMethod]
         public async Task SetGeotag_ShouldSet_UsingExifTool()
