@@ -816,7 +816,8 @@ namespace PhotoLocator
             var selectedItems = GetSelectedItems(true).ToArray();
             if (selectedItems.Length == 0)
                 return;
-            var offset = TextInputWindow.Show("Timestamp offset:", text => !string.IsNullOrWhiteSpace(text) && text[0] is '+' or '-', "Adjust timestamps", "+00:00:00");
+            var offset = TextInputWindow.Show("Timestamp offset (format: +/-hh:mm:ss):", 
+                text => !string.IsNullOrWhiteSpace(text) && text[0] is '+' or '-', "Adjust timestamps", "+00:00:00");
             if (string.IsNullOrEmpty(offset))
                 return;
             await RunProcessWithProgressBarAsync(async (progressCallback, ct) =>
@@ -846,7 +847,7 @@ namespace PhotoLocator
                 throw new UserMessageException("Unable to list metadata for file");
             metadataWin.DataContext = metadataWin;
             metadataWin.ShowDialog();
-        });        
+        });
 
         public ICommand OpenInMapsCommand => new RelayCommand(o =>
         {

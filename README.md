@@ -40,17 +40,17 @@ Note that it is possible to use Chrome's full screen cast feature to display the
 JPG images can be cropped and rotated without transcoding loss
 
 ## Basic photo and video editing
-* Local contrast, brightness and color correction got photos and video clips
+* Local contrast, brightness and color correction for photos and video clips.
 
-* Combine or crop video clips
+* Combine or crop video clips.
 
-* Combine image files to video for e.g. timelapse
+* Combine image files to video for e.g. timelapse.
 
-* Extract frames from video to image files
+* Extract frames from video to image files.
 
-* Stabilize shaky video
+* Stabilize shaky video.
 
-* Generate average and max frames for video for e.g. timelapse or long exposure simulation
+* Generate average and max frames for video for e.g. timelapse or long exposure simulation.
 
 ## Troubleshooting
 * If PhotoLocator cannot start, you need to install the .NET 8 Desktop Runtime.
