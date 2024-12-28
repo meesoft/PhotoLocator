@@ -1,5 +1,13 @@
 <Project>
   <PropertyGroup>
+	  
     <AccelerateBuildsInVisualStudio>true</AccelerateBuildsInVisualStudio>
+
+	<!-- Use hard links to speed up build -->
+	<CreateHardLinksForAdditionalFilesIfPossible>true</CreateHardLinksForAdditionalFilesIfPossible>
+	<CreateHardLinksForCopyLocalIfPossible>true</CreateHardLinksForCopyLocalIfPossible>
+	<CreateHardLinksForCopyFilesToOutputDirectoryIfPossible>true</CreateHardLinksForCopyFilesToOutputDirectoryIfPossible>
+	<CreateHardLinksForPublishFilesIfPossible>true</CreateHardLinksForPublishFilesIfPossible>
+
   </PropertyGroup>
 </Project>

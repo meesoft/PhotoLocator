@@ -265,7 +265,7 @@ namespace PhotoLocator
             if (_localContrastSetup.SourceBitmap is null)
                 using (var cursor = new MouseCursorOverride())
                 {
-                    var preview = _mainViewModel.GetSelectedItems().First(item => item.IsFile).LoadPreview(default) ?? throw new UserMessageException("Unable to load preview frame");
+                    var preview = _mainViewModel.GetSelectedItems(true).First().LoadPreview(default) ?? throw new UserMessageException("Unable to load preview frame");
                     _localContrastSetup.SourceBitmap = preview;
                 }
             var window = new LocalContrastView();
@@ -439,9 +439,9 @@ namespace PhotoLocator
 
         private PictureItemViewModel[] UpdateInputArgs()
         {
-            var allSelected = _mainViewModel.GetSelectedItems().Where(item => item.IsFile).ToArray();
+            var allSelected = _mainViewModel.GetSelectedItems(true).ToArray();
             if (allSelected.Length == 0)
-                throw new UserMessageException("No items selected");
+                throw new UserMessageException("No files are selected");
             if (allSelected.Length == 1)
             {
                 HasSingleInput = true;
@@ -515,7 +515,7 @@ namespace PhotoLocator
                         args.Add($"-ss {SkipTo}");
                     if (!string.IsNullOrEmpty(Duration))
                         args.Add($"-t {Duration}");
-                    args.Add($"-i \"{_mainViewModel.GetSelectedItems().First(item => item.IsFile).FullPath}\" -map 0:v -map 1:a? -c:a copy");
+                    args.Add($"-i \"{_mainViewModel.GetSelectedItems(true).First().FullPath}\" -map 0:v -map 1:a? -c:a copy");
                 }
                 if (SelectedVideoFormat.Tag is not null)
                     args.Add((string)SelectedVideoFormat.Tag);
@@ -545,7 +545,7 @@ namespace PhotoLocator
 
         public ICommand Combine => new RelayCommand(o =>
         {
-            if (_mainViewModel.GetSelectedItems().All(item => item.IsVideo))
+            if (_mainViewModel.GetSelectedItems(true).All(item => item.IsVideo))
             {
                 SelectedVideoFormat = VideoFormats[CopyVideoFormatIndex];
                 FrameRate = "";
@@ -562,7 +562,7 @@ namespace PhotoLocator
 
         public ICommand Compare => new RelayCommand(async o =>
         {
-            var allSelected = _mainViewModel.GetSelectedItems().Where(item => item.IsFile).ToArray();
+            var allSelected = _mainViewModel.GetSelectedItems(true).ToArray();
             if (allSelected.Length != 2)
                 throw new UserMessageException("Select exactly 2 files");
             InputArguments = $"-i \"{allSelected[0].FullPath}\" -i \"{allSelected[1].FullPath}\"";
@@ -761,7 +761,7 @@ namespace PhotoLocator
 
         private BitmapMetadata? CreateImageMetadata()
         {
-            var firstSelected = _mainViewModel.GetSelectedItems().First(item => item.IsFile);
+            var firstSelected = _mainViewModel.GetSelectedItems(true).First();
             return ExifHandler.EncodePngMetadata(
                 _hasDuration && _inputDuration.TotalSeconds >= 0.99 ? new Rational(IntMath.Round(_inputDuration.TotalSeconds), 1) : null,
                 firstSelected.GeoTag,

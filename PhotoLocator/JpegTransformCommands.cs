@@ -30,7 +30,7 @@ namespace PhotoLocator
 
         private async Task RotateSelectedAsync(int angle)
         {
-            var allSelected = _mainViewModel.GetSelectedItems().Where(item => item.IsFile && JpegTransformations.IsFileTypeSupported(item.Name)).ToArray();
+            var allSelected = _mainViewModel.GetSelectedItems(true).Where(item => JpegTransformations.IsFileTypeSupported(item.Name)).ToArray();
             if (allSelected.Length == 0)
                 throw new UserMessageException("Unsupported file format");
             await _mainViewModel.RunProcessWithProgressBarAsync((progressCallback, ct) => Task.Run(() =>

@@ -28,6 +28,8 @@ namespace PhotoLocator
 {
     public sealed class MainViewModel : INotifyPropertyChanged, IDisposable, IMainViewModel, IImageZoomPreviewViewModel
     {
+        private const int MaxParallelExifToolOperations = 1;
+
 #if DEBUG
         static readonly bool _isInDesignMode = DesignerProperties.GetIsInDesignMode(new DependencyObject());
 #else
@@ -238,21 +240,15 @@ namespace PhotoLocator
         }
         private PictureItemViewModel? _selectedItem;
 
-        public IEnumerable<PictureItemViewModel> GetSelectedItems()
+        public IEnumerable<PictureItemViewModel> GetSelectedItems(bool filesOnly)
         {
-            var firstChecked = SelectedItem != null && SelectedItem.IsChecked ? SelectedItem : null;
-            foreach (var item in Items)
-                if (item.IsChecked)
-                {
-                    if (firstChecked is null)
-                    {
-                        firstChecked = item;
-                        SelectIfNotNull(item);
-                    }
-                    yield return item;
-                }
-            if (firstChecked is null && SelectedItem != null)
-                yield return SelectedItem;
+            var items = Items.Where(item => item.IsChecked && (item.IsFile || !filesOnly)).ToArray();
+            if (items.Length > 0)
+            {
+                SelectIfNotNull(items[0]);
+                return items;
+            }
+            return SelectedItem != null && (SelectedItem.IsFile || !filesOnly) ? [SelectedItem] : [];
         }
 
         public void SelectIfNotNull(PictureItemViewModel? select)
@@ -360,18 +356,18 @@ namespace PhotoLocator
             }
         }
 
-        public ICommand AutoTagCommand => new RelayCommand(async o =>
+        public ICommand AutoGeotagCommand => new RelayCommand(async o =>
         {
             await WaitForPicturesLoadedAsync();
-            var selectedItems = GetSelectedItems().ToArray();
+            var selectedItems = GetSelectedItems(true).ToArray();
             if (selectedItems.Length == 0)
             {
                 SelectCandidatesCommand.Execute(null);
-                selectedItems = GetSelectedItems().ToArray();
+                selectedItems = GetSelectedItems(true).ToArray();
             }
             if (!selectedItems.Any(item => item.TimeStamp.HasValue && item.CanSaveGeoTag))
             {
-                MessageBox.Show("No supported pictures with timestamp and missing geotag found", "Information", MessageBoxButton.OK, MessageBoxImage.Information);
+                MessageBox.Show("No supported pictures with timestamp and missing geotag found in selection", "Information", MessageBoxButton.OK, MessageBoxImage.Information);
                 return;
             }
             var autoTagWin = new AutoTagWindow();
@@ -403,7 +399,7 @@ namespace PhotoLocator
         {
             if (SavedLocation is null)
                 throw new UserMessageException("You need to save a location before applying");
-            foreach (var item in GetSelectedItems().Where(i => i.CanSaveGeoTag && !Equals(i.GeoTag, SavedLocation)))
+            foreach (var item in GetSelectedItems(true).Where(i => i.CanSaveGeoTag && !Equals(i.GeoTag, SavedLocation)))
             {
                 item.GeoTag = SavedLocation;
                 item.GeoTagSaved = false;
@@ -463,7 +459,7 @@ namespace PhotoLocator
             }
         }
 
-        public ICommand SaveCommand => new RelayCommand(async o =>
+        public ICommand SaveGeotagsCommand => new RelayCommand(async o =>
         {
             var updatedPictures = Items.Where(i => i.GeoTagUpdated).ToArray();
             if (updatedPictures.Length == 0)
@@ -472,11 +468,12 @@ namespace PhotoLocator
             await RunProcessWithProgressBarAsync(async (progressCallback, ct) =>
             {
                 int i = 0;
-                await Parallel.ForEachAsync(updatedPictures, new ParallelOptions { MaxDegreeOfParallelism = 1 }, async (item, ct) =>
-                {
-                    await item.SaveGeoTagAsync();
-                    progressCallback((double)Interlocked.Increment(ref i) / updatedPictures.Length);
-                });
+                await Parallel.ForEachAsync(updatedPictures, new ParallelOptions { MaxDegreeOfParallelism = MaxParallelExifToolOperations, CancellationToken = ct }, 
+                    async (item, ct) =>
+                    {
+                        await item.SaveGeoTagAsync(ct);
+                        progressCallback((double)Interlocked.Increment(ref i) / updatedPictures.Length);
+                    });
                 await Task.Delay(10, ct);
             }, "Saving...");
             ResumeFileSystemWatcher();
@@ -484,13 +481,13 @@ namespace PhotoLocator
        
         public ICommand RenameCommand => new RelayCommand(async o =>
         {
-            var selectedItems = GetSelectedItems().ToList();
-            if (selectedItems.Count == 0)
+            var selectedItems = GetSelectedItems(false).ToArray();
+            if (selectedItems.Length == 0)
                 return;
             var focused = SelectedItem;
             if (selectedItems.Any(i => i.ThumbnailImage is null))
                 await WaitForPicturesLoadedAsync();
-            var renameWin = new RenameWindow(selectedItems, Items, Settings);
+            var renameWin = new RenameWindow(selectedItems, Items, focused!, Settings);
             renameWin.Owner = App.Current.MainWindow;
             renameWin.DataContext = renameWin;
             PauseFileSystemWatcher();
@@ -545,7 +542,7 @@ namespace PhotoLocator
                     settingsWin.Settings.ShowFolders != Settings.ShowFolders;
                 Settings.AssignSettings(settingsWin.Settings);
                 PhotoFileExtensions = Settings.CleanPhotoFileExtensions();
-                Settings.PhotoFileExtensions = String.Join(",", PhotoFileExtensions);
+                Settings.PhotoFileExtensions = String.Join(", ", PhotoFileExtensions);
 
                 if (refresh)
                     RefreshFolderCommand.Execute(null);
@@ -601,11 +598,9 @@ namespace PhotoLocator
         public ICommand SetFilterCommand => new RelayCommand(o =>
         {
             var filter = TextInputWindow.Show("Items containing the filter text will be listed first.", "Filter", Items.FilterText ?? string.Empty);
-            using (new MouseCursorOverride())
-            {
-                Items.FilterText = filter;
-                SelectIfNotNull(SelectedItem);
-            }
+            using var cursor = new MouseCursorOverride();
+            Items.FilterText = filter;
+            SelectIfNotNull(SelectedItem);
         });
         
         public ICommand SelectAllCommand => new RelayCommand(o =>
@@ -620,7 +615,7 @@ namespace PhotoLocator
             await WaitForPicturesLoadedAsync();
             foreach (var item in Items)
                 item.IsChecked = item.GeoTag is null && item.TimeStamp.HasValue && item.CanSaveGeoTag;
-            _ = GetSelectedItems().FirstOrDefault();
+            _ = GetSelectedItems(true).FirstOrDefault();
             UpdatePoints();
         });
 
@@ -650,7 +645,7 @@ namespace PhotoLocator
         public ICommand DeleteSelectedCommand => new RelayCommand(async o =>
         {
             var focusedItem = SelectedItem;
-            var allSelected = GetSelectedItems().ToArray();
+            var allSelected = GetSelectedItems(false).ToArray();
             if (allSelected.Length == 0)
                 return;
             focusedItem = GetNearestUnchecked(focusedItem, allSelected);
@@ -676,7 +671,7 @@ namespace PhotoLocator
 
         public ICommand CopySelectedCommand => new RelayCommand(async o =>
         {
-            var allSelected = GetSelectedItems().ToArray();
+            var allSelected = GetSelectedItems(false).ToArray();
             if (allSelected.Length == 0)
                 return;
             var destination = TextInputWindow.Show($"Copy {allSelected.Length} selected item(s).\n\nDestination:",
@@ -711,7 +706,7 @@ namespace PhotoLocator
         public ICommand MoveSelectedCommand => new RelayCommand(async o =>
         {
             var focusedItem = SelectedItem;
-            var allSelected = GetSelectedItems().ToArray();
+            var allSelected = GetSelectedItems(false).ToArray();
             if (allSelected.Length == 0)
                 return;
             focusedItem = GetNearestUnchecked(focusedItem, allSelected);
@@ -790,7 +785,7 @@ namespace PhotoLocator
 
         public ICommand ShellContextMenuCommand => new RelayCommand(o =>
         {
-            var allSelected = GetSelectedItems().ToArray();
+            var allSelected = GetSelectedItems(false).ToArray();
             if (allSelected.Length == 0)
                 return;
             var files = allSelected.Select(f => new FileInfo(f.FullPath)).ToArray();
@@ -811,6 +806,28 @@ namespace PhotoLocator
                 var select = Items.FirstOrDefault(item => item.FullPath.Equals(currentPath, StringComparison.CurrentCultureIgnoreCase));
                 SelectIfNotNull(select);
             }
+        });
+
+        public ICommand AdjustTimestampsCommand => new RelayCommand(async o =>
+        {
+            var selectedItems = GetSelectedItems(true).ToArray();
+            if (selectedItems.Length == 0)
+                return;
+            var offset = TextInputWindow.Show("Timestamp offset (format: +/-hh:mm:ss):", 
+                text => !string.IsNullOrWhiteSpace(text) && text[0] is '+' or '-', "Adjust timestamps", "+00:00:00");
+            if (string.IsNullOrEmpty(offset))
+                return;
+            await RunProcessWithProgressBarAsync(async (progressCallback, ct) =>
+            {
+                int i = 0;
+                await Parallel.ForEachAsync(selectedItems, new ParallelOptions { MaxDegreeOfParallelism = MaxParallelExifToolOperations, CancellationToken = ct }, 
+                    async (item, ct) =>
+                    {
+                        await ExifHandler.AdjustTimeStampAsync(item.FullPath, item.GetProcessedFileName(), offset, Settings.ExifToolPath, ct);
+                        progressCallback((double)Interlocked.Increment(ref i) / selectedItems.Length);
+                    });
+                await Task.Delay(10, ct);
+            }, "Adjust timestamps");
         });
 
         public ICommand ShowMetadataCommand => new RelayCommand(o =>
@@ -901,34 +918,37 @@ namespace PhotoLocator
 
         private async Task LoadFolderContentsAsync(bool keepSelection, string? selectItemFullPath = null)
         {
-            DisposeFileSystemWatcher();
-            var selectedName = SelectedItem?.Name;
-            CancelPictureLoading();
-            if (string.IsNullOrEmpty(PhotoFolderPath))
-                return;
-            Items.Clear();
-            Polylines.Clear();
-            SetupFileSystemWatcher();
-            if (Settings.ShowFolders)
-                foreach (var dir in Directory.EnumerateDirectories(PhotoFolderPath))
-                    Items.InsertOrdered(new PictureItemViewModel(dir, true, HandleFilePropertyChanged, Settings));
-            await AppendFilesAsync(Directory.EnumerateFiles(PhotoFolderPath));
-            if (Polylines.Count > 0)
-                MapCenter = Polylines[0].Center;
-            if (keepSelection && selectedName != null)
+            using (new MouseCursorOverride())
             {
-                var previousSelection = Items.FirstOrDefault(item => item.Name == selectedName);
-                if (previousSelection != null)
-                    SelectIfNotNull(previousSelection);
+                DisposeFileSystemWatcher();
+                var selectedName = SelectedItem?.Name;
+                CancelPictureLoading();
+                if (string.IsNullOrEmpty(PhotoFolderPath))
+                    return;
+                Items.Clear();
+                Polylines.Clear();
+                SetupFileSystemWatcher();
+                if (Settings.ShowFolders)
+                    foreach (var dir in Directory.EnumerateDirectories(PhotoFolderPath))
+                        Items.InsertOrdered(new PictureItemViewModel(dir, true, HandleFilePropertyChanged, Settings));
+                await AppendFilesAsync(Directory.EnumerateFiles(PhotoFolderPath));
+                if (Polylines.Count > 0)
+                    MapCenter = Polylines[0].Center;
+                if (keepSelection && selectedName != null)
+                {
+                    var previousSelection = Items.FirstOrDefault(item => item.Name == selectedName);
+                    if (previousSelection != null)
+                        SelectIfNotNull(previousSelection);
+                }
+                else if (selectItemFullPath is not null)
+                {
+                    var selectItem = Items.FirstOrDefault(item => item.FullPath == selectItemFullPath);
+                    if (selectItem != null)
+                        SelectIfNotNull(selectItem);
+                }
+                if (SelectedItem is null && Items.Count > 0)
+                    SelectIfNotNull(Items.FirstOrDefault(item => item.IsFile) ?? Items[0]);
             }
-            else if (selectItemFullPath is not null)
-            {
-                var selectItem = Items.FirstOrDefault(item => item.FullPath == selectItemFullPath);
-                if (selectItem != null)
-                    SelectIfNotNull(selectItem);
-            }
-            if (SelectedItem is null && Items.Count > 0)
-                SelectIfNotNull(Items.FirstOrDefault(item => item.IsFile) ?? Items[0]);
             await LoadPicturesAsync();
         }       
 
@@ -993,15 +1013,16 @@ namespace PhotoLocator
                 if (e.ChangeType == WatcherChangeTypes.Deleted)
                 {
                     var removed = Items.FirstOrDefault(item => item.FullPath == e.FullPath);
-                    if (removed != null)
-                        Items.Remove(removed);
+                    if (removed is null)
+                        return;
+                    Items.Remove(removed);
+                    _pictureCache.RemoveAll(item => item.Path == removed.FullPath);
                 }
                 else if (e.ChangeType is WatcherChangeTypes.Created or WatcherChangeTypes.Renamed)
                 {
                     await Task.Delay(1000);
-                    var name = Path.GetFileName(e.FullPath);
-                    var ext = Path.GetExtension(name).ToLowerInvariant();
-                    if (File.Exists(e.FullPath) && Settings.PhotoFileExtensions.Contains(ext, StringComparison.OrdinalIgnoreCase))
+                    var ext = Path.GetExtension(e.FullPath).ToLowerInvariant();
+                    if (File.Exists(e.FullPath) && PhotoFileExtensions.Contains(ext))
                     {
                         var newItem = new PictureItemViewModel(e.FullPath, false, HandleFilePropertyChanged, Settings);
                         if (!Items.InsertOrdered(newItem))
@@ -1064,12 +1085,13 @@ namespace PhotoLocator
 
         public async Task AppendFilesAsync(IEnumerable<string> fileNames)
         {
+            var extensions = PhotoFileExtensions.ToHashSet();
             foreach (var fileName in fileNames)
             {
                 if (Items.Any(i => i.FullPath == fileName))
                     continue;
                 var ext = Path.GetExtension(fileName).ToLowerInvariant();
-                if (Settings.PhotoFileExtensions.Contains(ext, StringComparison.OrdinalIgnoreCase))
+                if (extensions.Contains(ext))
                     Items.InsertOrdered(new PictureItemViewModel(fileName, false, HandleFilePropertyChanged, Settings));
                 else if (ext is ".gpx" or ".kml")
                 {

@@ -20,13 +20,14 @@ namespace PhotoLocator
     {
         private const int RenameHistoryLength = 20;
 
-        readonly IList<PictureItemViewModel> _selectedPictures;
+        readonly List<PictureItemViewModel> _selectedPictures;
         readonly OrderedCollection _allPictures;
+        readonly PictureItemViewModel _focusedItem;
         readonly string[] _previousMasks;
         MaskBasedNaming? _exampleNamer;
 
 #if DEBUG
-        public RenameWindow() : this([], [], new ObservableSettings())
+        public RenameWindow() : this([], [], null!, new ObservableSettings())
         {
             RenameMask = nameof(RenameMask);
             ExampleName = nameof(ExampleName);
@@ -34,13 +35,13 @@ namespace PhotoLocator
         }
 #endif
 
-        public RenameWindow(IList<PictureItemViewModel> selectedPictures, OrderedCollection allPictures,
-            ISettings settings)
+        public RenameWindow(IEnumerable<PictureItemViewModel> selectedPictures, OrderedCollection allPictures, PictureItemViewModel focusedItem, ISettings settings)
         {
             InitializeComponent();
-            Title = $"Rename {selectedPictures.Count} file(s)";
-            _selectedPictures = selectedPictures;
+            _selectedPictures = selectedPictures.ToList();
+            Title = $"Rename {_selectedPictures.Count} file(s)";
             _allPictures = allPictures;
+            _focusedItem = focusedItem;
             Settings = settings;
             _renameMask = string.Empty;
 
@@ -53,8 +54,8 @@ namespace PhotoLocator
                 menuItem.Click += HandleMaskItemClick;
                 MaskMenuButton.ContextMenu.Items.Add(menuItem);
             }
-            if (selectedPictures.Count == 1 || _previousMasks.Length == 0)
-                RenameMask = selectedPictures[0].Name;
+            if (_selectedPictures.Count == 1 || _previousMasks.Length == 0)
+                RenameMask = _selectedPictures[0].Name;
             else
                 RenameMask = _previousMasks[0];
         }
@@ -92,7 +93,7 @@ namespace PhotoLocator
                 {
                     try
                     {
-                        _exampleNamer ??= new MaskBasedNaming(_selectedPictures[0], 0);
+                        _exampleNamer ??= new MaskBasedNaming(_focusedItem, 0);
                         ExampleName = _exampleNamer.GetFileName(RenameMask);
                         ErrorMessage = null;
                         IsExtensionWarningVisible = !Path.GetExtension(ExampleName).Equals(

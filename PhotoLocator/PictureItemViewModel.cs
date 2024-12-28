@@ -374,16 +374,13 @@ namespace PhotoLocator
             }
         }
 
-        internal async Task SaveGeoTagAsync()
+        internal async Task SaveGeoTagAsync(CancellationToken ct)
         {
             try
             {
-                await Task.Run(() =>
-                {
-                    ExifHandler.SetGeotag(FullPath, GetProcessedFileName(),
-                        GeoTag ?? throw new InvalidOperationException(nameof(GeoTag) + " not set"),
-                        _settings?.ExifToolPath);
-                });
+                await ExifHandler.SetGeotagAsync(FullPath, GetProcessedFileName(),
+                    GeoTag ?? throw new InvalidOperationException(nameof(GeoTag) + " not set"),
+                    _settings?.ExifToolPath, ct);
                 GeoTagSaved = true;
             }
             catch (UserMessageException ex)
