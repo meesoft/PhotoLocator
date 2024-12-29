@@ -674,22 +674,22 @@ namespace PhotoLocator
             var allSelected = GetSelectedItems(false).ToArray();
             if (allSelected.Length == 0)
                 return;
-            var destination = TextInputWindow.Show($"Copy {allSelected.Length} selected item(s).\n\nDestination:",
-                text => !string.IsNullOrWhiteSpace(text) && text != PhotoFolderPath && text != ".",
-                "Copy files", (PhotoFolderPath ?? string.Empty).Trim('\\'));
-            if (string.IsNullOrEmpty(destination))
+            var target = TextInputWindow.Show($"Copy {allSelected.Length} selected item(s).\n\nDestination:",
+                text => !string.IsNullOrWhiteSpace(text) && text != PhotoFolderPath && text != ".", "Copy files", PhotoFolderPath);
+            if (target is null)
                 return;
             await RunProcessWithProgressBarAsync((progressCallback, ct) => Task.Run(() =>
             {
+                var targetIsDirectory = Directory.Exists(target) || allSelected.Length > 1 || string.IsNullOrEmpty(Path.GetExtension(target)) || target.EndsWith('\\');
                 Directory.SetCurrentDirectory(Path.GetDirectoryName(allSelected[0].FullPath)!);
                 int i = 0;
                 foreach (var item in allSelected)
                 {
-                    var destFileName = Path.Combine(destination, item.Name);
-                    if (item.IsFile && File.Exists(destFileName))
+                    var targetFileName = targetIsDirectory ? Path.Combine(target, item.Name) : target;
+                    if (item.IsFile && File.Exists(targetFileName))
                     {
                         var dialogResult = Application.Current.Dispatcher.Invoke(
-                            () => MessageBox.Show(destFileName + " already exists, do you want to overwrite it?", "Copy files", MessageBoxButton.YesNoCancel, MessageBoxImage.Question));
+                            () => MessageBox.Show(targetFileName + " already exists, do you want to overwrite it?", "Copy files", MessageBoxButton.YesNoCancel, MessageBoxImage.Question));
                         switch (dialogResult)
                         {
                             case MessageBoxResult.Yes: break;
@@ -697,7 +697,7 @@ namespace PhotoLocator
                             default: return;
                         }
                     }
-                    item.CopyTo(destFileName);
+                    item.CopyTo(targetFileName);
                     progressCallback((double)(++i) / allSelected.Length);
                 }
             }, ct), "Copying...");
@@ -710,10 +710,9 @@ namespace PhotoLocator
             if (allSelected.Length == 0)
                 return;
             focusedItem = GetNearestUnchecked(focusedItem, allSelected);
-            var destination = TextInputWindow.Show($"Move {allSelected.Length} selected item(s).\n\nDestination:", 
-                text => !string.IsNullOrWhiteSpace(text) && text != PhotoFolderPath && text != ".",
-                "Move files", (PhotoFolderPath ?? string.Empty).Trim('\\'));
-            if (destination is null)
+            var target = TextInputWindow.Show($"Move {allSelected.Length} selected item(s).\n\nDestination:", 
+                text => !string.IsNullOrWhiteSpace(text) && text != PhotoFolderPath && text != ".", "Move files", PhotoFolderPath);
+            if (target is null)
                 return;
             SelectedItem = null;
             await RunProcessWithProgressBarAsync((progressCallback, ct) => Task.Run(() =>
@@ -722,11 +721,11 @@ namespace PhotoLocator
                 int i = 0;
                 foreach (var item in allSelected)
                 {
-                    var destFileName = Path.Combine(destination, item.Name);
-                    if (item.IsFile && File.Exists(destFileName))
+                    var targetFileName = Path.Combine(target, item.Name);
+                    if (item.IsFile && File.Exists(targetFileName))
                     {
                         var dialogResult = Application.Current.Dispatcher.Invoke(
-                            () => MessageBox.Show(destFileName + " already exists, do you want to overwrite it?", "Move files", MessageBoxButton.YesNoCancel, MessageBoxImage.Question));
+                            () => MessageBox.Show(targetFileName + " already exists, do you want to overwrite it?", "Move files", MessageBoxButton.YesNoCancel, MessageBoxImage.Question));
                         switch (dialogResult)
                         {
                             case MessageBoxResult.Yes: break;
@@ -734,7 +733,7 @@ namespace PhotoLocator
                             default: return;
                         }
                     }
-                    item.MoveTo(destFileName);
+                    item.MoveTo(targetFileName);
                     Application.Current.Dispatcher.Invoke(() => Items.Remove(item));
                     progressCallback((double)(++i) / allSelected.Length);
                 }
@@ -875,16 +874,16 @@ namespace PhotoLocator
                     if (SelectedItem is null || CropControl is null || o is not true &&
                         MessageBox.Show("Crop to selection?", "Crop", MessageBoxButton.OKCancel, MessageBoxImage.Question) != MessageBoxResult.OK)
                         return;
-                    string sourceFileName, destFileName;
+                    string sourceFileName, targetFileName;
                     if (JpegTransformations.IsFileTypeSupported(SelectedItem.Name))
                     {
                         sourceFileName = SelectedItem.FullPath;
-                        destFileName = SelectedItem.GetProcessedFileName();
+                        targetFileName = SelectedItem.GetProcessedFileName();
                         SelectedItem.Rotation = Rotation.Rotate0;
                     }
                     else
                     {
-                        sourceFileName = destFileName =  Path.ChangeExtension(SelectedItem.GetProcessedFileName(), "jpg");
+                        sourceFileName = targetFileName =  Path.ChangeExtension(SelectedItem.GetProcessedFileName(), "jpg");
                         if (File.Exists(sourceFileName) && MessageBox.Show($"Do you wish to overwrite the file '{Path.GetFileName(sourceFileName)}'?", "Crop", MessageBoxButton.OKCancel, MessageBoxImage.Question) != MessageBoxResult.OK)
                             return;
                     }
@@ -896,7 +895,7 @@ namespace PhotoLocator
                             using var file = await FileHelpers.OpenFileWithRetryAsync(SelectedItem.FullPath, ct);
                             GeneralFileFormatHandler.SaveToFile(PreviewPictureSource!, sourceFileName, ExifHandler.LoadMetadata(file), Settings.JpegQuality);
                         }
-                        JpegTransformations.Crop(sourceFileName, destFileName, CropControl.CropRectangle);
+                        JpegTransformations.Crop(sourceFileName, targetFileName, CropControl.CropRectangle);
                     }, ct), "Cropping");
                 }
                 finally

@@ -284,7 +284,6 @@ namespace PhotoLocator
                 {
                     _draggedFiles = _viewModel.GetSelectedItems(false).Select(i => i.FullPath).ToArray();
                     var data = new DataObject(DataFormats.FileDrop, _draggedFiles);
-                    data.SetData(DataFormats.Text, _draggedFiles[0]);
                     DragDrop.DoDragDrop(this, data, DragDropEffects.All);
                     e.Handled = true;
                     _isStartingFileItemDrag = false;

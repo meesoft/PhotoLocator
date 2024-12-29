@@ -345,8 +345,9 @@ namespace PhotoLocator.BitmapOperations
                     var size = Size;
                     for (var i = 0; i < size; i++)
                     {
-                        min = Math.Min(min, elements[i]);
-                        max = Math.Max(max, elements[i]);
+                        var value = elements[i];
+                        min = Math.Min(min, value);
+                        max = Math.Max(max, value);
                     }
                 }
             }
@@ -421,9 +422,10 @@ namespace PhotoLocator.BitmapOperations
                             int xx = 0;
                             for (var x = 0; x < Width; x++)
                             {
-                                elements[xx] = operation(elements[xx++], otherElements[x]);
-                                elements[xx] = operation(elements[xx++], otherElements[x]);
-                                elements[xx] = operation(elements[xx++], otherElements[x]);
+                                var otherElement = otherElements[x];
+                                elements[xx] = operation(elements[xx++], otherElement);
+                                elements[xx] = operation(elements[xx++], otherElement);
+                                elements[xx] = operation(elements[xx++], otherElement);
                             }
                         }
                     });
