@@ -191,7 +191,7 @@ namespace PhotoLocator
                 selectedItem.IsChecked = !selectedItem.IsChecked;
                 e.Handled = true;
             }
-            else if (e.Key == Key.Insert)
+            else if (e.Key == Key.Insert && !e.KeyboardDevice.IsKeyDown(Key.LeftCtrl) && !e.KeyboardDevice.IsKeyDown(Key.RightCtrl))
             {
                 if (!(e.KeyboardDevice.IsKeyDown(Key.LeftShift) || e.KeyboardDevice.IsKeyDown(Key.RightShift)))
                     selectedItem.IsChecked = !selectedItem.IsChecked;
@@ -212,7 +212,7 @@ namespace PhotoLocator
             {
                 _selectStartIndex = Math.Max(0, PictureListBox.SelectedIndex);
             }
-            if (e.Key == Key.Escape) // Prevent Escape from navigating to the first item
+            else if (e.Key == Key.Escape) // Prevent Escape from navigating to the first item
                 e.Handled = true;
         }
 

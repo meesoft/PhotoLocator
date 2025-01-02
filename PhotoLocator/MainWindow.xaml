@@ -103,9 +103,9 @@
 
             <Button Content="Auto geotag" Width="100" Command="{Binding AutoGeotagCommand}"
                     ToolTip="Auto assign geotags to selected pictures (Ctrl+T)" />
-            <Button Content="Save center" Width="100" Command="{Binding CopyLocationCommand}"
-                    ToolTip="Save location of current map center (Ctrl+C)" />
-            <Button Content="Apply location" Width="100" Command="{Binding PasteLocationCommand}"
+            <Button Content="Copy location" Width="100" Command="{Binding CopyLocationCommand}"
+                    ToolTip="Save location of current map center to clipboard (Ctrl+C)" />
+            <Button Content="Paste location" Width="100" Command="{Binding PasteLocationCommand}"
                     ToolTip="Apply saved location to selected photos (Ctrl+V)" />
             <Button Content="Save changes" Width="100" Command="{Binding SaveGeotagsCommand}"
                     ToolTip="Save changed geotags to photo files (Ctrl+S)" />
@@ -134,6 +134,7 @@
                 <KeyBinding Key="Subtract" Command="{Binding DeselectAllCommand}" />
                 <KeyBinding Key="OemMinus" Command="{Binding DeselectAllCommand}" />
                 <KeyBinding Key="Divide" Command="{Binding QuickSearchCommand}" />
+                <KeyBinding Key="Insert" Modifiers="Ctrl" Command="{Binding CopyFilesToClipboardCommand}" />
             </ListBox.InputBindings>
             <ListBox.ContextMenu>
                 <ContextMenu>
@@ -175,10 +176,11 @@
                     </MenuItem>
                     <Separator />
                     <MenuItem Header="Rename (F2)" Command="{Binding RenameCommand}" />
-                    <MenuItem Header="Copy selected (F5)" Command="{Binding CopySelectedCommand}" />
-                    <MenuItem Header="Move selected (F6)" Command="{Binding MoveSelectedCommand}" />
-                    <MenuItem Header="Delete selected (Del)" Command="{Binding DeleteSelectedCommand}" />
+                    <MenuItem Header="Copy files (F5)" Command="{Binding CopySelectedCommand}" />
+                    <MenuItem Header="Copy files to clipboard (Ctrl+Ins)" Command="{Binding CopyFilesToClipboardCommand}" />
                     <MenuItem Header="Copy path to clipboard" Command="{Binding CopyPathCommand}" />
+                    <MenuItem Header="Move files (F6)" Command="{Binding MoveSelectedCommand}" />
+                    <MenuItem Header="Delete files (Del)" Command="{Binding DeleteSelectedCommand}" />
                     <MenuItem Header="Properties (Alt+Enter)" Command="{Binding FilePropertiesCommand}" />
                 </ContextMenu>
             </ListBox.ContextMenu>
