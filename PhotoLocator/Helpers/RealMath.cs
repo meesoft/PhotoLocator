@@ -31,11 +31,13 @@ namespace PhotoLocator.Helpers
             return value >= min && value <= max;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static double Sqr(double value)
         {
             return value * value;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static float Sqr(float value)
         {
             return value * value;

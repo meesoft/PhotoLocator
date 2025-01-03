@@ -261,7 +261,7 @@ namespace PhotoLocator
 
         public async Task SelectFileAsync(string outFileName)
         {
-            for (var i = 0; i < 10; i++)
+            for (var i = 0; i < 15; i++) // We need to wait longer than the delay in the file system watcher
             {
                 var item = Items.FirstOrDefault(x => string.Equals(x.FullPath, outFileName, StringComparison.CurrentCultureIgnoreCase));
                 if (item is null)
@@ -392,21 +392,62 @@ namespace PhotoLocator
 
         public ICommand CopyLocationCommand => new RelayCommand(o =>
         {
+            if (MapCenter is null)
+                return;
             SavedLocation = MapCenter;
+            Clipboard.SetText(MapCenter.ToString());
+        });
+
+        public ICommand CopyFilesToClipboardCommand => new RelayCommand(o =>
+        {
+            var collection = new System.Collections.Specialized.StringCollection();
+            foreach (var item in GetSelectedItems(false))
+                collection.Add(item.FullPath);
+            if (collection.Count > 0)
+                Clipboard.SetFileDropList(collection);
         });
 
         public ICommand PasteLocationCommand => new RelayCommand(o =>
         {
-            if (SavedLocation is null)
-                throw new UserMessageException("You need to save a location before applying");
-            foreach (var item in GetSelectedItems(true).Where(i => i.CanSaveGeoTag && !Equals(i.GeoTag, SavedLocation)))
+            if (Clipboard.ContainsText())
             {
-                item.GeoTag = SavedLocation;
-                item.GeoTagSaved = false;
+                try
+                {
+                    SavedLocation = Location.Parse(Clipboard.GetText());
+                }
+                catch (Exception ex)
+                {
+                    throw new UserMessageException("Clipboard does not contain a valid location:\n" + ex.Message, ex);
+                }
+                foreach (var item in GetSelectedItems(true).Where(i => i.CanSaveGeoTag && !Equals(i.GeoTag, SavedLocation)))
+                {
+                    item.GeoTag = SavedLocation;
+                    item.GeoTagSaved = false;
+                }
+                UpdatePushpins();
+                UpdatePoints();
+                MapCenter = SavedLocation;
             }
-            UpdatePushpins();
-            UpdatePoints();
-            MapCenter = SavedLocation;
+            else if (Clipboard.ContainsFileDropList())
+            {
+                var files = Clipboard.GetFileDropList().Cast<string>().ToArray();
+                var dropActionWindow = new SelectDropActionWindow(files, this) { Title = "Paste", Owner = App.Current.MainWindow };
+                dropActionWindow.ShowDialog();
+            }
+            else if (Clipboard.ContainsImage() && !string.IsNullOrWhiteSpace(PhotoFolderPath))
+            {
+                var image = Clipboard.GetImage();
+                for (int i = 0; i < 10000; i++)
+                {
+                    var fileName = Path.Combine(PhotoFolderPath, "ClipboardImage" + i + ".png");
+                    if (!File.Exists(fileName))
+                    {
+                        GeneralFileFormatHandler.SaveToFile(image, fileName);
+                        SelectFileAsync(fileName).WithExceptionLogging();
+                        break;
+                    }
+                }
+            }
         });
 
         public async Task RunProcessWithProgressBarAsync(Func<Action<double>, CancellationToken, Task> body, string text, PictureItemViewModel? focusItem = null)
@@ -576,8 +617,8 @@ namespace PhotoLocator
 
         public void HandleDroppedFiles(string[] droppedEntries)
         {
-            var selectWin = new SelectDropActionWindow(droppedEntries, this) { Owner = App.Current.MainWindow };
-            selectWin.ShowDialog();
+            var dropActionWindow = new SelectDropActionWindow(droppedEntries, this) { Owner = App.Current.MainWindow };
+            dropActionWindow.ShowDialog();
         }
 
         public ICommand QuickSearchCommand => new RelayCommand(o =>

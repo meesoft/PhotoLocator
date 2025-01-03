@@ -1,7 +1,6 @@
 ﻿// Geotagging based on example from https://www.codeproject.com/Questions/815338/Inserting-GPS-tags-into-jpeg-EXIF-metadata-using-n
 
 using MapControl;
-using OpenCvSharp;
 using PhotoLocator.Helpers;
 using System;
 using System.Collections.Generic;
@@ -13,7 +12,6 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Media.Imaging;
-using System.Windows.Shapes;
 
 namespace PhotoLocator.Metadata
 {
@@ -103,7 +101,7 @@ namespace PhotoLocator.Metadata
             return result;
         }
 
-        static (Rational? ExposureTime, Location? Location) DecodePngMetadata(BitmapMetadata metadata)
+        static (Rational? ExposureTime, Location? Location)  DecodePngMetadata(BitmapMetadata metadata)
         {
             if (metadata.GetQuery("/Text/Description") is not string str)
                 return (null, null);
