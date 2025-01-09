@@ -31,7 +31,7 @@
         <TextBox Grid.Row="3" Text="{Binding MaxTimestampDifference}" PreviewKeyDown="HandleTextBoxPreviewKeyUp"/>
 
         <TextBlock Grid.Row="4" Foreground="#FFEEEEEE" VerticalAlignment="Bottom"
-                   Text="Photo timestamp offset in hours" />
+                   Text="Photo timestamp offset in hours or hh:mm:ss" />
         <TextBox Grid.Row="5" Text="{Binding TimestampOffset}" PreviewKeyDown="HandleTextBoxPreviewKeyUp"/>
 
         <StackPanel Grid.Row="7" Orientation="Horizontal" HorizontalAlignment="Right">
