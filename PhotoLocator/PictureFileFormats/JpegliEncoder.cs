@@ -62,6 +62,8 @@ namespace PhotoLocator.PictureFileFormats
                         if (size <= 0)
                             throw new IOException("jpegli encoder failed, result is empty");
                         var destBytes = destReader.ReadBytes(size);
+                        if (destBytes.Length != size)
+                            throw new IOException("Failed to read all bytes from destination pipe");
                         dstStream.Write(destBytes, 0, size);
                     }
                     if (!process.WaitForExit(60000))
