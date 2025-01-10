@@ -5,6 +5,7 @@ using PhotoLocator.Settings;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Runtime.CompilerServices;
@@ -29,7 +30,7 @@ namespace PhotoLocator
             _settings = settings;
             _traceFilePath = _settings.GetValue(nameof(TraceFilePath)) as string;
             _maxTimestampDifference = (_settings.GetValue(nameof(MaxTimestampDifference)) as int? ?? 15 * 60) / 60.0;
-            _timestampOffset = (_settings.GetValue(nameof(TimestampOffset)) as int? ?? 0) / 3600.0;
+            _timestampOffset = TimeSpan.FromSeconds(_settings.GetValue(nameof(TimestampOffset)) as int? ?? 0);
         }
 
         public event PropertyChangedEventHandler? PropertyChanged;
@@ -46,10 +47,18 @@ namespace PhotoLocator
         private double _maxTimestampDifference;
 
         /// <summary>
-        /// In hours
+        /// In hours or hh:mm:nn
         /// </summary>
-        public double TimestampOffset { get => _timestampOffset; set => SetProperty(ref _timestampOffset, value); }
-        private double _timestampOffset;
+        public string TimestampOffset 
+        { 
+            get => (IntMath.Round(_timestampOffset.TotalSeconds) % 3600) != 0 ? 
+                _timestampOffset.ToString("c", CultureInfo.InvariantCulture) :
+                _timestampOffset.TotalHours.ToString(CultureInfo.CurrentCulture); 
+            set => SetProperty(ref _timestampOffset, value.Contains(':', StringComparison.Ordinal) ?
+                TimeSpan.Parse(value, CultureInfo.InvariantCulture) :
+                TimeSpan.FromHours(double.Parse(value, CultureInfo.CurrentCulture))); 
+        }
+        private TimeSpan _timestampOffset;
 
         public Action CompletedAction { get; }
 
@@ -100,7 +109,7 @@ namespace PhotoLocator
                 }
             }
             // Search in GPS traces
-            timeStamp += TimeSpan.FromHours(TimestampOffset);
+            timeStamp += _timestampOffset;
             foreach (var trace in gpsTraces)
                 for (int i = 0; i < trace.TimeStamps.Count; i++)
                 {
@@ -154,7 +163,7 @@ namespace PhotoLocator
         {
             _settings.SetValue(nameof(TraceFilePath), TraceFilePath ?? String.Empty);
             _settings.SetValue(nameof(MaxTimestampDifference), IntMath.Round(MaxTimestampDifference * 60));
-            _settings.SetValue(nameof(TimestampOffset), IntMath.Round(TimestampOffset * 3600));
+            _settings.SetValue(nameof(TimestampOffset), IntMath.Round(_timestampOffset.TotalSeconds));
         }
     }
 }
