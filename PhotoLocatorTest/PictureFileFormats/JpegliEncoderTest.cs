@@ -9,10 +9,10 @@ namespace PhotoLocator.PictureFileFormats
         const string EncoderPath = @"..\..\..\..\PhotoLocator\bin\Debug\net8.0-windows\cjpegli.exe";
 
         [TestMethod]
-        public void JpegliEncode()
+        public void SaveToFile_ShouldIncludeMetadata()
         {
             if (!File.Exists(EncoderPath))
-                Assert.Inconclusive("Encoder not found in "+Path.GetFullPath(EncoderPath));
+                Assert.Inconclusive("Encoder not found in " + Path.GetFullPath(EncoderPath));
 
             const string SourcePath = @"TestData\2022-06-17_19.03.02.jpg";
             const string TargetPathJpeg = @"jpeg.jpg";
@@ -33,6 +33,8 @@ namespace PhotoLocator.PictureFileFormats
             var sizeJpegli = new FileInfo(TargetPathJpegli).Length;
             Console.WriteLine($"Dest size jpegli: {sizeJpegli / 1024} kb");
             Console.WriteLine($"{100.0 * sizeJpegli / sizeJpeg:0.0}%");
+           
+            Assert.AreEqual(metadata!.DateTaken,  ExifHandler.LoadMetadata(File.OpenRead(TargetPathJpegli))?.DateTaken);
         }
     }
 }
