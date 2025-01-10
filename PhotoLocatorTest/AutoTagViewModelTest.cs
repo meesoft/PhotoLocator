@@ -50,7 +50,7 @@ namespace PhotoLocator
         }
 
         [TestMethod]
-        public async Task AutoTag_ShouldSetGeotag_WithNetagiveTimestampOffset()
+        public async Task AutoTag_ShouldSetGeotag_WithNegativeTimestampOffset()
         {
             var file = new PictureItemViewModel(@"TestData\2022-06-17_19.03.02.jpg", false, (s, e) => { }, null);
             file.IsSelected = true;
