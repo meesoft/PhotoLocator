@@ -249,33 +249,28 @@ namespace PhotoLocator.Metadata
             catch { }
         }
 
-        public static void SetMetadata(string sourceFileName, string targetFileName, BitmapMetadata metadata)
+        public static MemoryStream SetJpegMetadata(Stream source, BitmapMetadata metadata)
         {
-            using var memoryStream = new MemoryStream();
-            using (var originalFileStream = File.OpenRead(sourceFileName))
-            {
-                // Decode
-                var sourceSize = originalFileStream.Length;
-                var decoder = BitmapDecoder.Create(originalFileStream, CreateOptions, BitmapCacheOption.None); // Caching needs to be None for lossless setting metadata
-                var frame = decoder.Frames[0];
+            // Decode
+            var decoder = BitmapDecoder.Create(source, CreateOptions, BitmapCacheOption.None); // Caching needs to be None for lossless setting metadata
+            var frame = decoder.Frames[0];
 
-                // Encode
-                var encoder = new JpegBitmapEncoder();
-                var jpegMetadata = CreateMetadataForEncoder(metadata, encoder) ?? throw new NotSupportedException("Unsupported metadata format");
-                encoder.Frames.Add(BitmapFrame.Create(frame, frame.Thumbnail, jpegMetadata, frame.ColorContexts));
-                encoder.Save(memoryStream);
+            // Encode with metadata
+            var encoder = new JpegBitmapEncoder();
+            var jpegMetadata = CreateMetadataForEncoder(metadata, encoder) ?? throw new NotSupportedException("Unsupported metadata format");
+            encoder.Frames.Add(BitmapFrame.Create(frame, frame.Thumbnail, jpegMetadata, frame.ColorContexts));
+            var memoryStream = new MemoryStream();
+            encoder.Save(memoryStream);
 
-                // Check
-                memoryStream.Position = 0;
-                CheckPixels(frame, BitmapDecoder.Create(memoryStream, CreateOptions, BitmapCacheOption.None).Frames[0]);
-            }
-            // Save
-            using var targetFileStream = File.Open(targetFileName, FileMode.Create, FileAccess.Write);
+            // Check
             memoryStream.Position = 0;
-            memoryStream.CopyTo(targetFileStream);
+            CheckPixels(frame, BitmapDecoder.Create(memoryStream, CreateOptions, BitmapCacheOption.None).Frames[0]);
+
+            memoryStream.Position = 0;
+            return memoryStream;
         }
 
-        public static void SetGeotag(string sourceFileName, string targetFileName, Location location)
+        public static void SetJpegGeotag(string sourceFileName, string targetFileName, Location location)
         {
             using var memoryStream = new MemoryStream();
             using (var originalFileStream = File.OpenRead(sourceFileName))
@@ -308,7 +303,7 @@ namespace PhotoLocator.Metadata
         {
             if (string.IsNullOrEmpty(exifToolPath))
             {
-                SetGeotag(sourceFileName, targetFileName, location);
+                SetJpegGeotag(sourceFileName, targetFileName, location);
                 return;
             }
 
