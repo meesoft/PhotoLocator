@@ -54,9 +54,10 @@ namespace PhotoLocator
             get => (IntMath.Round(_timestampOffset.TotalSeconds) % 3600) != 0 ? 
                 _timestampOffset.ToString("c", CultureInfo.InvariantCulture) :
                 _timestampOffset.TotalHours.ToString(CultureInfo.CurrentCulture); 
-            set => SetProperty(ref _timestampOffset, value.Contains(':', StringComparison.Ordinal) ?
-                TimeSpan.Parse(value, CultureInfo.InvariantCulture) :
-                TimeSpan.FromHours(double.Parse(value, CultureInfo.CurrentCulture))); 
+            set => SetProperty(ref _timestampOffset, string.IsNullOrWhiteSpace(value) ? TimeSpan.Zero :
+                    value.Contains(':', StringComparison.Ordinal) ?
+                    TimeSpan.Parse(value, CultureInfo.InvariantCulture) :
+                    TimeSpan.FromHours(double.Parse(value, CultureInfo.CurrentCulture))); 
         }
         private TimeSpan _timestampOffset;
 
