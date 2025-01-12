@@ -41,6 +41,8 @@ Note that it is possible to use Chrome's full screen cast feature to display the
 
 * Local contrast, brightness and color correction for photos and video clips.
 
+* Uses jpegli for better compression of processed files.
+
 * Combine or crop video clips.
 
 * Combine image files to video for e.g. timelapse.
