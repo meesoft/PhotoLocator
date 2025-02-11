@@ -242,13 +242,21 @@ namespace PhotoLocator
 
         public IEnumerable<PictureItemViewModel> GetSelectedItems(bool filesOnly)
         {
-            var items = Items.Where(item => item.IsChecked && (item.IsFile || !filesOnly)).ToArray();
-            if (items.Length > 0)
-            {
-                SelectIfNotNull(items[0]);
-                return items;
-            }
-            return SelectedItem != null && (SelectedItem.IsFile || !filesOnly) ? [SelectedItem] : [];
+            var firstChecked = SelectedItem != null && SelectedItem.IsChecked 
+                && (SelectedItem.IsFile || !filesOnly) 
+                ? SelectedItem : null;
+            foreach (var item in Items)
+                if (item.IsChecked && (item.IsFile || !filesOnly))
+                {
+                    if (firstChecked is null)
+                    {
+                        firstChecked = item;
+                        SelectIfNotNull(item);
+                    }
+                    yield return item;
+                }
+            if (firstChecked is null && SelectedItem != null && (SelectedItem.IsFile || !filesOnly))
+                yield return SelectedItem;
         }
 
         public void SelectIfNotNull(PictureItemViewModel? select)
@@ -259,11 +267,11 @@ namespace PhotoLocator
             FocusListBoxItem?.Invoke(select);
         }
 
-        public async Task SelectFileAsync(string outFileName)
+        public async Task SelectFileAsync(string fileName)
         {
             for (var i = 0; i < 15; i++) // We need to wait longer than the delay in the file system watcher
             {
-                var item = Items.FirstOrDefault(x => string.Equals(x.FullPath, outFileName, StringComparison.CurrentCultureIgnoreCase));
+                var item = Items.FirstOrDefault(x => string.Equals(x.FullPath, fileName, StringComparison.CurrentCultureIgnoreCase));
                 if (item is null)
                 {
                     await Task.Delay(100);
@@ -781,7 +789,7 @@ namespace PhotoLocator
             }, ct), "Moving...", focusedItem);
         });
 
-        public ICommand CreateFolderCommand => new RelayCommand(o =>
+        public ICommand CreateFolderCommand => new RelayCommand(async o =>
         {
             if (string.IsNullOrEmpty(PhotoFolderPath))
                 return;
@@ -790,7 +798,9 @@ namespace PhotoLocator
                 "Create folder" );
             if (string.IsNullOrEmpty(folderName))
                 return;
-            Directory.CreateDirectory(Path.Combine(PhotoFolderPath, folderName));
+            folderName = Path.Combine(PhotoFolderPath, folderName);
+            Directory.CreateDirectory(folderName);
+            await SelectFileAsync(folderName);
         });
 
         public ICommand ExecuteSelectedCommand => new RelayCommand(o =>

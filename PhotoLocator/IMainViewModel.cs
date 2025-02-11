@@ -14,7 +14,7 @@ namespace PhotoLocator
 
         IEnumerable<PictureItemViewModel> GetSelectedItems(bool filesOnly);
 
-        Task SelectFileAsync(string outFileName);
+        Task SelectFileAsync(string fileName);
 
         string? ProgressBarText { get; set; }
 
