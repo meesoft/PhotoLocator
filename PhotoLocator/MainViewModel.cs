@@ -1084,6 +1084,12 @@ namespace PhotoLocator
                         if (!Items.InsertOrdered(newItem))
                             return;
                     }
+                    else if (ext is ".gpx" or ".kml")
+                    {
+                        var traces = await Task.Run(() => GpsTrace.DecodeGpsTraceFile(e.FullPath, TimeSpan.FromMinutes(1)));
+                        foreach (var trace in traces)
+                            Polylines.Add(trace);
+                    }
                     else
                         return;
                     if (e.ChangeType == WatcherChangeTypes.Renamed)
