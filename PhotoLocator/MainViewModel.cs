@@ -632,15 +632,17 @@ namespace PhotoLocator
         public ICommand QuickSearchCommand => new RelayCommand(o =>
         {
             var previous = SelectedItem;
+            PictureItemViewModel? result = null;
             if (TextInputWindow.Show("Enter part of the file name (without wildcards):", query =>
                 {
-                    PictureItemViewModel? result;
                     if (string.IsNullOrEmpty(query) || 
                         (result = Items.FirstOrDefault(item => item.Name.Contains(query, StringComparison.CurrentCultureIgnoreCase))) is null)
                         return false;
                     SelectIfNotNull(result);
                     return true;
-                }, "Search") is null)
+                }, "Search") is not null)
+                SelectIfNotNull(result);
+            else
                 SelectIfNotNull(previous);
         });
 
