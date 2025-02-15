@@ -94,7 +94,8 @@ namespace PhotoLocator
             dlg.DefaultExt = "jpg";
             if (dlg.ShowDialog() != true)
                 return;
-            GeneralFileFormatHandler.SaveToFile(localContrastViewModel.PreviewPictureSource!, dlg.FileName, metadata, _mainViewModel.Settings.JpegQuality);
+            using (new MouseCursorOverride())
+                GeneralFileFormatHandler.SaveToFile(localContrastViewModel.PreviewPictureSource!, dlg.FileName, metadata, _mainViewModel.Settings.JpegQuality);
         }, HasFileSelected);
     }
 }
