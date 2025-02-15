@@ -648,9 +648,21 @@ namespace PhotoLocator
 
         public ICommand SetFilterCommand => new RelayCommand(o =>
         {
-            var filter = TextInputWindow.Show("Items containing the filter text will be listed first.", "Filter", Items.FilterText ?? string.Empty);
+            var filter = TextInputWindow.Show("Items containing the filter text will be listed first.", query =>
+                {
+                    if (string.IsNullOrEmpty(query))
+                        return true;
+                   var firstMatch = Items.FirstOrDefault(item => item.Name.Contains(query, StringComparison.CurrentCultureIgnoreCase));
+                   if (firstMatch is null)
+                        return false;
+                    SelectIfNotNull(firstMatch);
+                    return true;
+                },  
+                "Filter", Items.FilterText);
+            if (filter is null)
+                return;
             using var cursor = new MouseCursorOverride();
-            Items.FilterText = filter;
+                Items.FilterText = filter;
             SelectIfNotNull(SelectedItem);
         });
         
