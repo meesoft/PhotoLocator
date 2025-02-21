@@ -81,9 +81,8 @@ namespace PhotoLocator
         {
             get
             {
-                var result = "PhotoLocator";
-                if (!string.IsNullOrEmpty(PhotoFolderPath))
-                    result += " - " + PhotoFolderPath;
+                var result = string.IsNullOrEmpty(PhotoFolderPath) ? "PhotoLocator"
+                    : $"{Path.GetFileName(PhotoFolderPath)} - {Path.GetDirectoryName(PhotoFolderPath)}";
                 var checkedCount = Items.Count(p => p.IsChecked);
                 if (checkedCount > 0)
                     result += $" - {checkedCount} of {Items.Count} selected";
