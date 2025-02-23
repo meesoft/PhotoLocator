@@ -81,13 +81,16 @@ namespace PhotoLocator
         {
             get
             {
-                var result = string.IsNullOrEmpty(PhotoFolderPath) ? "PhotoLocator"
-                    : $"{Path.GetFileName(PhotoFolderPath)} - {Path.GetDirectoryName(PhotoFolderPath)}";
-                var checkedCount = Items.Count(p => p.IsChecked);
-                if (checkedCount > 0)
-                    result += $" - {checkedCount} of {Items.Count} selected";
+                string result;
+                if (string.IsNullOrEmpty(PhotoFolderPath))
+                    result = "PhotoLocator";
                 else
-                    result += $" - {Items.Count} items";
+                {
+                    var folder = Path.GetFileName(PhotoFolderPath);
+                    result = (string.IsNullOrEmpty(folder) ? PhotoFolderPath : folder) + " - PhotoLocator";
+                }
+                var checkedCount = Items.Count(p => p.IsChecked);
+                result += checkedCount > 0 ? $" - {checkedCount} of {Items.Count} selected" : $" - {Items.Count} items";
                 return result;
             }
         }
