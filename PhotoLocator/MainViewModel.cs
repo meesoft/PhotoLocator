@@ -714,7 +714,8 @@ namespace PhotoLocator
             if (allSelected.Length == 0)
                 return;
             focusedItem = GetNearestUnchecked(focusedItem, allSelected);
-            if (MessageBox.Show($"Delete {allSelected.Length} selected item(s)?" +
+            if (MessageBox.Show(
+                (allSelected.Length == 1 ? $"Delete '{allSelected[0].Name}'?" : $"Delete {allSelected.Length} selected items?") +
                 (Settings.IncludeSidecarFiles ? "\nSidecar files will be included." : string.Empty),
                 "Confirm", MessageBoxButton.OKCancel, MessageBoxImage.Question) != MessageBoxResult.OK)
                 return;
@@ -727,7 +728,7 @@ namespace PhotoLocator
                 foreach (var item in allSelected)
                 {
                     item.Recycle(Settings.IncludeSidecarFiles);
-                    Application.Current.Dispatcher.Invoke(() => Items.Remove(item));
+                    Application.Current.Dispatcher.BeginInvoke(() => Items.Remove(item));
                     progressCallback((double)(++i) / allSelected.Length);
                 }
             }, ct), "Deleting...", focusedItem);
