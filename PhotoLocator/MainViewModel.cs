@@ -81,14 +81,16 @@ namespace PhotoLocator
         {
             get
             {
-                var result = "PhotoLocator";
-                if (!string.IsNullOrEmpty(PhotoFolderPath))
-                    result += " - " + PhotoFolderPath;
-                var checkedCount = Items.Count(p => p.IsChecked);
-                if (checkedCount > 0)
-                    result += $" - {checkedCount} of {Items.Count} selected";
+                string result;
+                if (string.IsNullOrEmpty(PhotoFolderPath))
+                    result = "PhotoLocator";
                 else
-                    result += $" - {Items.Count} items";
+                {
+                    var folder = Path.GetFileName(PhotoFolderPath);
+                    result = (string.IsNullOrEmpty(folder) ? PhotoFolderPath : folder) + " - PhotoLocator";
+                }
+                var checkedCount = Items.Count(p => p.IsChecked);
+                result += checkedCount > 0 ? $" - {checkedCount} of {Items.Count} selected" : $" - {Items.Count} items";
                 return result;
             }
         }
@@ -242,13 +244,21 @@ namespace PhotoLocator
 
         public IEnumerable<PictureItemViewModel> GetSelectedItems(bool filesOnly)
         {
-            var items = Items.Where(item => item.IsChecked && (item.IsFile || !filesOnly)).ToArray();
-            if (items.Length > 0)
-            {
-                SelectIfNotNull(items[0]);
-                return items;
-            }
-            return SelectedItem != null && (SelectedItem.IsFile || !filesOnly) ? [SelectedItem] : [];
+            var firstChecked = SelectedItem != null && SelectedItem.IsChecked 
+                && (SelectedItem.IsFile || !filesOnly) 
+                ? SelectedItem : null;
+            foreach (var item in Items)
+                if (item.IsChecked && (item.IsFile || !filesOnly))
+                {
+                    if (firstChecked is null)
+                    {
+                        firstChecked = item;
+                        SelectIfNotNull(item);
+                    }
+                    yield return item;
+                }
+            if (firstChecked is null && SelectedItem != null && (SelectedItem.IsFile || !filesOnly))
+                yield return SelectedItem;
         }
 
         public void SelectIfNotNull(PictureItemViewModel? select)
@@ -259,11 +269,11 @@ namespace PhotoLocator
             FocusListBoxItem?.Invoke(select);
         }
 
-        public async Task SelectFileAsync(string outFileName)
+        public async Task SelectFileAsync(string fileName)
         {
             for (var i = 0; i < 15; i++) // We need to wait longer than the delay in the file system watcher
             {
-                var item = Items.FirstOrDefault(x => string.Equals(x.FullPath, outFileName, StringComparison.CurrentCultureIgnoreCase));
+                var item = Items.FirstOrDefault(x => string.Equals(x.FullPath, fileName, StringComparison.CurrentCultureIgnoreCase));
                 if (item is null)
                 {
                     await Task.Delay(100);
@@ -624,23 +634,37 @@ namespace PhotoLocator
         public ICommand QuickSearchCommand => new RelayCommand(o =>
         {
             var previous = SelectedItem;
+            PictureItemViewModel? result = null;
             if (TextInputWindow.Show("Enter part of the file name (without wildcards):", query =>
                 {
-                    PictureItemViewModel? result;
                     if (string.IsNullOrEmpty(query) || 
                         (result = Items.FirstOrDefault(item => item.Name.Contains(query, StringComparison.CurrentCultureIgnoreCase))) is null)
                         return false;
                     SelectIfNotNull(result);
                     return true;
-                }, "Search") is null)
+                }, "Search") is not null)
+                SelectIfNotNull(result);
+            else
                 SelectIfNotNull(previous);
         });
 
         public ICommand SetFilterCommand => new RelayCommand(o =>
         {
-            var filter = TextInputWindow.Show("Items containing the filter text will be listed first.", "Filter", Items.FilterText ?? string.Empty);
+            var filter = TextInputWindow.Show("Items containing the filter text will be listed first.", query =>
+                {
+                    if (string.IsNullOrEmpty(query))
+                        return true;
+                   var firstMatch = Items.FirstOrDefault(item => item.Name.Contains(query, StringComparison.CurrentCultureIgnoreCase));
+                   if (firstMatch is null)
+                        return false;
+                    SelectIfNotNull(firstMatch);
+                    return true;
+                },  
+                "Filter", Items.FilterText);
+            if (filter is null)
+                return;
             using var cursor = new MouseCursorOverride();
-            Items.FilterText = filter;
+                Items.FilterText = filter;
             SelectIfNotNull(SelectedItem);
         });
         
@@ -690,7 +714,8 @@ namespace PhotoLocator
             if (allSelected.Length == 0)
                 return;
             focusedItem = GetNearestUnchecked(focusedItem, allSelected);
-            if (MessageBox.Show($"Delete {allSelected.Length} selected item(s)?" +
+            if (MessageBox.Show(
+                (allSelected.Length == 1 ? $"Delete '{allSelected[0].Name}'?" : $"Delete {allSelected.Length} selected items?") +
                 (Settings.IncludeSidecarFiles ? "\nSidecar files will be included." : string.Empty),
                 "Confirm", MessageBoxButton.OKCancel, MessageBoxImage.Question) != MessageBoxResult.OK)
                 return;
@@ -703,7 +728,7 @@ namespace PhotoLocator
                 foreach (var item in allSelected)
                 {
                     item.Recycle(Settings.IncludeSidecarFiles);
-                    Application.Current.Dispatcher.Invoke(() => Items.Remove(item));
+                    Application.Current.Dispatcher.BeginInvoke(() => Items.Remove(item));
                     progressCallback((double)(++i) / allSelected.Length);
                 }
             }, ct), "Deleting...", focusedItem);
@@ -781,7 +806,7 @@ namespace PhotoLocator
             }, ct), "Moving...", focusedItem);
         });
 
-        public ICommand CreateFolderCommand => new RelayCommand(o =>
+        public ICommand CreateFolderCommand => new RelayCommand(async o =>
         {
             if (string.IsNullOrEmpty(PhotoFolderPath))
                 return;
@@ -790,7 +815,9 @@ namespace PhotoLocator
                 "Create folder" );
             if (string.IsNullOrEmpty(folderName))
                 return;
-            Directory.CreateDirectory(Path.Combine(PhotoFolderPath, folderName));
+            folderName = Path.Combine(PhotoFolderPath, folderName);
+            Directory.CreateDirectory(folderName);
+            await SelectFileAsync(folderName);
         });
 
         public ICommand ExecuteSelectedCommand => new RelayCommand(o =>
@@ -1073,6 +1100,12 @@ namespace PhotoLocator
                         var newItem = new PictureItemViewModel(e.FullPath, true, HandleFilePropertyChanged, Settings);
                         if (!Items.InsertOrdered(newItem))
                             return;
+                    }
+                    else if (ext is ".gpx" or ".kml")
+                    {
+                        var traces = await Task.Run(() => GpsTrace.DecodeGpsTraceFile(e.FullPath, TimeSpan.FromMinutes(1)));
+                        foreach (var trace in traces)
+                            Polylines.Add(trace);
                     }
                     else
                         return;

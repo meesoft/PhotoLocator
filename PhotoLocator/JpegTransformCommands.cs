@@ -47,7 +47,7 @@ namespace PhotoLocator
             }, ct), "Rotating...");
         }
 
-        public ICommand LocalContrastCommand => new RelayCommand(o =>
+        public ICommand LocalContrastCommand => new RelayCommand(async o =>
         {
             LocalContrastViewModel localContrastViewModel;
             BitmapMetadata? metadata = null;
@@ -94,7 +94,8 @@ namespace PhotoLocator
             dlg.DefaultExt = "jpg";
             if (dlg.ShowDialog() != true)
                 return;
-            GeneralFileFormatHandler.SaveToFile(localContrastViewModel.PreviewPictureSource!, dlg.FileName, metadata, _mainViewModel.Settings.JpegQuality);
+            using (new MouseCursorOverride(Cursors.AppStarting))
+                await Task.Run(() =>  GeneralFileFormatHandler.SaveToFile(localContrastViewModel.PreviewPictureSource!, dlg.FileName, metadata, _mainViewModel.Settings.JpegQuality));
         }, HasFileSelected);
     }
 }
