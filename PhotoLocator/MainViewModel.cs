@@ -1053,12 +1053,10 @@ namespace PhotoLocator
         {
             Application.Current.Dispatcher.BeginInvoke(() =>
             {
+                _pictureCache.Clear();
                 var renamed = Items.FirstOrDefault(item => item.FullPath == e.OldFullPath);
                 if (renamed != null)
-                {
-                    _pictureCache.Clear();
                     renamed.Renamed(e.FullPath);
-                }
                 else
                     HandleFileSystemWatcherChange(this, e);
             });
@@ -1085,21 +1083,17 @@ namespace PhotoLocator
                     Items.Remove(removed);
                     _pictureCache.RemoveAll(item => item.Path == removed.FullPath);
                 }
-                else if (e.ChangeType is WatcherChangeTypes.Created or WatcherChangeTypes.Renamed)
+                else if (e.ChangeType is WatcherChangeTypes.Created or WatcherChangeTypes.Renamed) // Renamed may be forwarded from HandleFileSystemWatcherRename
                 {
                     await Task.Delay(1000);
                     var ext = Path.GetExtension(e.FullPath).ToLowerInvariant();
                     if (File.Exists(e.FullPath) && PhotoFileExtensions.Contains(ext))
                     {
-                        var newItem = new PictureItemViewModel(e.FullPath, false, HandleFilePropertyChanged, Settings);
-                        if (!Items.InsertOrdered(newItem))
-                            return;
+                        AddItem(e.FullPath, false);
                     }
                     else if (Directory.Exists(e.FullPath))
                     {
-                        var newItem = new PictureItemViewModel(e.FullPath, true, HandleFilePropertyChanged, Settings);
-                        if (!Items.InsertOrdered(newItem))
-                            return;
+                        AddItem(e.FullPath, true);
                     }
                     else if (ext is ".gpx" or ".kml")
                     {
@@ -1109,12 +1103,6 @@ namespace PhotoLocator
                     }
                     else
                         return;
-                    if (e.ChangeType == WatcherChangeTypes.Renamed)
-                        _pictureCache.Clear();
-                    if (_loadPicturesTask != null)
-                        _loadPicturesTask.ContinueWith(_ => Application.Current.Dispatcher.BeginInvoke(LoadPicturesAsync), TaskScheduler.Default).WithExceptionLogging();
-                    else
-                        LoadPicturesAsync().WithExceptionLogging();
                 }
                 else if (e.ChangeType == WatcherChangeTypes.Changed)
                 {
@@ -1136,6 +1124,16 @@ namespace PhotoLocator
                     }
                 }
             });
+        }
+
+        public void AddItem(string fullPath, bool isDirectory)
+        {
+            if (!Items.InsertOrdered(new PictureItemViewModel(fullPath, isDirectory, HandleFilePropertyChanged, Settings)))
+                return;
+            if (_loadPicturesTask != null)
+                _loadPicturesTask.ContinueWith(_ => Application.Current.Dispatcher.BeginInvoke(LoadPicturesAsync), TaskScheduler.Default).WithExceptionLogging();
+            else
+                LoadPicturesAsync().WithExceptionLogging();
         }
 
         private void HandleFilePropertyChanged(object? sender, PropertyChangedEventArgs e)
