@@ -95,7 +95,12 @@ namespace PhotoLocator
             if (dlg.ShowDialog() != true)
                 return;
             using (new MouseCursorOverride(Cursors.AppStarting))
-                await Task.Run(() =>  GeneralFileFormatHandler.SaveToFile(localContrastViewModel.PreviewPictureSource!, dlg.FileName, metadata, _mainViewModel.Settings.JpegQuality));
+            {
+                var sameDir = Path.GetDirectoryName(_mainViewModel.SelectedItem.FullPath) == Path.GetDirectoryName(dlg.FileName);
+                await Task.Run(() => GeneralFileFormatHandler.SaveToFile(localContrastViewModel.PreviewPictureSource!, dlg.FileName, metadata, _mainViewModel.Settings.JpegQuality));
+                if (sameDir)
+                    _mainViewModel.AddItem(dlg.FileName, false);
+            }
         }, HasFileSelected);
     }
 }
