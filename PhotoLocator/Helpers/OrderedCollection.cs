@@ -55,7 +55,7 @@ namespace PhotoLocator.Helpers
         public PictureItemViewModel InsertOrdered(PictureItemViewModel item)
         {
             var index = BinarySearch(item);
-            if (index >=0)
+            if (index >= 0)
                 return Items[index];
             Insert(~index, item);
             return item;

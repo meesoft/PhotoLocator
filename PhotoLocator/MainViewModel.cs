@@ -952,7 +952,7 @@ namespace PhotoLocator
                 if (IsCropControlVisible)
                     PreviewZoom = 0;
             }
-        }, o => SelectedItem is not null && SelectedItem.IsFile);        
+        }, o => SelectedItem is not null && SelectedItem.IsFile);
 
         public JpegTransformCommands JpegTransformCommands => new(this);
 
@@ -1104,6 +1104,7 @@ namespace PhotoLocator
         {
             var item = Items.InsertOrdered(new PictureItemViewModel(fullPath, isDirectory, HandleFilePropertyChanged, Settings));
             item.ThumbnailImage = null;
+            _pictureCache.RemoveAll(cache => cache.Path == item.FullPath);
             if (_loadPicturesTask != null)
                 _loadPicturesTask.ContinueWith(_ => Application.Current.Dispatcher.BeginInvoke(LoadPicturesAsync), TaskScheduler.Default).WithExceptionLogging();
             else
