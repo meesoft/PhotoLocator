@@ -51,14 +51,14 @@ namespace PhotoLocator.Helpers
         }
         private string? _filterText;
 
-        /// <summary> Return true if item inserted, false if duplicate ignored </summary>
-        public bool InsertOrdered(PictureItemViewModel item)
+        /// <summary> Return new item or existing item if one with the same name already exists </summary>
+        public PictureItemViewModel InsertOrdered(PictureItemViewModel item)
         {
-            var newIndex = ~BinarySearch(item);
-            if (newIndex < 0)
-                return false;
-            Insert(newIndex, item);
-            return true;
+            var index = BinarySearch(item);
+            if (index >=0)
+                return Items[index];
+            Insert(~index, item);
+            return item;
         }
 
         public int Compare(PictureItemViewModel? x, PictureItemViewModel? y)
