@@ -16,10 +16,12 @@ namespace PhotoLocator
 
         Task SelectFileAsync(string fileName);
 
-        void AddItem(string fullPath, bool isDirectory);
+        void AddOrUpdateItem(string fullPath, bool isDirectory, bool selectItem);
 
         string? ProgressBarText { get; set; }
 
         Task RunProcessWithProgressBarAsync(Func<Action<double>, CancellationToken, Task> body, string text, PictureItemViewModel? focusItem = null);
+
+        IDisposable PauseFileSystemWatcher();
     }
 }

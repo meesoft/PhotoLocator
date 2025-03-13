@@ -453,7 +453,7 @@ namespace PhotoLocator
                     if (!File.Exists(fileName))
                     {
                         GeneralFileFormatHandler.SaveToFile(image, fileName);
-                        SelectFileAsync(fileName).WithExceptionLogging();
+                        AddOrUpdateItem(fileName, false, true);
                         break;
                     }
                 }
@@ -515,7 +515,7 @@ namespace PhotoLocator
             var updatedPictures = Items.Where(i => i.GeoTagUpdated).ToArray();
             if (updatedPictures.Length == 0)
                 return;
-            PauseFileSystemWatcher();
+            using var pause = PauseFileSystemWatcher();
             await RunProcessWithProgressBarAsync(async (progressCallback, ct) =>
             {
                 int i = 0;
@@ -527,7 +527,6 @@ namespace PhotoLocator
                     });
                 await Task.Delay(10, ct);
             }, "Saving...");
-            ResumeFileSystemWatcher();
         });
        
         public ICommand RenameCommand => new RelayCommand(async o =>
@@ -541,9 +540,8 @@ namespace PhotoLocator
             var renameWin = new RenameWindow(selectedItems, Items, focused!, Settings);
             renameWin.Owner = App.Current.MainWindow;
             renameWin.DataContext = renameWin;
-            PauseFileSystemWatcher();
-            renameWin.ShowDialog();
-            ResumeFileSystemWatcher();
+            using (PauseFileSystemWatcher())
+                renameWin.ShowDialog();
             renameWin.DataContext = null;
             _pictureCache.Clear();
             if (focused != null)
@@ -721,7 +719,7 @@ namespace PhotoLocator
                 return;
             var selectedIndex = Items.IndexOf(SelectedItem!);
             SelectedItem = null;
-            PauseFileSystemWatcher();
+            using var pause = PauseFileSystemWatcher();
             await RunProcessWithProgressBarAsync((progressCallback, ct) => Task.Run(() =>
             {
                 int i = 0;
@@ -732,7 +730,6 @@ namespace PhotoLocator
                     progressCallback((double)(++i) / allSelected.Length);
                 }
             }, ct), "Deleting...", focusedItem);
-            ResumeFileSystemWatcher();
         });
 
         public ICommand CopySelectedCommand => new RelayCommand(async o =>
@@ -806,7 +803,7 @@ namespace PhotoLocator
             }, ct), "Moving...", focusedItem);
         });
 
-        public ICommand CreateFolderCommand => new RelayCommand(async o =>
+        public ICommand CreateFolderCommand => new RelayCommand(o =>
         {
             if (string.IsNullOrEmpty(PhotoFolderPath))
                 return;
@@ -817,7 +814,7 @@ namespace PhotoLocator
                 return;
             folderName = Path.Combine(PhotoFolderPath, folderName);
             Directory.CreateDirectory(folderName);
-            await SelectFileAsync(folderName);
+            AddOrUpdateItem(folderName, true, true);
         });
 
         public ICommand ExecuteSelectedCommand => new RelayCommand(o =>
@@ -939,32 +936,10 @@ namespace PhotoLocator
             {
                 try
                 {
-                    if (SelectedItem is null || CropControl is null || o is not true &&
+                    if (SelectedItem is null || CropControl is null || PreviewPictureSource  is null || o is not true &&
                         MessageBox.Show("Crop to selection?", "Crop", MessageBoxButton.OKCancel, MessageBoxImage.Question) != MessageBoxResult.OK)
                         return;
-                    string sourceFileName, targetFileName;
-                    if (JpegTransformations.IsFileTypeSupported(SelectedItem.Name))
-                    {
-                        sourceFileName = SelectedItem.FullPath;
-                        targetFileName = SelectedItem.GetProcessedFileName();
-                        SelectedItem.Rotation = Rotation.Rotate0;
-                    }
-                    else
-                    {
-                        sourceFileName = targetFileName =  Path.ChangeExtension(SelectedItem.GetProcessedFileName(), "jpg");
-                        if (File.Exists(sourceFileName) && MessageBox.Show($"Do you wish to overwrite the file '{Path.GetFileName(sourceFileName)}'?", "Crop", MessageBoxButton.OKCancel, MessageBoxImage.Question) != MessageBoxResult.OK)
-                            return;
-                    }
-                    await RunProcessWithProgressBarAsync((progressCallback, ct) => Task.Run(async () =>
-                    {
-                        progressCallback(-1);
-                        if (sourceFileName != SelectedItem.FullPath)
-                        {
-                            using var file = await FileHelpers.OpenFileWithRetryAsync(SelectedItem.FullPath, ct);
-                            GeneralFileFormatHandler.SaveToFile(PreviewPictureSource!, sourceFileName, ExifHandler.LoadMetadata(file), Settings.JpegQuality);
-                        }
-                        JpegTransformations.Crop(sourceFileName, targetFileName, CropControl.CropRectangle);
-                    }, ct), "Cropping");
+                    await new JpegTransformCommands(this).CropSelectedItemAsync(PreviewPictureSource, CropControl.CropRectangle);
                 }
                 finally
                 {
@@ -1037,16 +1012,15 @@ namespace PhotoLocator
         }
 
         /// <summary> Note that events during pause will be lost </summary>
-        public void PauseFileSystemWatcher()
+        public IDisposable PauseFileSystemWatcher()
         {
             if (_fileSystemWatcher is not null)
                 _fileSystemWatcher.EnableRaisingEvents = false;
-        }
-
-        public void ResumeFileSystemWatcher()
-        {
-            if (_fileSystemWatcher is not null)
-                _fileSystemWatcher.EnableRaisingEvents = true;
+            return new ActionDisposable(() =>
+            {
+                if (_fileSystemWatcher is not null)
+                    _fileSystemWatcher.EnableRaisingEvents = true;
+            });
         }
 
         private void HandleFileSystemWatcherRename(object sender, RenamedEventArgs e)
@@ -1089,11 +1063,11 @@ namespace PhotoLocator
                     var ext = Path.GetExtension(e.FullPath).ToLowerInvariant();
                     if (File.Exists(e.FullPath) && PhotoFileExtensions.Contains(ext))
                     {
-                        AddItem(e.FullPath, false);
+                        AddOrUpdateItem(e.FullPath, false, false);
                     }
                     else if (Directory.Exists(e.FullPath))
                     {
-                        AddItem(e.FullPath, true);
+                        AddOrUpdateItem(e.FullPath, true, false);
                     }
                     else if (ext is ".gpx" or ".kml")
                     {
@@ -1126,14 +1100,17 @@ namespace PhotoLocator
             });
         }
 
-        public void AddItem(string fullPath, bool isDirectory)
+        public void AddOrUpdateItem(string fullPath, bool isDirectory, bool selectItem)
         {
-            if (!Items.InsertOrdered(new PictureItemViewModel(fullPath, isDirectory, HandleFilePropertyChanged, Settings)))
-                return;
+            var item = Items.InsertOrdered(new PictureItemViewModel(fullPath, isDirectory, HandleFilePropertyChanged, Settings));
+            item.ThumbnailImage = null;
+            _pictureCache.RemoveAll(cache => cache.Path == item.FullPath);
             if (_loadPicturesTask != null)
                 _loadPicturesTask.ContinueWith(_ => Application.Current.Dispatcher.BeginInvoke(LoadPicturesAsync), TaskScheduler.Default).WithExceptionLogging();
             else
                 LoadPicturesAsync().WithExceptionLogging();
+            if (selectItem)
+                SelectIfNotNull(item);
         }
 
         private void HandleFilePropertyChanged(object? sender, PropertyChangedEventArgs e)
