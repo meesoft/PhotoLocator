@@ -234,7 +234,7 @@ namespace PhotoLocator
                     UpdateProcessArgs();
             }
         }
-        int _smoothFrames = 10;
+        int _smoothFrames = 20;
 
         public string StabilizeArguments
         {

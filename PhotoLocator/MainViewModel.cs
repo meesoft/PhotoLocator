@@ -737,7 +737,7 @@ namespace PhotoLocator
             var allSelected = GetSelectedItems(false).ToArray();
             if (allSelected.Length == 0)
                 return;
-            var target = TextInputWindow.Show($"Copy {allSelected.Length} selected item(s).\n\nDestination:",
+            var target = TextInputWindow.Show((allSelected.Length == 1 ? $"Copy '{allSelected[0].Name}'?" : $"Copy {allSelected.Length} selected items?") + "\n\nDestination:",
                 text => !string.IsNullOrWhiteSpace(text) && text != PhotoFolderPath && text != ".", "Copy files", PhotoFolderPath);
             if (target is null)
                 return;
@@ -773,7 +773,7 @@ namespace PhotoLocator
             if (allSelected.Length == 0)
                 return;
             focusedItem = GetNearestUnchecked(focusedItem, allSelected);
-            var target = TextInputWindow.Show($"Move {allSelected.Length} selected item(s).\n\nDestination:", 
+            var target = TextInputWindow.Show((allSelected.Length == 1 ? $"Move '{allSelected[0].Name}'?" : $"Move {allSelected.Length} selected items?") + "\n\nDestination:",
                 text => !string.IsNullOrWhiteSpace(text) && text != PhotoFolderPath && text != ".", "Move files", PhotoFolderPath);
             if (target is null)
                 return;
