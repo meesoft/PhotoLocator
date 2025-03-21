@@ -26,7 +26,7 @@ namespace PhotoLocator.PictureFileFormats
                 frame => result = frame,
                 line =>
                 {
-                    //System.Diagnostics.Debug.WriteLine(line);
+                    Log.Write(line);
                     if (timeStamp is null && line.Contains("  creation_time", StringComparison.Ordinal))
                     {
                         var i = line.IndexOf(':', StringComparison.Ordinal);

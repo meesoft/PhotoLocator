@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Diagnostics;
 using System.Windows;
 using System.Windows.Threading;
 
@@ -14,6 +13,7 @@ namespace PhotoLocator.Helpers
             var message = exception is UserMessageException ? exception.Message : exception.ToString();
             try
             {
+                Log.Write(message);
                 if (Application.Current.Dispatcher == Dispatcher.CurrentDispatcher)
                     MessageBox.Show(App.Current.MainWindow, message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                 else
@@ -28,7 +28,7 @@ namespace PhotoLocator.Helpers
 
         public static void LogException(Exception exception)
         {
-            Debug.WriteLine(exception.ToString());
+            Log.Write(exception.ToString());
         }
     }
 }

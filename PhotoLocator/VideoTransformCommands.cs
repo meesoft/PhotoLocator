@@ -769,7 +769,7 @@ namespace PhotoLocator
                     if (!_hasFps)
                         throw new UserMessageException("Unable to determine frame rate, please specify manually");
                     var writeTask = _videoTransforms.RunFFmpegWithStreamInputImagesAsync(_fps, $"{OutputArguments} -y \"{outFileName}\"", frameEnumerator, 
-                        stdError => Debug.WriteLine("Writer: " + stdError), ct);
+                        stdError => Log.Write("Writer: " + stdError), ct);
                     await await Task.WhenAny(readTask, writeTask).ConfigureAwait(false); // Write task is not expected to finish here, only if it fails
                     frameEnumerator.Break();
                     await writeTask.ConfigureAwait(false);
@@ -816,7 +816,7 @@ namespace PhotoLocator
 
         private void ProcessStdError(string line)
         {
-            Debug.WriteLine(line);
+            Log.Write(line);
             _mainViewModel.ProgressBarText = line;
 
             if (_progressCallback is not null)

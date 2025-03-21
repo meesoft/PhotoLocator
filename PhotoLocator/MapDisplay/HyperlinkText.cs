@@ -5,6 +5,8 @@
 using System;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
+using PhotoLocator.Helpers;
+
 #if WINUI
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
@@ -58,7 +60,7 @@ namespace PhotoLocator.MapDisplay
                         }
                         catch (Exception ex)
                         {
-                            Debug.WriteLine($"{e.Uri}: {ex}");
+                            Log.Write($"{e.Uri}: {ex}");
                         }
                     };
 #endif
