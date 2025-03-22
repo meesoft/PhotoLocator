@@ -522,6 +522,7 @@ namespace PhotoLocator
         {
             _viewModel?.Dispose();
             _resamplerCancellation?.Dispose();
+            Log.EventAdded -= HandleLogEventAdded;
         }
     }
 }

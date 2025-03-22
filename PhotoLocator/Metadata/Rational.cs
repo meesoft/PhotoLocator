@@ -8,9 +8,9 @@ namespace PhotoLocator.Metadata
     /// </summary>
     public class Rational
     {
-        public readonly int Num;     //numerator of exif rational
-        public readonly int Denom;   //denominator of exif rational
-        public readonly long Bytes;   //8 bytes that form the exif rational value
+        public int Num { get; }     //numerator of exif rational
+        public int Denom { get; }   //denominator of exif rational
+        public long Bytes { get; }  //8 bytes that form the exif rational value
 
         //form rational from a given 4-byte numerator and denominator
         public Rational(int num, int denom)
@@ -19,7 +19,7 @@ namespace PhotoLocator.Metadata
             Denom = denom;
             Span<byte> bytes = stackalloc byte[8];  //create a byte array with 8 bytes
             BitConverter.GetBytes(Num).CopyTo(bytes);  //copy 4 bytes of num to location 0 in the byte array
-            BitConverter.GetBytes(Denom).CopyTo(bytes.Slice(4));  //copy 4 bytes of denom to location 4 in the byte array
+            BitConverter.GetBytes(Denom).CopyTo(bytes[4..]);  //copy 4 bytes of denom to location 4 in the byte array
             Bytes = BitConverter.ToInt64(bytes);
         }
 
@@ -73,11 +73,11 @@ namespace PhotoLocator.Metadata
     /// </summary>
     public class GPSRational
     {
-        public readonly Rational Degrees;
-        public readonly Rational Minutes;
-        public readonly Rational Seconds;
+        public Rational Degrees { get; }
+        public Rational Minutes { get; }
+        public Rational Seconds { get; }
         public readonly long[] Bytes;  //becomes an array of 3 longs that represent hrs, minutes, seconds as 3 rationals
-        public double AngleInDegrees;  //latitude or longitude as decimal degrees
+        public double AngleInDegrees { get; set; }  //latitude or longitude as decimal degrees
 
         //form the 3-rational exif value from an angle in decimal degrees
         public GPSRational(double angleInDeg)

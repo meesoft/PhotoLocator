@@ -11,7 +11,7 @@ namespace PhotoLocator.Gps
     {
         public string? Name { get; set; }
         
-        public readonly List<DateTime> TimeStamps = new();
+        public List<DateTime> TimeStamps { get; } = [];
 
         public Location? Center => Locations is null || Locations.Count == 0 ? null : new Location(
             Locations.Select(l => l.Latitude).Sum() / Locations.Count,
