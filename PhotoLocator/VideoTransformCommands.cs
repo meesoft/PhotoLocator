@@ -30,7 +30,7 @@ namespace PhotoLocator
 
     public class VideoTransformCommands : INotifyPropertyChanged
     {
-        const string InputFileName = "input.txt";
+        const string InputListFileName = "input.txt";
         const string TransformsFileName = "transforms.trf";
         const string SaveVideoFilter = "MP4|*.mp4";
         readonly IMainViewModel _mainViewModel;
@@ -129,6 +129,28 @@ namespace PhotoLocator
             }
         }
         string _rotationAngle = string.Empty;
+
+        public bool IsSpeedupChecked
+        {
+            get => _isSpeedupChecked;
+            set
+            {
+                if (SetProperty(ref _isSpeedupChecked, value))
+                    UpdateProcessArgs();
+            }
+        }
+        bool _isSpeedupChecked;
+
+        public string SpeedupBy
+        {
+            get => _speedupBy;
+            set
+            {
+                if (SetProperty(ref _speedupBy, value.Trim()))
+                    UpdateProcessArgs();
+            }
+        }
+        string _speedupBy = string.Empty;
 
         public bool IsCropChecked
         {
@@ -351,6 +373,7 @@ namespace PhotoLocator
                 if (SetProperty(ref _frameRate, value.Trim()))
                 {
                     UpdateInputArgs();
+                    UpdateProcessArgs();
                     UpdateOutputArgs();
                 }
             }
@@ -442,6 +465,7 @@ namespace PhotoLocator
             var allSelected = _mainViewModel.GetSelectedItems(true).ToArray();
             if (allSelected.Length == 0)
                 throw new UserMessageException("No files are selected");
+            HasOnlyImageInput = !allSelected.Any(item => item.IsVideo);
             if (allSelected.Length == 1)
             {
                 HasSingleInput = true;
@@ -450,16 +474,16 @@ namespace PhotoLocator
                     args += $"-ss {SkipTo} ";
                 if (!string.IsNullOrEmpty(Duration))
                     args += $"-t {Duration} ";
-                if (!string.IsNullOrEmpty(FrameRate))
-                    args += $"-r {FrameRate} ";
                 InputArguments = args + $"-i \"{allSelected[0].FullPath}\"";
             }
             else
             {
                 HasSingleInput = false;
-                InputArguments = (string.IsNullOrEmpty(FrameRate) ? "" : $"-r {FrameRate} ") + $"-f concat -safe 0 -i {VideoTransformCommands.InputFileName}";
+                var args = string.Empty;
+                if (HasOnlyImageInput && !string.IsNullOrEmpty(FrameRate))
+                    args += $"-r {FrameRate} ";
+                InputArguments = args + $"-f concat -safe 0 -i {VideoTransformCommands.InputListFileName}";
             }
-            HasOnlyImageInput = !allSelected.Any(item => item.IsVideo);
             return allSelected;
         }
 
@@ -494,6 +518,10 @@ namespace PhotoLocator
                 filters.Add($"vidstabtransform=smoothing={SmoothFrames}"
                     + (IsTripodChecked ? ":tripod=1" : null)
                     + (IsBicubicStabilizeChecked ? ":interpol=bicubic" : null));
+            if (IsSpeedupChecked)
+                filters.Add($"setpts=PTS/({SpeedupBy})");
+            if (!string.IsNullOrEmpty(FrameRate))
+                filters.Add($"fps={FrameRate}");
             if (HasOnlyImageInput)
                 filters.Add("colorspace=all=bt709:iall=bt601-6-625:fast=1");
             if (filters.Count == 0)
@@ -515,7 +543,7 @@ namespace PhotoLocator
                         args.Add($"-ss {SkipTo}");
                     if (!string.IsNullOrEmpty(Duration))
                         args.Add($"-t {Duration}");
-                    args.Add($"-i \"{_mainViewModel.GetSelectedItems(true).First().FullPath}\" -map 0:v -map 1:a? -c:a copy");
+                    args.Add($"-i \"{_mainViewModel.GetSelectedItems(true).First().FullPath}\" -map 0:v -map 1:a? -c:a copy"); // Copy audio from first file
                 }
                 if (SelectedVideoFormat.Tag is not null)
                     args.Add((string)SelectedVideoFormat.Tag);
@@ -577,6 +605,7 @@ namespace PhotoLocator
                 return;
             var outFileName = dlg.FileName;
 
+            using var pause = _mainViewModel.PauseFileSystemWatcher();
             await _mainViewModel.RunProcessWithProgressBarAsync(async (progressCallback, ct) =>
             {
                 progressCallback(-1);
@@ -585,7 +614,7 @@ namespace PhotoLocator
                 var args = $"{InputArguments} -filter_complex \"[0:v:0]pad=iw*2:ih[bg]; [bg][1:v:0]overlay=w\" -y \"{outFileName}\"";
                 await _videoTransforms.RunFFmpegAsync(args, ProcessStdError, ct);
             }, "Processing");
-            await _mainViewModel.SelectFileAsync(outFileName);
+            _mainViewModel.AddOrUpdateItem(outFileName, false, true);
         });
 
         public ICommand GenerateMaxFrame => new RelayCommand(o =>
@@ -666,6 +695,7 @@ namespace PhotoLocator
                 outFileName = dlg.FileName;
             }
 
+            using var pause = _mainViewModel.PauseFileSystemWatcher();
             string? message = null;
             await _mainViewModel.RunProcessWithProgressBarAsync(async (progressCallback, ct) =>
             {
@@ -681,7 +711,7 @@ namespace PhotoLocator
 
                 Directory.SetCurrentDirectory(inPath);
                 if (allSelected.Length > 1)
-                    await File.WriteAllLinesAsync(InputFileName, allSelected.Select(f => $"file '{f.Name}'"), ct).ConfigureAwait(false);
+                    await File.WriteAllLinesAsync(InputListFileName, allSelected.Select(f => $"file '{f.Name}'"), ct).ConfigureAwait(false);
 
                 if (IsStabilizeChecked)
                 {
@@ -739,7 +769,7 @@ namespace PhotoLocator
                     if (!_hasFps)
                         throw new UserMessageException("Unable to determine frame rate, please specify manually");
                     var writeTask = _videoTransforms.RunFFmpegWithStreamInputImagesAsync(_fps, $"{OutputArguments} -y \"{outFileName}\"", frameEnumerator, 
-                        stdError => Debug.WriteLine("Writer: " + stdError), ct);
+                        stdError => Log.Write("Writer: " + stdError), ct);
                     await await Task.WhenAny(readTask, writeTask).ConfigureAwait(false); // Write task is not expected to finish here, only if it fails
                     frameEnumerator.Break();
                     await writeTask.ConfigureAwait(false);
@@ -750,11 +780,11 @@ namespace PhotoLocator
                 }
                 _progressCallback?.Invoke(1);
                 if (allSelected.Length > 1)
-                    File.Delete(InputFileName);
+                    File.Delete(InputListFileName);
                 if (IsStabilizeChecked)
                     File.Delete(TransformsFileName);
             }, "Processing");
-            await _mainViewModel.SelectFileAsync(outFileName);
+            _mainViewModel.AddOrUpdateItem(outFileName, false, true);
             if (!string.IsNullOrEmpty(message))
                 MessageBox.Show(App.Current.MainWindow, message);
         });
@@ -786,7 +816,7 @@ namespace PhotoLocator
 
         private void ProcessStdError(string line)
         {
-            Debug.WriteLine(line);
+            Log.Write(line);
             _mainViewModel.ProgressBarText = line;
 
             if (_progressCallback is not null)

@@ -71,10 +71,13 @@ namespace PhotoLocator
                 MapCenter = new Location(53.5, 8.2);
                 _previewPictureTitle = "Preview";
             }
+            else
 #endif
+            {
+                Application.Current.MainWindow.Closing += HandleMainWindowClosing;
+            }
             Settings = new ObservableSettings();
             Items.CollectionChanged += (s, e) => BeginTitleUpdate();
-            Application.Current.MainWindow.Closing += HandleMainWindowClosing;
         }     
 
         public string WindowTitle
@@ -954,6 +957,11 @@ namespace PhotoLocator
             }
         }, o => SelectedItem is not null && SelectedItem.IsFile);
 
+        public double LogViewHeight { get => _logViewHeight; set => SetProperty(ref _logViewHeight, value); }
+        private double _logViewHeight = 4;
+
+        public ICommand ToggleLogCommand => new RelayCommand(o => LogViewHeight = LogViewHeight > 4 ? 4 : 100);
+
         public JpegTransformCommands JpegTransformCommands => new(this);
 
         public VideoTransformCommands VideoTransformCommands => new(this);
@@ -1089,7 +1097,7 @@ namespace PhotoLocator
                         UpdatePreviewPictureAsync().WithExceptionLogging();
                     if (changed.ThumbnailImage != null)
                     {
-                        Debug.WriteLine("Reloading thumbnail for changed file " + changed.Name);
+                        Log.Write("Reloading thumbnail for changed file " + changed.Name);
                         changed.ThumbnailImage = null;
                         if (_loadPicturesTask != null)
                             _loadPicturesTask.ContinueWith(_ => Application.Current.Dispatcher.BeginInvoke(LoadPicturesAsync), TaskScheduler.Default).WithExceptionLogging();

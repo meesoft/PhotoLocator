@@ -1,6 +1,5 @@
 ﻿using PhotoLocator.Helpers;
 using PhotoLocator.Metadata;
-using System.Diagnostics;
 using System.IO;
 using System.Threading;
 using System.Windows.Media.Imaging;
@@ -43,14 +42,14 @@ namespace PhotoLocator.PictureFileFormats
                     _jpegliPath = Path.Combine(Path.GetDirectoryName(typeof(GeneralFileFormatHandler).Assembly.Location)!, "cjpegli.exe");
                     if (!File.Exists(_jpegliPath))
                     {
-                        Debug.WriteLine("jpegli not found");
+                        Log.Write("jpegli not found");
                         _jpegliPath = null;
                     }
                     _jpegliChecked = true;
                 }
                 if (_jpegliPath is not null)
                 {
-                    Debug.WriteLine("Saving using " + _jpegliPath);
+                    Log.Write("Saving using " + _jpegliPath);
                     JpegliEncoder.SaveToFile(image, targetPath, metadata, jpegQuality, _jpegliPath);
                     return;
                 }

@@ -1,4 +1,5 @@
-﻿using PhotoLocator.Metadata;
+﻿using PhotoLocator.Helpers;
+using PhotoLocator.Metadata;
 using System;
 using System.Diagnostics;
 using System.IO;
@@ -74,7 +75,7 @@ namespace PhotoLocator.PictureFileFormats
                 finally
                 {
                     if (outputTask.Wait(1000))
-                        Debug.WriteLine(output);
+                        Log.Write(output);
                 }
             }
             catch (Exception ex)

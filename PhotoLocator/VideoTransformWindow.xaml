@@ -30,20 +30,23 @@
         </DockPanel>
 
         <TextBlock Text="Video filters:" Margin="0,4,0,0"/>
-        <StackPanel Orientation="Horizontal" Margin="10,4,0,0">
+        <DockPanel Margin="10,4,0,0">
             <CheckBox Content="Rotate:" IsChecked="{Binding IsRotateChecked}" Width="130" />
-            <TextBox Text="{Binding RotationAngle}" IsEnabled="{Binding IsRotateChecked}" Width="140" 
+            <TextBox Text="{Binding RotationAngle}" IsEnabled="{Binding IsRotateChecked}" Width="140"
                      ToolTip="Rotation angle in degrees"/>
-            <TextBlock Text="°" IsEnabled="{Binding IsRotateChecked}" Margin="4,0,0,0"/>
-        </StackPanel>
-        <StackPanel Orientation="Horizontal" Margin="10,4,0,0">
+            <TextBlock Text="°" IsEnabled="{Binding IsRotateChecked}" Margin="4,0,0,0" Width="16"/>
+            <CheckBox Content="Speedup by:" IsChecked="{Binding IsSpeedupChecked}" />
+            <TextBox Text="{Binding SpeedupBy}" IsEnabled="{Binding IsSpeedupChecked}" Width="140" HorizontalAlignment="Right"
+                     ToolTip="Speedup factor (below 1 means slowdown)"/>
+        </DockPanel>
+        <DockPanel Margin="10,4,0,0">
             <CheckBox Content="Crop:" IsChecked="{Binding IsCropChecked}" Width="130"/>
             <TextBox Text="{Binding CropWindow}" IsEnabled="{Binding IsCropChecked}" Width="140"
                      ToolTip="Crop region size and position"/>
-            <CheckBox Content="Scale to:" IsChecked="{Binding IsScaleChecked}" Margin="20,0,0,0" Width="130"/>
-            <TextBox Text="{Binding ScaleTo}" IsEnabled="{Binding IsScaleChecked}" Width="140"
+            <CheckBox Content="Scale to:" IsChecked="{Binding IsScaleChecked}" Margin="20,0,0,0"/>
+            <TextBox Text="{Binding ScaleTo}" IsEnabled="{Binding IsScaleChecked}" Width="140" HorizontalAlignment="Right"
                      ToolTip="Scale to resolution"/>
-        </StackPanel>
+        </DockPanel>
 
         <CheckBox Content="Stabilize" IsChecked="{Binding IsStabilizeChecked}" Margin="0,8,0,0"/>
         
@@ -51,7 +54,7 @@
             <TextBlock Text="Smooth frames:" IsEnabled="{Binding IsStabilizeChecked}" Width="130"/>
             <TextBox Text="{Binding SmoothFrames}" IsEnabled="{Binding IsStabilizeChecked}" Width="140"/>
             <CheckBox Content="Tripod mode" IsChecked="{Binding IsTripodChecked}" Margin="20,0,0,0" IsEnabled="{Binding IsStabilizeChecked}"
-          ToolTip="Simulate a fixed camera position"/>
+                      ToolTip="Simulate a fixed camera position"/>
         </StackPanel>
         <TextBlock Text="Stabilize arguments:" Margin="10,4,0,0" IsEnabled="{Binding IsStabilizeChecked}"/>
         <TextBox Text="{Binding StabilizeArguments}" Margin="10,0,0,0" IsEnabled="{Binding IsStabilizeChecked}"/>
@@ -90,7 +93,7 @@
                      IsChecked="{Binding Path=OutputMode, Converter={StaticResource ComparisonConverter}, ConverterParameter={x:Static local:OutputMode.ImageSequence}}"/>
         <DockPanel Margin="10,4,0,0" >
             <RadioButton Content="Frame average" Width="130"
-                     IsChecked="{Binding Path=OutputMode, Converter={StaticResource ComparisonConverter}, ConverterParameter={x:Static local:OutputMode.Average}}"/>
+                         IsChecked="{Binding Path=OutputMode, Converter={StaticResource ComparisonConverter}, ConverterParameter={x:Static local:OutputMode.Average}}"/>
             <TextBlock Text="Dark frame path:"  Width="160"/>
             <CheckBox Content="Register frames" IsChecked="{Binding IsRegisterFramesChecked}" IsEnabled="{Binding IsCombineFramesOperation}"
                       ToolTip="Align all frames with the first to minimize camera movement"/>
