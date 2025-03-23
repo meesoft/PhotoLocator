@@ -42,7 +42,7 @@ namespace PhotoLocator.PictureFileFormats
                     _jpegliPath = Path.Combine(Path.GetDirectoryName(typeof(GeneralFileFormatHandler).Assembly.Location)!, "cjpegli.exe");
                     if (!File.Exists(_jpegliPath))
                     {
-                        Log.Write("jpegli not found");
+                        Log.Write("jpegli not found at " + _jpegliPath);
                         _jpegliPath = null;
                     }
                     _jpegliChecked = true;
