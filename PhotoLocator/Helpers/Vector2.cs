@@ -48,27 +48,24 @@ namespace PhotoLocator.Helpers
         /// </summary>
         public readonly double Angle()
         {
-            if (X == 0)
-            {
-                if (Y >= 0)
-                    return Math.PI / 2;
-                else
-                    return -Math.PI / 2;
-            }
-            else if (X > 0)
+            if (X > 0)
             {
                 if (Y >= 0)
                     return Math.Atan(Y / X);
                 else
                     return -Math.Atan(-Y / X);
             }
-            else
+            if (X < 0)
             {
                 if (Y >= 0)
                     return Math.PI - Math.Atan(-Y / X);
                 else
                     return Math.Atan(Y / X) - Math.PI;
             }
+            if (Y >= 0)
+                return Math.PI / 2;
+            else
+                return -Math.PI / 2;
         }
     }
 }

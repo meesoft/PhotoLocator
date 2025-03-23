@@ -26,12 +26,12 @@ namespace PhotoLocator.PictureFileFormats
                 frame => result = frame,
                 line =>
                 {
-                    //System.Diagnostics.Debug.WriteLine(line);
+                    Log.Write(line);
                     if (timeStamp is null && line.Contains("  creation_time", StringComparison.Ordinal))
                     {
                         var i = line.IndexOf(':', StringComparison.Ordinal);
                         if (i > 0 &&
-                            DateTime.TryParse(line.AsSpan(i + 1), CultureInfo.InvariantCulture, DateTimeStyles.AllowLeadingWhite | DateTimeStyles.AllowLeadingWhite | DateTimeStyles.AssumeUniversal, out var dt))
+                            DateTime.TryParse(line.AsSpan(i + 1), CultureInfo.InvariantCulture, DateTimeStyles.AllowLeadingWhite | DateTimeStyles.AllowTrailingWhite | DateTimeStyles.AssumeUniversal, out var dt))
                             timeStamp = dt;
                     }
                     else if (location is null && line.Contains("  location", StringComparison.Ordinal))

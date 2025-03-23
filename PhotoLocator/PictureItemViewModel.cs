@@ -184,7 +184,7 @@ namespace PhotoLocator
             }
             catch (Exception ex)
             {
-                Debug.WriteLine(ex);
+                Log.Write(ex);
                 return string.Empty;
             }
         }
@@ -288,17 +288,17 @@ namespace PhotoLocator
         {
             try
             {
-                Debug.WriteLine("Loading preview of " + Name);
+                Log.Write("Loading preview of " + Name);
                 return LoadPreviewInternal(maxWidth, preservePixelFormat, ct);
             }
             catch (OperationCanceledException)
             {
-                Debug.WriteLine("Cancelled loading preview of " + Name);
+                Log.Write("Cancelled loading preview of " + Name);
                 throw;
             }
             catch
             {
-                Debug.WriteLine("Loading thumbnail of " + Name);
+                Log.Write("Loading thumbnail of " + Name);
                 return TryLoadShellThumbnail(large: true, ShellThumbnailFormatOption.Default, ct);
             }
         }

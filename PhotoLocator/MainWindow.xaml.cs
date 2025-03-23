@@ -4,6 +4,7 @@ using PhotoLocator.MapDisplay;
 using PhotoLocator.Settings;
 using System;
 using System.ComponentModel;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Threading;
@@ -28,6 +29,7 @@ namespace PhotoLocator
         CancellationTokenSource? _resamplerCancellation;
         DispatcherTimer? _resamplerTimer;
         string[]? _draggedFiles;
+        bool _isLogActive;
 
         public MainWindow()
         {
@@ -86,6 +88,8 @@ namespace PhotoLocator
                 registrySettings.FirstLaunch = 1;
             }
             PictureListBox.Focus();
+
+            LogTextBox.SizeChanged += (s, e) => UpdateLogView();
 
             Task.Run(() => CleanupTileCache(MapView.TileCachePath)).WithExceptionLogging();
         }
@@ -332,6 +336,34 @@ namespace PhotoLocator
             }
         }
 
+        private void UpdateLogView()
+        {
+            var isLogActive = LogTextBox.ActualHeight > 4;
+            if (isLogActive == _isLogActive)
+                return;
+            _isLogActive = isLogActive;
+            if (isLogActive)
+            {
+                LogTextBox.Text = string.Join("\n", Log.GetHistory());
+                LogTextBox.ScrollToEnd();
+                Log.EventAdded += HandleLogEventAdded;
+            }
+            else
+            {
+                Log.EventAdded -= HandleLogEventAdded;
+                LogTextBox.Text = string.Empty;
+            }
+        }
+
+        private void HandleLogEventAdded(string line)
+        {
+            Dispatcher.BeginInvoke(() =>
+            { 
+                LogTextBox.AppendText("\n" + line); 
+                LogTextBox.ScrollToEnd();
+            });
+        }
+
         private void ShowCropControl()
         {
             var sourceImage = _viewModel.PreviewPictureSource;
@@ -490,6 +522,7 @@ namespace PhotoLocator
         {
             _viewModel?.Dispose();
             _resamplerCancellation?.Dispose();
+            Log.EventAdded -= HandleLogEventAdded;
         }
     }
 }

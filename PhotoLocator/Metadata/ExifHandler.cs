@@ -91,7 +91,7 @@ namespace PhotoLocator.Metadata
             var result = new BitmapMetadata("png");
             var tags = new List<string>();
             if (exposureTime is not null)
-                tags.Add(string.Create(CultureInfo.InvariantCulture, $"ExposureTime={exposureTime.Num}/{exposureTime.Denom}"));
+                tags.Add(string.Create(CultureInfo.InvariantCulture, $"ExposureTime={exposureTime.Numerator}/{exposureTime.Denominator}"));
             if (location is not null)
                 tags.Add(string.Create(CultureInfo.InvariantCulture, $"Location={location.Latitude:+0.#####;-0.#####}{location.Longitude:+0.#####;-0.#####}"));
             if (tags.Count > 0)
@@ -511,8 +511,8 @@ namespace PhotoLocator.Metadata
                 else if (metadataValue is long or ulong)
                 {
                     var rational = Rational.Decode(metadataValue);
-                    if (rational != null && rational.Denom > 0)
-                        yield return fullQuery + $" = {metadataValue} ({rational.Num} / {rational.Denom})";
+                    if (rational != null && rational.Denominator > 0)
+                        yield return fullQuery + $" = {metadataValue} ({rational.Numerator} / {rational.Denominator})";
                     else
                         yield return fullQuery + $" = {metadataValue} ({metadataValue.GetType().Name})";
                 }
@@ -562,18 +562,18 @@ namespace PhotoLocator.Metadata
                 (exposureTime, var _) = DecodePngMetadata(metadata);
             if (exposureTime != null)
             {
-                if (exposureTime.Num == 1 && exposureTime.Denom > 1)
-                    metadataStrings.Add($"{exposureTime.Num}/{exposureTime.Denom}s");
+                if (exposureTime.Numerator == 1 && exposureTime.Denominator > 1)
+                    metadataStrings.Add($"{exposureTime.Numerator}/{exposureTime.Denominator}s");
                 else
                     metadataStrings.Add(exposureTime.ToDouble() + "s");
             }
 
             var lensAperture = Rational.Decode(metadata.GetQuery(LensApertureQuery1) ?? metadata.GetQuery(LensApertureQuery2));
-            if (lensAperture != null && lensAperture.Num > 0 && lensAperture.Denom > 0)
+            if (lensAperture != null && lensAperture.Numerator > 0 && lensAperture.Denominator > 0)
                 metadataStrings.Add("f/" + lensAperture.ToDouble());
 
             var focalLength = Rational.Decode(metadata.GetQuery(FocalLengthQuery1) ?? metadata.GetQuery(FocalLengthQuery2));
-            if (focalLength != null && focalLength.Num > 0 && focalLength.Denom > 0)
+            if (focalLength != null && focalLength.Numerator > 0 && focalLength.Denominator > 0)
                 metadataStrings.Add(focalLength.ToDouble() + "mm");
 
             var iso = metadata.GetQuery(IsoQuery1) ?? metadata.GetQuery(IsoQuery2);

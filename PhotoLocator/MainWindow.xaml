@@ -48,6 +48,7 @@
         <KeyBinding Key="F7" Command="{Binding CreateFolderCommand}" />
         <KeyBinding Key="F11" Command="{Binding SlideShowCommand}" />
         <KeyBinding Key="F12" Command="{Binding SettingsCommand}" />
+        <KeyBinding Key="F12" Modifiers="Ctrl" Command="{Binding ToggleLogCommand}" />
         <KeyBinding Key="Add" Modifiers="Ctrl" Command="{Binding ZoomInCommand}" />
         <KeyBinding Key="OemPlus" Modifiers="Ctrl" Command="{Binding ZoomInCommand}" />
         <KeyBinding Key="Subtract" Modifiers="Ctrl" Command="{Binding ZoomOutCommand}" />
@@ -58,10 +59,11 @@
         <TaskbarItemInfo ProgressValue="{Binding ProgressBarValue}" ProgressState="{Binding TaskbarProgressState}"/>
     </Window.TaskbarItemInfo>
 
-    <Grid Margin="4">
+    <Grid Margin="4,4,4,2">
         <Grid.RowDefinitions>
             <RowDefinition Height="28"/>
             <RowDefinition/>
+            <RowDefinition Height="{Binding LogViewHeight}"/>
         </Grid.RowDefinitions>
         <Grid.ColumnDefinitions>
             <ColumnDefinition Name="LeftColumn"/>
@@ -255,5 +257,9 @@
                 </Grid.ContextMenu>
             </Grid>
         </Grid>
+
+        <GridSplitter Grid.Row="2" Grid.ColumnSpan="2" VerticalAlignment="Top" HorizontalAlignment="Stretch" Height="4" Background="Black"/>
+        <TextBox Grid.Row="2" Grid.ColumnSpan="2" Margin="0,10,0,0" IsReadOnly="True" VerticalScrollBarVisibility="Visible"
+                 Name="LogTextBox" Background="Black" Foreground="White" />
     </Grid>
 </Window>

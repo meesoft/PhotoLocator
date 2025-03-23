@@ -5,7 +5,7 @@ using System.Windows.Media.Imaging;
 
 namespace PhotoLocator.BitmapOperations
 {
-    sealed class MaxFramesOperation : CombineFramesOperationBase, IDisposable
+    sealed class MaxFramesOperation : CombineFramesOperationBase
     {
         public MaxFramesOperation(string? darkFramePath, bool enableRegistration, ROI? registrationRegion, CancellationToken ct)
             : base(darkFramePath, enableRegistration ? RegistrationMethod.BlackBorders : RegistrationMethod.None, registrationRegion, ct)
