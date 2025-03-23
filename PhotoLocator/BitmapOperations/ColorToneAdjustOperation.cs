@@ -64,44 +64,6 @@ namespace PhotoLocator.BitmapOperations
             _updateSrcHsi = true;
         }
 
-        public static void ColorTransformRGB2HSI(float r, float g, float b, out float h, out float s, out float i)
-        {
-            r = RealMath.Clamp(r, 0f, 1f);
-            g = RealMath.Clamp(g, 0f, 1f);
-            b = RealMath.Clamp(b, 0f, 1f);
-            i = (r + g + b) / 3f;
-            if (i == 0)
-            {
-                s = 0;
-                h = 0;
-            }
-            else
-            {
-                var D = r;
-                if (g < D)
-                    D = g;
-                if (b < D)
-                    D = b;
-                s = Math.Max(0, 1 - 3f / (r + g + b) * D);
-                if (s == 0)
-                    h = 0;
-                else
-                {
-                    var a = 0.5 * (r - g + (r - b)) / Math.Sqrt(RealMath.Sqr(r - g) + (r - b) * (g - b));
-                    double rh;
-                    if (a <= -1)
-                        rh = Math.PI;
-                    else if (!(a < 1))
-                        rh = 0;
-                    else
-                        rh = Math.Acos(a);
-                    if (b > g)
-                        rh = 2 * Math.PI - rh;
-                    h = (float)(rh * (1 / (2 * Math.PI)));
-                }
-            }
-        }
-
         public static void ColorTransformHSI2RGB(float h, float s, float i, out float r, out float g, out float b)
         {
             if (h > 1)
@@ -139,6 +101,44 @@ namespace PhotoLocator.BitmapOperations
             b = (float)(rb * i);
             if (b > 1)
                 b = 1;
+        }
+
+        public static void ColorTransformRGB2HSI(float r, float g, float b, out float h, out float s, out float i)
+        {
+            r = RealMath.Clamp(r, 0f, 1f);
+            g = RealMath.Clamp(g, 0f, 1f);
+            b = RealMath.Clamp(b, 0f, 1f);
+            i = (r + g + b) / 3f;
+            if (i == 0)
+            {
+                s = 0;
+                h = 0;
+            }
+            else
+            {
+                var D = r;
+                if (g < D)
+                    D = g;
+                if (b < D)
+                    D = b;
+                s = Math.Max(0, 1 - 3f / (r + g + b) * D);
+                if (s == 0)
+                    h = 0;
+                else
+                {
+                    var a = 0.5 * (r - g + (r - b)) / Math.Sqrt(RealMath.Sqr(r - g) + (r - b) * (g - b));
+                    double rh;
+                    if (a <= -1)
+                        rh = Math.PI;
+                    else if (!(a < 1))
+                        rh = 0;
+                    else
+                        rh = Math.Acos(a);
+                    if (b > g)
+                        rh = 2 * Math.PI - rh;
+                    h = (float)(rh * (1 / (2 * Math.PI)));
+                }
+            }
         }
 
         public static FloatBitmap ColorTransformRGB2HSI(FloatBitmap source, FloatBitmap destination)

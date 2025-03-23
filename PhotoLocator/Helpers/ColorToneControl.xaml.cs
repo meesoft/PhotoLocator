@@ -183,22 +183,22 @@ namespace PhotoLocator.Helpers
             else
             {
                 int prevHighlightTone = _highlightTone;
-                double bestDist = 20;
+                double bestDistance = 20;
                 _highlightTone = -1;
                 for (int i = 0; i < ToneAdjustments.Length; i++)
                 {
                     var p1 = HS2XY(ToneAdjustments[i].ToneHue + rotation, 0.5);
                     var p2 = HS2XY(ToneAdjustments[i].ToneHue + rotation + ToneAdjustments[i].AdjustHue, 0.5 * ToneAdjustments[i].AdjustSaturation);
-                    var dist = RealMath.Sqr(p1.X - pt.X) + RealMath.Sqr(p1.Y - pt.Y);
-                    if (dist < bestDist)
+                    var distance = RealMath.Sqr(p1.X - pt.X) + RealMath.Sqr(p1.Y - pt.Y);
+                    if (distance < bestDistance)
                     {
-                        bestDist = dist;
+                        bestDistance = distance;
                         _highlightTone = i;
                     }
-                    dist = RealMath.Sqr(p2.X - pt.X) + RealMath.Sqr(p2.Y - pt.Y);
-                    if (dist < bestDist)
+                    distance = RealMath.Sqr(p2.X - pt.X) + RealMath.Sqr(p2.Y - pt.Y);
+                    if (distance < bestDistance)
                     {
-                        bestDist = dist;
+                        bestDistance = distance;
                         _highlightTone = i;
                     }
                 }

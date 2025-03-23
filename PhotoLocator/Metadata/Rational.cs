@@ -19,7 +19,7 @@ namespace PhotoLocator.Metadata
             Denominator = denominator;
             Span<byte> bytes = stackalloc byte[8];  //create a byte array with 8 bytes
             BitConverter.GetBytes(Numerator).CopyTo(bytes);  //copy 4 bytes of num to location 0 in the byte array
-            BitConverter.GetBytes(Denominator).CopyTo(bytes[4..]);  //copy 4 bytes of denom to location 4 in the byte array
+            BitConverter.GetBytes(Denominator).CopyTo(bytes[4..]);  //copy 4 bytes of denominator to location 4 in the byte array
             Bytes = BitConverter.ToInt64(bytes);
         }
 
@@ -39,7 +39,7 @@ namespace PhotoLocator.Metadata
             Bytes = BitConverter.ToInt64(bytes);
             //convert the 4 bytes from n into a 4-byte int (becomes the numerator of the rational)
             Numerator = BitConverter.ToInt32(bytes, 0);
-            //convert the 4 bytes from d into a 4-byte int (becomes the denonimator of the rational)
+            //convert the 4 bytes from d into a 4-byte int (becomes the denominator of the rational)
             Denominator = BitConverter.ToInt32(bytes, 4);
         }
 
