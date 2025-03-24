@@ -107,42 +107,9 @@ namespace PhotoLocator
             if (allSelected.Length > 1 &&
                 MessageBox.Show($"Apply operation to all {allSelected.Length} selected files and save to JPG?",
                     "Batch process", MessageBoxButton.YesNo, MessageBoxImage.Question) == MessageBoxResult.Yes)
-            {
-                await _mainViewModel.RunProcessWithProgressBarAsync((progressCallback, ct) => Task.Run(() =>
-                {
-                    int i = 0;
-                    foreach (var item in allSelected)
-                    {
-                        var sourceFileName = item.FullPath;
-                        var targetFileName = Path.ChangeExtension(item.GetProcessedFileName(), "jpg");
-                        if (item == selectedItem)
-                            GeneralFileFormatHandler.SaveToFile(localContrastViewModel.PreviewPictureSource!, targetFileName, metadata, _mainViewModel.Settings.JpegQuality);
-                        else
-                        {
-                            var (image, itemMetadata) = LoadImageWithMetadata(item);
-                            image = localContrastViewModel.ApplyOperations(image);
-                            GeneralFileFormatHandler.SaveToFile(image, targetFileName, itemMetadata, _mainViewModel.Settings.JpegQuality);
-                        }
-                        progressCallback((double)(++i) / allSelected.Length);
-                    }
-                }, ct), "Batch process");
-                return;
-            }
-
-            var dlg = new SaveFileDialog();
-            dlg.InitialDirectory = Path.GetDirectoryName(selectedItem.FullPath);
-            dlg.FileName = Path.GetFileNameWithoutExtension(selectedItem.Name) + ".jpg";
-            dlg.Filter = GeneralFileFormatHandler.SaveImageFilter;
-            dlg.DefaultExt = "jpg";
-            if (dlg.ShowDialog() != true)
-                return;
-            using (new MouseCursorOverride(Cursors.AppStarting))
-            {
-                var sameDir = Path.GetDirectoryName(selectedItem.FullPath) == Path.GetDirectoryName(dlg.FileName);
-                await Task.Run(() => GeneralFileFormatHandler.SaveToFile(localContrastViewModel.PreviewPictureSource!, dlg.FileName, metadata, _mainViewModel.Settings.JpegQuality));
-                if (sameDir)
-                    _mainViewModel.AddOrUpdateItem(dlg.FileName, false, false);
-            }
+                await BatchProcessLocalContrastAsync(localContrastViewModel, metadata, allSelected, selectedItem);
+            else
+                await SaveProcessedImageAsync(localContrastViewModel, metadata, selectedItem);
         }, HasFileSelected);
 
         private static (BitmapSource, BitmapMetadata?) LoadImageWithMetadata(PictureItemViewModel item)
@@ -168,6 +135,45 @@ namespace PhotoLocator
                 ExifHandler.SetGeotag(metadata, item.GeoTag);
             }
             return (image, metadata);
+        }
+
+        private async Task SaveProcessedImageAsync(LocalContrastViewModel localContrastViewModel, BitmapMetadata metadata, PictureItemViewModel selectedItem)
+        {
+            var dlg = new SaveFileDialog();
+            dlg.InitialDirectory = Path.GetDirectoryName(selectedItem.FullPath);
+            dlg.FileName = Path.GetFileNameWithoutExtension(selectedItem.Name) + ".jpg";
+            dlg.Filter = GeneralFileFormatHandler.SaveImageFilter;
+            dlg.DefaultExt = "jpg";
+            if (dlg.ShowDialog() != true)
+                return;
+            using (new MouseCursorOverride(Cursors.AppStarting))
+            {
+                var sameDir = Path.GetDirectoryName(selectedItem.FullPath) == Path.GetDirectoryName(dlg.FileName);
+                await Task.Run(() => GeneralFileFormatHandler.SaveToFile(localContrastViewModel.PreviewPictureSource!, dlg.FileName, metadata, _mainViewModel.Settings.JpegQuality));
+                if (sameDir)
+                    _mainViewModel.AddOrUpdateItem(dlg.FileName, false, false);
+            }
+        }
+
+        private async Task BatchProcessLocalContrastAsync(LocalContrastViewModel localContrastViewModel, BitmapMetadata metadata, PictureItemViewModel[] allSelected, PictureItemViewModel selectedItem)
+        {
+            await _mainViewModel.RunProcessWithProgressBarAsync((progressCallback, ct) => Task.Run(() =>
+            {
+                int i = 0;
+                foreach (var item in allSelected)
+                {
+                    var targetFileName = Path.ChangeExtension(item.GetProcessedFileName(), "jpg");
+                    if (item == selectedItem)
+                        GeneralFileFormatHandler.SaveToFile(localContrastViewModel.PreviewPictureSource!, targetFileName, metadata, _mainViewModel.Settings.JpegQuality);
+                    else
+                    {
+                        var (image, itemMetadata) = LoadImageWithMetadata(item);
+                        image = localContrastViewModel.ApplyOperations(image);
+                        GeneralFileFormatHandler.SaveToFile(image, targetFileName, itemMetadata, _mainViewModel.Settings.JpegQuality);
+                    }
+                    progressCallback((double)(++i) / allSelected.Length);
+                }
+            }, ct), "Batch process");
         }
     }
 }

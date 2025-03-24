@@ -15,6 +15,8 @@ namespace PhotoLocator.Helpers
     /// </summary>
     partial class ColorToneControl : UserControl
     {
+        const int MaxClickDistanceSqr = 20;
+
         double _centerXY;
         int _highlightTone = -1;
         bool _isToneHit;
@@ -54,6 +56,8 @@ namespace PhotoLocator.Helpers
             get => _viewModel.ActiveToneIndex;
             set => _viewModel.ActiveToneIndex = value;
         }
+
+        static double SqrDistance(in Point p1, in Point p2) => RealMath.Sqr(p1.X - p2.X) + RealMath.Sqr(p1.Y - p2.Y);
 
         Point HS2XY(double h, double s)
         {
@@ -140,11 +144,6 @@ namespace PhotoLocator.Helpers
                 var drawing = new GeometryDrawing(Brushes.Black, new Pen(Brushes.Black, thickness), group);
                 drawings.Children.Add(drawing);
             }
-            //if (DropperColor.X != 0 && DropperColor.Y != 0 && DropperColor.Z != 0)
-            //{
-            //    var p1 = HS2XY(DropperColor.X, DropperColor.Y);
-            //    graphic.DrawEllipse(activePen, p1.X - 1, p1.Y - 1, 3, 3);
-            //}
             drawings.ClipGeometry = new RectangleGeometry(new Rect(new Size(ActualWidth, ActualWidth)));
             var image = new DrawingImage(drawings);
             image.Freeze();
@@ -182,20 +181,20 @@ namespace PhotoLocator.Helpers
             }
             else
             {
+                double bestDistance = MaxClickDistanceSqr;
                 int prevHighlightTone = _highlightTone;
-                double bestDistance = 20;
                 _highlightTone = -1;
                 for (int i = 0; i < ToneAdjustments.Length; i++)
                 {
                     var p1 = HS2XY(ToneAdjustments[i].ToneHue + rotation, 0.5);
                     var p2 = HS2XY(ToneAdjustments[i].ToneHue + rotation + ToneAdjustments[i].AdjustHue, 0.5 * ToneAdjustments[i].AdjustSaturation);
-                    var distance = RealMath.Sqr(p1.X - pt.X) + RealMath.Sqr(p1.Y - pt.Y);
+                    var distance = SqrDistance(p1, pt);
                     if (distance < bestDistance)
                     {
                         bestDistance = distance;
                         _highlightTone = i;
                     }
-                    distance = RealMath.Sqr(p2.X - pt.X) + RealMath.Sqr(p2.Y - pt.Y);
+                    distance = SqrDistance(p2, pt);
                     if (distance < bestDistance)
                     {
                         bestDistance = distance;
