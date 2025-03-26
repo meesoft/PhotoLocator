@@ -20,11 +20,6 @@ namespace PhotoLocator.Helpers
             EventAdded?.Invoke(message);
         }
 
-        public static void Write(object? obj)
-        {
-            Write(obj?.ToString());
-        }
-
         public static IEnumerable<string> GetHistory()
         {
             for (int i = 0; i < _history.Length; i++)

@@ -2,6 +2,7 @@
 using PhotoLocator.Helpers;
 using PhotoLocator.Metadata;
 using PhotoLocator.PictureFileFormats;
+using System;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
@@ -80,28 +81,13 @@ namespace PhotoLocator
         public ICommand LocalContrastCommand => new RelayCommand(async o =>
         {
             LocalContrastViewModel localContrastViewModel;
-            BitmapMetadata? metadata = null;
+            BitmapMetadata? metadata;
+            var allSelected = _mainViewModel.GetSelectedItems(true).ToArray();
+            var selectedItem = _mainViewModel.SelectedItem!;
             using (var cursor = new MouseCursorOverride())
             {
-                var image = _mainViewModel.SelectedItem!.LoadPreview(default, int.MaxValue, true);
-                try
-                {
-                    using var file = File.OpenRead(_mainViewModel.SelectedItem.FullPath);
-                    var decoder = BitmapDecoder.Create(file, ExifHandler.CreateOptions, BitmapCacheOption.OnLoad);
-                    metadata = decoder.Frames[0].Metadata as BitmapMetadata;
-                    image ??= decoder.Frames[0];
-                }
-                catch { }
-                if (metadata is null && _mainViewModel.SelectedItem.GeoTag is not null)
-                {
-                    metadata = new BitmapMetadata("jpg");
-                    ExifHandler.SetDateTaken(metadata, _mainViewModel.SelectedItem.TimeStamp ?? File.GetLastWriteTime(_mainViewModel.SelectedItem.FullPath));
-                    ExifHandler.SetGeotag(metadata, _mainViewModel.SelectedItem.GeoTag);
-                }
-                localContrastViewModel = new LocalContrastViewModel()
-                {
-                    SourceBitmap = image ?? throw new UserMessageException(_mainViewModel.SelectedItem.ErrorMessage)
-                };
+                (var image, metadata) = await Task.Run(() => LoadImageWithMetadata(selectedItem));
+                localContrastViewModel = new LocalContrastViewModel() { SourceBitmap = image };
             }
             var window = new LocalContrastView();
             window.Owner = Application.Current.MainWindow;
@@ -117,20 +103,77 @@ namespace PhotoLocator
                 window.DataContext = null;
             }
             localContrastViewModel.SaveLastUsedValues();
+
+            if (allSelected.Length > 1 &&
+                MessageBox.Show($"Apply operation to all {allSelected.Length} selected files and save to JPG?",
+                    "Batch process", MessageBoxButton.YesNo, MessageBoxImage.Question) == MessageBoxResult.Yes)
+                await BatchProcessLocalContrastAsync(localContrastViewModel, metadata, allSelected, selectedItem);
+            else
+                await SaveProcessedImageAsync(localContrastViewModel, metadata, selectedItem);
+        }, HasFileSelected);
+
+        private static (BitmapSource, BitmapMetadata?) LoadImageWithMetadata(PictureItemViewModel item)
+        {
+            BitmapMetadata? metadata = null;
+            var image = item.LoadPreview(default, int.MaxValue, true);
+            try
+            {
+                using var file = File.OpenRead(item.FullPath);
+                var decoder = BitmapDecoder.Create(file, ExifHandler.CreateOptions, BitmapCacheOption.OnLoad);
+                metadata = decoder.Frames[0].Metadata as BitmapMetadata;
+                image ??= decoder.Frames[0];
+            }
+            catch (Exception ex)
+            {
+                if (image is null)
+                    throw new UserMessageException(item.ErrorMessage ?? ex.Message, ex);
+            }
+            if (metadata is null && item.GeoTag is not null)
+            {
+                metadata = new BitmapMetadata("jpg");
+                ExifHandler.SetDateTaken(metadata, item.TimeStamp ?? File.GetLastWriteTime(item.FullPath));
+                ExifHandler.SetGeotag(metadata, item.GeoTag);
+            }
+            return (image, metadata);
+        }
+
+        private async Task SaveProcessedImageAsync(LocalContrastViewModel localContrastViewModel, BitmapMetadata metadata, PictureItemViewModel selectedItem)
+        {
             var dlg = new SaveFileDialog();
-            dlg.InitialDirectory = Path.GetDirectoryName(_mainViewModel.SelectedItem.FullPath);
-            dlg.FileName = Path.GetFileNameWithoutExtension(_mainViewModel.SelectedItem.Name) + ".jpg";
+            dlg.InitialDirectory = Path.GetDirectoryName(selectedItem.FullPath);
+            dlg.FileName = Path.GetFileNameWithoutExtension(selectedItem.Name) + ".jpg";
             dlg.Filter = GeneralFileFormatHandler.SaveImageFilter;
             dlg.DefaultExt = "jpg";
             if (dlg.ShowDialog() != true)
                 return;
             using (new MouseCursorOverride(Cursors.AppStarting))
             {
-                var sameDir = Path.GetDirectoryName(_mainViewModel.SelectedItem.FullPath) == Path.GetDirectoryName(dlg.FileName);
+                var sameDir = Path.GetDirectoryName(selectedItem.FullPath) == Path.GetDirectoryName(dlg.FileName);
                 await Task.Run(() => GeneralFileFormatHandler.SaveToFile(localContrastViewModel.PreviewPictureSource!, dlg.FileName, metadata, _mainViewModel.Settings.JpegQuality));
                 if (sameDir)
                     _mainViewModel.AddOrUpdateItem(dlg.FileName, false, false);
             }
-        }, HasFileSelected);
+        }
+
+        private async Task BatchProcessLocalContrastAsync(LocalContrastViewModel localContrastViewModel, BitmapMetadata metadata, PictureItemViewModel[] allSelected, PictureItemViewModel selectedItem)
+        {
+            await _mainViewModel.RunProcessWithProgressBarAsync((progressCallback, ct) => Task.Run(() =>
+            {
+                int i = 0;
+                foreach (var item in allSelected)
+                {
+                    var targetFileName = Path.ChangeExtension(item.GetProcessedFileName(), "jpg");
+                    if (item == selectedItem)
+                        GeneralFileFormatHandler.SaveToFile(localContrastViewModel.PreviewPictureSource!, targetFileName, metadata, _mainViewModel.Settings.JpegQuality);
+                    else
+                    {
+                        var (image, itemMetadata) = LoadImageWithMetadata(item);
+                        image = localContrastViewModel.ApplyOperations(image);
+                        GeneralFileFormatHandler.SaveToFile(image, targetFileName, itemMetadata, _mainViewModel.Settings.JpegQuality);
+                    }
+                    progressCallback((double)(++i) / allSelected.Length);
+                }
+            }, ct), "Batch process");
+        }
     }
 }

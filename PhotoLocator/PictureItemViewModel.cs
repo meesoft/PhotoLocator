@@ -184,7 +184,7 @@ namespace PhotoLocator
             }
             catch (Exception ex)
             {
-                Log.Write(ex);
+                Log.Write($"Failed to loads metadata for {Name}: {ex}");
                 return string.Empty;
             }
         }
@@ -242,8 +242,9 @@ namespace PhotoLocator
                 {
                     throw;
                 }
-                catch
+                catch (Exception ex)
                 {
+                    Log.Write($"Failed to loads thumbnail for {Name}: {ex}");
                     return TryLoadShellThumbnail(large: false, ShellThumbnailFormatOption.IconOnly, ct);
                 }
             }, ct);
@@ -280,7 +281,8 @@ namespace PhotoLocator
             }
             catch (Exception ex)
             {
-                ErrorMessage = ex.ToString();
+                Log.Write($"Failed to loads metadata for {Name}: {ex}");
+                ErrorMessage = ex.Message;
             }
         }
 
@@ -296,8 +298,9 @@ namespace PhotoLocator
                 Log.Write("Cancelled loading preview of " + Name);
                 throw;
             }
-            catch
+            catch (Exception ex)
             {
+                ExceptionHandler.LogException(ex);
                 Log.Write("Loading thumbnail of " + Name);
                 return TryLoadShellThumbnail(large: true, ShellThumbnailFormatOption.Default, ct);
             }
@@ -344,8 +347,9 @@ namespace PhotoLocator
             {
                 throw;
             }
-            catch
+            catch (Exception ex)
             {
+                ExceptionHandler.LogException(ex);
                 fileStream.Position = 0; // Fallback to default reader
             }
             ct.ThrowIfCancellationRequested();
@@ -369,7 +373,8 @@ namespace PhotoLocator
                 if (ex is OperationCanceledException)
                     throw;
                 if (formatOption != ShellThumbnailFormatOption.ThumbnailOnly)
-                    ErrorMessage = ex.ToString();
+                    ErrorMessage = ex.Message;
+                Log.Write($"Failed to loads thumbnail for {Name}: {ex}");
                 return null;
             }
         }
@@ -383,13 +388,10 @@ namespace PhotoLocator
                     _settings?.ExifToolPath, ct);
                 GeoTagSaved = true;
             }
-            catch (UserMessageException ex)
-            {
-                ErrorMessage = ex.Message;
-            }
             catch (Exception ex)
             {
-                ErrorMessage = ex.ToString();
+                ExceptionHandler.LogException(ex);
+                ErrorMessage = ex.Message;
             }
         }
 
@@ -429,6 +431,7 @@ namespace PhotoLocator
                         catch (Exception ex)
                         {
                             File.Move(newFullPath, FullPath); // Rename back if renaming sidecar fails
+                            ExceptionHandler.LogException(ex);
                             throw new UserMessageException("Unable to rename sidecar file: " + ex.Message, ex);
                         }
                     }
