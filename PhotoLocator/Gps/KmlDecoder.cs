@@ -101,7 +101,7 @@ namespace PhotoLocator.Gps
                             Interpolate(startTime, endTime, (double)i / (placemark.Coordinates.Count - 1))), placemark.StartTime.Kind));
                     }
                 }
-            };
+            }
             if (trace.Locations.Count > 0)
                 yield return trace;
         }

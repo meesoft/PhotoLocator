@@ -5,7 +5,7 @@ namespace PhotoLocator.Helpers
 {
     public sealed class MouseCursorOverride : IDisposable
     {
-        private Cursor _previousCursor;
+        private readonly Cursor _previousCursor;
 
         /// <summary>
         /// Set cursor, null for default wait cursor
