@@ -58,7 +58,7 @@ namespace PhotoLocator.Helpers
 
         public static void ShowFileProperties(string fileName)
         {
-            SHELLEXECUTEINFO info = new SHELLEXECUTEINFO();
+            var info = new SHELLEXECUTEINFO();
             info.cbSize = Marshal.SizeOf(info);
             info.lpVerb = "properties";
             info.lpFile = fileName;

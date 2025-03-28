@@ -1,5 +1,4 @@
 #nullable disable
-#pragma warning disable CA1003
 #pragma warning disable CA1032
 #pragma warning disable CA1069
 #pragma warning disable CA1401
@@ -11,7 +10,6 @@
 #pragma warning disable CA1823
 #pragma warning disable CA1838
 #pragma warning disable CA2101
-#pragma warning disable CA5392
 #pragma warning disable IDE0045 // Convert to conditional expression
 #pragma warning disable IDE0051 // Remove unused private members
 #pragma warning disable IDE1006 // Naming Styles
@@ -72,7 +70,7 @@ namespace Peter
         /// <param name="oParentFolder">Parent folder</param>
         /// <param name="arrPIDLs">PIDLs</param>
         /// <returns>true if it got the interfaces, otherwise false</returns>
-        private bool GetContextMenuInterfaces(IShellFolder oParentFolder, IntPtr[] arrPIDLs, out IntPtr ctxMenuPtr)
+        private bool GetContextMenuInterfaces(IShellFolder oParentFolder, IntPtr[] arrPIDLs, ref IntPtr ctxMenuPtr)
         {
             int nResult = oParentFolder.GetUIObjectOf(
                 IntPtr.Zero,
@@ -80,7 +78,7 @@ namespace Peter
                 arrPIDLs,
                 ref IID_IContextMenu,
                 IntPtr.Zero,
-                out ctxMenuPtr);
+                ref ctxMenuPtr);
 
             if (S_OK == nResult)
             {
@@ -158,7 +156,7 @@ namespace Peter
         #region InvokeCommand
         private void InvokeCommand(IContextMenu oContextMenu, uint nCmd, string strFolder, Point pointInvoke)
         {
-            CMINVOKECOMMANDINFOEX invoke = new CMINVOKECOMMANDINFOEX();
+            var invoke = new CMINVOKECOMMANDINFOEX();
             invoke.cbSize = cbInvokeCommand;
             invoke.lpVerb = (IntPtr)(nCmd - CMD_FIRST);
             invoke.lpDirectory = strFolder;
@@ -225,7 +223,7 @@ namespace Peter
             if (null == _oDesktopFolder)
             {
                 // Get desktop IShellFolder
-                int nResult = SHGetDesktopFolder(out pUnkownDesktopFolder);
+                int nResult = SHGetDesktopFolder(ref pUnkownDesktopFolder);
                 if (S_OK != nResult)
                 {
                     throw new ShellContextMenuException("Failed to get the desktop shell folder");
@@ -247,7 +245,7 @@ namespace Peter
         {
             if (null == _oParentFolder)
             {
-                IShellFolder oDesktopFolder = GetDesktopFolder();
+                var oDesktopFolder = GetDesktopFolder();
                 if (null == oDesktopFolder)
                 {
                     return null;
@@ -257,7 +255,7 @@ namespace Peter
                 IntPtr pPIDL = IntPtr.Zero;
                 uint pchEaten = 0;
                 SFGAO pdwAttributes = 0;
-                int nResult = oDesktopFolder.ParseDisplayName(IntPtr.Zero, IntPtr.Zero, folderName, ref pchEaten, out pPIDL, ref pdwAttributes);
+                int nResult = oDesktopFolder.ParseDisplayName(IntPtr.Zero, IntPtr.Zero, folderName, ref pchEaten, ref pPIDL, ref pdwAttributes);
                 if (S_OK != nResult)
                 {
                     return null;
@@ -266,7 +264,7 @@ namespace Peter
                 IntPtr pStrRet = Marshal.AllocCoTaskMem(MAX_PATH * 2 + 4);
                 Marshal.WriteInt32(pStrRet, 0, 0);
                 nResult = _oDesktopFolder.GetDisplayNameOf(pPIDL, SHGNO.FORPARSING, pStrRet);
-                StringBuilder strFolder = new StringBuilder(MAX_PATH);
+                var strFolder = new StringBuilder(MAX_PATH);
                 StrRetToBuf(pStrRet, pPIDL, strFolder, MAX_PATH);
                 Marshal.FreeCoTaskMem(pStrRet);
                 pStrRet = IntPtr.Zero;
@@ -274,7 +272,7 @@ namespace Peter
 
                 // Get the IShellFolder for folder
                 IntPtr pUnknownParentFolder = IntPtr.Zero;
-                nResult = oDesktopFolder.BindToObject(pPIDL, IntPtr.Zero, ref IID_IShellFolder, out pUnknownParentFolder);
+                nResult = oDesktopFolder.BindToObject(pPIDL, IntPtr.Zero, ref IID_IShellFolder, ref pUnknownParentFolder);
                 // Free the PIDL first
                 Marshal.FreeCoTaskMem(pPIDL);
                 if (S_OK != nResult)
@@ -301,7 +299,7 @@ namespace Peter
                 return null;
             }
 
-            IShellFolder oParentFolder = GetParentFolder(arrFI[0].DirectoryName);
+            var oParentFolder = GetParentFolder(arrFI[0].DirectoryName);
             if (null == oParentFolder)
             {
                 return null;
@@ -315,7 +313,7 @@ namespace Peter
                 uint pchEaten = 0;
                 SFGAO pdwAttributes = 0;
                 IntPtr pPIDL = IntPtr.Zero;
-                int nResult = oParentFolder.ParseDisplayName(IntPtr.Zero, IntPtr.Zero, fi.Name, ref pchEaten, out pPIDL, ref pdwAttributes);
+                int nResult = oParentFolder.ParseDisplayName(IntPtr.Zero, IntPtr.Zero, fi.Name, ref pchEaten, ref pPIDL, ref pdwAttributes);
                 if (S_OK != nResult)
                 {
                     FreePIDLs(arrPIDLs);
@@ -340,7 +338,7 @@ namespace Peter
                 return null;
             }
 
-            IShellFolder oParentFolder = GetParentFolder(arrFI[0].Parent.FullName);
+            var oParentFolder = GetParentFolder(arrFI[0].Parent.FullName);
             if (null == oParentFolder)
             {
                 return null;
@@ -354,7 +352,7 @@ namespace Peter
                 uint pchEaten = 0;
                 SFGAO pdwAttributes = 0;
                 IntPtr pPIDL = IntPtr.Zero;
-                int nResult = oParentFolder.ParseDisplayName(IntPtr.Zero, IntPtr.Zero, fi.Name, ref pchEaten, out pPIDL, ref pdwAttributes);
+                int nResult = oParentFolder.ParseDisplayName(IntPtr.Zero, IntPtr.Zero, fi.Name, ref pchEaten, ref pPIDL, ref pdwAttributes);
                 if (S_OK != nResult)
                 {
                     FreePIDLs(arrPIDLs);
@@ -373,7 +371,7 @@ namespace Peter
         /// Free the PIDLs
         /// </summary>
         /// <param name="arrPIDLs">Array of PIDLs (IntPtr)</param>
-        protected void FreePIDLs(IntPtr[] arrPIDLs)
+        protected static void FreePIDLs(IntPtr[] arrPIDLs)
         {
             if (null != arrPIDLs)
             {
@@ -407,7 +405,7 @@ namespace Peter
                     return;
                 }
 
-                if (false == GetContextMenuInterfaces(_oParentFolder, _arrPIDLs, out iContextMenuPtr))
+                if (!GetContextMenuInterfaces(_oParentFolder, _arrPIDLs, ref iContextMenuPtr))
                 {
                     ReleaseAll();
                     return;
@@ -495,7 +493,7 @@ namespace Peter
                     return;
                 }
 
-                if (false == GetContextMenuInterfaces(_oParentFolder, _arrPIDLs, out iContextMenuPtr))
+                if (!GetContextMenuInterfaces(_oParentFolder, _arrPIDLs, ref iContextMenuPtr))
                 {
                     ReleaseAll();
                     return;
@@ -579,45 +577,45 @@ namespace Peter
         private const int S_OK = 0;
         private const int S_FALSE = 1;
 
-        private static int cbMenuItemInfo = Marshal.SizeOf(typeof(MENUITEMINFO));
-        private static int cbInvokeCommand = Marshal.SizeOf(typeof(CMINVOKECOMMANDINFOEX));
+        private static readonly int cbMenuItemInfo = Marshal.SizeOf(typeof(MENUITEMINFO));
+        private static readonly int cbInvokeCommand = Marshal.SizeOf(typeof(CMINVOKECOMMANDINFOEX));
 
         #endregion
 
         #region DLL Import
 
         // Retrieves the IShellFolder interface for the desktop folder, which is the root of the Shell's namespace.
-        [DllImport("shell32.dll")]
-        private static extern Int32 SHGetDesktopFolder(out IntPtr ppshf);
+        [DllImport("shell32.dll"), DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
+        private static extern Int32 SHGetDesktopFolder(ref IntPtr ppshf);
 
         // Takes a STRRET structure returned by IShellFolder::GetDisplayNameOf, converts it to a string, and places the result in a buffer. 
-        [DllImport("shlwapi.dll", EntryPoint = "StrRetToBuf", ExactSpelling = false, CharSet = CharSet.Auto, SetLastError = true)]
+        [DllImport("shlwapi.dll", EntryPoint = "StrRetToBuf", ExactSpelling = false, CharSet = CharSet.Auto, SetLastError = true), DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
         private static extern Int32 StrRetToBuf(IntPtr pstr, IntPtr pidl, StringBuilder pszBuf, int cchBuf);
 
         // The TrackPopupMenuEx function displays a shortcut menu at the specified location and tracks the selection of items on the shortcut menu. The shortcut menu can appear anywhere on the screen.
-        [DllImport("user32.dll", ExactSpelling = true, CharSet = CharSet.Auto)]
+        [DllImport("user32.dll", ExactSpelling = true, CharSet = CharSet.Auto), DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
         private static extern uint TrackPopupMenuEx(IntPtr hmenu, TPM flags, int x, int y, IntPtr hwnd, IntPtr lptpm);
 
         // The CreatePopupMenu function creates a drop-down menu, submenu, or shortcut menu. The menu is initially empty. You can insert or append menu items by using the InsertMenuItem function. You can also use the InsertMenu function to insert menu items and the AppendMenu function to append menu items.
-        [DllImport("user32", SetLastError = true, CharSet = CharSet.Auto)]
+        [DllImport("user32", SetLastError = true, CharSet = CharSet.Auto), DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
         private static extern IntPtr CreatePopupMenu();
 
         // The DestroyMenu function destroys the specified menu and frees any memory that the menu occupies.
-        [DllImport("user32", SetLastError = true, CharSet = CharSet.Auto)]
+        [DllImport("user32", SetLastError = true, CharSet = CharSet.Auto), DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
         private static extern bool DestroyMenu(IntPtr hMenu);
 
         // Determines the default menu item on the specified menu
-        [DllImport("user32", SetLastError = true, CharSet = CharSet.Auto)]
+        [DllImport("user32", SetLastError = true, CharSet = CharSet.Auto), DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
         private static extern int GetMenuDefaultItem(IntPtr hMenu, bool fByPos, uint gmdiFlags);
 
         #endregion
 
         #region Shell GUIDs
 
-        private static Guid IID_IShellFolder = new Guid("{000214E6-0000-0000-C000-000000000046}");
-        private static Guid IID_IContextMenu = new Guid("{000214e4-0000-0000-c000-000000000046}");
-        private static Guid IID_IContextMenu2 = new Guid("{000214f4-0000-0000-c000-000000000046}");
-        private static Guid IID_IContextMenu3 = new Guid("{bcfce0a0-ec17-11d0-8d10-00a0c90f2719}");
+        private static Guid IID_IShellFolder = new("{000214E6-0000-0000-C000-000000000046}");
+        private static Guid IID_IContextMenu = new("{000214e4-0000-0000-c000-000000000046}");
+        private static Guid IID_IContextMenu2 = new("{000214f4-0000-0000-c000-000000000046}");
+        private static Guid IID_IContextMenu3 = new("{bcfce0a0-ec17-11d0-8d10-00a0c90f2719}");
 
         #endregion
 
@@ -1182,7 +1180,7 @@ namespace Peter
                 [MarshalAs(UnmanagedType.LPWStr)] 
             string pszDisplayName,
                 ref uint pchEaten,
-                out IntPtr ppidl,
+                ref IntPtr ppidl,
                 ref SFGAO pdwAttributes);
 
             // Allows a client to determine the contents of a folder by creating an item
@@ -1192,7 +1190,7 @@ namespace Peter
             Int32 EnumObjects(
                 IntPtr hwnd,
                 SHCONTF grfFlags,
-                out IntPtr enumIDList);
+                ref IntPtr enumIDList);
 
             // Retrieves an IShellFolder object for a subfolder.
             // Return value: error code, if any
@@ -1201,7 +1199,7 @@ namespace Peter
                 IntPtr pidl,
                 IntPtr pbc,
                 ref Guid riid,
-                out IntPtr ppv);
+                ref IntPtr ppv);
 
             // Requests a pointer to an object's storage interface. 
             // Return value: error code, if any
@@ -1210,7 +1208,7 @@ namespace Peter
                 IntPtr pidl,
                 IntPtr pbc,
                 ref Guid riid,
-                out IntPtr ppv);
+                ref IntPtr ppv);
 
             // Determines the relative order of two file objects or folders, given their
             // item identifier lists. Return value: If this method is successful, the
@@ -1235,7 +1233,7 @@ namespace Peter
             Int32 CreateViewObject(
                 IntPtr hwndOwner,
                 Guid riid,
-                out IntPtr ppv);
+                ref IntPtr ppv);
 
             // Retrieves the attributes of one or more file objects or subfolders. 
             // Return value: error code, if any
@@ -1257,7 +1255,7 @@ namespace Peter
             IntPtr[] apidl,
                 ref Guid riid,
                 IntPtr rgfReserved,
-                out IntPtr ppv);
+                ref IntPtr ppv);
 
             // Retrieves the display name for the specified file object or subfolder. 
             // Return value: error code, if any
@@ -1277,7 +1275,7 @@ namespace Peter
                 [MarshalAs(UnmanagedType.LPWStr)] 
             string pszName,
                 SHGNO uFlags,
-                out IntPtr ppidlOut);
+                ref IntPtr ppidlOut);
         }
         #endregion
 
@@ -1421,7 +1419,7 @@ namespace Peter
     #endregion
 
     #region Class HookEventArgs
-    public class HookEventArgs : EventArgs
+    class HookEventArgs : EventArgs
     {
         public int HookCode;	// Hook code
         public IntPtr wParam;	// WPARAM argument
@@ -1452,7 +1450,7 @@ namespace Peter
     #endregion
 
     #region Class LocalWindowsHook
-    public class LocalWindowsHook
+    class LocalWindowsHook
     {
         // ************************************************************************
         // Filter function delegate
@@ -1476,8 +1474,7 @@ namespace Peter
         public event HookEventHandler HookInvoked;
         protected void OnHookInvoked(HookEventArgs e)
         {
-            if (HookInvoked != null)
-                HookInvoked(this, e);
+            HookInvoked?.Invoke(this, e);
         }
         // ************************************************************************
 
@@ -1503,7 +1500,7 @@ namespace Peter
                 return CallNextHookEx(m_hhook, code, wParam, lParam);
 
             // Let clients determine what to do
-            HookEventArgs e = new HookEventArgs();
+            var e = new HookEventArgs();
             e.HookCode = code;
             e.wParam = wParam;
             e.lParam = lParam;
@@ -1538,7 +1535,7 @@ namespace Peter
         #region Win32 Imports
         // ************************************************************************
         // Win32: SetWindowsHookEx()
-        [DllImport("user32.dll")]
+        [DllImport("user32.dll"), DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
         protected static extern IntPtr SetWindowsHookEx(HookType code,
             HookProc func,
             IntPtr hInstance,
@@ -1547,13 +1544,13 @@ namespace Peter
 
         // ************************************************************************
         // Win32: UnhookWindowsHookEx()
-        [DllImport("user32.dll")]
+        [DllImport("user32.dll"), DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
         protected static extern int UnhookWindowsHookEx(IntPtr hhook);
                               // ************************************************************************
 
         // ************************************************************************
         // Win32: CallNextHookEx()
-        [DllImport("user32.dll")]
+        [DllImport("user32.dll"), DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
         protected static extern int CallNextHookEx(IntPtr hhook,
             int code, IntPtr wParam, IntPtr lParam);
         // ************************************************************************
