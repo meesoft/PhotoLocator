@@ -405,7 +405,7 @@ namespace Peter
                     return;
                 }
 
-                if (false == GetContextMenuInterfaces(_oParentFolder, _arrPIDLs, ref iContextMenuPtr))
+                if (!GetContextMenuInterfaces(_oParentFolder, _arrPIDLs, ref iContextMenuPtr))
                 {
                     ReleaseAll();
                     return;
@@ -493,7 +493,7 @@ namespace Peter
                     return;
                 }
 
-                if (false == GetContextMenuInterfaces(_oParentFolder, _arrPIDLs, ref iContextMenuPtr))
+                if (!GetContextMenuInterfaces(_oParentFolder, _arrPIDLs, ref iContextMenuPtr))
                 {
                     ReleaseAll();
                     return;
