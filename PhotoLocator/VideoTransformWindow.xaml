@@ -42,17 +42,18 @@
         <DockPanel Margin="10,4,0,0">
             <CheckBox Content="Crop:" IsChecked="{Binding IsCropChecked}" Width="130"/>
             <TextBox Text="{Binding CropWindow}" IsEnabled="{Binding IsCropChecked}" Width="140"
-                     ToolTip="Crop region size and position"/>
+                     ToolTip="Crop region size and position, width:height:left:top"/>
             <CheckBox Content="Scale to:" IsChecked="{Binding IsScaleChecked}" Margin="20,0,0,0"/>
             <TextBox Text="{Binding ScaleTo}" IsEnabled="{Binding IsScaleChecked}" Width="140" HorizontalAlignment="Right"
-                     ToolTip="Scale to resolution"/>
+                     ToolTip="Scale to resolution, width:height"/>
         </DockPanel>
 
         <CheckBox Content="Stabilize" IsChecked="{Binding IsStabilizeChecked}" Margin="0,8,0,0"/>
         
         <StackPanel Orientation="Horizontal" Margin="10,4,0,0">
             <TextBlock Text="Smooth frames:" IsEnabled="{Binding IsStabilizeChecked}" Width="130"/>
-            <TextBox Text="{Binding SmoothFrames}" IsEnabled="{Binding IsStabilizeChecked}" Width="140"/>
+            <TextBox Text="{Binding SmoothFrames}" IsEnabled="{Binding IsStabilizeChecked}" Width="140"
+                     ToolTip="Number of frames before and after to use"/>
             <CheckBox Content="Tripod mode" IsChecked="{Binding IsTripodChecked}" Margin="20,0,0,0" IsEnabled="{Binding IsStabilizeChecked}"
                       ToolTip="Simulate a fixed camera position"/>
         </StackPanel>
@@ -61,13 +62,20 @@
 
         <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
             <CheckBox Content="Adjust local contrast, brightness and colors" Width="300"
-                      IsChecked="{Binding IsLocalContrastChecked}" IsEnabled="{Binding IsLocalContrastEnabled}" />
+                      IsChecked="{Binding IsLocalContrastChecked}" IsEnabled="{Binding IsFrameProcessingEnabled}" />
             <Button Content="Setup" Command="{Binding SetupLocalContrastCommand}" Width="80" IsEnabled="{Binding IsLocalContrastChecked}" />
         </StackPanel>
         <StackPanel Orientation="Horizontal" Margin="0,4,0,0">
-            <CheckBox Content="Rolling average:" Width="140" 
-                      IsChecked="{Binding IsRollingAverageChecked}" IsEnabled="{Binding IsLocalContrastEnabled}" />
-            <TextBox Text="{Binding RollingAverageFrames}" IsEnabled="{Binding IsRollingAverageChecked}" Width="140"/>
+            <RadioButton Content="None" Margin="10,0,0,0" IsEnabled="{Binding IsFrameProcessingEnabled}"
+                     IsChecked="{Binding Path=RollingAverageMode, Converter={StaticResource ComparisonConverter}, ConverterParameter={x:Static local:RollingAverageMode.None}}"/>
+            <RadioButton Content="Rolling average" Margin="10,0,0,0" IsEnabled="{Binding IsFrameProcessingEnabled}"
+                     IsChecked="{Binding Path=RollingAverageMode, Converter={StaticResource ComparisonConverter}, ConverterParameter={x:Static local:RollingAverageMode.RollingAverage}}"/>
+            <RadioButton Content="Fading average" Margin="10,0,0,0" IsEnabled="{Binding IsFrameProcessingEnabled}"
+                     IsChecked="{Binding Path=RollingAverageMode, Converter={StaticResource ComparisonConverter}, ConverterParameter={x:Static local:RollingAverageMode.FadingAverage}}"/>
+            <RadioButton Content="Fading max" Margin="10,0,0,0" IsEnabled="{Binding IsFrameProcessingEnabled}"
+                     IsChecked="{Binding Path=RollingAverageMode, Converter={StaticResource ComparisonConverter}, ConverterParameter={x:Static local:RollingAverageMode.FadingAverage}}"/>
+            <TextBox Text="{Binding RollingAverageFrames}" IsEnabled="{Binding IsFrameProcessingEnabled}" Width="140"
+                     ToolTip="Number of frames to average"/>
         </StackPanel>
 
         <TextBlock Text="Output" Margin="0,4,0,0"/>
