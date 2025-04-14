@@ -20,18 +20,29 @@ namespace PhotoLocator.BitmapOperations
 
         public override void ProcessImage(BitmapSource image)
         {
+            var pixels = PrepareFrame(image);
             if (_previousFrames.Count >= _numberOfFramesToAverage)
                 _previousFrames.RemoveAt(0);
-            var pixels = PrepareFrame(image);
             _previousFrames.Add(pixels);
-            int max = _previousFrames.Count * 255;
-            Parallel.For(0, pixels.Length, i =>
+
+            Array.Clear(_accumulatorPixels!);
+            var max = (uint)_previousFrames.Count * 255;
+            int stride = Width * PixelSize;
+            for (int f = 0; f < _previousFrames.Count; f++)
             {
-                int acc = 0;
-                for (int f = 0; f < _previousFrames.Count; f++)
-                    acc = Math.Clamp(_previousFrames[f][i] * (f + 1), acc, max);
-                _accumulatorPixels![i] = (uint)acc;
-            });
+                var frame = _previousFrames[f];
+                var scale = (uint)(f + 1);
+                Parallel.For(0, Height, y =>
+                {
+                    unsafe
+                    {
+                        fixed (byte* frameRow = &frame[y * stride])
+                        fixed (uint* accumulatorRow = &_accumulatorPixels![y * stride])
+                            for (int x = 0; x < stride; x++)
+                                accumulatorRow[x] = Math.Clamp(frameRow[x] * scale, accumulatorRow[x], max);
+                    }
+                });
+            }
         }
         
         protected override double GetResultScaling()

@@ -473,6 +473,7 @@ namespace PhotoLocator
             IsProgressBarVisible = true;
             IsWindowEnabled = false;
             _processCancellation = new CancellationTokenSource();
+            bool completed = false;
             var ct = _processCancellation.Token;
             try
             {
@@ -482,18 +483,13 @@ namespace PhotoLocator
                     ProgressBarIsIndeterminate = progress < 0;
                     ProgressBarValue = Math.Max(ProgressBarValue, progress);
                 }, ct);
-            }
-            catch (Exception ex) when (ex is not OperationCanceledException)
-            {
-                TaskbarProgressState = TaskbarItemProgressState.Error;
-                IsProgressBarVisible = false;
-                ExceptionHandler.ShowException(ex);
+                completed = true;
             }
             finally
             {
                 IsWindowEnabled = true;
                 IsProgressBarVisible = false;
-                TaskbarProgressState = TaskbarItemProgressState.None;
+                TaskbarProgressState = completed ? TaskbarItemProgressState.None : TaskbarItemProgressState.Error;
                 if (focusItem is not null)
                     SelectIfNotNull(focusItem);
                 else if (SelectedItem != null)

@@ -273,7 +273,8 @@ namespace PhotoLocator
         }
         string _stabilizeArguments = string.Empty;
 
-        public bool IsFrameProcessingEnabled => OutputMode is OutputMode.Video or OutputMode.ImageSequence;
+        public bool IsFrameProcessingEnabled => OutputMode == OutputMode.Video && SelectedVideoFormat != VideoFormats[CopyVideoFormatIndex]
+            || OutputMode == OutputMode.ImageSequence;
 
         public bool IsLocalContrastChecked
         {
@@ -356,6 +357,7 @@ namespace PhotoLocator
                 {
                     UpdateProcessArgs();
                     UpdateOutputArgs();
+                    PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(IsFrameProcessingEnabled)));
                 }
             }
         }
@@ -675,7 +677,18 @@ namespace PhotoLocator
                 switch (OutputMode)
                 {
                     case OutputMode.Video:
-                        postfix = allSelected.Length > 1 ? "combined" : IsStabilizeChecked ? "stabilized" : "processed";
+                        if (RollingAverageMode == RollingAverageMode.RollingAverage && RollingAverageFrames > 1)
+                            postfix = "rolling" + RollingAverageFrames;
+                        else if (RollingAverageMode == RollingAverageMode.FadingAverage && RollingAverageFrames > 1)
+                            postfix = "fadeavg" + RollingAverageFrames;
+                        else if (RollingAverageMode == RollingAverageMode.FadingMax && RollingAverageFrames > 1)
+                            postfix = "fademax" + RollingAverageFrames;
+                        else if (IsStabilizeChecked || IsRegisterFramesChecked && RollingAverageMode > RollingAverageMode.None)
+                            postfix = "stabilized";
+                        else if (allSelected.Length > 1)
+                            postfix = "combined";
+                        else
+                            postfix = "processed";
                         dlg.Filter = SaveVideoFilter;
                         ext = ".mp4";
                         break;

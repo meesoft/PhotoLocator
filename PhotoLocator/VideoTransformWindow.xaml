@@ -13,6 +13,7 @@
 
     <Window.Resources>
         <BooleanToVisibilityConverter x:Key="BooleanToVisibility" />
+        <helpers:BooleanToHiddenVisibilityConverter x:Key="BooleanToHiddenVisibility" />
         <helpers:ComparisonConverter x:Key="ComparisonConverter" />
         <Style TargetType="TextBlock">
             <Setter Property="Foreground" Value="#FFEEEEEE" />
@@ -60,23 +61,24 @@
         <TextBlock Text="Stabilize arguments:" Margin="10,4,0,0" IsEnabled="{Binding IsStabilizeChecked}"/>
         <TextBox Text="{Binding StabilizeArguments}" Margin="10,0,0,0" IsEnabled="{Binding IsStabilizeChecked}"/>
 
-        <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
-            <CheckBox Content="Adjust local contrast, brightness and colors" Width="300"
-                      IsChecked="{Binding IsLocalContrastChecked}" IsEnabled="{Binding IsFrameProcessingEnabled}" />
+        <StackPanel Orientation="Horizontal" Margin="0,8,0,0" Visibility="{Binding IsFrameProcessingEnabled, Converter={StaticResource BooleanToHiddenVisibility}}" >
+            <CheckBox Content="Adjust local contrast, brightness and colors" Width="300" IsChecked="{Binding IsLocalContrastChecked}" />
             <Button Content="Setup" Command="{Binding SetupLocalContrastCommand}" Width="80" IsEnabled="{Binding IsLocalContrastChecked}" />
         </StackPanel>
-        <StackPanel Orientation="Horizontal" Margin="0,4,0,0">
-            <RadioButton Content="None" Margin="10,0,0,0" IsEnabled="{Binding IsFrameProcessingEnabled}"
+
+        <DockPanel Margin="0,4" Visibility="{Binding IsFrameProcessingEnabled, Converter={StaticResource BooleanToHiddenVisibility}}">
+            <TextBlock Text="Combine frames:" />
+            <RadioButton Content="Off" Margin="10,0,0,0"
                      IsChecked="{Binding Path=RollingAverageMode, Converter={StaticResource ComparisonConverter}, ConverterParameter={x:Static local:RollingAverageMode.None}}"/>
-            <RadioButton Content="Rolling average" Margin="10,0,0,0" IsEnabled="{Binding IsFrameProcessingEnabled}"
+            <RadioButton Content="Rolling average" Margin="10,0,0,0"
                      IsChecked="{Binding Path=RollingAverageMode, Converter={StaticResource ComparisonConverter}, ConverterParameter={x:Static local:RollingAverageMode.RollingAverage}}"/>
-            <RadioButton Content="Fading average" Margin="10,0,0,0" IsEnabled="{Binding IsFrameProcessingEnabled}"
+            <RadioButton Content="Fading" Margin="10,0,0,0"
                      IsChecked="{Binding Path=RollingAverageMode, Converter={StaticResource ComparisonConverter}, ConverterParameter={x:Static local:RollingAverageMode.FadingAverage}}"/>
-            <RadioButton Content="Fading max" Margin="10,0,0,0" IsEnabled="{Binding IsFrameProcessingEnabled}"
-                     IsChecked="{Binding Path=RollingAverageMode, Converter={StaticResource ComparisonConverter}, ConverterParameter={x:Static local:RollingAverageMode.FadingAverage}}"/>
-            <TextBox Text="{Binding RollingAverageFrames}" IsEnabled="{Binding IsFrameProcessingEnabled}" Width="140"
-                     ToolTip="Number of frames to average"/>
-        </StackPanel>
+            <RadioButton Content="Fading max" Margin="10,0,0,0"
+                     IsChecked="{Binding Path=RollingAverageMode, Converter={StaticResource ComparisonConverter}, ConverterParameter={x:Static local:RollingAverageMode.FadingMax}}"/>
+            <TextBox Text="{Binding RollingAverageFrames}" Width="140" HorizontalAlignment="Right" IsEnabled="{Binding IsCombineFramesOperation}"
+                     ToolTip="Number of frames to combine"/>
+        </DockPanel>
 
         <TextBlock Text="Output" Margin="0,4,0,0"/>
 
@@ -106,7 +108,7 @@
             <CheckBox Content="Register frames" IsChecked="{Binding IsRegisterFramesChecked}" IsEnabled="{Binding IsCombineFramesOperation}"
                       ToolTip="Align all frames with the first to minimize camera movement"/>
             <TextBox Text="{Binding RegistrationRegion}" Width="140" HorizontalAlignment="Right" IsEnabled="{Binding IsRegisterFramesChecked}" 
-                     ToolTip="Optional registration region of interest"/>
+                     ToolTip="Optional registration region of interest, width:height:left:top"/>
         </DockPanel>
         <DockPanel Margin="10,4,0,0" >
             <RadioButton Content="Frame max" Width="130"
