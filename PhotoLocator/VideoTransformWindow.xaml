@@ -34,7 +34,7 @@
         <DockPanel Margin="10,4,0,0">
             <CheckBox Content="Rotate:" IsChecked="{Binding IsRotateChecked}" Width="130" />
             <TextBox Text="{Binding RotationAngle}" IsEnabled="{Binding IsRotateChecked}" Width="140"
-                     ToolTip="Rotation angle in degrees"/>
+                     ToolTip="Clockwise rotation angle in degrees"/>
             <TextBlock Text="°" IsEnabled="{Binding IsRotateChecked}" Margin="4,0,0,0" Width="16"/>
             <CheckBox Content="Speedup by:" IsChecked="{Binding IsSpeedupChecked}" />
             <TextBox Text="{Binding SpeedupBy}" IsEnabled="{Binding IsSpeedupChecked}" Width="140" HorizontalAlignment="Right"
