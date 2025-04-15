@@ -21,11 +21,14 @@ namespace PhotoLocator.BitmapOperations
         double _dpiY;
         int _width;
         int _height;
-
         PixelFormat _pixelFormat;
         int _pixelSize;
         RegistrationOperation? _registrationOperation;
         protected uint[]? _accumulatorPixels;
+
+        protected int Width => _width;
+        protected int Height => _height;
+        protected int PixelSize => _pixelSize;
 
         public int ProcessedImages { get; private set; }
 

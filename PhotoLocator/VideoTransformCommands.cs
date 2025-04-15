@@ -28,6 +28,14 @@ namespace PhotoLocator
         Max,
     }
 
+    public enum RollingAverageMode
+    {
+        None,
+        RollingAverage,
+        FadingAverage,
+        FadingMax,
+    }
+
     public class VideoTransformCommands : INotifyPropertyChanged
     {
         const string InputListFileName = "input.txt";
@@ -265,7 +273,8 @@ namespace PhotoLocator
         }
         string _stabilizeArguments = string.Empty;
 
-        public bool IsLocalContrastEnabled => OutputMode is OutputMode.Video or OutputMode.ImageSequence;
+        public bool IsFrameProcessingEnabled => OutputMode == OutputMode.Video && SelectedVideoFormat != VideoFormats[CopyVideoFormatIndex]
+            || OutputMode == OutputMode.ImageSequence;
 
         public bool IsLocalContrastChecked
         {
@@ -300,19 +309,19 @@ namespace PhotoLocator
         });
         LocalContrastViewModel? _localContrastSetup;
 
-        public bool IsRollingAverageChecked
+        public RollingAverageMode RollingAverageMode
         {
-            get => _isRollingAverageChecked;
+            get => _rollingAverageMode;
             set
             {
-                if (SetProperty(ref _isRollingAverageChecked, value))
+                if (SetProperty(ref _rollingAverageMode, value))
                 {
                     PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(IsCombineFramesOperation)));
                     UpdateOutputArgs();
                 }
             }
         }
-        bool _isRollingAverageChecked;
+        RollingAverageMode _rollingAverageMode;
 
         public int RollingAverageFrames
         {
@@ -331,7 +340,7 @@ namespace PhotoLocator
                     UpdateProcessArgs();
                     UpdateOutputArgs();
                     PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(IsCombineFramesOperation)));
-                    PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(IsLocalContrastEnabled)));
+                    PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(IsFrameProcessingEnabled)));
                 }
             }
         }
@@ -348,6 +357,7 @@ namespace PhotoLocator
                 {
                     UpdateProcessArgs();
                     UpdateOutputArgs();
+                    PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(IsFrameProcessingEnabled)));
                 }
             }
         }
@@ -402,7 +412,7 @@ namespace PhotoLocator
         }
         bool _isRemoveAudioChecked;
 
-        public bool IsCombineFramesOperation => IsRollingAverageChecked || OutputMode is OutputMode.Average or OutputMode.Max;
+        public bool IsCombineFramesOperation => RollingAverageMode > RollingAverageMode.None || OutputMode is OutputMode.Average or OutputMode.Max;
 
         public bool IsRegisterFramesChecked
         {
@@ -537,7 +547,7 @@ namespace PhotoLocator
                 var args = new List<string>();
                 if (IsRemoveAudioChecked)
                     args.Add("-an");
-                else if ((IsLocalContrastChecked || IsRollingAverageChecked) && HasSingleInput && !HasOnlyImageInput)
+                else if ((IsLocalContrastChecked || RollingAverageMode > RollingAverageMode.None) && HasSingleInput && !HasOnlyImageInput)
                 {
                     if (!string.IsNullOrEmpty(SkipTo))
                         args.Add($"-ss {SkipTo}");
@@ -667,7 +677,18 @@ namespace PhotoLocator
                 switch (OutputMode)
                 {
                     case OutputMode.Video:
-                        postfix = allSelected.Length > 1 ? "combined" : IsStabilizeChecked ? "stabilized" : "processed";
+                        if (RollingAverageMode == RollingAverageMode.RollingAverage && RollingAverageFrames > 1)
+                            postfix = "rolling" + RollingAverageFrames;
+                        else if (RollingAverageMode == RollingAverageMode.FadingAverage && RollingAverageFrames > 1)
+                            postfix = "fadeavg" + RollingAverageFrames;
+                        else if (RollingAverageMode == RollingAverageMode.FadingMax && RollingAverageFrames > 1)
+                            postfix = "fademax" + RollingAverageFrames;
+                        else if (IsStabilizeChecked || IsRegisterFramesChecked && RollingAverageMode > RollingAverageMode.None)
+                            postfix = "stabilized";
+                        else if (allSelected.Length > 1)
+                            postfix = "combined";
+                        else
+                            postfix = "processed";
                         dlg.Filter = SaveVideoFilter;
                         ext = ".mp4";
                         break;
@@ -741,14 +762,21 @@ namespace PhotoLocator
                     GeneralFileFormatHandler.SaveToFile(process.GetResult8(), outFileName, CreateImageMetadata(), _mainViewModel.Settings.JpegQuality);
                     message = $"Processed {process.ProcessedImages} frames in {sw.Elapsed.TotalSeconds:N1}s";
                 }
-                else if (IsLocalContrastChecked || IsRollingAverageChecked)
+                else if (IsLocalContrastChecked || RollingAverageMode > RollingAverageMode.None)
                 {
                     if (!string.IsNullOrEmpty(FrameRate))
                     {
                         _fps = double.Parse(FrameRate, CultureInfo.InvariantCulture);
                         _hasFps = true;
                     }
-                    var runningAverage = IsRollingAverageChecked ? new RollingAverageOperation(RollingAverageFrames, DarkFramePath, IsRegisterFramesChecked, ParseRegistrationRegion(), ct) : null;
+                    CombineFramesOperationBase? runningAverage = RollingAverageMode switch
+                    {
+                        RollingAverageMode.RollingAverage => new RollingAverageOperation(RollingAverageFrames, DarkFramePath, IsRegisterFramesChecked, ParseRegistrationRegion(), ct),
+                        RollingAverageMode.FadingAverage => new FadingAverageOperation(RollingAverageFrames, DarkFramePath, IsRegisterFramesChecked, ParseRegistrationRegion(), ct),
+                        RollingAverageMode.FadingMax => new FadingMaxOperation(RollingAverageFrames, DarkFramePath, IsRegisterFramesChecked, ParseRegistrationRegion(), ct),
+                        _ => null,
+                    };
+
                     using var frameEnumerator = new QueueEnumerable<BitmapSource>();
                     var readTask = _videoTransforms.RunFFmpegWithStreamOutputImagesAsync($"{InputArguments} {ProcessArguments}", 
                         source =>
