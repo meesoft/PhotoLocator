@@ -8,20 +8,20 @@ namespace PhotoLocator.BitmapOperations
 {
     sealed class FadingMaxOperation : CombineFramesOperationBase
     {
-        readonly int _numberOfFramesToAverage;
+        readonly int _numberOfFramesToCombine;
         readonly List<byte[]> _previousFrames;
 
-        public FadingMaxOperation(int numberOfFramesToAverage, string? darkFramePath, bool enableRegistration, ROI? registrationRegion, CancellationToken ct)
+        public FadingMaxOperation(int numberOfFramesToCombine, string? darkFramePath, bool enableRegistration, ROI? registrationRegion, CancellationToken ct)
             : base(darkFramePath, enableRegistration ? RegistrationMethod.MirrorBorders : RegistrationMethod.None, registrationRegion, ct)
         {
-            _numberOfFramesToAverage = numberOfFramesToAverage;
-            _previousFrames = new List<byte[]>(_numberOfFramesToAverage);
+            _numberOfFramesToCombine  = numberOfFramesToCombine;
+            _previousFrames = new List<byte[]>(_numberOfFramesToCombine);
         }
 
         public override void ProcessImage(BitmapSource image)
         {
             var pixels = PrepareFrame(image);
-            if (_previousFrames.Count >= _numberOfFramesToAverage)
+            if (_previousFrames.Count >= _numberOfFramesToCombine)
                 _previousFrames.RemoveAt(0);
             _previousFrames.Add(pixels);
 
