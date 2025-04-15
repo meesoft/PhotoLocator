@@ -53,6 +53,7 @@ namespace PhotoLocator
         public VideoTransformCommands(IMainViewModel mainViewModel)
         {
             _selectedVideoFormat = VideoFormats[DefaultVideoFormatIndex];
+            _selectedEffect = Effects[0];
             _mainViewModel = mainViewModel;
             _videoTransforms = new VideoTransforms(mainViewModel.Settings);
             UpdateProcessArgs();
@@ -215,6 +216,32 @@ namespace PhotoLocator
             }
         }
         string _scaleTo = "w:h";
+
+        public ObservableCollection<ComboBoxItem> Effects { get; } = [
+            new ComboBoxItem { Content = "None" },
+            new ComboBoxItem { Content = "Rotate 90° clockwise", Tag = "transpose=1" },
+            new ComboBoxItem { Content = "Rotate 90° counterclockwise", Tag = "transpose=2" },
+            new ComboBoxItem { Content = "Rotate 180°", Tag = "transpose=2,transpose=2" },
+            new ComboBoxItem { Content = "Mirror left half to right", Tag = "crop=iw/2:ih:0:0,split[left][tmp];[tmp]hflip[right];[left][right] hstack" },
+            new ComboBoxItem { Content = "Mirror top half to bottom", Tag = "crop=iw:ih/2:0:0,split[top][tmp];[tmp]vflip[bottom];[top][bottom] vstack" },
+            new ComboBoxItem { Content = "Grayscale", Tag = "eq=saturation=0" },
+            new ComboBoxItem { Content = "High contrast", Tag = "eq=brightness=0.05:contrast=1.3" },
+            new ComboBoxItem { Content = "Denoise", Tag = "atadenoise" },
+            new ComboBoxItem { Content = "Add noise", Tag = "noise=c0s=60:c0f=t+u" },            
+        ];
+
+        public ComboBoxItem SelectedEffect
+        {
+            get => _selectedEffect;
+            set
+            {
+                if (value is null)
+                    return;
+                if (SetProperty(ref _selectedEffect, value))
+                    UpdateProcessArgs();
+            }
+        }
+        ComboBoxItem _selectedEffect;
 
         public bool IsStabilizeChecked
         {
@@ -528,6 +555,8 @@ namespace PhotoLocator
                 filters.Add($"vidstabtransform=smoothing={SmoothFrames}"
                     + (IsTripodChecked ? ":tripod=1" : null)
                     + (IsBicubicStabilizeChecked ? ":interpol=bicubic" : null));
+            if (SelectedEffect.Tag is string effect)
+                filters.Add(effect);
             if (IsSpeedupChecked)
                 filters.Add($"setpts=PTS/({SpeedupBy})");
             if (!string.IsNullOrEmpty(FrameRate))

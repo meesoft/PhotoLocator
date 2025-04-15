@@ -49,6 +49,11 @@
                      ToolTip="Scale to resolution, width:height"/>
         </DockPanel>
 
+        <StackPanel Margin="10,4,0,0" Orientation="Horizontal" >
+            <TextBlock Text="Effect" Width="130"/>
+            <ComboBox ItemsSource="{Binding Effects}" SelectedItem="{Binding SelectedEffect}" Width="140" />
+        </StackPanel>
+
         <CheckBox Content="Stabilize" IsChecked="{Binding IsStabilizeChecked}" Margin="0,8,0,0"/>
         
         <StackPanel Orientation="Horizontal" Margin="10,4,0,0">
