@@ -224,10 +224,14 @@ namespace PhotoLocator
             new ComboBoxItem { Content = "Rotate 180°", Tag = "transpose=2,transpose=2" },
             new ComboBoxItem { Content = "Mirror left half to right", Tag = "crop=iw/2:ih:0:0,split[left][tmp];[tmp]hflip[right];[left][right] hstack" },
             new ComboBoxItem { Content = "Mirror top half to bottom", Tag = "crop=iw:ih/2:0:0,split[top][tmp];[tmp]vflip[bottom];[top][bottom] vstack" },
-            new ComboBoxItem { Content = "Grayscale", Tag = "eq=saturation=0" },
-            new ComboBoxItem { Content = "High contrast", Tag = "eq=brightness=0.05:contrast=1.3" },
-            new ComboBoxItem { Content = "Denoise", Tag = "atadenoise" },
-            new ComboBoxItem { Content = "Add noise", Tag = "noise=c0s=60:c0f=t+u" },            
+            new ComboBoxItem { Content = "Saturation", Tag = ( "eq=saturation={0}", "1.3" ) },
+            new ComboBoxItem { Content = "High contrast", Tag = ( "eq=brightness=0.05:contrast={0}", "1.3" ) },
+            new ComboBoxItem { Content = "Denoise (atadenoise)", Tag = ( "atadenoise=s={0}", "9" ) },
+            new ComboBoxItem { Content = "Denoise (hqdn3d)", Tag = ( "hqdn3d=luma_spatial={0}", "4" ) },
+            new ComboBoxItem { Content = "Denoise (nlmeans)", Tag = ( "nlmeans=s={0}", "1.0" ) },
+            new ComboBoxItem { Content = "Add noise", Tag = ( "noise=c0s={0}:c0f=t+u", "60" ) },
+            new ComboBoxItem { Content = "Sharpen", Tag = ( "unsharp=7:7:{0}", "2.5" ) },
+            new ComboBoxItem { Content = "Normalize", Tag = ( "normalize=smoothing={0}:independence=0", "50" ) },
         ];
 
         public ComboBoxItem SelectedEffect
@@ -238,10 +242,37 @@ namespace PhotoLocator
                 if (value is null)
                     return;
                 if (SetProperty(ref _selectedEffect, value))
+                {
+                    if (_selectedEffect.Tag is ValueTuple<string, string> effectTuple)
+                    {
+                        IsParameterizedEffect = true;
+                        _effectStrength = effectTuple.Item2;
+                    }
+                    else
+                    {
+                        IsParameterizedEffect = false;
+                        _effectStrength = null;
+                    }
+                    PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(EffectStrength)));
+                    PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(IsParameterizedEffect)));
                     UpdateProcessArgs();
+                }
             }
         }
         ComboBoxItem _selectedEffect;
+
+        public bool IsParameterizedEffect { get; private set; }
+
+        public string? EffectStrength
+        {
+            get => _effectStrength;
+            set
+            {
+                if (SetProperty(ref _effectStrength, value?.Trim().Replace(',', '.')))
+                    UpdateProcessArgs();
+            }
+        }
+        string? _effectStrength;
 
         public bool IsStabilizeChecked
         {
@@ -557,6 +588,8 @@ namespace PhotoLocator
                     + (IsBicubicStabilizeChecked ? ":interpol=bicubic" : null));
             if (SelectedEffect.Tag is string effect)
                 filters.Add(effect);
+            else if (_selectedEffect.Tag is ValueTuple<string, string> effectTuple)
+                filters.Add(string.Format(CultureInfo.InvariantCulture, effectTuple.Item1, EffectStrength));
             if (IsSpeedupChecked)
                 filters.Add($"setpts=PTS/({SpeedupBy})");
             if (!string.IsNullOrEmpty(FrameRate))
