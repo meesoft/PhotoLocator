@@ -224,6 +224,7 @@ namespace PhotoLocator
             new ComboBoxItem { Content = "Rotate 180°", Tag = "transpose=2,transpose=2" },
             new ComboBoxItem { Content = "Mirror left half to right", Tag = "crop=iw/2:ih:0:0,split[left][tmp];[tmp]hflip[right];[left][right] hstack" },
             new ComboBoxItem { Content = "Mirror top half to bottom", Tag = "crop=iw:ih/2:0:0,split[top][tmp];[tmp]vflip[bottom];[top][bottom] vstack" },
+            new ComboBoxItem { Content = "Normalize", Tag = ( "normalize=smoothing={0}:independence=0", "50" ) },
             new ComboBoxItem { Content = "Saturation", Tag = ( "eq=saturation={0}", "1.3" ) },
             new ComboBoxItem { Content = "High contrast", Tag = ( "eq=brightness=0.05:contrast={0}", "1.3" ) },
             new ComboBoxItem { Content = "Denoise (atadenoise)", Tag = ( "atadenoise=s={0}", "9" ) },
@@ -231,7 +232,6 @@ namespace PhotoLocator
             new ComboBoxItem { Content = "Denoise (nlmeans)", Tag = ( "nlmeans=s={0}", "1.0" ) },
             new ComboBoxItem { Content = "Add noise", Tag = ( "noise=c0s={0}:c0f=t+u", "60" ) },
             new ComboBoxItem { Content = "Sharpen", Tag = ( "unsharp=7:7:{0}", "2.5" ) },
-            new ComboBoxItem { Content = "Normalize", Tag = ( "normalize=smoothing={0}:independence=0", "50" ) },
         ];
 
         public ComboBoxItem SelectedEffect
