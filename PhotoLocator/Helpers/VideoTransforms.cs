@@ -38,7 +38,15 @@ namespace PhotoLocator.Helpers
             startInfo.CreateNoWindow = true;
             using var process = Process.Start(startInfo) ?? throw new IOException("Failed to start FFmpeg");
             var stdErrorTask = ProcessStandardErrorAsync(process.StandardError, stdErrorCallback, ct);
-            await stdErrorTask.ConfigureAwait(false);
+            try
+            {
+                await stdErrorTask.ConfigureAwait(false);
+            }
+            catch (OperationCanceledException)
+            {
+                process.Kill();
+                throw;
+            }
             await process.WaitForExitAsync(ct).ConfigureAwait(false);
             if (process.ExitCode != 0)
                 throw new UserMessageException($"Unable to process video. {_lastError}\nCommand line: ffmpeg {args}");
@@ -60,13 +68,14 @@ namespace PhotoLocator.Helpers
                 var header = new byte[6];
                 var theRest = Array.Empty<byte>();
                 using var memStream = new MemoryStream();
+                var standardOutput = process.StandardOutput.BaseStream;
                 while (true)
                 {
-                    await process.StandardOutput.BaseStream.ReadExactlyAsync(header, 0, header.Length, ct).ConfigureAwait(false);
+                    await standardOutput.ReadExactlyAsync(header, 0, header.Length, ct).ConfigureAwait(false);
                     var remainingSize = BitConverter.ToInt32(header, 2) - header.Length;
                     if (remainingSize > theRest.Length)
                         theRest = new byte[remainingSize];
-                    await process.StandardOutput.BaseStream.ReadExactlyAsync(theRest, 0, remainingSize, ct).ConfigureAwait(false);
+                    await standardOutput.ReadExactlyAsync(theRest, 0, remainingSize, ct).ConfigureAwait(false);
 #pragma warning disable CA1849 // Call async methods when in an async method
                     memStream.Write(header);
                     memStream.Write(theRest, 0, remainingSize);
@@ -78,6 +87,11 @@ namespace PhotoLocator.Helpers
                 }
             }
             catch (EndOfStreamException) { }
+            catch (OperationCanceledException)
+            {
+                process.Kill();
+                throw;
+            }
             await stdErrorTask.ConfigureAwait(false);
             await process.WaitForExitAsync(ct).ConfigureAwait(false);
             if (process.ExitCode != 0)
@@ -152,15 +166,15 @@ namespace PhotoLocator.Helpers
         }
 
         private async Task ProcessStandardErrorAsync(StreamReader output, Action<string> lineCallback, CancellationToken ct)
-        {
-            while (true)
             {
-                var line = await output.ReadLineAsync(ct).ConfigureAwait(false);
-                if (line is null)
-                    return;
-                _lastError = line;
-                lineCallback(line);
+                while (true)
+                {
+                    var line = await output.ReadLineAsync(ct).ConfigureAwait(false);
+                    if (line is null)
+                        return;
+                    _lastError = line;
+                    lineCallback(line);
+                }
             }
-        }
     }
 }

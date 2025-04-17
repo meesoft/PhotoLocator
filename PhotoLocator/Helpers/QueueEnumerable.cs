@@ -61,7 +61,12 @@ namespace PhotoLocator.Helpers
 
         public void Dispose()
         {
-            _break = true;
+            if (!_break)
+            {
+                _break = true;
+                _nextSet.Set();
+                _nextTaken.Set();
+            }
             _nextSet.Dispose();
             _nextTaken.Dispose();
         }
