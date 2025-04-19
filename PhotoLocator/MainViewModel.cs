@@ -45,6 +45,7 @@ namespace PhotoLocator
         double _loadImagesProgress;
         bool _titleUpdatePending;
         readonly List<(string Path, BitmapSource Picture)> _pictureCache = [];
+        readonly HashSet<string> _gpsTraceFiles = [];
 
         public event PropertyChangedEventHandler? PropertyChanged;
 
@@ -938,7 +939,10 @@ namespace PhotoLocator
                     if (SelectedItem is null || CropControl is null || PreviewPictureSource  is null || o is not true &&
                         MessageBox.Show("Crop to selection?", "Crop", MessageBoxButton.OKCancel, MessageBoxImage.Question) != MessageBoxResult.OK)
                         return;
-                    await new JpegTransformCommands(this).CropSelectedItemAsync(PreviewPictureSource, CropControl.CropRectangle);
+                    if (SelectedItem.IsVideo)
+                        new VideoTransformCommands(this).CropSelected(CropControl.CropRectangle);
+                    else
+                        await new JpegTransformCommands(this).CropSelectedItemAsync(PreviewPictureSource, CropControl.CropRectangle);
                 }
                 finally
                 {
@@ -973,6 +977,7 @@ namespace PhotoLocator
                     return;
                 Items.Clear();
                 Polylines.Clear();
+                _gpsTraceFiles.Clear();
                 SetupFileSystemWatcher();
                 if (Settings.ShowFolders)
                     foreach (var dir in Directory.EnumerateDirectories(PhotoFolderPath))
@@ -1020,10 +1025,16 @@ namespace PhotoLocator
         {
             if (_fileSystemWatcher is not null)
                 _fileSystemWatcher.EnableRaisingEvents = false;
-            return new ActionDisposable(() =>
+            return new ActionDisposable(async () =>
             {
                 if (_fileSystemWatcher is not null)
                     _fileSystemWatcher.EnableRaisingEvents = true;
+                if (!string.IsNullOrEmpty(PhotoFolderPath))
+                {
+                    await AppendFilesAsync(Directory.EnumerateFiles(PhotoFolderPath));
+                    if (_loadPicturesTask is null)
+                        await LoadPicturesAsync();
+                }
             });
         }
 
@@ -1140,13 +1151,12 @@ namespace PhotoLocator
             var extensions = PhotoFileExtensions.ToHashSet();
             foreach (var fileName in fileNames)
             {
-                if (Items.Any(i => i.FullPath == fileName))
-                    continue;
                 var ext = Path.GetExtension(fileName).ToLowerInvariant();
                 if (extensions.Contains(ext))
                     Items.InsertOrdered(new PictureItemViewModel(fileName, false, HandleFilePropertyChanged, Settings));
-                else if (ext is ".gpx" or ".kml")
+                else if (ext is ".gpx" or ".kml" && !_gpsTraceFiles.Contains(fileName))
                 {
+                    _gpsTraceFiles.Add(fileName);
                     var traces = await Task.Run(() => GpsTrace.DecodeGpsTraceFile(fileName, TimeSpan.FromMinutes(1)));
                     foreach (var trace in traces)
                         Polylines.Add(trace);
@@ -1160,6 +1170,8 @@ namespace PhotoLocator
             _loadCancellation = new CancellationTokenSource();
 
             var candidates = Items.Where(item => item.ThumbnailImage is null).ToArray();
+            if (candidates.Length == 0)
+                return;
             // Reorder so that we take alternately one from the top and one from the bottom
             var reordered = new PictureItemViewModel[candidates.Length];
             int iStart = 0;

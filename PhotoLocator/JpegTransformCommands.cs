@@ -67,11 +67,20 @@ namespace PhotoLocator
             await _mainViewModel.RunProcessWithProgressBarAsync(async (progressCallback, ct) =>
             {
                 progressCallback(-1);
+                using var pause = _mainViewModel.PauseFileSystemWatcher();
                 if (sourceFileName != SelectedItem.FullPath)
                 {
-                    using var pause = _mainViewModel.PauseFileSystemWatcher();
                     using var file = await FileHelpers.OpenFileWithRetryAsync(SelectedItem.FullPath, ct);
-                    await Task.Run(() => GeneralFileFormatHandler.SaveToFile(pictureSource, sourceFileName, ExifHandler.LoadMetadata(file), _mainViewModel.Settings.JpegQuality), ct);
+                    await Task.Run(() =>
+                    {
+                        BitmapMetadata? metadata = null;
+                        try
+                        {
+                            metadata = ExifHandler.LoadMetadata(file);
+                        }
+                        catch { }
+                        GeneralFileFormatHandler.SaveToFile(pictureSource, sourceFileName, metadata, _mainViewModel.Settings.JpegQuality);
+                    }, ct);
                 }
                 await Task.Run(() => JpegTransformations.Crop(sourceFileName, targetFileName, cropRectangle), ct);
                 _mainViewModel.AddOrUpdateItem(targetFileName, false, true);

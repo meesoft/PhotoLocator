@@ -11,7 +11,7 @@ using System.Windows.Media.Imaging;
 
 namespace PhotoLocator.Helpers
 {
-    class VideoTransforms
+    class VideoProcessing
     {
         public const string DurationOutputPrefix = "  Duration:";
         public const string EncodingOutputPrefix = "  Stream #0:";
@@ -19,7 +19,7 @@ namespace PhotoLocator.Helpers
         readonly ISettings _settings;
         string? _lastError;
 
-        public VideoTransforms(ISettings settings)
+        public VideoProcessing(ISettings settings)
         {
             _settings = settings;
         }

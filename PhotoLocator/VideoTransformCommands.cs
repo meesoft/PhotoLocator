@@ -42,7 +42,7 @@ namespace PhotoLocator
         const string TransformsFileName = "transforms.trf";
         const string SaveVideoFilter = "MP4|*.mp4";
         readonly IMainViewModel _mainViewModel;
-        readonly VideoTransforms _videoTransforms;
+        readonly VideoProcessing _videoTransforms;
         Action<double>? _progressCallback;
         double _progressOffset, _progressScale;
         TimeSpan _inputDuration;
@@ -55,7 +55,7 @@ namespace PhotoLocator
             _selectedVideoFormat = VideoFormats[DefaultVideoFormatIndex];
             _selectedEffect = Effects[0];
             _mainViewModel = mainViewModel;
-            _videoTransforms = new VideoTransforms(mainViewModel.Settings);
+            _videoTransforms = new VideoProcessing(mainViewModel.Settings);
             UpdateProcessArgs();
             UpdateOutputArgs();
         }
@@ -703,6 +703,13 @@ namespace PhotoLocator
             ProcessSelected.Execute(null);
         });
 
+        internal void CropSelected(Rect cropRectangle)
+        {
+            _cropWindow = $"{cropRectangle.Width:0}:{cropRectangle.Height:0}:{cropRectangle.X:0}:{cropRectangle.Y:0}";
+            IsCropChecked = true;
+            ProcessSelected.Execute(null);
+        }
+
         public ICommand ProcessSelected => new RelayCommand(async o =>
         {
             var allSelected = UpdateInputArgs();
@@ -922,13 +929,13 @@ namespace PhotoLocator
                 }
                 //Duration: 00:00:10.44, start: 0.000000, bitrate: 67364 kb / s
                 //Stream #0:0[0x1](eng): Video: h264 (High) (avc1 / 0x31637661), yuv420p(tv, bt709, progressive), 3840x2160 [SAR 1:1 DAR 16:9], 67360 kb/s, 25 fps, 25 tbr, 12800 tbn (default)
-                else if (!_hasDuration && line.StartsWith(VideoTransforms.DurationOutputPrefix, StringComparison.Ordinal))
+                else if (!_hasDuration && line.StartsWith(VideoProcessing.DurationOutputPrefix, StringComparison.Ordinal))
                 {
                     var parts = line.Split([' ', ','], StringSplitOptions.RemoveEmptyEntries);
                     if (parts.Length > 1)
                         _hasDuration = TimeSpan.TryParse(parts[1], CultureInfo.InvariantCulture, out _inputDuration);
                 }
-                else if (!_hasFps && line.StartsWith(VideoTransforms.EncodingOutputPrefix, StringComparison.Ordinal))
+                else if (!_hasFps && line.StartsWith(VideoProcessing.EncodingOutputPrefix, StringComparison.Ordinal))
                 {
                     var parts = line.Split([' ', ','], StringSplitOptions.RemoveEmptyEntries);
                     for (int i = 1; i < parts.Length; i++)

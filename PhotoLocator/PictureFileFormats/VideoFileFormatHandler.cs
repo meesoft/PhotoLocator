@@ -14,7 +14,7 @@ namespace PhotoLocator.PictureFileFormats
     {
         public static (BitmapSource, DateTime?, Location?, string?) LoadFromFile(string fullPath, int maxWidth, ISettings settings, CancellationToken ct)
         {
-            var videoTransforms = new VideoTransforms(settings);
+            var videoTransforms = new VideoProcessing(settings);
             var vf = maxWidth < int.MaxValue ? $"-vf \"scale={maxWidth}:-1\"" : "";
             var args = $"-i \"{fullPath}\" {vf} -frames:0 1";
             BitmapSource? result = null;
@@ -46,16 +46,16 @@ namespace PhotoLocator.PictureFileFormats
                                 location = new Location(latitude, longitude);
                         }
                     }
-                    else if (duration is null && line.StartsWith(VideoTransforms.DurationOutputPrefix, StringComparison.Ordinal))
+                    else if (duration is null && line.StartsWith(VideoProcessing.DurationOutputPrefix, StringComparison.Ordinal))
                     {
                         var parts = line.Split([' ', ','], StringSplitOptions.RemoveEmptyEntries);
                         if (parts.Length > 1)
                             duration = parts[1];
                     }
-                    else if (metadata is null && line.StartsWith(VideoTransforms.EncodingOutputPrefix, StringComparison.Ordinal))
+                    else if (metadata is null && line.StartsWith(VideoProcessing.EncodingOutputPrefix, StringComparison.Ordinal))
                     {
-                        var i = Math.Max(VideoTransforms.EncodingOutputPrefix.Length,
-                            line.IndexOf(": ", VideoTransforms.EncodingOutputPrefix.Length, StringComparison.Ordinal));
+                        var i = Math.Max(VideoProcessing.EncodingOutputPrefix.Length,
+                            line.IndexOf(": ", VideoProcessing.EncodingOutputPrefix.Length, StringComparison.Ordinal));
                         metadata = (duration is null ? null : duration + ",") + line[(i + 1)..];
                     }
                 }, ct), ct).GetAwaiter().GetResult();
