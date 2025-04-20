@@ -44,6 +44,7 @@ namespace PhotoLocator
         DispatcherOperation? _fileSystemWatcherUpdate;
         double _loadImagesProgress;
         bool _titleUpdatePending;
+        bool _loadPicturesPending;
         readonly List<(string Path, BitmapSource Picture)> _pictureCache = [];
         readonly HashSet<string> _gpsTraceFiles = [];
 
@@ -421,7 +422,7 @@ namespace PhotoLocator
                 Clipboard.SetFileDropList(collection);
         });
 
-        public ICommand PasteLocationCommand => new RelayCommand(o =>
+        public ICommand PasteLocationCommand => new RelayCommand(async o =>
         {
             if (Clipboard.ContainsText())
             {
@@ -457,7 +458,7 @@ namespace PhotoLocator
                     if (!File.Exists(fileName))
                     {
                         GeneralFileFormatHandler.SaveToFile(image, fileName);
-                        AddOrUpdateItem(fileName, false, true);
+                        await AddOrUpdateItemAsync(fileName, false, true);
                         break;
                     }
                 }
@@ -803,7 +804,7 @@ namespace PhotoLocator
             }, ct), "Moving...", focusedItem);
         });
 
-        public ICommand CreateFolderCommand => new RelayCommand(o =>
+        public ICommand CreateFolderCommand => new RelayCommand(async o =>
         {
             if (string.IsNullOrEmpty(PhotoFolderPath))
                 return;
@@ -814,7 +815,7 @@ namespace PhotoLocator
                 return;
             folderName = Path.Combine(PhotoFolderPath, folderName);
             Directory.CreateDirectory(folderName);
-            AddOrUpdateItem(folderName, true, true);
+            await AddOrUpdateItemAsync(folderName, true, true);
         });
 
         public ICommand ExecuteSelectedCommand => new RelayCommand(o =>
@@ -1032,8 +1033,7 @@ namespace PhotoLocator
                 if (!string.IsNullOrEmpty(PhotoFolderPath))
                 {
                     await AppendFilesAsync(Directory.EnumerateFiles(PhotoFolderPath));
-                    if (_loadPicturesTask is null)
-                        await LoadPicturesAsync();
+                    await LoadPicturesAsync();
                 }
             });
         }
@@ -1078,11 +1078,11 @@ namespace PhotoLocator
                     var ext = Path.GetExtension(e.FullPath).ToLowerInvariant();
                     if (File.Exists(e.FullPath) && PhotoFileExtensions.Contains(ext))
                     {
-                        AddOrUpdateItem(e.FullPath, false, false);
+                        await AddOrUpdateItemAsync(e.FullPath, false, false);
                     }
                     else if (Directory.Exists(e.FullPath))
                     {
-                        AddOrUpdateItem(e.FullPath, true, false);
+                        await AddOrUpdateItemAsync(e.FullPath, true, false);
                     }
                     else if (ext is ".gpx" or ".kml")
                     {
@@ -1106,26 +1106,20 @@ namespace PhotoLocator
                     {
                         Log.Write("Reloading thumbnail for changed file " + changed.Name);
                         changed.ThumbnailImage = null;
-                        if (_loadPicturesTask != null)
-                            _loadPicturesTask.ContinueWith(_ => Application.Current.Dispatcher.BeginInvoke(LoadPicturesAsync), TaskScheduler.Default).WithExceptionLogging();
-                        else
-                            LoadPicturesAsync().WithExceptionLogging();
+                        await LoadPicturesAsync();
                     }
                 }
             });
         }
 
-        public void AddOrUpdateItem(string fullPath, bool isDirectory, bool selectItem)
+        public async Task AddOrUpdateItemAsync(string fullPath, bool isDirectory, bool selectItem) 
         {
             var item = Items.InsertOrdered(new PictureItemViewModel(fullPath, isDirectory, HandleFilePropertyChanged, Settings));
             item.ThumbnailImage = null;
             _pictureCache.RemoveAll(cache => cache.Path == item.FullPath);
-            if (_loadPicturesTask != null)
-                _loadPicturesTask.ContinueWith(_ => Application.Current.Dispatcher.BeginInvoke(LoadPicturesAsync), TaskScheduler.Default).WithExceptionLogging();
-            else
-                LoadPicturesAsync().WithExceptionLogging();
             if (selectItem)
                 SelectIfNotNull(item);
+            await LoadPicturesAsync();
         }
 
         private void HandleFilePropertyChanged(object? sender, PropertyChangedEventArgs e)
@@ -1163,34 +1157,52 @@ namespace PhotoLocator
                 }
             }
         }
-
+        
         public async Task LoadPicturesAsync()
         {
+            AssertInMainThread();
+            if (_loadPicturesTask is not null && !_loadPicturesTask.IsCompleted)
+            {
+                _loadPicturesPending = true;
+                return;
+            }
+
             _loadCancellation?.Dispose();
             _loadCancellation = new CancellationTokenSource();
+            var ct = _loadCancellation.Token;
 
-            var candidates = Items.Where(item => item.ThumbnailImage is null).ToArray();
-            if (candidates.Length == 0)
-                return;
-            // Reorder so that we take alternately one from the top and one from the bottom
-            var reordered = new PictureItemViewModel[candidates.Length];
-            int iStart = 0;
-            int iEnd = candidates.Length;
-            for (int i = 0; i < candidates.Length; i++)
-                reordered[i] = (i & 1) == 0 ? candidates[iStart++] : candidates[--iEnd];
-            int progress = 0;
-            _loadImagesProgress = 0;
-            _loadPicturesTask = Parallel.ForEachAsync(reordered,
-                new ParallelOptions { MaxDegreeOfParallelism = 2, CancellationToken = _loadCancellation.Token },
-                async (item, ct) =>
-                {
-                    await item.LoadThumbnailAndMetadataAsync(ct);
-                    if (item.IsSelected && item.GeoTag != null)
-                        MapCenter = item.GeoTag;
-                    _loadImagesProgress = ++progress / (double)reordered.Length;
-                });
-            await _loadPicturesTask;
-            _loadPicturesTask = null;
+            do
+            {
+                _loadPicturesPending = false;
+                var candidates = Items.Where(item => item.ThumbnailImage is null).ToArray();
+                if (candidates.Length == 0)
+                    return;
+                // Reorder so that we take alternately one from the top and one from the bottom
+                var reordered = new PictureItemViewModel[candidates.Length];
+                int iStart = 0;
+                int iEnd = candidates.Length;
+                for (int i = 0; i < candidates.Length; i++)
+                    reordered[i] = (i & 1) == 0 ? candidates[iStart++] : candidates[--iEnd];
+                int progress = 0;
+                _loadImagesProgress = 0;
+                _loadPicturesTask = Parallel.ForEachAsync(reordered,
+                    new ParallelOptions { MaxDegreeOfParallelism = 2, CancellationToken = ct },
+                    async (item, ct) =>
+                    {
+                        await item.LoadThumbnailAndMetadataAsync(ct);
+                        if (item.IsSelected && item.GeoTag != null)
+                            MapCenter = item.GeoTag;
+                        _loadImagesProgress = ++progress / (double)reordered.Length;
+                    });
+                await _loadPicturesTask;
+                _loadPicturesTask = null;
+            }
+            while (_loadPicturesPending && !ct.IsCancellationRequested);
+        }
+
+        private static void AssertInMainThread()
+        {
+            Debug.Assert(App.Current.Dispatcher.Thread == Thread.CurrentThread);
         }
 
         public async Task WaitForPicturesLoadedAsync()
@@ -1201,13 +1213,13 @@ namespace PhotoLocator
                     progressCallback(_loadImagesProgress);
                     while (_loadPicturesTask != null && await Task.WhenAny(_loadPicturesTask, Task.Delay(TimeSpan.FromSeconds(1), ct)) != _loadPicturesTask)
                         progressCallback(_loadImagesProgress);
-                    _loadPicturesTask = null;
                 }, "Loading images");
         }
 
         private void CancelPictureLoading()
         {
             _loadCancellation?.Cancel();
+            _loadCancellation?.Dispose();
             _loadCancellation = null;
             _loadPicturesTask = null;
         }

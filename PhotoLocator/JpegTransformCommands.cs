@@ -83,7 +83,7 @@ namespace PhotoLocator
                     }, ct);
                 }
                 await Task.Run(() => JpegTransformations.Crop(sourceFileName, targetFileName, cropRectangle), ct);
-                _mainViewModel.AddOrUpdateItem(targetFileName, false, true);
+                await _mainViewModel.AddOrUpdateItemAsync(targetFileName, false, true);
             }, "Cropping");
         }
 
@@ -160,7 +160,7 @@ namespace PhotoLocator
                 var sameDir = Path.GetDirectoryName(selectedItem.FullPath) == Path.GetDirectoryName(dlg.FileName);
                 await Task.Run(() => GeneralFileFormatHandler.SaveToFile(localContrastViewModel.PreviewPictureSource!, dlg.FileName, metadata, _mainViewModel.Settings.JpegQuality));
                 if (sameDir)
-                    _mainViewModel.AddOrUpdateItem(dlg.FileName, false, false);
+                    await _mainViewModel.AddOrUpdateItemAsync(dlg.FileName, false, false);
             }
         }
 

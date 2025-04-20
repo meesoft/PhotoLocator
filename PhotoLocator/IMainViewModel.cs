@@ -16,7 +16,7 @@ namespace PhotoLocator
 
         Task SelectFileAsync(string fileName);
 
-        void AddOrUpdateItem(string fullPath, bool isDirectory, bool selectItem);
+        Task AddOrUpdateItemAsync(string fullPath, bool isDirectory, bool selectItem);
 
         string? ProgressBarText { get; set; }
 

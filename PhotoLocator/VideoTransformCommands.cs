@@ -686,7 +686,7 @@ namespace PhotoLocator
                 var args = $"{InputArguments} -filter_complex \"[0:v:0]pad=iw*2:ih[bg]; [bg][1:v:0]overlay=w\" -y \"{outFileName}\"";
                 await _videoTransforms.RunFFmpegAsync(args, ProcessStdError, ct);
             }, "Processing");
-            _mainViewModel.AddOrUpdateItem(outFileName, false, true);
+            await _mainViewModel.AddOrUpdateItemAsync(outFileName, false, true);
         });
 
         public ICommand GenerateMaxFrame => new RelayCommand(o =>
@@ -881,7 +881,7 @@ namespace PhotoLocator
                 if (IsStabilizeChecked)
                     File.Delete(TransformsFileName);
             }, "Processing");
-            _mainViewModel.AddOrUpdateItem(outFileName, false, true);
+            await _mainViewModel.AddOrUpdateItemAsync(outFileName, false, true);
             if (!string.IsNullOrEmpty(message))
                 MessageBox.Show(App.Current.MainWindow, message);
         });
