@@ -86,7 +86,7 @@ namespace PhotoLocator.Helpers
                     imageCallback(image);
                 }
             }
-            catch (EndOfStreamException) { }
+            catch (EndOfStreamException) { } // End of source video
             catch (OperationCanceledException)
             {
                 process.Kill();

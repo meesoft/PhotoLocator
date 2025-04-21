@@ -78,7 +78,7 @@ namespace PhotoLocator
                         {
                             metadata = ExifHandler.LoadMetadata(file);
                         }
-                        catch { }
+                        catch { } // Ignore if there is no supported metadata
                         GeneralFileFormatHandler.SaveToFile(pictureSource, sourceFileName, metadata, _mainViewModel.Settings.JpegQuality);
                     }, ct);
                 }
