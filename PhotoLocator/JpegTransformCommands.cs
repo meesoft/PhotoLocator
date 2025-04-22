@@ -67,7 +67,7 @@ namespace PhotoLocator
             await _mainViewModel.RunProcessWithProgressBarAsync(async (progressCallback, ct) =>
             {
                 progressCallback(-1);
-                using var pause = _mainViewModel.PauseFileSystemWatcher();
+                await using var pause = _mainViewModel.PauseFileSystemWatcher();
                 if (sourceFileName != SelectedItem.FullPath)
                 {
                     using var file = await FileHelpers.OpenFileWithRetryAsync(SelectedItem.FullPath, ct);

@@ -516,7 +516,7 @@ namespace PhotoLocator
             var updatedPictures = Items.Where(i => i.GeoTagUpdated).ToArray();
             if (updatedPictures.Length == 0)
                 return;
-            using var pause = PauseFileSystemWatcher();
+            await using var pause = PauseFileSystemWatcher();
             await RunProcessWithProgressBarAsync(async (progressCallback, ct) =>
             {
                 int i = 0;
@@ -541,7 +541,7 @@ namespace PhotoLocator
             var renameWin = new RenameWindow(selectedItems, Items, focused!, Settings);
             renameWin.Owner = App.Current.MainWindow;
             renameWin.DataContext = renameWin;
-            using (PauseFileSystemWatcher())
+            await using (PauseFileSystemWatcher())
                 renameWin.ShowDialog();
             renameWin.DataContext = null;
             _pictureCache.Clear();
@@ -720,7 +720,7 @@ namespace PhotoLocator
                 return;
             var selectedIndex = Items.IndexOf(SelectedItem!);
             SelectedItem = null;
-            using var pause = PauseFileSystemWatcher();
+            await using var pause = PauseFileSystemWatcher();
             await RunProcessWithProgressBarAsync((progressCallback, ct) => Task.Run(() =>
             {
                 int i = 0;
@@ -1022,7 +1022,7 @@ namespace PhotoLocator
         }
 
         /// <summary> Note that events during pause will be lost </summary>
-        public IDisposable PauseFileSystemWatcher()
+        public IAsyncDisposable PauseFileSystemWatcher()
         {
             if (_fileSystemWatcher is not null)
                 _fileSystemWatcher.EnableRaisingEvents = false;

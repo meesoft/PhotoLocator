@@ -677,7 +677,7 @@ namespace PhotoLocator
                 return;
             var outFileName = dlg.FileName;
 
-            using var pause = _mainViewModel.PauseFileSystemWatcher();
+            await using var pause = _mainViewModel.PauseFileSystemWatcher();
             await _mainViewModel.RunProcessWithProgressBarAsync(async (progressCallback, ct) =>
             {
                 progressCallback(-1);
@@ -785,7 +785,7 @@ namespace PhotoLocator
                 outFileName = dlg.FileName;
             }
 
-            using var pause = _mainViewModel.PauseFileSystemWatcher();
+            await using var pause = _mainViewModel.PauseFileSystemWatcher();
             string? message = null;
             await _mainViewModel.RunProcessWithProgressBarAsync(async (progressCallback, ct) =>
             {

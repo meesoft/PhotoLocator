@@ -22,6 +22,6 @@ namespace PhotoLocator
 
         Task RunProcessWithProgressBarAsync(Func<Action<double>, CancellationToken, Task> body, string text, PictureItemViewModel? focusItem = null);
 
-        IDisposable PauseFileSystemWatcher();
+        IAsyncDisposable PauseFileSystemWatcher();
     }
 }

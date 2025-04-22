@@ -1,19 +1,20 @@
 ﻿using System;
+using System.Threading.Tasks;
 
 namespace PhotoLocator.Helpers
 {
-    sealed class ActionDisposable : IDisposable
+    sealed class ActionDisposable : IAsyncDisposable
     {
-        private readonly Action _callback;
+        private readonly Func<ValueTask> _callback;
 
-        public ActionDisposable(Action callback)
+        public ActionDisposable(Func<ValueTask> callback)
         {
             _callback = callback;
         }
 
-        public void Dispose()
+        public ValueTask DisposeAsync()
         {
-            _callback();
+            return _callback();
         }
     }
 }
