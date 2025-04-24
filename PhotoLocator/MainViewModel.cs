@@ -904,10 +904,8 @@ namespace PhotoLocator
             {
                 metadataWin.Owner = App.Current.MainWindow;
                 metadataWin.Title = SelectedItem.Name;
-                metadataWin.Metadata = String.Join("\n", ExifHandler.EnumerateMetadata(SelectedItem.FullPath));
+                metadataWin.Metadata = String.Join("\n", ExifHandler.EnumerateMetadata(SelectedItem.FullPath, Settings.ExifToolPath));
             }
-            if (string.IsNullOrEmpty(metadataWin.Metadata))
-                throw new UserMessageException("Unable to list metadata for file");
             metadataWin.DataContext = metadataWin;
             metadataWin.ShowDialog();
         });

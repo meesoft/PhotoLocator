@@ -254,34 +254,13 @@ namespace PhotoLocator
         {
             try
             {
-                if (IsVideo)
-                    return;
-                GeoTag = await Task.Run(async () =>
-                {
-                    using var file = await FileHelpers.OpenFileWithRetryAsync(FullPath, ct);
-                    var metadata = ExifHandler.LoadMetadata(file);
-                    if (metadata is null)
-                        return null;
-                    var orientation = metadata.GetQuery(ExifHandler.OrientationQuery1) as ushort? ?? metadata.GetQuery(ExifHandler.OrientationQuery2) as ushort? ?? 0;
-                    Rotation = orientation switch
-                    {
-                        3 => Rotation.Rotate180,
-                        6 => Rotation.Rotate90,
-                        8 => Rotation.Rotate270,
-                        _ => Rotation.Rotate0
-                    };
-                    _timeStamp = ExifHandler.GetTimeStamp(metadata);
-                    _metadataString ??= ExifHandler.GetMetadataString(metadata);
-                    return ExifHandler.GetGeotag(metadata);
-                }, ct);
+                (GeoTag, _timeStamp, _metadataString, Rotation) = await Task.Run(() => ExifHandler.DecodeMetadataAsync(FullPath, IsVideo, _settings?.ExifToolPath, ct), ct);
                 GeoTagSaved = GeoTag != null;
             }
-            catch (NotSupportedException)
-            {
-            }
+            catch (NotSupportedException) { }
             catch (Exception ex)
             {
-                Log.Write($"Failed to loads metadata for {Name}: {ex}");
+                Log.Write($"Failed to load metadata for {Name}: {ex}");
                 ErrorMessage = ex.Message;
             }
         }
@@ -313,7 +292,7 @@ namespace PhotoLocator
                 try
                 {
                     var (result, timestamp, location, metadata) = VideoFileFormatHandler.LoadFromFile(FullPath, maxPixelWidth, _settings, ct);
-                    if (metadata is not null)
+                    if (metadata is not null && string.IsNullOrEmpty(MetadataString))
                         MetadataString = metadata;
                     if (location is not null && GeoTag is null)
                     {

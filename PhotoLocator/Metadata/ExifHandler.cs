@@ -272,6 +272,7 @@ namespace PhotoLocator.Metadata
 
         public static void SetJpegGeotag(string sourceFileName, string targetFileName, Location location)
         {
+            Log.Write($"Updating '{targetFileName}' using JpegBitmapEncoder");
             using var memoryStream = new MemoryStream();
             using (var originalFileStream = File.OpenRead(sourceFileName))
             {
@@ -308,7 +309,7 @@ namespace PhotoLocator.Metadata
             }
 
             var startInfo = new ProcessStartInfo(exifToolPath!,
-                //"-m " +
+                //"-m " + // Ignore minor errors and warnings
                 $"-GPSLatitude={location.Latitude.ToString(CultureInfo.InvariantCulture)} " +
                 $"-GPSLatitudeRef={Math.Sign(location.Latitude)} " +
                 $"-GPSLongitude={location.Longitude.ToString(CultureInfo.InvariantCulture)} " +
@@ -327,6 +328,7 @@ namespace PhotoLocator.Metadata
             var process = Process.Start(startInfo) ?? throw new IOException("Failed to start ExifTool");
             var output = await process.StandardOutput.ReadToEndAsync(ct) + '\n' + await process.StandardError.ReadToEndAsync(ct);
             await process.WaitForExitAsync(ct);
+            Log.Write(output);
             if (process.ExitCode != 0)
                 throw new UserMessageException(output);
         }
@@ -482,13 +484,33 @@ namespace PhotoLocator.Metadata
             return altitudeRef == 1 ? -altitude.ToDouble() : altitude.ToDouble();
         }
 
-        public static IEnumerable<string> EnumerateMetadata(string fileName)
+        public static IEnumerable<string> EnumerateMetadata(string fileName, string? exifToolPath)
         {
-            using var file = File.OpenRead(fileName);
-            var metadata = LoadMetadata(file);
-            if (metadata is null)
-                return [];
-            return EnumerateMetadata(metadata, string.Empty).ToArray();
+            try
+            {
+                using var file = File.OpenRead(fileName);
+                var metadata = LoadMetadata(file);
+                if (metadata is null || !metadata.Any())
+                    throw new UserMessageException("Unable to list metadata for file");
+                return EnumerateMetadata(metadata, string.Empty).ToArray();
+            }
+            catch (Exception ex) when (ex is UserMessageException or NotSupportedException)
+            {
+                if (string.IsNullOrEmpty(exifToolPath))
+                    throw;
+                return EnumerateMetadataUsingExifTool(fileName, exifToolPath);
+            }
+        }
+
+        private static string[] EnumerateMetadataUsingExifTool(string fileName, string exifToolPath)
+        {
+            var startInfo = new ProcessStartInfo(exifToolPath, $"\"{fileName}\" -s2 -c +%.6f"); // -H to add hexadecimal values
+            startInfo.CreateNoWindow = true;
+            startInfo.RedirectStandardOutput = true;
+            var process = Process.Start(startInfo) ?? throw new IOException("Failed to start ExifTool");
+            var output = process.StandardOutput.ReadToEnd();
+            process.WaitForExit();
+            return output.Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
         }
 
         public static IEnumerable<string> EnumerateMetadata(BitmapMetadata metadata, string query)
@@ -585,6 +607,88 @@ namespace PhotoLocator.Metadata
                 metadataStrings.Add(timestamp.Value.ToString("G", CultureInfo.CurrentCulture));
 
             return string.Join(", ", metadataStrings);
+        }
+
+        public static async Task<(Location?, DateTime?, string?, Rotation)> DecodeMetadataAsync(string fileName, bool isVideo, string? exifToolPath, CancellationToken ct)
+        {
+            if (isVideo && !string.IsNullOrEmpty(exifToolPath))
+                return DecodeMetadata(fileName, exifToolPath);
+            try
+            {
+                using var file = await FileHelpers.OpenFileWithRetryAsync(fileName, ct);
+                var metadata = ExifHandler.LoadMetadata(file);
+                if (metadata is null)
+                    return (null, null, null, Rotation.Rotate0);
+                var orientation = metadata.GetQuery(ExifHandler.OrientationQuery1) as ushort? ?? metadata.GetQuery(ExifHandler.OrientationQuery2) as ushort? ?? 0;
+                var rotation = orientation switch
+                {
+                    3 => Rotation.Rotate180,
+                    6 => Rotation.Rotate90,
+                    8 => Rotation.Rotate270,
+                    _ => Rotation.Rotate0
+                };
+                return (ExifHandler.GetGeotag(metadata), ExifHandler.GetTimeStamp(metadata), ExifHandler.GetMetadataString(metadata), rotation);
+            }
+            catch (NotSupportedException)
+            {
+                if (string.IsNullOrEmpty(exifToolPath))
+                    throw;
+                return DecodeMetadata(fileName, exifToolPath);
+            }
+        }
+
+        public static (Location?, DateTime?, string?, Rotation) DecodeMetadata(string fileName, string exifToolPath)
+        {
+            var metadata = new Dictionary<string, string>();
+            foreach (var line in EnumerateMetadataUsingExifTool(fileName, exifToolPath))
+            {
+                var index = line.IndexOf(':', StringComparison.Ordinal);
+                if (index < line.Length - 2)
+                    metadata[line[..index]] = line[(index + 2)..];
+            }
+
+            var metadataStrings = new List<string>();
+
+            if (metadata.TryGetValue("Model", out var value) || metadata.TryGetValue("Encoder", out value))
+                metadataStrings.Add(value.Trim());
+            if (metadata.TryGetValue("ApertureValue", out value))
+                metadataStrings.Add("f/" + value.Trim());
+            if (metadata.TryGetValue("FocalLength", out value))
+                metadataStrings.Add(value.Trim());
+            if (metadata.TryGetValue("ImageSize", out value))
+                metadataStrings.Add(value.Trim());
+            if (metadata.TryGetValue("Duration", out value))
+                metadataStrings.Add(value.Trim());
+            if (metadata.TryGetValue("VideoFrameRate", out value))
+                metadataStrings.Add(value.Trim()+"fps");
+            if (metadata.TryGetValue("AvgBitrate", out value))
+                metadataStrings.Add(value.Trim());
+
+            Location? location = null;
+            if (metadata.TryGetValue("GPSPosition", out var locationStr) || 
+                metadata.TryGetValue("GPSCoordinates", out locationStr))
+            {
+                var parts = locationStr.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+                if (parts.Length >= 4 && 
+                    double.TryParse(parts[0], CultureInfo.InvariantCulture, out var latitude) && 
+                    double.TryParse(parts[2], CultureInfo.InvariantCulture, out var longitude))
+                    location = new Location(latitude, longitude);
+            }
+
+            DateTime? creationTimestamp = null;
+            if (metadata.TryGetValue("CreateDate", out var timestampStr) ||
+                metadata.TryGetValue("CreationDate", out timestampStr) ||
+                metadata.TryGetValue("DateTimeOriginal", out timestampStr))
+            {
+                if (DateTime.TryParseExact(timestampStr, "yyyy:MM:dd HH:mm:ss", CultureInfo.InvariantCulture, DateTimeStyles.AllowWhiteSpaces, out var timestamp) ||
+                    DateTime.TryParseExact(timestampStr, "yyyy:MM:dd HH:mm:sszzz", CultureInfo.InvariantCulture, DateTimeStyles.AllowWhiteSpaces, out timestamp))
+                {
+                    creationTimestamp = timestamp;
+                    metadataStrings.Add(timestamp.ToString("G", CultureInfo.CurrentCulture));
+                }
+            }
+
+            return (location, creationTimestamp, metadataStrings.Count > 0 ? string.Join(", ", metadataStrings) : null, Rotation.Rotate0);
         }
     }
 }
