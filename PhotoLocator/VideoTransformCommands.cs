@@ -42,7 +42,7 @@ namespace PhotoLocator
         const string TransformsFileName = "transforms.trf";
         const string SaveVideoFilter = "MP4|*.mp4";
         readonly IMainViewModel _mainViewModel;
-        readonly VideoTransforms _videoTransforms;
+        readonly VideoProcessing _videoTransforms;
         Action<double>? _progressCallback;
         double _progressOffset, _progressScale;
         TimeSpan _inputDuration;
@@ -53,8 +53,9 @@ namespace PhotoLocator
         public VideoTransformCommands(IMainViewModel mainViewModel)
         {
             _selectedVideoFormat = VideoFormats[DefaultVideoFormatIndex];
+            _selectedEffect = Effects[0];
             _mainViewModel = mainViewModel;
-            _videoTransforms = new VideoTransforms(mainViewModel.Settings);
+            _videoTransforms = new VideoProcessing(mainViewModel.Settings);
             UpdateProcessArgs();
             UpdateOutputArgs();
         }
@@ -215,6 +216,63 @@ namespace PhotoLocator
             }
         }
         string _scaleTo = "w:h";
+
+        public ObservableCollection<ComboBoxItem> Effects { get; } = [
+            new ComboBoxItem { Content = "None" },
+            new ComboBoxItem { Content = "Rotate 90° clockwise", Tag = "transpose=1" },
+            new ComboBoxItem { Content = "Rotate 90° counterclockwise", Tag = "transpose=2" },
+            new ComboBoxItem { Content = "Rotate 180°", Tag = "transpose=2,transpose=2" },
+            new ComboBoxItem { Content = "Mirror left half to right", Tag = "crop=iw/2:ih:0:0,split[left][tmp];[tmp]hflip[right];[left][right] hstack" },
+            new ComboBoxItem { Content = "Mirror top half to bottom", Tag = "crop=iw:ih/2:0:0,split[top][tmp];[tmp]vflip[bottom];[top][bottom] vstack" },
+            new ComboBoxItem { Content = "Normalize", Tag = ( "normalize=smoothing={0}:independence=0", "50" ) },
+            new ComboBoxItem { Content = "Saturation", Tag = ( "eq=saturation={0}", "1.3" ) },
+            new ComboBoxItem { Content = "High contrast", Tag = ( "eq=brightness=0.05:contrast={0}", "1.3" ) },
+            new ComboBoxItem { Content = "Denoise (atadenoise)", Tag = ( "atadenoise=s={0}", "9" ) },
+            new ComboBoxItem { Content = "Denoise (hqdn3d)", Tag = ( "hqdn3d=luma_spatial={0}", "4" ) },
+            new ComboBoxItem { Content = "Denoise (nlmeans)", Tag = ( "nlmeans=s={0}", "1.0" ) },
+            new ComboBoxItem { Content = "Add noise", Tag = ( "noise=c0s={0}:c0f=t+u", "60" ) },
+            new ComboBoxItem { Content = "Sharpen", Tag = ( "unsharp=7:7:{0}", "2.5" ) },
+        ];
+
+        public ComboBoxItem SelectedEffect
+        {
+            get => _selectedEffect;
+            set
+            {
+                if (value is null)
+                    return;
+                if (SetProperty(ref _selectedEffect, value))
+                {
+                    if (_selectedEffect.Tag is ValueTuple<string, string> effectTuple)
+                    {
+                        IsParameterizedEffect = true;
+                        _effectStrength = effectTuple.Item2;
+                    }
+                    else
+                    {
+                        IsParameterizedEffect = false;
+                        _effectStrength = null;
+                    }
+                    PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(EffectStrength)));
+                    PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(IsParameterizedEffect)));
+                    UpdateProcessArgs();
+                }
+            }
+        }
+        ComboBoxItem _selectedEffect;
+
+        public bool IsParameterizedEffect { get; private set; }
+
+        public string? EffectStrength
+        {
+            get => _effectStrength;
+            set
+            {
+                if (SetProperty(ref _effectStrength, value?.Trim().Replace(',', '.')))
+                    UpdateProcessArgs();
+            }
+        }
+        string? _effectStrength;
 
         public bool IsStabilizeChecked
         {
@@ -528,6 +586,10 @@ namespace PhotoLocator
                 filters.Add($"vidstabtransform=smoothing={SmoothFrames}"
                     + (IsTripodChecked ? ":tripod=1" : null)
                     + (IsBicubicStabilizeChecked ? ":interpol=bicubic" : null));
+            if (SelectedEffect.Tag is string effect)
+                filters.Add(effect);
+            else if (_selectedEffect.Tag is ValueTuple<string, string> effectTuple)
+                filters.Add(string.Format(CultureInfo.InvariantCulture, effectTuple.Item1, EffectStrength));
             if (IsSpeedupChecked)
                 filters.Add($"setpts=PTS/({SpeedupBy})");
             if (!string.IsNullOrEmpty(FrameRate))
@@ -615,7 +677,7 @@ namespace PhotoLocator
                 return;
             var outFileName = dlg.FileName;
 
-            using var pause = _mainViewModel.PauseFileSystemWatcher();
+            await using var pause = _mainViewModel.PauseFileSystemWatcher();
             await _mainViewModel.RunProcessWithProgressBarAsync(async (progressCallback, ct) =>
             {
                 progressCallback(-1);
@@ -624,7 +686,7 @@ namespace PhotoLocator
                 var args = $"{InputArguments} -filter_complex \"[0:v:0]pad=iw*2:ih[bg]; [bg][1:v:0]overlay=w\" -y \"{outFileName}\"";
                 await _videoTransforms.RunFFmpegAsync(args, ProcessStdError, ct);
             }, "Processing");
-            _mainViewModel.AddOrUpdateItem(outFileName, false, true);
+            await _mainViewModel.AddOrUpdateItemAsync(outFileName, false, true);
         });
 
         public ICommand GenerateMaxFrame => new RelayCommand(o =>
@@ -640,6 +702,13 @@ namespace PhotoLocator
             SelectedVideoFormat = VideoFormats.First();
             ProcessSelected.Execute(null);
         });
+
+        internal void CropSelected(Rect cropRectangle)
+        {
+            _cropWindow = $"{cropRectangle.Width:0}:{cropRectangle.Height:0}:{cropRectangle.X:0}:{cropRectangle.Y:0}";
+            IsCropChecked = true;
+            ProcessSelected.Execute(null);
+        }
 
         public ICommand ProcessSelected => new RelayCommand(async o =>
         {
@@ -716,7 +785,7 @@ namespace PhotoLocator
                 outFileName = dlg.FileName;
             }
 
-            using var pause = _mainViewModel.PauseFileSystemWatcher();
+            await using var pause = _mainViewModel.PauseFileSystemWatcher();
             string? message = null;
             await _mainViewModel.RunProcessWithProgressBarAsync(async (progressCallback, ct) =>
             {
@@ -812,7 +881,7 @@ namespace PhotoLocator
                 if (IsStabilizeChecked)
                     File.Delete(TransformsFileName);
             }, "Processing");
-            _mainViewModel.AddOrUpdateItem(outFileName, false, true);
+            await _mainViewModel.AddOrUpdateItemAsync(outFileName, false, true);
             if (!string.IsNullOrEmpty(message))
                 MessageBox.Show(App.Current.MainWindow, message);
         });
@@ -860,13 +929,13 @@ namespace PhotoLocator
                 }
                 //Duration: 00:00:10.44, start: 0.000000, bitrate: 67364 kb / s
                 //Stream #0:0[0x1](eng): Video: h264 (High) (avc1 / 0x31637661), yuv420p(tv, bt709, progressive), 3840x2160 [SAR 1:1 DAR 16:9], 67360 kb/s, 25 fps, 25 tbr, 12800 tbn (default)
-                else if (!_hasDuration && line.StartsWith(VideoTransforms.DurationOutputPrefix, StringComparison.Ordinal))
+                else if (!_hasDuration && line.StartsWith(VideoProcessing.DurationOutputPrefix, StringComparison.Ordinal))
                 {
                     var parts = line.Split([' ', ','], StringSplitOptions.RemoveEmptyEntries);
                     if (parts.Length > 1)
                         _hasDuration = TimeSpan.TryParse(parts[1], CultureInfo.InvariantCulture, out _inputDuration);
                 }
-                else if (!_hasFps && line.StartsWith(VideoTransforms.EncodingOutputPrefix, StringComparison.Ordinal))
+                else if (!_hasFps && line.StartsWith(VideoProcessing.EncodingOutputPrefix, StringComparison.Ordinal))
                 {
                     var parts = line.Split([' ', ','], StringSplitOptions.RemoveEmptyEntries);
                     for (int i = 1; i < parts.Length; i++)

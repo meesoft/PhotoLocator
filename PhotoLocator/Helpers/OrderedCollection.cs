@@ -51,7 +51,7 @@ namespace PhotoLocator.Helpers
         }
         private string? _filterText;
 
-        /// <summary> Return new item or existing item if one with the same name already exists </summary>
+        /// <summary> Return new item or existing item if one with the same name and path already exists </summary>
         public PictureItemViewModel InsertOrdered(PictureItemViewModel item)
         {
             var index = BinarySearch(item);

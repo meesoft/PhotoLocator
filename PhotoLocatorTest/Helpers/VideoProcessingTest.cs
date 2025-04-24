@@ -5,7 +5,7 @@ using System.Windows.Media.Imaging;
 namespace PhotoLocator.Helpers
 {
     [TestClass]
-    public class VideoTransformsTest
+    public class VideoProcessingTest
     {
         const string FFmpegPath = @"";
         const string SourceVideoPath = @"";
@@ -16,7 +16,7 @@ namespace PhotoLocator.Helpers
             if (string.IsNullOrEmpty(FFmpegPath))
                 Assert.Inconclusive("FFmpegPath not set");
             var settings = new ObservableSettings() { FFmpegPath = FFmpegPath };
-            var videoTransforms = new VideoTransforms(settings);
+            var videoTransforms = new VideoProcessing(settings);
 
             var args = $" -i \"{SourceVideoPath}\"";
             int i = 0;
@@ -35,7 +35,7 @@ namespace PhotoLocator.Helpers
             if (string.IsNullOrEmpty(FFmpegPath))
                 Assert.Inconclusive("FFmpegPath not set");
             var settings = new ObservableSettings() { FFmpegPath = FFmpegPath };
-            var videoTransforms = new VideoTransforms(settings);
+            var videoTransforms = new VideoProcessing(settings);
 
             using var frameEnumerator = new QueueEnumerable<BitmapSource>();
 
@@ -56,7 +56,7 @@ namespace PhotoLocator.Helpers
             if (string.IsNullOrEmpty(FFmpegPath))
                 Assert.Inconclusive("FFmpegPath not set");
             var settings = new ObservableSettings() { FFmpegPath = FFmpegPath };
-            var videoTransforms = new VideoTransforms(settings);
+            var videoTransforms = new VideoProcessing(settings);
 
             using var frameEnumerator = new QueueEnumerable<BitmapSource>();
 

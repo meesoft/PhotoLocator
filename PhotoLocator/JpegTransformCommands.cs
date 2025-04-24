@@ -67,14 +67,23 @@ namespace PhotoLocator
             await _mainViewModel.RunProcessWithProgressBarAsync(async (progressCallback, ct) =>
             {
                 progressCallback(-1);
+                await using var pause = _mainViewModel.PauseFileSystemWatcher();
                 if (sourceFileName != SelectedItem.FullPath)
                 {
-                    using var pause = _mainViewModel.PauseFileSystemWatcher();
                     using var file = await FileHelpers.OpenFileWithRetryAsync(SelectedItem.FullPath, ct);
-                    await Task.Run(() => GeneralFileFormatHandler.SaveToFile(pictureSource, sourceFileName, ExifHandler.LoadMetadata(file), _mainViewModel.Settings.JpegQuality), ct);
+                    await Task.Run(() =>
+                    {
+                        BitmapMetadata? metadata = null;
+                        try
+                        {
+                            metadata = ExifHandler.LoadMetadata(file);
+                        }
+                        catch { } // Ignore if there is no supported metadata
+                        GeneralFileFormatHandler.SaveToFile(pictureSource, sourceFileName, metadata, _mainViewModel.Settings.JpegQuality);
+                    }, ct);
                 }
                 await Task.Run(() => JpegTransformations.Crop(sourceFileName, targetFileName, cropRectangle), ct);
-                _mainViewModel.AddOrUpdateItem(targetFileName, false, true);
+                await _mainViewModel.AddOrUpdateItemAsync(targetFileName, false, true);
             }, "Cropping");
         }
 
@@ -151,7 +160,7 @@ namespace PhotoLocator
                 var sameDir = Path.GetDirectoryName(selectedItem.FullPath) == Path.GetDirectoryName(dlg.FileName);
                 await Task.Run(() => GeneralFileFormatHandler.SaveToFile(localContrastViewModel.PreviewPictureSource!, dlg.FileName, metadata, _mainViewModel.Settings.JpegQuality));
                 if (sameDir)
-                    _mainViewModel.AddOrUpdateItem(dlg.FileName, false, false);
+                    await _mainViewModel.AddOrUpdateItemAsync(dlg.FileName, false, false);
             }
         }
 

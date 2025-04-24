@@ -169,6 +169,8 @@ namespace PhotoLocator
 
         private void HandlePictureListBoxPreviewTextInput(object sender, TextCompositionEventArgs e)
         {
+            if (string.IsNullOrEmpty(e.Text))
+                return;
             if (SelectItem(e.Text, PictureListBox.SelectedIndex + 1, _viewModel.Items.Count) ||
                 SelectItem(e.Text, 0, PictureListBox.SelectedIndex))
                 e.Handled = true;
