@@ -3,6 +3,7 @@ using System.Diagnostics;
 using System.Globalization;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
+using static System.Windows.Forms.VisualStyles.VisualStyleElement;
 
 namespace PhotoLocator.Metadata
 {
@@ -246,9 +247,10 @@ namespace PhotoLocator.Metadata
                 Assert.Inconclusive("ExifTool not found");
 
             var setValue = new MapControl.Location(-10, -20);
-            await ExifHandler.SetGeotagAsync(@"TestData\2022-06-17_19.03.02.jpg", @"TestData\2022-06-17_19.03.02.jpg", setValue, ExifToolPath, default);
+            File.Copy(@"TestData\2022-06-17_19.03.02.jpg", @"TestData\2022-06-17_19.03.02_copy.jpg", true);
+            await ExifHandler.SetGeotagAsync(@"TestData\2022-06-17_19.03.02_copy.jpg", @"TestData\2022-06-17_19.03.02_copy.jpg", setValue, ExifToolPath, default);
 
-            var newValue = ExifHandler.GetGeotag(@"TestData\2022-06-17_19.03.02.jpg");
+            var newValue = ExifHandler.GetGeotag(@"TestData\2022-06-17_19.03.02_copy.jpg");
             Assert.AreEqual(setValue, newValue);
         }
 
@@ -279,6 +281,22 @@ namespace PhotoLocator.Metadata
             Assert.IsNotNull(metadata);
             var str = ExifHandler.GetMetadataString(metadata);
             Assert.AreEqual("FC7303, 100.7m, 1/80s, f/2.8, 4.49mm, ISO100, 06/17/2022 19:03:02", str);
+        }
+
+        [TestMethod]
+        public void DecodeMetadata_ShouldDecodeUsingExifTool()
+        {
+            if (!File.Exists(ExifToolPath))
+                Assert.Inconclusive("ExifTool not found");
+
+            Thread.CurrentThread.CurrentCulture = CultureInfo.InvariantCulture;
+
+            var metadata = ExifHandler.DecodeMetadata(@"TestData\2022-06-17_19.03.02.jpg", ExifToolPath);
+
+            Assert.AreEqual("FC7303, f/2.8, 4.5 mm, 341x191, 06/17/2022 19:03:02", metadata.Metadata);
+            Assert.AreEqual(new DateTime(2022, 6, 17, 19, 3, 2), metadata.TimeStamp);
+            Assert.AreEqual(55.4, metadata.Location!.Latitude, 0.1);
+            Assert.AreEqual(11.2, metadata.Location!.Longitude, 0.1);
         }
 
         [TestMethod, Ignore]

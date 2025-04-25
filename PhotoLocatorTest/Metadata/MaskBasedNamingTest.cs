@@ -9,19 +9,13 @@ namespace PhotoLocator.Metadata
         static MaskBasedNaming _renamer;
 #pragma warning restore CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
 
-        class FileInfo : IFileInformation
+        class FileInfo(string fullPath, DateTime? timeStamp) : IFileInformation
         {
-            public FileInfo(string fullPath, DateTime? timeStamp)
-            {
-                FullPath = fullPath;
-                TimeStamp = timeStamp;
-            }
-
             public string Name => Path.GetFileName(FullPath);
 
-            public string FullPath { get; set; }
+            public string FullPath { get; set; } = fullPath;
 
-            public DateTime? TimeStamp { get; set; }
+            public DateTime? TimeStamp { get; set; } = timeStamp;
         }
 
         [ClassInitialize]

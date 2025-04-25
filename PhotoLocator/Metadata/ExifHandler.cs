@@ -637,7 +637,7 @@ namespace PhotoLocator.Metadata
             }
         }
 
-        public static (Location?, DateTime?, string?, Rotation) DecodeMetadata(string fileName, string exifToolPath)
+        public static (Location? Location, DateTime? TimeStamp, string? Metadata, Rotation Rotation) DecodeMetadata(string fileName, string exifToolPath)
         {
             var metadata = new Dictionary<string, string>();
             foreach (var line in EnumerateMetadataUsingExifTool(fileName, exifToolPath))
