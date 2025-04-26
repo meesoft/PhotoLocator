@@ -41,7 +41,7 @@ namespace PhotoLocator
                 foreach (var item in allSelected)
                 {
                     JpegTransformations.Rotate(item.FullPath, item.GetProcessedFileName(), angle); //TODO: Make async
-                    item.Rotation = Rotation.Rotate0;
+                    item.Orientation = Rotation.Rotate0;
                     item.IsChecked = false;
                     progressCallback((double)(++i) / allSelected.Length);
                 }
@@ -56,7 +56,7 @@ namespace PhotoLocator
             {
                 sourceFileName = SelectedItem.FullPath;
                 targetFileName = SelectedItem.GetProcessedFileName();
-                SelectedItem.Rotation = Rotation.Rotate0;
+                SelectedItem.Orientation = Rotation.Rotate0;
             }
             else
             {

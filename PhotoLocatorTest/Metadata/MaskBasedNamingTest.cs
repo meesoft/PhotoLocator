@@ -5,17 +5,15 @@ namespace PhotoLocator.Metadata
     [TestClass]
     public class MaskBasedNamingTest
     {
-#pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
-        static MaskBasedNaming _renamer;
-#pragma warning restore CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
+        static MaskBasedNaming _renamer = null!;
 
         class FileInfo(string fullPath, DateTime? timeStamp) : IFileInformation
         {
             public string Name => Path.GetFileName(FullPath);
 
-            public string FullPath { get; set; } = fullPath;
+            public string FullPath { get; } = fullPath;
 
-            public DateTime? TimeStamp { get; set; } = timeStamp;
+            public DateTime? TimeStamp { get; } = timeStamp;
         }
 
         [ClassInitialize]

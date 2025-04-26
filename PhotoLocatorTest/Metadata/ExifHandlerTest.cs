@@ -3,7 +3,6 @@ using System.Diagnostics;
 using System.Globalization;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
-using static System.Windows.Forms.VisualStyles.VisualStyleElement;
 
 namespace PhotoLocator.Metadata
 {
@@ -293,7 +292,7 @@ namespace PhotoLocator.Metadata
 
             var metadata = ExifHandler.DecodeMetadata(@"TestData\2022-06-17_19.03.02.jpg", ExifToolPath);
 
-            Assert.AreEqual("FC7303, f/2.8, 4.5 mm, 341x191, 06/17/2022 19:03:02", metadata.Metadata);
+            Assert.AreEqual("FC7303, 1/80s, f/2.8, 4.5 mm, ISO 100, 341x191, 06/17/2022 19:03:02", metadata.Metadata);
             Assert.AreEqual(new DateTime(2022, 6, 17, 19, 3, 2), metadata.TimeStamp);
             Assert.AreEqual(55.4, metadata.Location!.Latitude, 0.1);
             Assert.AreEqual(11.2, metadata.Location!.Longitude, 0.1);
