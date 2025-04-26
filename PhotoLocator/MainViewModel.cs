@@ -361,9 +361,7 @@ namespace PhotoLocator
                     PreviewPictureSource = cached.Picture;
                 PreviewPictureTitle = selected.Name + (string.IsNullOrEmpty(selected.MetadataString) ? null : " [" + selected.MetadataString + "]");
             }
-            catch (OperationCanceledException)
-            {
-            }
+            catch (OperationCanceledException) { }
             catch (Exception ex)
             {
                 PreviewPictureSource = null;

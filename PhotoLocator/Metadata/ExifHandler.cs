@@ -669,17 +669,6 @@ namespace PhotoLocator.Metadata
                     metadataStrings.Add(value);
             }
 
-            Location? location = null;
-            if (metadata.TryGetValue("GPSPosition", out var locationStr) || 
-                metadata.TryGetValue("GPSCoordinates", out locationStr))
-            {
-                var parts = locationStr.Split(' ', StringSplitOptions.RemoveEmptyEntries);
-                if (parts.Length >= 4 && 
-                    double.TryParse(parts[0], CultureInfo.InvariantCulture, out var latitude) && 
-                    double.TryParse(parts[2], CultureInfo.InvariantCulture, out var longitude))
-                    location = new Location(latitude, longitude);
-            }
-
             DateTime? creationTimestamp = null;
             if (metadata.TryGetValue("CreateDate", out var timestampStr) ||
                 metadata.TryGetValue("CreationDate", out timestampStr) ||
@@ -693,17 +682,37 @@ namespace PhotoLocator.Metadata
                 }
             }
 
-            var orientation = Rotation.Rotate0;
-            if (metadata.TryGetValue("Orientation", out var orientationStr))
-                orientation = orientationStr switch
-                {
-                    "Rotate 90 CW" => Rotation.Rotate90,
-                    "Rotate 180" => Rotation.Rotate180,
-                    "Rotate 270 CW" => Rotation.Rotate270,
-                    _ => Rotation.Rotate0
-                };
+            var location = DecodeLocationFromExifTool(metadata);
+            var orientation = DecodeOrientationFromExifTool(metadata);
 
             return (location, creationTimestamp, metadataStrings.Count > 0 ? string.Join(", ", metadataStrings) : null, orientation);
+        }
+
+        private static Rotation DecodeOrientationFromExifTool(Dictionary<string, string> metadata)
+        {
+            if (!metadata.TryGetValue("Orientation", out var orientationStr))
+                return Rotation.Rotate0;
+            return orientationStr switch
+            {
+                "Rotate 90 CW" => Rotation.Rotate90,
+                "Rotate 180" => Rotation.Rotate180,
+                "Rotate 270 CW" => Rotation.Rotate270,
+                _ => Rotation.Rotate0
+            };
+        }
+
+        private static Location? DecodeLocationFromExifTool(Dictionary<string, string> metadata)
+        {
+            if (metadata.TryGetValue("GPSPosition", out var locationStr) ||
+                metadata.TryGetValue("GPSCoordinates", out locationStr))
+            {
+                var parts = locationStr.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+                if (parts.Length >= 4 &&
+                    double.TryParse(parts[0], CultureInfo.InvariantCulture, out var latitude) &&
+                    double.TryParse(parts[2], CultureInfo.InvariantCulture, out var longitude))
+                    return new Location(latitude, longitude);
+            }
+            return null;
         }
     }
 }
