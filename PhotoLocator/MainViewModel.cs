@@ -1113,7 +1113,9 @@ namespace PhotoLocator
             var item = Items.InsertOrdered(new PictureItemViewModel(fullPath, isDirectory, HandleFilePropertyChanged, Settings));
             item.ThumbnailImage = null;
             _pictureCache.RemoveAll(cache => cache.Path == item.FullPath);
-            if (selectItem)
+            if (item == SelectedItem)
+                UpdatePreviewPictureAsync().WithExceptionLogging();
+            else if (selectItem)
                 SelectIfNotNull(item);
             await LoadPicturesAsync();
         }

@@ -157,6 +157,7 @@ namespace PhotoLocator
                 return;
             using (new MouseCursorOverride(Cursors.AppStarting))
             {
+                await using var pause = _mainViewModel.PauseFileSystemWatcher();
                 var sameDir = Path.GetDirectoryName(selectedItem.FullPath) == Path.GetDirectoryName(dlg.FileName);
                 await Task.Run(() => GeneralFileFormatHandler.SaveToFile(localContrastViewModel.PreviewPictureSource!, dlg.FileName, metadata, _mainViewModel.Settings.JpegQuality));
                 if (sameDir)
