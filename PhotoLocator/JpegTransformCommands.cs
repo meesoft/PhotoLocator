@@ -41,7 +41,7 @@ namespace PhotoLocator
                 foreach (var item in allSelected)
                 {
                     JpegTransformations.Rotate(item.FullPath, item.GetProcessedFileName(), angle); //TODO: Make async
-                    item.Rotation = Rotation.Rotate0;
+                    item.Orientation = Rotation.Rotate0;
                     item.IsChecked = false;
                     progressCallback((double)(++i) / allSelected.Length);
                 }
@@ -56,7 +56,7 @@ namespace PhotoLocator
             {
                 sourceFileName = SelectedItem.FullPath;
                 targetFileName = SelectedItem.GetProcessedFileName();
-                SelectedItem.Rotation = Rotation.Rotate0;
+                SelectedItem.Orientation = Rotation.Rotate0;
             }
             else
             {
@@ -157,6 +157,7 @@ namespace PhotoLocator
                 return;
             using (new MouseCursorOverride(Cursors.AppStarting))
             {
+                await using var pause = _mainViewModel.PauseFileSystemWatcher();
                 var sameDir = Path.GetDirectoryName(selectedItem.FullPath) == Path.GetDirectoryName(dlg.FileName);
                 await Task.Run(() => GeneralFileFormatHandler.SaveToFile(localContrastViewModel.PreviewPictureSource!, dlg.FileName, metadata, _mainViewModel.Settings.JpegQuality));
                 if (sameDir)

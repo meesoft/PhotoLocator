@@ -246,9 +246,10 @@ namespace PhotoLocator.Metadata
                 Assert.Inconclusive("ExifTool not found");
 
             var setValue = new MapControl.Location(-10, -20);
-            await ExifHandler.SetGeotagAsync(@"TestData\2022-06-17_19.03.02.jpg", @"TestData\2022-06-17_19.03.02.jpg", setValue, ExifToolPath, default);
+            File.Copy(@"TestData\2022-06-17_19.03.02.jpg", @"TestData\2022-06-17_19.03.02_copy.jpg", true);
+            await ExifHandler.SetGeotagAsync(@"TestData\2022-06-17_19.03.02_copy.jpg", @"TestData\2022-06-17_19.03.02_copy.jpg", setValue, ExifToolPath, default);
 
-            var newValue = ExifHandler.GetGeotag(@"TestData\2022-06-17_19.03.02.jpg");
+            var newValue = ExifHandler.GetGeotag(@"TestData\2022-06-17_19.03.02_copy.jpg");
             Assert.AreEqual(setValue, newValue);
         }
 
@@ -279,6 +280,24 @@ namespace PhotoLocator.Metadata
             Assert.IsNotNull(metadata);
             var str = ExifHandler.GetMetadataString(metadata);
             Assert.AreEqual("FC7303, 100.7m, 1/80s, f/2.8, 4.49mm, ISO100, 06/17/2022 19:03:02", str);
+        }
+
+        [TestMethod]
+        public void DecodeMetadata_ShouldDecodeUsingExifTool()
+        {
+            if (!File.Exists(ExifToolPath))
+                Assert.Inconclusive("ExifTool not found");
+
+            Thread.CurrentThread.CurrentCulture = CultureInfo.InvariantCulture;
+
+            var metadata = ExifHandler.DecodeMetadata(@"TestData\2022-06-17_19.03.02.jpg", ExifToolPath);
+
+            // Note that time is wrong because exiftool is incosistent with timezones, but the chosen decoding seems to
+            // be correct for video files which is the primary use case for exiftool for now.
+            Assert.AreEqual("FC7303, 1/80s, f/2.8, 4.5 mm, ISO100, 341x191, 06/17/2022 21:03:02", metadata.Metadata); 
+            Assert.AreEqual(new DateTime(2022, 6, 17, 21, 3, 2), metadata.TimeStamp);
+            Assert.AreEqual(55.4, metadata.Location!.Latitude, 0.1);
+            Assert.AreEqual(11.2, metadata.Location!.Longitude, 0.1);
         }
 
         [TestMethod, Ignore]

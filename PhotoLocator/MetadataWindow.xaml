@@ -15,7 +15,7 @@
             <RowDefinition Height="30"/>
         </Grid.RowDefinitions>
         <TextBox Text="{Binding Metadata, Mode=OneTime}" IsReadOnly="True" IsReadOnlyCaretVisible="True" VerticalScrollBarVisibility="Auto" 
-                 Margin="5" Grid.Row="0" Name="MetadataTextBox"/>
+                 Margin="5" Grid.Row="0" Name="MetadataTextBox" FontFamily="Lucida Console"/>
         <Button Content="Close" Margin="5" Width="80" HorizontalAlignment="Right" IsCancel="True" Grid.Row="1" />
     </Grid>
 </Window>

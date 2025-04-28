@@ -323,7 +323,7 @@ namespace PhotoLocator
                 Pushpins.Add(new PointItem { Location = SelectedItem.GeoTag, Name = SelectedItem.Name });
         }
 
-        private async Task UpdatePreviewPictureAsync()
+        public async Task UpdatePreviewPictureAsync(string? skipTo = null)
         {
             if (_previewCancellation is not null)
                 await _previewCancellation.CancelAsync();
@@ -345,13 +345,13 @@ namespace PhotoLocator
             var ct = _previewCancellation.Token;
             try
             {
-                var cached = _pictureCache.Find(item => item.Path == selected.FullPath);
+                var cached = skipTo is null ? _pictureCache.Find(item => item.Path == selected.FullPath) : default;
                 if (cached.Path is null)
                 {
                     while (_pictureCache.Count > 3)
                         _pictureCache.RemoveAt(0);
-                    var loaded = await Task.Run(() => selected.LoadPreview(ct), ct);
-                    if (loaded is not null)
+                    var loaded = await Task.Run(() => selected.LoadPreview(ct, skipTo: skipTo), ct);
+                    if (loaded is not null && skipTo is null)
                         _pictureCache.Add((selected.FullPath, loaded));
                     if (selected != SelectedItem) // If another item was selected while preview was being loaded
                         return;
@@ -361,9 +361,7 @@ namespace PhotoLocator
                     PreviewPictureSource = cached.Picture;
                 PreviewPictureTitle = selected.Name + (string.IsNullOrEmpty(selected.MetadataString) ? null : " [" + selected.MetadataString + "]");
             }
-            catch (OperationCanceledException)
-            {
-            }
+            catch (OperationCanceledException) { }
             catch (Exception ex)
             {
                 PreviewPictureSource = null;
@@ -904,10 +902,8 @@ namespace PhotoLocator
             {
                 metadataWin.Owner = App.Current.MainWindow;
                 metadataWin.Title = SelectedItem.Name;
-                metadataWin.Metadata = String.Join("\n", ExifHandler.EnumerateMetadata(SelectedItem.FullPath));
+                metadataWin.Metadata = String.Join("\n", ExifHandler.EnumerateMetadata(SelectedItem.FullPath, Settings.ExifToolPath));
             }
-            if (string.IsNullOrEmpty(metadataWin.Metadata))
-                throw new UserMessageException("Unable to list metadata for file");
             metadataWin.DataContext = metadataWin;
             metadataWin.ShowDialog();
         });
@@ -1117,7 +1113,9 @@ namespace PhotoLocator
             var item = Items.InsertOrdered(new PictureItemViewModel(fullPath, isDirectory, HandleFilePropertyChanged, Settings));
             item.ThumbnailImage = null;
             _pictureCache.RemoveAll(cache => cache.Path == item.FullPath);
-            if (selectItem)
+            if (item == SelectedItem)
+                UpdatePreviewPictureAsync().WithExceptionLogging();
+            else if (selectItem)
                 SelectIfNotNull(item);
             await LoadPicturesAsync();
         }

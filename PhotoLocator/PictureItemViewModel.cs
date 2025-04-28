@@ -209,7 +209,7 @@ namespace PhotoLocator
             }
         }
 
-        public Rotation Rotation { get; set; }
+        public Rotation Orientation { get; set; }
 
         public async ValueTask LoadThumbnailAndMetadataAsync(CancellationToken ct)
         {
@@ -229,7 +229,7 @@ namespace PhotoLocator
                             () => _screenDpi = VisualTreeHelper.GetDpi(App.Current.MainWindow));
                     var thumbnailPixelSize = ThumbnailSize * _screenDpi.DpiScaleX;
                     int thumbnailIntPixelSize = IntMath.Round(thumbnailPixelSize);
-                    thumbnail = LoadPreviewInternal(thumbnailIntPixelSize, false, ct);
+                    thumbnail = LoadPreviewInternal(thumbnailIntPixelSize, false, null, ct);
                     if (thumbnail.PixelWidth <= thumbnailIntPixelSize && thumbnail.PixelHeight <= thumbnailIntPixelSize)
                         return thumbnail;
                     ct.ThrowIfCancellationRequested();
@@ -254,44 +254,23 @@ namespace PhotoLocator
         {
             try
             {
-                if (IsVideo)
-                    return;
-                GeoTag = await Task.Run(async () =>
-                {
-                    using var file = await FileHelpers.OpenFileWithRetryAsync(FullPath, ct);
-                    var metadata = ExifHandler.LoadMetadata(file);
-                    if (metadata is null)
-                        return null;
-                    var orientation = metadata.GetQuery(ExifHandler.OrientationQuery1) as ushort? ?? metadata.GetQuery(ExifHandler.OrientationQuery2) as ushort? ?? 0;
-                    Rotation = orientation switch
-                    {
-                        3 => Rotation.Rotate180,
-                        6 => Rotation.Rotate90,
-                        8 => Rotation.Rotate270,
-                        _ => Rotation.Rotate0
-                    };
-                    _timeStamp = ExifHandler.GetTimeStamp(metadata);
-                    _metadataString ??= ExifHandler.GetMetadataString(metadata);
-                    return ExifHandler.GetGeotag(metadata);
-                }, ct);
+                (GeoTag, _timeStamp, _metadataString, Orientation) = await Task.Run(() => ExifHandler.DecodeMetadataAsync(FullPath, IsVideo, _settings?.ExifToolPath, ct), ct);
                 GeoTagSaved = GeoTag != null;
             }
-            catch (NotSupportedException)
-            {
-            }
+            catch (NotSupportedException) { }
             catch (Exception ex)
             {
-                Log.Write($"Failed to loads metadata for {Name}: {ex}");
+                Log.Write($"Failed to load metadata for {Name}: {ex}");
                 ErrorMessage = ex.Message;
             }
         }
 
-        public BitmapSource? LoadPreview(CancellationToken ct, int maxWidth = int.MaxValue, bool preservePixelFormat = false)
+        public BitmapSource? LoadPreview(CancellationToken ct, int maxWidth = int.MaxValue, bool preservePixelFormat = false, string? skipTo = null)
         {
             try
             {
                 Log.Write("Loading preview of " + Name);
-                return LoadPreviewInternal(maxWidth, preservePixelFormat, ct);
+                return LoadPreviewInternal(maxWidth, preservePixelFormat, skipTo, ct);
             }
             catch (OperationCanceledException)
             {
@@ -306,14 +285,14 @@ namespace PhotoLocator
             }
         }
 
-        private BitmapSource LoadPreviewInternal(int maxPixelWidth, bool preservePixelFormat, CancellationToken ct)
+        private BitmapSource LoadPreviewInternal(int maxPixelWidth, bool preservePixelFormat, string? skipTo, CancellationToken ct)
         {
             if (IsVideo && !string.IsNullOrEmpty(_settings?.FFmpegPath))
             {
                 try
                 {
-                    var (result, timestamp, location, metadata) = VideoFileFormatHandler.LoadFromFile(FullPath, maxPixelWidth, _settings, ct);
-                    if (metadata is not null)
+                    var (result, timestamp, location, metadata) = VideoFileFormatHandler.LoadFromFile(FullPath, maxPixelWidth, skipTo, _settings, ct);
+                    if (metadata is not null && string.IsNullOrEmpty(MetadataString))
                         MetadataString = metadata;
                     if (location is not null && GeoTag is null)
                     {
@@ -328,20 +307,18 @@ namespace PhotoLocator
                 {
                     throw;
                 }
-                catch
-                {
-                }
+                catch { } // Ignore errors and fallback to default reader
             }
             using var fileStream = File.OpenRead(FullPath);
             try
             {
                 var ext = Path.GetExtension(Name).ToLowerInvariant();
                 if (CR2FileFormatHandler.CanLoad(ext))
-                    return CR2FileFormatHandler.LoadFromStream(fileStream, Rotation, maxPixelWidth, preservePixelFormat, ct);
+                    return CR2FileFormatHandler.LoadFromStream(fileStream, Orientation, maxPixelWidth, preservePixelFormat, ct);
                 if (CR3FileFormatHandler.CanLoad(ext))
-                    return CR3FileFormatHandler.LoadFromStream(fileStream, Rotation, maxPixelWidth, preservePixelFormat, ct);
+                    return CR3FileFormatHandler.LoadFromStream(fileStream, Orientation, maxPixelWidth, preservePixelFormat, ct);
                 if (PhotoshopFileFormatHandler.CanLoad(ext))
-                    return PhotoshopFileFormatHandler.LoadFromStream(fileStream, Rotation, maxPixelWidth, preservePixelFormat, ct);
+                    return PhotoshopFileFormatHandler.LoadFromStream(fileStream, Orientation, maxPixelWidth, preservePixelFormat, ct);
             }
             catch (OperationCanceledException)
             {
@@ -353,7 +330,7 @@ namespace PhotoLocator
                 fileStream.Position = 0; // Fallback to default reader
             }
             ct.ThrowIfCancellationRequested();
-            return GeneralFileFormatHandler.LoadFromStream(fileStream, Rotation, maxPixelWidth, preservePixelFormat, ct);
+            return GeneralFileFormatHandler.LoadFromStream(fileStream, Orientation, maxPixelWidth, preservePixelFormat, ct);
         }
 
         private BitmapSource? TryLoadShellThumbnail(bool large, ShellThumbnailFormatOption formatOption, CancellationToken ct)

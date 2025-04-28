@@ -12,15 +12,18 @@ namespace PhotoLocator.PictureFileFormats
 {
     static class VideoFileFormatHandler
     {
-        public static (BitmapSource, DateTime?, Location?, string?) LoadFromFile(string fullPath, int maxWidth, ISettings settings, CancellationToken ct)
+        public static (BitmapSource, DateTime?, Location?, string?) LoadFromFile(string fullPath, int maxWidth, string? skipTo, ISettings settings, CancellationToken ct)
         {
-            var videoTransforms = new VideoProcessing(settings);
-            var vf = maxWidth < int.MaxValue ? $"-vf \"scale={maxWidth}:-1\"" : "";
-            var args = $"-i \"{fullPath}\" {vf} -frames:0 1";
             BitmapSource? result = null;
             string? metadata = null, duration = null;
             Location? location = null;
             DateTime? timeStamp = null;
+            var videoTransforms = new VideoProcessing(settings);
+            var args = 
+                (string.IsNullOrEmpty(skipTo) ? null : $"-ss {skipTo} ") +
+                $"-i \"{fullPath}\" "+
+                (maxWidth == int.MaxValue ? null : $"-vf \"scale={maxWidth}:-1\" ") +
+                "-frames:0 1";
 
             Task.Run(() => videoTransforms.RunFFmpegWithStreamOutputImagesAsync(args,
                 frame => result = frame,

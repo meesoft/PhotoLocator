@@ -98,6 +98,9 @@ namespace PhotoLocator
                 {
                     UpdateInputArgs();
                     UpdateOutputArgs();
+                    if (_localContrastSetup is not null)
+                        _localContrastSetup.SourceBitmap = null;
+                    _mainViewModel.UpdatePreviewPictureAsync(_skipTo).WithExceptionLogging();
                 }
             }
         }
@@ -354,7 +357,9 @@ namespace PhotoLocator
             if (_localContrastSetup.SourceBitmap is null)
                 using (var cursor = new MouseCursorOverride())
                 {
-                    var preview = _mainViewModel.GetSelectedItems(true).First().LoadPreview(default) ?? throw new UserMessageException("Unable to load preview frame");
+                    var firstSelected = _mainViewModel.GetSelectedItems(true).First();
+                    var preview = firstSelected.LoadPreview(default, skipTo: HasSingleInput && !string.IsNullOrEmpty(SkipTo) ? SkipTo: null) 
+                        ?? throw new UserMessageException("Unable to load preview frame");
                     _localContrastSetup.SourceBitmap = preview;
                 }
             var window = new LocalContrastView();
@@ -713,7 +718,8 @@ namespace PhotoLocator
         public ICommand ProcessSelected => new RelayCommand(async o =>
         {
             var allSelected = UpdateInputArgs();
-
+            if (HasSingleInput && !string.IsNullOrEmpty(SkipTo))
+                _mainViewModel.UpdatePreviewPictureAsync(SkipTo).WithExceptionLogging();
             if (_localContrastSetup is not null && _localContrastSetup.SourceBitmap is not null)
                 _localContrastSetup.SourceBitmap = null;
             var window = new VideoTransformWindow() { Owner = App.Current.MainWindow, DataContext = this };
@@ -741,45 +747,7 @@ namespace PhotoLocator
             }
             else
             {
-                string postfix, ext;
-                var dlg = new SaveFileDialog();
-                switch (OutputMode)
-                {
-                    case OutputMode.Video:
-                        if (RollingAverageMode == RollingAverageMode.RollingAverage && RollingAverageFrames > 1)
-                            postfix = "rolling" + RollingAverageFrames;
-                        else if (RollingAverageMode == RollingAverageMode.FadingAverage && RollingAverageFrames > 1)
-                            postfix = "fadeavg" + RollingAverageFrames;
-                        else if (RollingAverageMode == RollingAverageMode.FadingMax && RollingAverageFrames > 1)
-                            postfix = "fademax" + RollingAverageFrames;
-                        else if (IsStabilizeChecked || IsRegisterFramesChecked && RollingAverageMode > RollingAverageMode.None)
-                            postfix = "stabilized";
-                        else if (allSelected.Length > 1)
-                            postfix = "combined";
-                        else
-                            postfix = "processed";
-                        dlg.Filter = SaveVideoFilter;
-                        ext = ".mp4";
-                        break;
-                    case OutputMode.Average:
-                        postfix = "avg";
-                        dlg.Filter = GeneralFileFormatHandler.SaveImageFilter;
-                        dlg.FilterIndex = 2;
-                        ext = ".png";
-                        break;
-                    case OutputMode.Max:
-                        postfix = "max";
-                        dlg.Filter = GeneralFileFormatHandler.SaveImageFilter;
-                        dlg.FilterIndex = 2;
-                        ext = ".png";
-                        break;
-                    default:
-                        throw new ArgumentException("Unknown output mode");
-                }
-                dlg.InitialDirectory = inPath;
-                dlg.FileName = Path.GetFileNameWithoutExtension(allSelected[0].Name) + $"[{postfix}]{ext}";
-                dlg.DefaultExt = ext;
-                dlg.CheckPathExists = false;
+                var dlg = SetupSaveFileDialog(allSelected, inPath); 
                 if (dlg.ShowDialog() != true)
                     return;
                 outFileName = dlg.FileName;
@@ -885,6 +853,50 @@ namespace PhotoLocator
             if (!string.IsNullOrEmpty(message))
                 MessageBox.Show(App.Current.MainWindow, message);
         });
+
+        private SaveFileDialog SetupSaveFileDialog(PictureItemViewModel[] allSelected, string inPath)
+        {
+            string postfix, ext;
+            var dlg = new SaveFileDialog();
+            switch (OutputMode)
+            {
+                case OutputMode.Video:
+                    if (RollingAverageMode == RollingAverageMode.RollingAverage && RollingAverageFrames > 1)
+                        postfix = "rolling" + RollingAverageFrames;
+                    else if (RollingAverageMode == RollingAverageMode.FadingAverage && RollingAverageFrames > 1)
+                        postfix = "fadeavg" + RollingAverageFrames;
+                    else if (RollingAverageMode == RollingAverageMode.FadingMax && RollingAverageFrames > 1)
+                        postfix = "fademax" + RollingAverageFrames;
+                    else if (IsStabilizeChecked || IsRegisterFramesChecked && RollingAverageMode > RollingAverageMode.None)
+                        postfix = "stabilized";
+                    else if (allSelected.Length > 1)
+                        postfix = "combined";
+                    else
+                        postfix = "processed";
+                    dlg.Filter = SaveVideoFilter;
+                    ext = ".mp4";
+                    break;
+                case OutputMode.Average:
+                    postfix = "avg";
+                    dlg.Filter = GeneralFileFormatHandler.SaveImageFilter;
+                    dlg.FilterIndex = 2;
+                    ext = ".png";
+                    break;
+                case OutputMode.Max:
+                    postfix = "max";
+                    dlg.Filter = GeneralFileFormatHandler.SaveImageFilter;
+                    dlg.FilterIndex = 2;
+                    ext = ".png";
+                    break;
+                default:
+                    throw new ArgumentException("Unknown output mode");
+            }
+            dlg.InitialDirectory = inPath;
+            dlg.FileName = Path.GetFileNameWithoutExtension(allSelected[0].Name) + $"[{postfix}]{ext}";
+            dlg.DefaultExt = ext;
+            dlg.CheckPathExists = false;
+            return dlg;
+        }
 
         private BitmapMetadata? CreateImageMetadata()
         {

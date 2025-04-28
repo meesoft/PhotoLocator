@@ -3,15 +3,16 @@
 ![Icon](./PhotoLocator/Resources/PhotoLocator.png)
 
 ## Photo geotagging and location browsing
-PhotoLocator can import GPS traces from GPX and KML files and then apply the GPS positions to picture files by synchronizing with
-the photo timestamps. GPS tags can also be imported from other already geotagged photos.
-The locations can either be set automatically based on timestamps or manually by copy/pasting from other files or selecting on the map.
-PhotoLocator can perfom a lossless update of the EXIF data in the target files directly or in copies of the files.
+PhotoLocator can import GPS traces from GPX and KML files and then apply the GPS positions to picture and video files by 
+synchronizing with the photo timestamps. GPS tags can also be imported from other already geotagged photos.
+The locations can either be set automatically based on timestamps or manually by copy/pasting from other files or selecting 
+on the map. PhotoLocator can perform a lossless update of the EXIF data in the target files directly or in copies of the files.
 
-If you need to save geotags to other than JPEG files you need to download ExifTool (https://exiftool.org/) and setup the path to it in 
-the Settings dialog.
+If you need to save geotags to other than JPEG files you need to download [ExifTool](https://exiftool.org/) and setup the path 
+to it in the Settings dialog.
 
-KML files can be obtained directly from the Google maps location history. GPX files can be exported by many location and sports tracking apps. 
+KML files can be obtained directly from the Google Maps location history. GPX files can be exported by many location and 
+sports tracking apps. 
 
 ![Screenshot](./Screenshot.jpg)
 
@@ -50,6 +51,8 @@ Note that it is possible to use Chrome's full screen cast feature to display the
 * Extract frames from video to image files.
 
 * Stabilize shaky video.
+
+* Rotate, adjust saturation and contrast and denoise video files
 
 * Generate average and max frames for video for e.g. timelapse or long exposure simulation.
 

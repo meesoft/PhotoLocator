@@ -32,6 +32,7 @@
         <KeyBinding Key="F" Modifiers="Ctrl" Command="{Binding QuickSearchCommand}" />
         <KeyBinding Key="L" Modifiers="Ctrl" Command="{Binding JpegTransformCommands.LocalContrastCommand}" />
         <KeyBinding Key="O" Modifiers="Ctrl" Command="{Binding BrowseForPhotosCommand}" />
+        <KeyBinding Key="P" Modifiers="Ctrl" Command="{Binding VideoTransformCommands.ProcessSelected}" />
         <KeyBinding Key="Q" Modifiers="Ctrl" Command="{Binding ViewModeCommand}" />
         <KeyBinding Key="S" Modifiers="Ctrl" Command="{Binding SaveGeotagsCommand}" />
         <KeyBinding Key="T" Modifiers="Ctrl" Command="{Binding AutoGeotagCommand}" />
@@ -167,7 +168,7 @@
                         <MenuItem Header="Crop (Alt-C)" Command="{Binding CropCommand}" IsChecked="{Binding IsCropControlVisible}" />
                     </MenuItem>
                     <MenuItem Header="Transform video" >
-                        <MenuItem Header="Process selected" Command="{Binding VideoTransformCommands.ProcessSelected}" />
+                        <MenuItem Header="Process selected (Ctrl+P)" Command="{Binding VideoTransformCommands.ProcessSelected}" />
                         <Separator />
                         <MenuItem Header="Stabilize video" Command="{Binding VideoTransformCommands.StabilizeVideo}" />
                         <MenuItem Header="Combine images or videos" Command="{Binding VideoTransformCommands.Combine}" />
@@ -260,6 +261,6 @@
 
         <GridSplitter Grid.Row="2" Grid.ColumnSpan="2" VerticalAlignment="Top" HorizontalAlignment="Stretch" Height="4" Background="Black"/>
         <TextBox Grid.Row="2" Grid.ColumnSpan="2" Margin="0,10,0,0" IsReadOnly="True" VerticalScrollBarVisibility="Visible"
-                 Name="LogTextBox" Background="Black" Foreground="White" />
+                 Name="LogTextBox" Background="Black" Foreground="White" FontFamily="Lucida Console"/>
     </Grid>
 </Window>
