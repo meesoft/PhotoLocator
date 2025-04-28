@@ -307,7 +307,7 @@ namespace PhotoLocator
                 {
                     throw;
                 }
-                catch { }
+                catch { } // Ignore errors and fallback to default reader
             }
             using var fileStream = File.OpenRead(FullPath);
             try

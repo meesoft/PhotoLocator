@@ -669,23 +669,24 @@ namespace PhotoLocator.Metadata
                     metadataStrings.Add(value);
             }
 
-            DateTime? creationTimestamp = null;
-            if (metadata.TryGetValue("CreateDate", out var timestampStr) ||
-                metadata.TryGetValue("CreationDate", out timestampStr) ||
-                metadata.TryGetValue("DateTimeOriginal", out timestampStr))
-            {
-                if (DateTime.TryParseExact(timestampStr, "yyyy:MM:dd HH:mm:ss", CultureInfo.InvariantCulture, DateTimeStyles.AllowWhiteSpaces, out var timestamp) ||
-                    DateTime.TryParseExact(timestampStr, "yyyy:MM:dd HH:mm:sszzz", CultureInfo.InvariantCulture, DateTimeStyles.AllowWhiteSpaces, out timestamp))
-                {
-                    creationTimestamp = timestamp;
-                    metadataStrings.Add(timestamp.ToString("G", CultureInfo.CurrentCulture));
-                }
-            }
-
+            var creationTimestamp = DecodeTimestampFromExifTool(metadata, metadataStrings);
             var location = DecodeLocationFromExifTool(metadata);
             var orientation = DecodeOrientationFromExifTool(metadata);
 
             return (location, creationTimestamp, metadataStrings.Count > 0 ? string.Join(", ", metadataStrings) : null, orientation);
+        }
+
+        private static DateTime? DecodeTimestampFromExifTool(Dictionary<string, string> metadata, List<string> metadataStrings)
+        {
+            if (!metadata.TryGetValue("CreateDate", out var timestampStr) &&
+                !metadata.TryGetValue("CreationDate", out timestampStr) &&
+                !metadata.TryGetValue("DateTimeOriginal", out timestampStr))
+                return null;
+            if (!DateTime.TryParseExact(timestampStr, "yyyy:MM:dd HH:mm:ss", CultureInfo.InvariantCulture, DateTimeStyles.AllowWhiteSpaces|  DateTimeStyles.AssumeUniversal, out var timestamp) &&
+                !DateTime.TryParseExact(timestampStr, "yyyy:MM:dd HH:mm:sszzz", CultureInfo.InvariantCulture, DateTimeStyles.AllowWhiteSpaces, out timestamp))
+                return null;
+            metadataStrings.Add(timestamp.ToString("G", CultureInfo.CurrentCulture));
+            return timestamp;
         }
 
         private static Rotation DecodeOrientationFromExifTool(Dictionary<string, string> metadata)
@@ -694,9 +695,9 @@ namespace PhotoLocator.Metadata
                 return Rotation.Rotate0;
             return orientationStr switch
             {
-                "Rotate 90 CW" => Rotation.Rotate90,
-                "Rotate 180" => Rotation.Rotate180,
-                "Rotate 270 CW" => Rotation.Rotate270,
+                "Rotate 90 CW" or "6" => Rotation.Rotate90,
+                "Rotate 180" or "3" => Rotation.Rotate180,
+                "Rotate 270 CW" or "8" => Rotation.Rotate270,
                 _ => Rotation.Rotate0
             };
         }
