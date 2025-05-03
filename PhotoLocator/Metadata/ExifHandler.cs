@@ -86,7 +86,7 @@ namespace PhotoLocator.Metadata
             }
         }
 
-        public static BitmapMetadata EncodePngMetadata(Rational? exposureTime, Location? location, DateTime? dateTaken)
+        public static BitmapMetadata EncodePngMetadata(Rational? exposureTime, Location? location, DateTimeOffset? dateTaken)
         {
             var result = new BitmapMetadata("png");
             var tags = new List<string>();
@@ -240,11 +240,11 @@ namespace PhotoLocator.Metadata
             }
         }
 
-        public static void SetDateTaken(BitmapMetadata metadata, DateTime dateTaken)
+        public static void SetDateTaken(BitmapMetadata metadata, DateTimeOffset dateTaken)
         {
             try
             {   // Parsing the timestamp string should use current culture but writing must happen in invariant culture
-                metadata.DateTaken = dateTaken.ToString(CultureInfo.InvariantCulture);
+                metadata.DateTaken = dateTaken.LocalDateTime.ToString(CultureInfo.InvariantCulture);
             }
             catch { }
         }
@@ -333,7 +333,7 @@ namespace PhotoLocator.Metadata
                 throw new UserMessageException(output);
         }
 
-        public static async Task AdjustTimeStampAsync(string sourceFileName, string targetFileName, string offset, string? exifToolPath, System.Threading.CancellationToken ct)
+        public static async Task AdjustTimeStampAsync(string sourceFileName, string targetFileName, string offset, string? exifToolPath, CancellationToken ct)
         {
             var sign = offset[0];
             offset = offset[1..];
@@ -433,7 +433,7 @@ namespace PhotoLocator.Metadata
             return new Location(latitude: latitude.AngleInDegrees, longitude: longitude.AngleInDegrees);
         }
 
-        public static DateTime? GetTimeStamp(BitmapMetadata metadata)
+        public static DateTimeOffset? GetTimeStamp(BitmapMetadata metadata)
         {
             var dateTaken = ParseDateTaken(metadata);
 
@@ -544,7 +544,7 @@ namespace PhotoLocator.Metadata
             }
         }
 
-        private static string[] EnumerateMetadataUsingExifTool(string fileName, string exifToolPath)
+        public static string[] EnumerateMetadataUsingExifTool(string fileName, string exifToolPath)
         {
             var startInfo = new ProcessStartInfo(exifToolPath, $"-s2 -c +%.6f \"{fileName}\""); // -H to add hexadecimal values
             startInfo.CreateNoWindow = true;
@@ -604,22 +604,27 @@ namespace PhotoLocator.Metadata
 
             var timestamp = GetTimeStamp(metadata);
             if (timestamp.HasValue)
-                metadataStrings.Add(timestamp.Value.ToString("G", CultureInfo.CurrentCulture));
+                metadataStrings.Add(FormatTimestampForDisplay(timestamp.Value));
 
             return string.Join(", ", metadataStrings);
         }
 
-        public static async Task<(Location? Location, DateTime? TimeStamp, string? Metadata, Rotation Orientation)> DecodeMetadataAsync(string fileName, bool isVideo, string? exifToolPath, CancellationToken ct)
+        private static string FormatTimestampForDisplay(DateTimeOffset timestamp)
+        {
+            return timestamp.ToString(CultureInfo.CurrentCulture);
+        }
+
+        public static async Task<(Location? Location, DateTimeOffset? TimeStamp, string? Metadata, Rotation Orientation)> DecodeMetadataAsync(string fileName, bool isVideo, string? exifToolPath, CancellationToken ct)
         {
             if (isVideo && !string.IsNullOrEmpty(exifToolPath))
-                return DecodeMetadata(fileName, exifToolPath);
+                return DecodeMetadataUsingExifTool(fileName, exifToolPath);
             try
             {
                 using var file = await FileHelpers.OpenFileWithRetryAsync(fileName, ct);
-                var metadata = ExifHandler.LoadMetadata(file);
+                var metadata = LoadMetadata(file);
                 if (metadata is null)
                     return (null, null, null, Rotation.Rotate0);
-                var orientationStr = metadata.GetQuery(ExifHandler.OrientationQuery1) as ushort? ?? metadata.GetQuery(ExifHandler.OrientationQuery2) as ushort? ?? 0;
+                var orientationStr = metadata.GetQuery(OrientationQuery1) as ushort? ?? metadata.GetQuery(OrientationQuery2) as ushort? ?? 0;
                 var orientation = orientationStr switch
                 {
                     3 => Rotation.Rotate180,
@@ -627,25 +632,19 @@ namespace PhotoLocator.Metadata
                     8 => Rotation.Rotate270,
                     _ => Rotation.Rotate0
                 };
-                return (ExifHandler.GetGeotag(metadata), ExifHandler.GetTimeStamp(metadata), ExifHandler.GetMetadataString(metadata), orientation);
+                return (GetGeotag(metadata), GetTimeStamp(metadata), GetMetadataString(metadata), orientation);
             }
             catch (NotSupportedException)
             {
                 if (string.IsNullOrEmpty(exifToolPath))
                     throw;
-                return DecodeMetadata(fileName, exifToolPath);
+                return DecodeMetadataUsingExifTool(fileName, exifToolPath);
             }
         }
 
-        public static (Location? Location, DateTime? TimeStamp, string? Metadata, Rotation Orientation) DecodeMetadata(string fileName, string exifToolPath)
+        public static (Location? Location, DateTimeOffset? TimeStamp, string? Metadata, Rotation Orientation) DecodeMetadataUsingExifTool(string fileName, string exifToolPath)
         {
-            var metadata = new Dictionary<string, string>();
-            foreach (var line in EnumerateMetadataUsingExifTool(fileName, exifToolPath))
-            {
-                var index = line.IndexOf(':', StringComparison.Ordinal);
-                if (index < line.Length - 2)
-                    metadata[line[..index]] = line[(index + 2)..];
-            }
+            var metadata = DecodeExifToolMetadataToDictionary(EnumerateMetadataUsingExifTool(fileName, exifToolPath));
 
             var metadataStrings = new List<string>();
             if (metadata.TryGetValue("Model", out var value) || metadata.TryGetValue("Encoder", out value))
@@ -669,24 +668,47 @@ namespace PhotoLocator.Metadata
                     metadataStrings.Add(value);
             }
 
-            var creationTimestamp = DecodeTimestampFromExifTool(metadata, metadataStrings);
+            var creationTimestamp = DecodeTimestampFromExifTool(metadata);
+            if (creationTimestamp.HasValue)
+                metadataStrings.Add(FormatTimestampForDisplay(creationTimestamp.Value));
             var location = DecodeLocationFromExifTool(metadata);
             var orientation = DecodeOrientationFromExifTool(metadata);
 
             return (location, creationTimestamp, metadataStrings.Count > 0 ? string.Join(", ", metadataStrings) : null, orientation);
         }
 
-        private static DateTime? DecodeTimestampFromExifTool(Dictionary<string, string> metadata, List<string> metadataStrings)
+        internal static Dictionary<string, string> DecodeExifToolMetadataToDictionary(string[] lines)
         {
-            if (!metadata.TryGetValue("CreateDate", out var timestampStr) &&
+            var metadata = new Dictionary<string, string>();
+            foreach (var line in lines)
+            {
+                var index = line.IndexOf(':', StringComparison.Ordinal);
+                if (index < line.Length - 2)
+                    metadata[line[..index]] = line[(index + 2)..];
+            }
+            return metadata;
+        }
+
+        internal static DateTimeOffset? DecodeTimestampFromExifTool(Dictionary<string, string> metadata)
+        {
+            if (!metadata.TryGetValue("SubSecCreateDate", out var timestampStr) &&
+                !metadata.TryGetValue("SubSecDateTimeOriginal", out timestampStr) &&
                 !metadata.TryGetValue("CreationDate", out timestampStr) &&
+                !metadata.TryGetValue("CreateDate", out timestampStr) &&
                 !metadata.TryGetValue("DateTimeOriginal", out timestampStr))
                 return null;
-            if (!DateTime.TryParseExact(timestampStr, "yyyy:MM:dd HH:mm:ss", CultureInfo.InvariantCulture, DateTimeStyles.AllowWhiteSpaces|  DateTimeStyles.AssumeUniversal, out var timestamp) &&
-                !DateTime.TryParseExact(timestampStr, "yyyy:MM:dd HH:mm:sszzz", CultureInfo.InvariantCulture, DateTimeStyles.AllowWhiteSpaces, out timestamp))
-                return null;
-            metadataStrings.Add(timestamp.ToString("G", CultureInfo.CurrentCulture));
-            return timestamp;
+            if (DateTimeOffset.TryParseExact(timestampStr, "yyyy:MM:dd HH:mm:sszzz", CultureInfo.InvariantCulture, DateTimeStyles.AllowWhiteSpaces, out var timestampOffset) ||
+                DateTimeOffset.TryParseExact(timestampStr, "yyyy:MM:dd HH:mm:ss.ffzzz", CultureInfo.InvariantCulture, DateTimeStyles.AllowWhiteSpaces, out timestampOffset))
+                return timestampOffset;
+            if ((metadata.TryGetValue("OffsetTimeOriginal", out var offsetStr) ||
+                 metadata.TryGetValue("OffsetTime", out offsetStr) ||
+                 metadata.TryGetValue("TimeZone", out offsetStr)) &&
+                DateTimeOffset.TryParseExact(timestampStr + offsetStr, "yyyy:MM:dd HH:mm:sszzz", CultureInfo.InvariantCulture, DateTimeStyles.AllowWhiteSpaces, out timestampOffset))
+                return timestampOffset;
+            var timeZone = metadata.TryGetValue("FileType", out var fileType) && fileType=="JPEG" ? DateTimeStyles.AssumeLocal : DateTimeStyles.AssumeUniversal;
+            if (DateTime.TryParseExact(timestampStr, "yyyy:MM:dd HH:mm:ss", CultureInfo.InvariantCulture, DateTimeStyles.AllowWhiteSpaces | timeZone, out var timestamp))
+                return timestamp;
+            return null;
         }
 
         private static Rotation DecodeOrientationFromExifTool(Dictionary<string, string> metadata)

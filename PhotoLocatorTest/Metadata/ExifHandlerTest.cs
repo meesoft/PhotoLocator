@@ -11,7 +11,7 @@ namespace PhotoLocator.Metadata
     {
         const string ExifToolPath = @"TestData\exiftool.exe";
 
-        static readonly string _jpegTestDataTimestamp = new DateTime(2022, 6, 17, 19, 3, 2).ToString();
+        static readonly DateTimeOffset _jpegTestDataTimestamp = new DateTimeOffset(2022, 6, 17, 19, 3, 2, TimeSpan.FromHours(2));
 
         [TestMethod]
         public void SetMetadata_ShouldSetJpegMetadataOnJpeg()
@@ -158,7 +158,7 @@ namespace PhotoLocator.Metadata
 
             var tag = ExifHandler.GetTimeStamp(metadata) ?? throw new FileFormatException("Failed to decode timestamp");
 
-            Assert.AreEqual(new DateTime(2022, 06, 17, 19, 03, 02, DateTimeKind.Local), tag);
+            Assert.AreEqual(_jpegTestDataTimestamp, tag);
         }
 
         [TestMethod]
@@ -279,7 +279,7 @@ namespace PhotoLocator.Metadata
             var metadata = ExifHandler.LoadMetadata(stream);
             Assert.IsNotNull(metadata);
             var str = ExifHandler.GetMetadataString(metadata);
-            Assert.AreEqual("FC7303, 100.7m, 1/80s, f/2.8, 4.49mm, ISO100, 06/17/2022 19:03:02", str);
+            Assert.AreEqual("FC7303, 100.7m, 1/80s, f/2.8, 4.49mm, ISO100, " + _jpegTestDataTimestamp, str);
         }
 
         [TestMethod]
@@ -290,14 +290,42 @@ namespace PhotoLocator.Metadata
 
             Thread.CurrentThread.CurrentCulture = CultureInfo.InvariantCulture;
 
-            var metadata = ExifHandler.DecodeMetadata(@"TestData\2022-06-17_19.03.02.jpg", ExifToolPath);
+            var metadata = ExifHandler.DecodeMetadataUsingExifTool(@"TestData\2022-06-17_19.03.02.jpg", ExifToolPath);
 
-            // Note that time is wrong because exiftool is incosistent with timezones, but the chosen decoding seems to
-            // be correct for video files which is the primary use case for exiftool for now.
-            Assert.AreEqual("FC7303, 1/80s, f/2.8, 4.5 mm, ISO100, 341x191, 06/17/2022 21:03:02", metadata.Metadata); 
-            Assert.AreEqual(new DateTime(2022, 6, 17, 21, 3, 2), metadata.TimeStamp);
+            Assert.AreEqual("FC7303, 1/80s, f/2.8, 4.5 mm, ISO100, 341x191, " + _jpegTestDataTimestamp, metadata.Metadata);
+            Assert.AreEqual(new DateTimeOffset(2022, 6, 17, 19, 3, 2, TimeSpan.FromHours(2)), metadata.TimeStamp);
             Assert.AreEqual(55.4, metadata.Location!.Latitude, 0.1);
             Assert.AreEqual(11.2, metadata.Location!.Longitude, 0.1);
+        }
+
+        [TestMethod]
+        public void DecodeTimestampFromExifTool_ShouldUseOffset()
+        {
+            var dict = new Dictionary<string, string>
+            {
+                { "DateTimeOriginal", "2025:02:01 22:14:54" },
+                { "OffsetTimeOriginal", "+01:00" }
+            };
+
+            var timestamp = ExifHandler.DecodeTimestampFromExifTool(dict);
+
+            Assert.AreEqual(new DateTimeOffset(2025, 2, 1, 22, 14, 54, TimeSpan.FromHours(1)), timestamp);
+        }
+
+        [TestMethod]
+        public void DecodeTimestampFromExifTool_ShouldHandleDifferentFormats()
+        {
+            static DateTimeOffset? DecodeTimestampFromMetadata(string fileName)
+            {
+                var metadata = ExifHandler.DecodeExifToolMetadataToDictionary(File.ReadAllLines(fileName));
+                return ExifHandler.DecodeTimestampFromExifTool(metadata);
+            }
+
+            Assert.AreEqual(new DateTimeOffset(2024, 7, 9, 14, 38, 53, 390, TimeSpan.FromHours(2)), DecodeTimestampFromMetadata(@"TestData\Canon90DVideo.txt"));
+            Assert.AreEqual(new DateTimeOffset(2022, 4, 16, 18, 46, 28, TimeSpan.FromHours(2)), DecodeTimestampFromMetadata(@"TestData\DJIAction2Video.txt"));
+            Assert.AreEqual(new DateTimeOffset(2022, 9, 23, 12, 50, 53, TimeSpan.FromHours(2)), DecodeTimestampFromMetadata(@"TestData\iPhoneVideo.txt"));
+            Assert.AreEqual(new DateTimeOffset(2024, 7, 9, 13, 9, 22, TimeSpan.FromHours(2)), DecodeTimestampFromMetadata(@"TestData\Mini2Video.txt"));
+            Assert.AreEqual(new DateTimeOffset(2025, 4, 26, 17, 6, 45, TimeSpan.FromHours(2)), DecodeTimestampFromMetadata(@"TestData\Pixel5Video.txt"));
         }
 
         [TestMethod, Ignore]

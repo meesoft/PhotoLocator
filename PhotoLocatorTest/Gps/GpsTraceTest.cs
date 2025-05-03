@@ -7,7 +7,7 @@ namespace PhotoLocator.Gps
     public class GpsTraceTest
     {
         [TestMethod]
-        public void DecodeGpxStream_ShouldDecodeGpx()
+        public void DecodeGpxStream_ShouldDecodeGpx1()
         {
             using var stream = GetType().Assembly.GetManifestResourceStream(@"PhotoLocator.TestData.2022-07-02_16-19.gpx")
                 ?? throw new FileNotFoundException("Resource not found");
@@ -15,6 +15,19 @@ namespace PhotoLocator.Gps
             var trace = GpxDecoder.DecodeStream(stream).Single();
 
             Assert.AreEqual(244, trace.Locations.Count);
+            Assert.AreEqual(DateTimeKind.Utc, trace.TimeStamps[0].Kind);
+        }
+
+        [TestMethod]
+        public void DecodeGpxStream_ShouldDecodeGpx2()
+        {
+            using var stream = GetType().Assembly.GetManifestResourceStream(@"PhotoLocator.TestData.20250503.gpx")
+                ?? throw new FileNotFoundException("Resource not found");
+
+            var trace = GpxDecoder.DecodeStream(stream).Single();
+
+            Assert.AreEqual(2, trace.Locations.Count);
+            Assert.AreEqual(DateTimeKind.Utc, trace.TimeStamps[0].Kind);
         }
 
         [TestMethod]
@@ -26,6 +39,7 @@ namespace PhotoLocator.Gps
             var trace = KmlDecoder.DecodeStream(stream, TimeSpan.FromMinutes(15)).Single();
 
             Assert.AreEqual(540, trace.Locations.Count);
+            Assert.AreEqual(DateTimeKind.Utc, trace.TimeStamps[0].Kind);
         }
 
         [TestMethod]
@@ -37,6 +51,19 @@ namespace PhotoLocator.Gps
             var trace = KmlDecoder.DecodeStream(stream, TimeSpan.FromMinutes(15)).Single();
 
             Assert.AreEqual(259, trace.Locations.Count);
+            Assert.AreEqual(DateTimeKind.Utc, trace.TimeStamps[0].Kind);
+        }
+
+        [TestMethod]
+        public void DecodeKmlStream_ShouldDecodeKml3()
+        {
+            using var stream = GetType().Assembly.GetManifestResourceStream(@"PhotoLocator.TestData.20250503.kml")
+                ?? throw new FileNotFoundException("Resource not found");
+
+            var trace = KmlDecoder.DecodeStream(stream, TimeSpan.FromMinutes(15)).Single();
+
+            Assert.AreEqual(2, trace.Locations.Count);
+            Assert.AreEqual(DateTimeKind.Utc, trace.TimeStamps[0].Kind);
         }
 
         [TestMethod, Ignore]
@@ -48,8 +75,7 @@ namespace PhotoLocator.Gps
             src.Load(Path + "Fredede fortidsminder i Slagelse Kommune.xml");
             var root = src["doc"] ?? throw new FileFormatException("doc node missing");
 
-            var settings = new XmlWriterSettings();
-            settings.Indent = true;
+            var settings = new XmlWriterSettings { Indent = true };
             using var dst = XmlWriter.Create(Path + "Fredede fortidsminder i Slagelse Kommune.gpx", settings);
             dst.WriteStartDocument();
             dst.WriteStartElement(null, "gpx", "http://www.topografix.com/GPX/1/1");

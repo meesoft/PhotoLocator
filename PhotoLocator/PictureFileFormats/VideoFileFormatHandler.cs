@@ -12,7 +12,7 @@ namespace PhotoLocator.PictureFileFormats
 {
     static class VideoFileFormatHandler
     {
-        public static (BitmapSource, DateTime?, Location?, string?) LoadFromFile(string fullPath, int maxWidth, string? skipTo, ISettings settings, CancellationToken ct)
+        public static (BitmapSource, DateTimeOffset?, Location?, string?) LoadFromFile(string fullPath, int maxWidth, string? skipTo, ISettings settings, CancellationToken ct)
         {
             BitmapSource? result = null;
             string? metadata = null, duration = null;
@@ -33,8 +33,7 @@ namespace PhotoLocator.PictureFileFormats
                     if (timeStamp is null && line.Contains("  creation_time", StringComparison.Ordinal))
                     {
                         var i = line.IndexOf(':', StringComparison.Ordinal);
-                        if (i > 0 &&
-                            DateTime.TryParse(line.AsSpan(i + 1), CultureInfo.InvariantCulture, DateTimeStyles.AllowLeadingWhite | DateTimeStyles.AllowTrailingWhite | DateTimeStyles.AssumeUniversal, out var dt))
+                        if (i > 0 && DateTime.TryParse(line.AsSpan(i + 1), CultureInfo.InvariantCulture, DateTimeStyles.AllowLeadingWhite | DateTimeStyles.AllowTrailingWhite, out var dt))
                             timeStamp = dt;
                     }
                     else if (location is null && line.Contains("  location", StringComparison.Ordinal))

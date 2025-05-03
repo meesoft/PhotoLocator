@@ -12,7 +12,7 @@ using System.Windows.Media.Imaging;
 
 namespace PhotoLocator
 {
-    public class JpegTransformCommands
+    public sealed class JpegTransformCommands
     {
         private readonly IMainViewModel _mainViewModel;
 

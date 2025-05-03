@@ -32,7 +32,7 @@
         <KeyBinding Key="F" Modifiers="Ctrl" Command="{Binding QuickSearchCommand}" />
         <KeyBinding Key="L" Modifiers="Ctrl" Command="{Binding JpegTransformCommands.LocalContrastCommand}" />
         <KeyBinding Key="O" Modifiers="Ctrl" Command="{Binding BrowseForPhotosCommand}" />
-        <KeyBinding Key="P" Modifiers="Ctrl" Command="{Binding VideoTransformCommands.ProcessSelected}" />
+        <KeyBinding Key="P" Modifiers="Ctrl" Command="{Binding VideoTransformCommandsShared.ProcessSelected}" />
         <KeyBinding Key="Q" Modifiers="Ctrl" Command="{Binding ViewModeCommand}" />
         <KeyBinding Key="S" Modifiers="Ctrl" Command="{Binding SaveGeotagsCommand}" />
         <KeyBinding Key="T" Modifiers="Ctrl" Command="{Binding AutoGeotagCommand}" />
@@ -168,7 +168,7 @@
                         <MenuItem Header="Crop (Alt-C)" Command="{Binding CropCommand}" IsChecked="{Binding IsCropControlVisible}" />
                     </MenuItem>
                     <MenuItem Header="Transform video" >
-                        <MenuItem Header="Process selected (Ctrl+P)" Command="{Binding VideoTransformCommands.ProcessSelected}" />
+                        <MenuItem Header="Process selected (Ctrl+P)" Command="{Binding VideoTransformCommandsShared.ProcessSelected}" />
                         <Separator />
                         <MenuItem Header="Stabilize video" Command="{Binding VideoTransformCommands.StabilizeVideo}" />
                         <MenuItem Header="Combine images or videos" Command="{Binding VideoTransformCommands.Combine}" />

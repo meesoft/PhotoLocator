@@ -11,6 +11,8 @@
   <ItemGroup>
     <None Remove="TestData\2022-06-17_19.03.02.jpg" />
     <None Remove="TestData\2022-08-14_12.38.33.jpg" />
+    <None Remove="TestData\20250503.gpx" />
+    <None Remove="TestData\20250503.kml" />
     <None Remove="TestData\history-2016-05-17.kml" />
   </ItemGroup>
 
@@ -21,6 +23,8 @@
     <EmbeddedResource Include="TestData\2022-06-17_19.03.02.jpg">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </EmbeddedResource>
+    <EmbeddedResource Include="TestData\20250503.gpx" />
+    <EmbeddedResource Include="TestData\20250503.kml" />
     <EmbeddedResource Include="TestData\history-2016-05-17.kml" />
     <EmbeddedResource Include="TestData\history-2022-07-09.kml">
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
@@ -39,6 +43,12 @@
   </ItemGroup>
 
   <ItemGroup>
+    <None Update="TestData\Canon90DVideo.txt">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="TestData\DJIAction2Video.txt">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
     <None Update="TestData\exiftool.exe">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
@@ -46,6 +56,15 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Update="TestData\G8.psd">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="TestData\iPhoneVideo.txt">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="TestData\Mini2Video.txt">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="TestData\Pixel5Video.txt">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Update="TestData\RGB16.psd">

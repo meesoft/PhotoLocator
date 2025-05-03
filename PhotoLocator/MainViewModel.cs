@@ -903,6 +903,7 @@ namespace PhotoLocator
                 metadataWin.Owner = App.Current.MainWindow;
                 metadataWin.Title = SelectedItem.Name;
                 metadataWin.Metadata = String.Join("\n", ExifHandler.EnumerateMetadata(SelectedItem.FullPath, Settings.ExifToolPath));
+                //metadataWin.Metadata = String.Join("\n", ExifHandler.EnumerateMetadataUsingExifTool(SelectedItem.FullPath, Settings.ExifToolPath));
             }
             metadataWin.DataContext = metadataWin;
             metadataWin.ShowDialog();
@@ -937,7 +938,7 @@ namespace PhotoLocator
                         MessageBox.Show("Crop to selection?", "Crop", MessageBoxButton.OKCancel, MessageBoxImage.Question) != MessageBoxResult.OK)
                         return;
                     if (SelectedItem.IsVideo)
-                        new VideoTransformCommands(this).CropSelected(CropControl.CropRectangle);
+                        VideoTransformCommandsShared.CropSelected(CropControl.CropRectangle);
                     else
                         await new JpegTransformCommands(this).CropSelectedItemAsync(PreviewPictureSource, CropControl.CropRectangle);
                 }
@@ -962,6 +963,9 @@ namespace PhotoLocator
         public JpegTransformCommands JpegTransformCommands => new(this);
 
         public VideoTransformCommands VideoTransformCommands => new(this);
+
+        public VideoTransformCommands VideoTransformCommandsShared => _videoTransformCommandsShared ??= new(this);
+        VideoTransformCommands? _videoTransformCommandsShared;
 
         private async Task LoadFolderContentsAsync(bool keepSelection, string? selectItemFullPath = null)
         {

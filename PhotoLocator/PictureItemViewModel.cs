@@ -145,12 +145,12 @@ namespace PhotoLocator
         }
         Location? _geoTag;
 
-        public DateTime? TimeStamp
+        public DateTimeOffset? TimeStamp
         {
             get => _timeStamp;
             set => SetProperty(ref _timeStamp, value);
         }
-        DateTime? _timeStamp;
+        DateTimeOffset? _timeStamp;
 
         public ImageSource? ThumbnailImage
         {
@@ -300,7 +300,7 @@ namespace PhotoLocator
                         GeoTagSaved = true;
                     }
                     if (timestamp.HasValue && !TimeStamp.HasValue)
-                        TimeStamp = timestamp.Value;
+                        _timeStamp = timestamp.Value;
                     return result;
                 }
                 catch (OperationCanceledException)
