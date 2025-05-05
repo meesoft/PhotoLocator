@@ -11,7 +11,7 @@ namespace PhotoLocator.Metadata
     {
         const string ExifToolPath = @"TestData\exiftool.exe";
 
-        static readonly DateTimeOffset _jpegTestDataTimestamp = new DateTimeOffset(2022, 6, 17, 19, 3, 2, TimeSpan.FromHours(2));
+        static readonly DateTimeOffset _jpegTestDataTimestamp = new(2022, 6, 17, 19, 3, 2, TimeSpan.FromHours(2)); // Use TimeZoneInfo.Local.?
 
         [TestMethod]
         public void SetMetadata_ShouldSetJpegMetadataOnJpeg()
@@ -149,14 +149,14 @@ namespace PhotoLocator.Metadata
         }
 
         [TestMethod]
-        public void GetTimeStamp_ShouldDecodeTimeStamp()
+        public void DecodeTimeStamp_ShouldDecodeTimeStamp()
         {
             using var stream = GetType().Assembly.GetManifestResourceStream(@"PhotoLocator.TestData.2022-06-17_19.03.02.jpg")
                 ?? throw new FileNotFoundException("Resource not found");
             var decoder = BitmapDecoder.Create(stream, ExifHandler.CreateOptions, BitmapCacheOption.OnDemand);
             var metadata = (BitmapMetadata)decoder.Frames[0].Metadata;
 
-            var tag = ExifHandler.GetTimeStamp(metadata) ?? throw new FileFormatException("Failed to decode timestamp");
+            var tag = ExifHandler.DecodeTimeStamp(metadata) ?? throw new FileFormatException("Failed to decode timestamp");
 
             Assert.AreEqual(_jpegTestDataTimestamp, tag);
         }
@@ -172,7 +172,7 @@ namespace PhotoLocator.Metadata
             await ExifHandler.AdjustTimeStampAsync(@"TestData\2022-06-17_19.03.02.jpg", TargetFileName, "-01:00:00", ExifToolPath, default);
 
             var metadata = ExifHandler.LoadMetadata(File.OpenRead(TargetFileName));
-            var tag = ExifHandler.GetTimeStamp(metadata!) ?? throw new FileFormatException("Failed to decode timestamp");
+            var tag = ExifHandler.DecodeTimeStamp(metadata!) ?? throw new FileFormatException("Failed to decode timestamp");
             Assert.AreEqual(new DateTime(2022, 06, 17, 18, 03, 02, DateTimeKind.Local), tag);
         }
 
@@ -307,7 +307,7 @@ namespace PhotoLocator.Metadata
                 { "OffsetTimeOriginal", "+01:00" }
             };
 
-            var timestamp = ExifHandler.DecodeTimestampFromExifTool(dict);
+            var timestamp = ExifHandler.DecodeTimeStampFromExifTool(dict);
 
             Assert.AreEqual(new DateTimeOffset(2025, 2, 1, 22, 14, 54, TimeSpan.FromHours(1)), timestamp);
         }
@@ -318,7 +318,7 @@ namespace PhotoLocator.Metadata
             static DateTimeOffset? DecodeTimestampFromMetadata(string fileName)
             {
                 var metadata = ExifHandler.DecodeExifToolMetadataToDictionary(File.ReadAllLines(fileName));
-                return ExifHandler.DecodeTimestampFromExifTool(metadata);
+                return ExifHandler.DecodeTimeStampFromExifTool(metadata);
             }
 
             Assert.AreEqual(new DateTimeOffset(2024, 7, 9, 14, 38, 53, 390, TimeSpan.FromHours(2)), DecodeTimestampFromMetadata(@"TestData\Canon90DVideo.txt"));
