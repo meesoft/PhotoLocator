@@ -29,6 +29,7 @@
     <EmbeddedResource Include="TestData\history-2022-07-09.kml">
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </EmbeddedResource>
+    <EmbeddedResource Include="TestData\2025-05-04_15.13.08-04.jpg" />
   </ItemGroup>
 
   <ItemGroup>

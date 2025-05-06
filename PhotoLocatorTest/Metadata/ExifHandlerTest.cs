@@ -11,7 +11,8 @@ namespace PhotoLocator.Metadata
     {
         const string ExifToolPath = @"TestData\exiftool.exe";
 
-        static readonly DateTimeOffset _jpegTestDataTimestamp = new(2022, 6, 17, 19, 3, 2, TimeSpan.FromHours(2)); // Use TimeZoneInfo.Local.?
+        static readonly DateTimeOffset _jpegTestDataTimestamp = new(2022, 6, 17, 19, 3, 2, 
+            TimeZoneInfo.Local.GetUtcOffset(new DateTime(2022, 6, 17, 19, 3, 2)));
 
         [TestMethod]
         public void SetMetadata_ShouldSetJpegMetadataOnJpeg()
@@ -149,7 +150,7 @@ namespace PhotoLocator.Metadata
         }
 
         [TestMethod]
-        public void DecodeTimeStamp_ShouldDecodeTimeStamp()
+        public void DecodeTimeStamp_ShouldDecodeTimeStamp_InLocalTime()
         {
             using var stream = GetType().Assembly.GetManifestResourceStream(@"PhotoLocator.TestData.2022-06-17_19.03.02.jpg")
                 ?? throw new FileNotFoundException("Resource not found");
@@ -159,6 +160,19 @@ namespace PhotoLocator.Metadata
             var tag = ExifHandler.DecodeTimeStamp(metadata) ?? throw new FileFormatException("Failed to decode timestamp");
 
             Assert.AreEqual(_jpegTestDataTimestamp, tag);
+        }
+
+        [TestMethod]
+        public void DecodeTimeStamp_ShouldDecodeTimeStamp_WithOffset()
+        {
+            using var stream = GetType().Assembly.GetManifestResourceStream(@"PhotoLocator.TestData.2025-05-04_15.13.08-04.jpg")
+                ?? throw new FileNotFoundException("Resource not found");
+            var decoder = BitmapDecoder.Create(stream, ExifHandler.CreateOptions, BitmapCacheOption.OnDemand);
+            var metadata = (BitmapMetadata)decoder.Frames[0].Metadata;
+
+            var tag = ExifHandler.DecodeTimeStamp(metadata) ?? throw new FileFormatException("Failed to decode timestamp");
+
+            Assert.AreEqual(new(2025, 5, 4, 15, 13, 8, TimeSpan.FromHours(-4)), tag);
         }
 
         [TestMethod]
