@@ -29,8 +29,8 @@ namespace PhotoLocator.Metadata
         public const string DateTimeOriginalQuery2 = "/ifd/{ushort=34665}/{ushort=36867}";
 
         public const string DateTimeOriginalOffsetQuery1 = "/app1/{ushort=0}/{ushort=34665}/{ushort=36881}"; // +01:00 (String)
-        public const string DateTimeOriginalOffsetQuery2 = "/ifd/{ushort=36881}";
-        public const string DateTimeOriginalOffsetQuery3 = "/ifd/{ushort=34665}/{ushort=36881}";
+        public const string DateTimeOriginalOffsetQuery2 = "/ifd/{ushort=34665}/{ushort=36881}";
+        public const string DateTimeOriginalOffsetQuery3 = "/ifd/{ushort=36881}";
 
         public const string ExposureTimeQuery1 = "/app1/ifd/exif/subifd:{uint=33434}"; // RATIONAL 1
         public const string ExposureTimeQuery2 = "/ifd/{ushort=34665}/{ushort=33434}"; // RATIONAL 1
@@ -144,9 +144,11 @@ namespace PhotoLocator.Metadata
                 BitmapMetadata result;
                 int setValue = 0;
 
-                void TransferValue(string query1, string query2)
+                void TransferValue(string query1, string query2, string? query3 = null)
                 {
                     var value = source.GetQuery(query1) ?? source.GetQuery(query2);
+                    if (value is null && query3 is not null)
+                        value = source.GetQuery(query3);
                     if (value is not null)
                         try
                         {
@@ -155,7 +157,7 @@ namespace PhotoLocator.Metadata
                             else if (setValue == 2)
                                 result.SetQuery(query2, value);
                         }
-                        catch { }
+                        catch { } // Ignore unsupported properties
                 }
 
                 if (encoder is JpegBitmapEncoder)
@@ -231,6 +233,8 @@ namespace PhotoLocator.Metadata
                 }
                 catch (NotSupportedException) { }
 
+                TransferValue(DateTimeOriginalQuery1, DateTimeOriginalQuery2);
+                TransferValue(DateTimeOriginalOffsetQuery1, DateTimeOriginalOffsetQuery2, DateTimeOriginalOffsetQuery3);
                 TransferValue(ExposureTimeQuery1, ExposureTimeQuery2);
                 TransferValue(LensApertureQuery1, LensApertureQuery2);
                 TransferValue(FocalLengthQuery1, FocalLengthQuery2);
@@ -472,9 +476,7 @@ namespace PhotoLocator.Metadata
 
                 return DateTime.SpecifyKind(timeStamp, DateTimeKind.Local);
             }
-            catch (NotSupportedException) 
-            { 
-            }
+            catch (NotSupportedException) { } // Fallback to DateTaken if metadata query is not supported
 
             return DateTime.TryParse(metadata.DateTaken, out var dateTakenStr) ? DateTime.SpecifyKind(dateTakenStr, DateTimeKind.Local) : null;
         }

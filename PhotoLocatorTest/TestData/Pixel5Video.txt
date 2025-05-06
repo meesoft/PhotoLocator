@@ -1,6 +1,5 @@
 ExifToolVersion: 12.60
 FileName: 2025-04-26 17.06.45.mp4
-Directory: D:/Dropbox/Camera Uploads
 FileSize: 10 MB
 FileModifyDate: 2025:04:26 17:06:45+02:00
 FileAccessDate: 2025:05:03 20:18:51+02:00

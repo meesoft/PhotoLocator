@@ -1,6 +1,5 @@
 ExifToolVersion: 12.60
 FileName: 2022-04-16 18.46.28-1 RocketCam.mp4
-Directory: D:/Dropbox/Foto/2022 Sommerhus/raw2
 FileSize: 207 MB
 FileModifyDate: 2022:04:16 18:46:28+02:00
 FileAccessDate: 2025:04:24 22:38:14+02:00

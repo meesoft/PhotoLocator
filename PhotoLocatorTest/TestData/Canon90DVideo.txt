@@ -1,6 +1,5 @@
 ExifToolVersion: 12.60
 FileName: 2024-07-09 14.38.58 Ribe.MP4
-Directory: D:/Dropbox/Foto/2024-07-02 Vadehavet/M
 FileSize: 94 MB
 FileModifyDate: 2024:07:09 14:38:58+02:00
 FileAccessDate: 2025:04:24 22:12:30+02:00

@@ -1,6 +1,5 @@
 ExifToolVersion: 12.60
 FileName: 2022-09-23 11.50.53.mov
-Directory: D:/Dropbox/Foto/2025 Familie
 FileSize: 17 MB
 FileModifyDate: 2022:09:23 12:50:53+02:00
 FileAccessDate: 2025:04:22 22:56:53+02:00

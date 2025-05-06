@@ -1,6 +1,5 @@
 ExifToolVersion: 12.60
 FileName: 2024-07-09 13.10.35 Boreplatform Highlander i Esbjerg havn.MP4
-Directory: D:/Dropbox/Foto/2024-07-02 Vadehavet/M/vid
 FileSize: 729 MB
 FileModifyDate: 2024:07:09 13:10:35+02:00
 FileAccessDate: 2025:04:24 20:48:39+02:00
