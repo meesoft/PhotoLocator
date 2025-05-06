@@ -11,8 +11,9 @@ namespace PhotoLocator.Metadata
     {
         const string ExifToolPath = @"TestData\exiftool.exe";
 
-        static readonly DateTimeOffset _jpegTestDataTimestamp = new(2022, 6, 17, 19, 3, 2, 
-            TimeZoneInfo.Local.GetUtcOffset(new DateTime(2022, 6, 17, 19, 3, 2)));
+        static readonly DateTimeOffset _jpegTestDataTimestamp = LocalTimeToDateTimeOffset(new DateTime(2022, 6, 17, 19, 3, 2));
+        
+        static DateTimeOffset LocalTimeToDateTimeOffset(DateTime dateTime) => new(dateTime, TimeZoneInfo.Local.GetUtcOffset(dateTime));
 
         [TestMethod]
         public void SetMetadata_ShouldSetJpegMetadataOnJpeg()
@@ -327,19 +328,18 @@ namespace PhotoLocator.Metadata
         }
 
         [TestMethod]
-        public void DecodeTimestampFromExifTool_ShouldHandleDifferentFormats()
+        [DataRow(@"TestData\Canon90DVideo.txt", 2024, 7, 9, 14, 38, 53, 390, +2)]
+        [DataRow(@"TestData\DJIAction2Video.txt", 2022, 4, 16, 18, 46, 28, 0, +2)]
+        [DataRow(@"TestData\iPhoneVideo.txt", 2022, 9, 23, 12, 50, 53, 0, +2)]
+        [DataRow(@"TestData\Mini2Video.txt", 2024, 7, 9, 13, 9, 22, 0, +2)]
+        [DataRow(@"TestData\Pixel5Video.txt", 2025, 4, 26, 17, 6, 45, 0, +2)]
+        public void DecodeTimestampFromExifTool_ShouldHandleDifferentFormats(string fileName, int year, int month, int day, int hour, int minutes, int seconds, int ms, int offset)
         {
-            static DateTimeOffset? DecodeTimestampFromMetadata(string fileName)
-            {
-                var metadata = ExifHandler.DecodeExifToolMetadataToDictionary(File.ReadAllLines(fileName));
-                return ExifHandler.DecodeTimeStampFromExifTool(metadata);
-            }
+            var metadata = ExifHandler.DecodeExifToolMetadataToDictionary(File.ReadAllLines(fileName));
 
-            Assert.AreEqual(new DateTimeOffset(2024, 7, 9, 14, 38, 53, 390, TimeSpan.FromHours(2)), DecodeTimestampFromMetadata(@"TestData\Canon90DVideo.txt"));
-            Assert.AreEqual(new DateTimeOffset(2022, 4, 16, 18, 46, 28, TimeSpan.FromHours(2)), DecodeTimestampFromMetadata(@"TestData\DJIAction2Video.txt"));
-            Assert.AreEqual(new DateTimeOffset(2022, 9, 23, 12, 50, 53, TimeSpan.FromHours(2)), DecodeTimestampFromMetadata(@"TestData\iPhoneVideo.txt"));
-            Assert.AreEqual(new DateTimeOffset(2024, 7, 9, 13, 9, 22, TimeSpan.FromHours(2)), DecodeTimestampFromMetadata(@"TestData\Mini2Video.txt"));
-            Assert.AreEqual(new DateTimeOffset(2025, 4, 26, 17, 6, 45, TimeSpan.FromHours(2)), DecodeTimestampFromMetadata(@"TestData\Pixel5Video.txt"));
+            var decoded = ExifHandler.DecodeTimeStampFromExifTool(metadata);
+
+            Assert.AreEqual(new DateTimeOffset(year, month, day, hour, minutes, seconds, ms, TimeSpan.FromHours(offset)), decoded);
         }
 
         [TestMethod, Ignore]
