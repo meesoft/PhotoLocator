@@ -2,6 +2,7 @@
 using PhotoLocator.MapDisplay;
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
 
@@ -9,9 +10,11 @@ namespace PhotoLocator.Gps
 {
     public class GpsTrace : PolylineItem
     {
+        public static readonly HashSet<string> TraceExtensions = [".gpx", ".kml", ".json"];
+
         public string? Name { get; set; }
         
-        public List<DateTime> TimeStamps { get; } = [];
+        public Collection<DateTime> TimeStamps { get; } = [];
 
         public Location? Center => Locations is null || Locations.Count == 0 ? null : new Location(
             Locations.Select(l => l.Latitude).Sum() / Locations.Count,
@@ -25,6 +28,8 @@ namespace PhotoLocator.Gps
                 return GpxDecoder.DecodeStream(file).ToArray();
             if (ext == ".kml")
                 return KmlDecoder.DecodeStream(file, minimumInterval).ToArray();
+            if (ext == ".json")
+                return TimelineDecoder.DecodeStream(file, minimumInterval).ToArray();
             throw new FileFormatException("Unsupported file format");
         }
     }

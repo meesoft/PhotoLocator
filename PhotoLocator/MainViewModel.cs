@@ -1084,7 +1084,7 @@ namespace PhotoLocator
                     {
                         await AddOrUpdateItemAsync(e.FullPath, true, false);
                     }
-                    else if (ext is ".gpx" or ".kml")
+                    else if (GpsTrace.TraceExtensions.Contains(ext))
                     {
                         var traces = await Task.Run(() => GpsTrace.DecodeGpsTraceFile(e.FullPath, TimeSpan.FromMinutes(1)));
                         foreach (var trace in traces)
@@ -1150,7 +1150,7 @@ namespace PhotoLocator
                 var ext = Path.GetExtension(fileName).ToLowerInvariant();
                 if (extensions.Contains(ext))
                     Items.InsertOrdered(new PictureItemViewModel(fileName, false, HandleFilePropertyChanged, Settings));
-                else if (ext is ".gpx" or ".kml" && !_gpsTraceFiles.Contains(fileName))
+                else if (GpsTrace.TraceExtensions.Contains(ext) && !_gpsTraceFiles.Contains(fileName))
                 {
                     _gpsTraceFiles.Add(fileName);
                     var traces = await Task.Run(() => GpsTrace.DecodeGpsTraceFile(fileName, TimeSpan.FromMinutes(1)));

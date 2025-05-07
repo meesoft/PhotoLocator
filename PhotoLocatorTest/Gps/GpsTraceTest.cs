@@ -1,4 +1,3 @@
-using Microsoft.VisualStudio.TestPlatform.ObjectModel;
 using System.Xml;
 
 namespace PhotoLocator.Gps
@@ -64,6 +63,17 @@ namespace PhotoLocator.Gps
 
             Assert.AreEqual(2, trace.Locations.Count);
             Assert.AreEqual(DateTimeKind.Utc, trace.TimeStamps[0].Kind);
+        }
+
+        [TestMethod, Ignore]
+        public void TimelineDecoder_ShouldDecodeTimeline()
+        {
+            using var stream = File.OpenRead(@"TestData\Tidslinje.json");
+
+            var trace = TimelineDecoder.DecodeStream(stream, TimeSpan.FromMinutes(15)).ToArray();
+
+            Assert.AreEqual(2, trace[0].Locations.Count);
+            Assert.AreEqual(DateTimeKind.Utc, trace[0].TimeStamps[0].Kind);
         }
 
         [TestMethod, Ignore]
