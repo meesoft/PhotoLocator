@@ -95,7 +95,7 @@ namespace PhotoLocator
             }
         });
 
-        private Location? GetBestGeoFix(PictureItemViewModel[] sourceImages, IEnumerable<GpsTrace> gpsTraces, DateTime timeStamp)
+        private Location? GetBestGeoFix(PictureItemViewModel[] sourceImages, IEnumerable<GpsTrace> gpsTraces, DateTimeOffset timeStamp)
         {
             Location? bestFix = null;
             var minDistance = TimeSpan.FromMinutes(MaxTimestampDifference + 0.001);

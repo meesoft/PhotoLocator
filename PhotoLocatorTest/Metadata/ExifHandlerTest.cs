@@ -11,7 +11,9 @@ namespace PhotoLocator.Metadata
     {
         const string ExifToolPath = @"TestData\exiftool.exe";
 
-        static readonly string _jpegTestDataTimestamp = new DateTime(2022, 6, 17, 19, 3, 2).ToString();
+        static readonly DateTimeOffset _jpegTestDataTimestamp = LocalTimeToDateTimeOffset(new DateTime(2022, 6, 17, 19, 3, 2));
+        
+        static DateTimeOffset LocalTimeToDateTimeOffset(DateTime dateTime) => new(dateTime, TimeZoneInfo.Local.GetUtcOffset(dateTime));
 
         [TestMethod]
         public void SetMetadata_ShouldSetJpegMetadataOnJpeg()
@@ -149,16 +151,29 @@ namespace PhotoLocator.Metadata
         }
 
         [TestMethod]
-        public void GetTimeStamp_ShouldDecodeTimeStamp()
+        public void DecodeTimeStamp_ShouldDecodeTimeStamp_InLocalTime()
         {
             using var stream = GetType().Assembly.GetManifestResourceStream(@"PhotoLocator.TestData.2022-06-17_19.03.02.jpg")
                 ?? throw new FileNotFoundException("Resource not found");
             var decoder = BitmapDecoder.Create(stream, ExifHandler.CreateOptions, BitmapCacheOption.OnDemand);
             var metadata = (BitmapMetadata)decoder.Frames[0].Metadata;
 
-            var tag = ExifHandler.GetTimeStamp(metadata) ?? throw new FileFormatException("Failed to decode timestamp");
+            var tag = ExifHandler.DecodeTimeStamp(metadata) ?? throw new FileFormatException("Failed to decode timestamp");
 
-            Assert.AreEqual(new DateTime(2022, 06, 17, 19, 03, 02, DateTimeKind.Local), tag);
+            Assert.AreEqual(_jpegTestDataTimestamp, tag);
+        }
+
+        [TestMethod]
+        public void DecodeTimeStamp_ShouldDecodeTimeStamp_WithOffset()
+        {
+            using var stream = GetType().Assembly.GetManifestResourceStream(@"PhotoLocator.TestData.2025-05-04_15.13.08-04.jpg")
+                ?? throw new FileNotFoundException("Resource not found");
+            var decoder = BitmapDecoder.Create(stream, ExifHandler.CreateOptions, BitmapCacheOption.OnDemand);
+            var metadata = (BitmapMetadata)decoder.Frames[0].Metadata;
+
+            var tag = ExifHandler.DecodeTimeStamp(metadata) ?? throw new FileFormatException("Failed to decode timestamp");
+
+            Assert.AreEqual(new(2025, 5, 4, 15, 13, 8, TimeSpan.FromHours(-4)), tag);
         }
 
         [TestMethod]
@@ -172,7 +187,7 @@ namespace PhotoLocator.Metadata
             await ExifHandler.AdjustTimeStampAsync(@"TestData\2022-06-17_19.03.02.jpg", TargetFileName, "-01:00:00", ExifToolPath, default);
 
             var metadata = ExifHandler.LoadMetadata(File.OpenRead(TargetFileName));
-            var tag = ExifHandler.GetTimeStamp(metadata!) ?? throw new FileFormatException("Failed to decode timestamp");
+            var tag = ExifHandler.DecodeTimeStamp(metadata!) ?? throw new FileFormatException("Failed to decode timestamp");
             Assert.AreEqual(new DateTime(2022, 06, 17, 18, 03, 02, DateTimeKind.Local), tag);
         }
 
@@ -279,7 +294,7 @@ namespace PhotoLocator.Metadata
             var metadata = ExifHandler.LoadMetadata(stream);
             Assert.IsNotNull(metadata);
             var str = ExifHandler.GetMetadataString(metadata);
-            Assert.AreEqual("FC7303, 100.7m, 1/80s, f/2.8, 4.49mm, ISO100, 06/17/2022 19:03:02", str);
+            Assert.AreEqual("FC7303, 100.7m, 1/80s, f/2.8, 4.49mm, ISO100, " + _jpegTestDataTimestamp, str);
         }
 
         [TestMethod]
@@ -290,14 +305,41 @@ namespace PhotoLocator.Metadata
 
             Thread.CurrentThread.CurrentCulture = CultureInfo.InvariantCulture;
 
-            var metadata = ExifHandler.DecodeMetadata(@"TestData\2022-06-17_19.03.02.jpg", ExifToolPath);
+            var metadata = ExifHandler.DecodeMetadataUsingExifTool(@"TestData\2022-06-17_19.03.02.jpg", ExifToolPath);
 
-            // Note that time is wrong because exiftool is incosistent with timezones, but the chosen decoding seems to
-            // be correct for video files which is the primary use case for exiftool for now.
-            Assert.AreEqual("FC7303, 1/80s, f/2.8, 4.5 mm, ISO100, 341x191, 06/17/2022 21:03:02", metadata.Metadata); 
-            Assert.AreEqual(new DateTime(2022, 6, 17, 21, 3, 2), metadata.TimeStamp);
+            Assert.AreEqual("FC7303, 1/80s, f/2.8, 4.5 mm, ISO100, 341x191, " + _jpegTestDataTimestamp, metadata.Metadata);
+            Assert.AreEqual(new DateTimeOffset(2022, 6, 17, 19, 3, 2, TimeSpan.FromHours(2)), metadata.TimeStamp);
             Assert.AreEqual(55.4, metadata.Location!.Latitude, 0.1);
             Assert.AreEqual(11.2, metadata.Location!.Longitude, 0.1);
+        }
+
+        [TestMethod]
+        public void DecodeTimestampFromExifTool_ShouldUseOffset()
+        {
+            var dict = new Dictionary<string, string>
+            {
+                { "DateTimeOriginal", "2025:02:01 22:14:54" },
+                { "OffsetTimeOriginal", "+01:00" }
+            };
+
+            var timestamp = ExifHandler.DecodeTimeStampFromExifTool(dict);
+
+            Assert.AreEqual(new DateTimeOffset(2025, 2, 1, 22, 14, 54, TimeSpan.FromHours(1)), timestamp);
+        }
+
+        [TestMethod]
+        [DataRow(@"TestData\Canon90DVideo.txt", 2024, 7, 9, 14, 38, 53, 390, +2)]
+        [DataRow(@"TestData\DJIAction2Video.txt", 2022, 4, 16, 18, 46, 28, 0, +2)]
+        [DataRow(@"TestData\iPhoneVideo.txt", 2022, 9, 23, 12, 50, 53, 0, +2)]
+        [DataRow(@"TestData\Mini2Video.txt", 2024, 7, 9, 13, 9, 22, 0, +2)]
+        [DataRow(@"TestData\Pixel5Video.txt", 2025, 4, 26, 17, 6, 45, 0, +2)]
+        public void DecodeTimestampFromExifTool_ShouldHandleDifferentFormats(string fileName, int year, int month, int day, int hour, int minutes, int seconds, int ms, int offset)
+        {
+            var metadata = ExifHandler.DecodeExifToolMetadataToDictionary(File.ReadAllLines(fileName));
+
+            var decoded = ExifHandler.DecodeTimeStampFromExifTool(metadata);
+
+            Assert.AreEqual(new DateTimeOffset(year, month, day, hour, minutes, seconds, ms, TimeSpan.FromHours(offset)), decoded);
         }
 
         [TestMethod, Ignore]

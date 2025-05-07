@@ -1,0 +1,278 @@
+ExifToolVersion: 12.60
+FileName: 2024-07-09 14.38.58 Ribe.MP4
+FileSize: 94 MB
+FileModifyDate: 2024:07:09 14:38:58+02:00
+FileAccessDate: 2025:04:24 22:12:30+02:00
+FileCreateDate: 2024:07:14 22:08:49+02:00
+FilePermissions: -rw-rw-rw-
+FileType: MP4
+FileTypeExtension: mp4
+MIMEType: video/mp4
+MajorBrand: MP4 v2 [ISO 14496-14]
+MinorVersion: 0.0.1
+CompatibleBrands: mp42, avc1, CAEP
+CompressorVersion: CanonMP4_002/09.00.00/00.00.02
+ExifByteOrder: Little-endian (Intel, II)
+Orientation: Horizontal (normal)
+ResolutionUnit: inches
+YCbCrPositioning: Co-sited
+ExposureTime: undef
+FNumber: undef
+ExposureProgram: Program AE
+SensitivityType: Recommended Exposure Index
+RecommendedExposureIndex: 0
+ExifVersion: 0231
+DateTimeOriginal: 2024:07:09 14:38:53
+OffsetTime: +02:00
+OffsetTimeOriginal: +02:00
+OffsetTimeDigitized: +02:00
+ComponentsConfiguration: Y, Cb, Cr, -
+ShutterSpeedValue: 0
+ApertureValue: 8.0
+Flash: No Flash
+FocalLength: 20.0 mm
+MacroMode: Normal
+SelfTimer: Off
+Quality: Standard (RAW)
+CanonFlashMode: n/a
+ContinuousDrive: Movie
+FocusMode: Movie Servo AF
+RecordMode: MP4
+CanonImageSize: Unknown (136)
+EasyMode: Manual
+DigitalZoom: None
+Contrast: Normal
+Saturation: Normal
+CameraISO: Auto
+MeteringMode: Center-weighted average
+FocusRange: Auto
+CanonExposureMode: Program AE
+LensType: Sigma 14-24mm f/2.8 DG HSM | A or other Sigma Lens
+MaxFocalLength: 300 mm
+MinFocalLength: 18 mm
+FocalUnits: 1/mm
+MaxAperture: 3.7
+MinAperture: 23
+FlashActivity: 0
+FlashBits: E-TTL
+FocusContinuous: Single
+ImageStabilization: On (2)
+ZoomSourceWidth: 0
+ZoomTargetWidth: 0
+ManualFlashOutput: n/a
+ColorTone: Normal
+FocalType: Zoom
+AutoISO: 100
+MeasuredEV: 12.25
+TargetExposureTime: 1
+ExposureCompensation: 0
+WhiteBalance: Auto
+SlowShutter: None
+SequenceNumber: 0
+OpticalZoomCode: n/a
+CameraTemperature: 34 C
+FlashGuideNumber: 0
+FlashExposureComp: 0
+AutoExposureBracketing: Off
+AEBBracketValue: 0
+ControlMode: n/a
+MeasuredEV2: 23
+BulbDuration: 0
+CameraType: EOS High-end
+AutoRotate: None
+NDFilter: Off
+CanonImageType: MVI:Canon EOS 90D
+CanonFirmwareVersion: Firmware Version 1.1.1
+CanonModelID: EOS 90D
+ThumbnailImageValidArea: 0 159 15 104
+ImageUniqueID: 9b0ba934e1bf4acd9a8ba185bcf3620d
+TimeZone: +02:00
+TimeZoneCity: Paris
+DaylightSavings: On
+BatteryType: LP-E6NH
+BracketMode: Off
+BracketValue: 0
+BracketShotNumber: 0
+RawJpgSize: Large
+WBBracketMode: Off
+WBBracketValueAB: 0
+WBBracketValueGM: 0
+LiveViewShooting: On
+FocusDistanceUpper: inf
+FocusDistanceLower: 22.95 m
+ShutterMode: Mechanical
+FlashExposureLock: Off
+RFLensType: n/a
+InternalSerialNumber: GJ0011338
+ExposureLevelIncrements: 1/3 Stop
+ISOSpeedIncrements: 1/3 Stop
+AEBAutoCancel: On
+AEBSequence: 0,-,+
+AEBShotCount: 3 shots
+SafetyShift: Disable
+ExposureCompAutoCancel: Enable
+AELockMeterModeAfterFocus: Evaluative
+AIServoTrackingSensitivity: Medium Slow
+AIServoTrackingMethod: Continuous AF track priority
+LensDriveNoAF: Focus search off
+AFMicroadjustment: Adjust by lens; 1; 0; 0; 0; 0; 0; 0; 0; 0; 0; 0; 0; 0; 0; 0
+AFPointDisplayDuringFocus: Selected (constant)
+AFPointSelectionMethod: Unknown (1046 1046)
+SelectAFAreaSelectMode: Unknown (87)
+ManualAFPointSelectPattern: Stops at AF area edges
+OrientationLinkedAFPoint: Same for vertical and horizontal
+AccelerationTracking: 0
+AIServoFirstImagePriority: Equal priority
+AIServoSecondImagePriority: Unknown (2)
+AFAreaSelectMethod: Main dial
+AutoAFPointColorTracking: On-Shot AF only
+VFDisplayIllumination: Auto
+InitialAFPointAIServoAF: Manual AF point
+ViewfinderWarnings: Monochrome, WB corrected, Noise reduction, HDR
+DialDirectionTvAv: Normal
+CustomControls: 29 0 19 0 0 65535 65535 65535 3 0 0 65535 65535 65535 18 0 4 0 29 0 25 0 46 0 13 0 14 2 14 2 5 0 29 0 5 0 5 0 5 0 5 0 29 0 0 0 0 0 90 0 29 0 29 0 79 0 87 0 103 0 39 0 105 0 53 0 65535 0 3 5376 3840 0 0 0 0 0 0 0 0 0 0 0 5200 0 0 0 0 0 0 0 0 0 0 7 3 4 31 1 4 0 0 0 1
+RetractLensOnPowerOff: Enable
+AudioCompression: Enable
+ToneCurve: Standard
+Sharpness: 4
+SharpnessFrequency: n/a
+SensorRedLevel: 0
+SensorBlueLevel: 0
+WhiteBalanceRed: 0
+WhiteBalanceBlue: 0
+ColorTemperature: 5200
+PictureStyle: Auto
+DigitalGain: 0
+WBShiftAB: 0
+WBShiftGM: 0
+VRDOffset: 0
+SensorWidth: 7128
+SensorHeight: 4732
+SensorLeftBorder: 156
+SensorTopBorder: 84
+SensorRightBorder: 7115
+SensorBottomBorder: 4723
+BlackMaskLeftBorder: 0
+BlackMaskTopBorder: 0
+BlackMaskRightBorder: 0
+BlackMaskBottomBorder: 0
+PictureStyleUserDef: Auto; Auto; Auto
+PictureStylePC: None; None; None
+CustomPictureStyleFileName:
+PeripheralIlluminationCorr: Off
+AutoLightingOptimizer: Standard
+HighlightTonePriority: Off
+LongExposureNoiseReduction: Off
+HighISONoiseReduction: Standard
+DigitalLensOptimizer: Off
+CompressionFormat: Light (IPB)
+HDR: Off
+HDREffect: Natural
+UserComment:
+SubSecTime: 39
+SubSecTimeOriginal: 39
+SubSecTimeDigitized: 39
+FlashpixVersion: 0100
+ColorSpace: sRGB
+ExifImageWidth: 160
+ExifImageHeight: 120
+InteropIndex: THM - DCF thumbnail file
+InteropVersion: 0100
+RelatedImageWidth: 3840
+RelatedImageHeight: 2160
+FocalPlaneXResolution: 330.672748
+FocalPlaneYResolution: 440.6444444
+FocalPlaneResolutionUnit: inches
+CustomRendered: Normal
+ExposureMode: Auto
+SceneCaptureType: Standard
+OwnerName:
+SerialNumber: 083052001082
+LensInfo: 18-300mm f/0
+LensModel: 18-300mm F3.5-6.3 DC MACRO OS HSM | Contemporary 014
+LensSerialNumber: 0000000000
+GPSVersionID: 2.3.0.0
+EncodingProcess: Baseline DCT, Huffman coding
+BitsPerSample: 8
+ColorComponents: 3
+YCbCrSubSampling: YCbCr4:2:2 (2 1)
+ThumbnailImage: (Binary data 20997 bytes, use -b option to extract)
+Make: Canon
+Model: Canon EOS 90D
+Author: Leth & Vinther
+UserRating: 0
+MovieHeaderVersion: 0
+CreateDate: 2024:07:09 12:38:53
+ModifyDate: 2024:07:09 12:38:53
+TimeScale: 25000
+Duration: 6.20 s
+PreferredRate: 1
+PreferredVolume: 100.00%
+PreviewTime: 0 s
+PreviewDuration: 0 s
+PosterTime: 0 s
+SelectionTime: 0 s
+SelectionDuration: 0 s
+CurrentTime: 0 s
+NextTrackID: 3
+TrackHeaderVersion: 0
+TrackCreateDate: 2024:07:09 12:38:53
+TrackModifyDate: 2024:07:09 12:38:53
+TrackID: 1
+TrackDuration: 6.20 s
+TrackLayer: 0
+TrackVolume: 0.00%
+ImageWidth: 3840
+ImageHeight: 2160
+GraphicsMode: srcCopy
+OpColor: 0 0 0
+CompressorID: avc1
+SourceImageWidth: 3840
+SourceImageHeight: 2160
+XResolution: 72
+YResolution: 72
+BitDepth: 24
+ColorProfiles: nclx
+ColorPrimaries: BT.709
+TransferCharacteristics: BT.709
+MatrixCoefficients: BT.709
+VideoFrameRate: 25
+MatrixStructure: 1 0 0 0 1 0 0 0 1
+MediaHeaderVersion: 0
+MediaCreateDate: 2024:07:09 12:38:53
+MediaModifyDate: 2024:07:09 12:38:53
+MediaTimeScale: 48000
+MediaDuration: 6.19 s
+MediaLanguageCode: eng
+HandlerType: Audio Track
+Balance: 0
+AudioFormat: mp4a
+AudioChannels: 2
+AudioBitsPerSample: 16
+AudioSampleRate: 48000
+MediaDataSize: 93644176
+MediaDataOffset: 98320
+ConditionalFEC: 0
+DriveMode: Continuous Shooting
+FlashType: Built-In Flash
+Lens: 18.0 - 300.0 mm
+RedEyeReduction: Off
+ShootingMode: Program AE
+ShutterCurtainHack: 1st-curtain sync
+Aperture: undef
+ImageSize: 3840x2160
+LensID: Sigma 18-35mm f/1.8 DC HSM | A
+Megapixels: 8.3
+ScaleFactor35efl: 3.1
+ShutterSpeed: undef
+SubSecCreateDate: 2024:07:09 14:38:53.39+02:00
+SubSecDateTimeOriginal: 2024:07:09 14:38:53.39+02:00
+SubSecModifyDate: 2024:07:09 14:38:53.39+02:00
+AvgBitrate: 121 Mbps
+Rotation: 0
+Lens35efl: 18.0 - 300.0 mm (35 mm equivalent: 55.2 - 920.4 mm)
+CircleOfConfusion: 0.010 mm
+DOF: 0.00 m (339.15 - 339.15 m)
+FOV: 32.7 deg
+FocalLength35efl: 20.0 mm (35 mm equivalent: 61.4 mm)
+HyperfocalDistance: Inf m

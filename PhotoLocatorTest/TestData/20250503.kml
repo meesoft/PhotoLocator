@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?><kml xmlns="http://www.opengis.net/kml/2.2" xmlns:gx="http://www.google.com/kml/ext/2.2" xmlns:kml="http://www.opengis.net/kml/2.2" xmlns:atom="http://www.w3.org/2005/Atom"><Document><name>2025-05-03T22:38:20.388+03:00</name>
+<Placemark>
+<gx:Track>
+
+<when>2025-05-03T22:38:20.388+03:00</when>
+<gx:coord>35.99948 31.717053333333336 920.4</gx:coord>
+
+<when>2025-05-03T22:38:39.000+03:00</when>
+<gx:coord>35.999295 31.71709333333333 1007.8</gx:coord>
+</gx:Track>
+</Placemark></Document></kml>

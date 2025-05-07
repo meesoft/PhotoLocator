@@ -1,0 +1,96 @@
+ExifToolVersion: 12.60
+FileName: 2024-07-09 13.10.35 Boreplatform Highlander i Esbjerg havn.MP4
+FileSize: 729 MB
+FileModifyDate: 2024:07:09 13:10:35+02:00
+FileAccessDate: 2025:04:24 20:48:39+02:00
+FileCreateDate: 2024:07:14 22:08:59+02:00
+FilePermissions: -rw-rw-rw-
+FileType: MP4
+FileTypeExtension: mp4
+MIMEType: video/mp4
+MajorBrand: MP4 Base w/ AVC ext [ISO 14496-12:2005]
+MinorVersion: 2014.2.0
+CompatibleBrands: avc1, isom
+MediaDataSize: 729096693
+MediaDataOffset: 44
+MovieHeaderVersion: 0
+CreateDate: 2024:07:09 11:09:22
+ModifyDate: 2024:07:09 11:09:22
+TimeScale: 50000
+Duration: 0:01:13
+PreferredRate: 1
+PreferredVolume: 100.00%
+PreviewTime: 0 s
+PreviewDuration: 0 s
+PosterTime: 0 s
+SelectionTime: 0 s
+SelectionDuration: 0 s
+CurrentTime: 0 s
+NextTrackID: 4
+GPSCoordinates-err: +55.478000 N, +8.410600 E
+SpeedX-err: +0.00
+SpeedY-err: -0.50
+SpeedZ-err: -0.10
+Pitch-err: -8.00
+Yaw-err: +145.40
+Roll-err: -13.90
+CameraPitch-err: -6.70
+CameraYaw-err: +0.20
+CameraRoll-err: +0.00
+Comment: DE=None,SN=1SFOJ8M0AB03BN, Type=Normal, HQ=Normal, Mode=P
+Category: v01.43.0074, 0.0.1, v1.0.0
+Model: FC7303
+UserData_mux-fr:
+UserData_mux: IJ..III
+TrackHeaderVersion: 0
+TrackCreateDate: 2024:07:09 11:09:22
+TrackModifyDate: 2024:07:09 11:09:22
+TrackID: 1
+TrackDuration: 0:01:13
+TrackLayer: 0
+TrackVolume: 0.00%
+ImageWidth: 2720
+ImageHeight: 1530
+GraphicsMode: srcCopy
+OpColor: 0 0 0
+CompressorID: avc1
+SourceImageWidth: 2720
+SourceImageHeight: 1530
+XResolution: 72
+YResolution: 72
+CompressorName: AVC encoder
+BitDepth: 24
+VideoFrameRate: 50
+MetaFormat: priv
+MatrixStructure: 1 0 0 0 1 0 0 0 1
+MediaHeaderVersion: 0
+MediaCreateDate: 2024:07:09 11:09:22
+MediaModifyDate: 2024:07:09 11:09:22
+MediaTimeScale: 50000
+MediaDuration: 0:01:13
+HandlerClass: Media Handler
+HandlerType: Text
+HandlerDescription: .DJI.Subtitle
+GenMediaVersion: 0
+GenFlags: 0 0 0
+GenGraphicsMode: ditherCopy
+GenOpColor: 32768 32768 32768
+GenBalance: 0
+OtherFormat: text
+GPSCoordinates: +55.478000 N, +8.410600 E
+SpeedX: +0.00
+SpeedY: -0.50
+SpeedZ: -0.10
+Pitch: -8.00
+Yaw: +145.40
+Roll: -13.90
+CameraPitch: -6.70
+CameraYaw: +0.20
+CameraRoll: +0.00
+ImageSize: 2720x1530
+Megapixels: 4.2
+AvgBitrate: 80.1 Mbps
+GPSLatitude: +55.478000 N
+GPSLongitude: +8.410600 E
+Rotation: 0
+GPSPosition: +55.478000 N, +8.410600 E

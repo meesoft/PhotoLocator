@@ -35,7 +35,7 @@ namespace PhotoLocator.Metadata
         DateTime GetTimestamp()
         {
             if (_file.TimeStamp.HasValue)
-                return _file.TimeStamp.Value;
+                return _file.TimeStamp.Value.DateTime; // We want the local time in the time zone where the image was acquired
             return File.GetLastWriteTime(_file.FullPath);
         }
 

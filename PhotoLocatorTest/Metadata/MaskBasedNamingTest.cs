@@ -7,19 +7,19 @@ namespace PhotoLocator.Metadata
     {
         static MaskBasedNaming _renamer = null!;
 
-        class FileInfo(string fullPath, DateTime? timeStamp) : IFileInformation
+        class FileInfo(string fullPath, DateTimeOffset? timeStamp) : IFileInformation
         {
             public string Name => Path.GetFileName(FullPath);
 
             public string FullPath { get; } = fullPath;
 
-            public DateTime? TimeStamp { get; } = timeStamp;
+            public DateTimeOffset? TimeStamp { get; } = timeStamp;
         }
 
         [ClassInitialize]
         public static void ClassInit(TestContext context)
         {
-            var file = new FileInfo(@"TestData\2022-06-17_19.03.02.jpg", new DateTime(2022, 6, 17, 19, 03, 02));
+            var file = new FileInfo(@"TestData\2022-06-17_19.03.02.jpg", new DateTimeOffset(2022, 6, 17, 19, 03, 02, TimeSpan.FromHours(-4)));
             _renamer = new MaskBasedNaming(file, 1);
         }
 

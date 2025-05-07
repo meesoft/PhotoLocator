@@ -8,6 +8,6 @@ namespace PhotoLocator.Metadata
 
         string FullPath { get; }
 
-        public DateTime? TimeStamp { get; }
+        public DateTimeOffset? TimeStamp { get; }
     }
 }

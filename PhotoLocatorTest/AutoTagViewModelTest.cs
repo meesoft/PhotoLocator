@@ -18,7 +18,7 @@ namespace PhotoLocator
             var trace = new GpsTrace();
             var location = new Location(1, 2);
             trace.Locations.Add(location);
-            trace.TimeStamps.Add(file.TimeStamp!.Value.AddMinutes(1));
+            trace.TimeStamps.Add(file.TimeStamp!.Value.AddMinutes(1).UtcDateTime);
             var settings = Mock.Of<IRegistrySettings>();
             var vm = new AutoTagViewModel([file], [file], [trace], () => { }, settings);
             vm.MaxTimestampDifference = 1;
@@ -38,7 +38,7 @@ namespace PhotoLocator
             var trace = new GpsTrace();
             var location = new Location(1, 2);
             trace.Locations.Add(location);
-            trace.TimeStamps.Add(file.TimeStamp!.Value.AddHours(1));
+            trace.TimeStamps.Add(file.TimeStamp!.Value.AddHours(1).UtcDateTime);
             var settings = Mock.Of<IRegistrySettings>();
             var vm = new AutoTagViewModel([file], [file], [trace], () => { }, settings);
             vm.MaxTimestampDifference = 0;
@@ -59,7 +59,7 @@ namespace PhotoLocator
             var trace = new GpsTrace();
             var location = new Location(1, 2);
             trace.Locations.Add(location);
-            trace.TimeStamps.Add(file.TimeStamp!.Value.AddMinutes(-1));
+            trace.TimeStamps.Add(file.TimeStamp!.Value.AddMinutes(-1).UtcDateTime);
             var settings = Mock.Of<IRegistrySettings>();
             var vm = new AutoTagViewModel([file], [file], [trace], () => { }, settings);
             vm.MaxTimestampDifference = 0;

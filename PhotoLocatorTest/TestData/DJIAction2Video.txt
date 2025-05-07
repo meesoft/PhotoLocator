@@ -1,0 +1,73 @@
+ExifToolVersion: 12.60
+FileName: 2022-04-16 18.46.28-1 RocketCam.mp4
+FileSize: 207 MB
+FileModifyDate: 2022:04:16 18:46:28+02:00
+FileAccessDate: 2025:04:24 22:38:14+02:00
+FileCreateDate: 2022:06:19 20:38:46+02:00
+FilePermissions: -rw-rw-rw-
+FileType: MP4
+FileTypeExtension: mp4
+MIMEType: video/mp4
+MajorBrand: MP4 Base Media v1 [IS0 14496-12:2003]
+MinorVersion: 0.2.0
+CompatibleBrands: isom, iso2, mp41
+MediaDataSize: 205699913
+MediaDataOffset: 512
+MovieHeaderVersion: 0
+CreateDate: 2022:04:16 16:46:28
+ModifyDate: 2022:04:16 16:46:28
+TimeScale: 1000
+Duration: 0:03:10
+PreferredRate: 1
+PreferredVolume: 100.00%
+PreviewTime: 0 s
+PreviewDuration: 0 s
+PosterTime: 0 s
+SelectionTime: 0 s
+SelectionDuration: 0 s
+CurrentTime: 0 s
+NextTrackID: 3
+TrackHeaderVersion: 0
+TrackCreateDate: 2022:04:16 16:46:28
+TrackModifyDate: 2022:04:16 16:46:28
+TrackID: 1
+TrackDuration: 0:03:10
+TrackLayer: 0
+TrackVolume: 0.00%
+ImageWidth: 1920
+ImageHeight: 1080
+GraphicsMode: srcCopy
+OpColor: 0 0 0
+CompressorID: hvc1
+SourceImageWidth: 1920
+SourceImageHeight: 1080
+XResolution: 72
+YResolution: 72
+BitDepth: 24
+ColorProfiles: nclx
+ColorPrimaries: Unspecified
+TransferCharacteristics: Unspecified
+MatrixCoefficients: Unspecified
+VideoFrameRate: 29.97
+MatrixStructure: 1 0 0 0 1 0 0 0 1
+MediaHeaderVersion: 0
+MediaCreateDate: 2022:04:16 16:46:28
+MediaModifyDate: 2022:04:16 16:46:28
+MediaTimeScale: 90000
+MediaDuration: 0:03:10
+MediaLanguageCode: und
+HandlerDescription: DJI meta
+GenMediaVersion: 0
+GenFlags: 0 0 0
+GenGraphicsMode: ditherCopy
+GenOpColor: 32768 32768 32768
+GenBalance: 0
+MetaFormat: djmd
+HandlerType: Metadata
+HandlerVendorID: Apple
+Encoder: DJIAction2
+CoverArt: (Binary data 422646 bytes, use -b option to extract)
+ImageSize: 1920x1080
+Megapixels: 2.1
+AvgBitrate: 8.68 Mbps
+Rotation: 0
