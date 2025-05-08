@@ -1,4 +1,5 @@
 ﻿using MapControl;
+using PhotoLocator.Helpers;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
@@ -9,11 +10,14 @@ namespace PhotoLocator.Gps
 {
     static class TimelineDecoder
     {
-        public static IEnumerable<GpsTrace> DecodeStream(Stream stream, TimeSpan minimumInterval)
+        public static IEnumerable<GpsTrace> DecodeStream(Stream stream)
         {
-            var document = JsonDocument.Parse(stream);
+            using var document = JsonDocument.Parse(stream);
             if (!document.RootElement.TryGetProperty("semanticSegments", out var segments))
+            {
+                Log.Write("Unsupported JSON file format");
                 yield break;
+            }
 
             foreach (var segment in segments.EnumerateArray())
             {
@@ -29,7 +33,8 @@ namespace PhotoLocator.Gps
                                 double.Parse(coords[1], CultureInfo.InvariantCulture)));
                             trace.TimeStamps.Add(time.GetDateTimeOffset().UtcDateTime);
                         }
-                    yield return trace;
+                    if (trace.Locations.Count > 0)
+                        yield return trace;
                 }
                 //else if (segment.TryGetProperty("visit", out var visit)
                 //    && visit.TryGetProperty("topCandidate", out var topCandidate)

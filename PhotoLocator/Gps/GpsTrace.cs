@@ -24,12 +24,19 @@ namespace PhotoLocator.Gps
         {
             var ext = Path.GetExtension(fileName).ToLowerInvariant();
             using var file = File.OpenRead(fileName);
-            if (ext == ".gpx")
-                return GpxDecoder.DecodeStream(file).ToArray();
-            if (ext == ".kml")
-                return KmlDecoder.DecodeStream(file, minimumInterval).ToArray();
-            if (ext == ".json")
-                return TimelineDecoder.DecodeStream(file, minimumInterval).ToArray();
+            try
+            {
+                if (ext == ".gpx")
+                    return GpxDecoder.DecodeStream(file).ToArray();
+                if (ext == ".kml")
+                    return KmlDecoder.DecodeStream(file, minimumInterval).ToArray();
+                if (ext == ".json")
+                    return TimelineDecoder.DecodeStream(file).ToArray();
+            }
+            catch (Exception ex)
+            {
+                throw new FileFormatException("Error decoding GPS trace file " + fileName, ex);
+            }
             throw new FileFormatException("Unsupported file format");
         }
     }

@@ -65,12 +65,16 @@ namespace PhotoLocator.Gps
             Assert.AreEqual(DateTimeKind.Utc, trace.TimeStamps[0].Kind);
         }
 
-        [TestMethod, Ignore]
+        [TestMethod]
         public void TimelineDecoder_ShouldDecodeTimeline()
         {
-            using var stream = File.OpenRead(@"TestData\Tidslinje.json");
+            const string TimelineJsonPath = @"TestData\Timeline.json";
 
-            var trace = TimelineDecoder.DecodeStream(stream, TimeSpan.FromMinutes(15)).ToArray();
+            if (!File.Exists(TimelineJsonPath))
+                Assert.Inconclusive("Test data not available");
+
+            using var stream = File.OpenRead(TimelineJsonPath);
+            var trace = TimelineDecoder.DecodeStream(stream).ToArray();
 
             Assert.AreEqual(2, trace[0].Locations.Count);
             Assert.AreEqual(DateTimeKind.Utc, trace[0].TimeStamps[0].Kind);
