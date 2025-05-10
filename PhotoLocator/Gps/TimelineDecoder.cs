@@ -19,10 +19,15 @@ namespace PhotoLocator.Gps
                 yield break;
             }
 
+            var cutoffDate = DateTime.Now - TimeSpan.FromDays(365);
+
             foreach (var segment in segments.EnumerateArray())
             {
-                if (segment.TryGetProperty("timelinePath", out var timelinePath))
+                if (segment.TryGetProperty("timelinePath", out var timelinePath) && segment.TryGetProperty("startTime", out var startTime))
                 {
+                    if (startTime.GetDateTimeOffset() < cutoffDate)
+                        continue;
+
                     var trace = new GpsTrace();
                     foreach (var location in timelinePath.EnumerateArray())
                         if (location.TryGetProperty("point", out var point) && location.TryGetProperty("time", out var time))
@@ -45,12 +50,8 @@ namespace PhotoLocator.Gps
                 //    trace.Locations.Add(new Location(
                 //        double.Parse(point[0], CultureInfo.InvariantCulture),
                 //        double.Parse(point[1], CultureInfo.InvariantCulture)));
-
-                //    var time = segment.GetProperty("startTime").GetDateTimeOffset();
-                //    trace.TimeStamps.Add(time.UtcDateTime);
-
+                //    trace.TimeStamps.Add(startTime.UtcDateTime);
                 //    trace.Name = time.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture);
-            
                 //    yield return trace;
                 //}
             }
