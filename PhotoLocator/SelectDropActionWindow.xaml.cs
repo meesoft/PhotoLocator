@@ -90,6 +90,7 @@ namespace PhotoLocator
             await _mainViewModel.RunProcessWithProgressBarAsync(async (progressCallback, ct) =>
             {
                 for (int i = 0; i < DroppedEntries.Count; i++)
+                {
                     await Task.Run(() =>
                     {
                         var destinationPath = Path.Combine(CurrentPath!, Path.GetFileName(DroppedEntries[i]));
@@ -97,8 +98,9 @@ namespace PhotoLocator
                             FileSystem.CopyDirectory(DroppedEntries[i], destinationPath, UIOption.AllDialogs);
                         else
                             FileSystem.CopyFile(DroppedEntries[i], destinationPath, UIOption.AllDialogs);
-                        progressCallback((double)(i + 1) / DroppedEntries.Count);
                     }, ct);
+                    progressCallback((double)(i + 1) / DroppedEntries.Count);
+                }
                 await SelectFirstDroppedAsync();
             }, "Copying...");
         });
@@ -109,6 +111,7 @@ namespace PhotoLocator
             await _mainViewModel.RunProcessWithProgressBarAsync(async (progressCallback, ct) =>
             {
                 for (int i = 0; i < DroppedEntries.Count; i++)
+                {
                     await Task.Run(() =>
                     {
                         var destinationPath = Path.Combine(CurrentPath!, Path.GetFileName(DroppedEntries[i]));
@@ -116,8 +119,9 @@ namespace PhotoLocator
                             FileSystem.MoveDirectory(DroppedEntries[i], destinationPath, UIOption.AllDialogs);
                         else
                             FileSystem.MoveFile(DroppedEntries[i], destinationPath, UIOption.AllDialogs);
-                        progressCallback((double)(i + 1) / DroppedEntries.Count);
                     }, ct);
+                    progressCallback((double)(i + 1) / DroppedEntries.Count);
+                }
                 await SelectFirstDroppedAsync();
             }, "Moving...");
         });
