@@ -4,7 +4,6 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.IO;
 using System.Linq;
-using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
@@ -32,15 +31,6 @@ namespace PhotoLocator
 
         public event PropertyChangedEventHandler? PropertyChanged;
 
-        bool SetProperty<T>(ref T field, T newValue, [CallerMemberName] string? propertyName = null)
-        {
-            if (Equals(field, newValue))
-                return false;
-            field = newValue;
-            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
-            return true;
-        }
-
         public IList<string> DroppedEntries { get; }
 
         public string? CurrentPath => _mainViewModel.PhotoFolderPath;
@@ -48,20 +38,6 @@ namespace PhotoLocator
         public bool IsIncludeAvailable => DroppedEntries.Any(f => _mainViewModel.Items.All(i => i.FullPath != f));
 
         public bool IsCopyAndMoveAvailable => !string.IsNullOrEmpty(CurrentPath) && Path.GetDirectoryName(DroppedEntries[0]) != CurrentPath;
-
-        public bool IsProgressBarVisible
-        {
-            get => _isProgressBarVisible;
-            set => SetProperty(ref _isProgressBarVisible, value);
-        }
-        private bool _isProgressBarVisible;
-
-        public double ProgressBarValue
-        {
-            get => _progressBarValue;
-            set => SetProperty(ref _progressBarValue, value);
-        }
-        private double _progressBarValue;
 
         public ICommand IncludeCommand => new RelayCommand(async o =>
         {
@@ -110,10 +86,9 @@ namespace PhotoLocator
 
         public ICommand CopyCommand => new RelayCommand(async o =>
         {
-            try
+            DialogResult = true;
+            await _mainViewModel.RunProcessWithProgressBarAsync(async (progressCallback, ct) =>
             {
-                IsProgressBarVisible = true;
-                IsEnabled = false;
                 for (int i = 0; i < DroppedEntries.Count; i++)
                     await Task.Run(() =>
                     {
@@ -122,22 +97,17 @@ namespace PhotoLocator
                             FileSystem.CopyDirectory(DroppedEntries[i], destinationPath, UIOption.AllDialogs);
                         else
                             FileSystem.CopyFile(DroppedEntries[i], destinationPath, UIOption.AllDialogs);
-                        ProgressBarValue = (double)(i + 1) / DroppedEntries.Count;
-                    });
+                        progressCallback((double)(i + 1) / DroppedEntries.Count);
+                    }, ct);
                 await SelectFirstDroppedAsync();
-            }
-            finally
-            {
-                DialogResult = true;
-            }
+            }, "Copying...");
         });
 
         public ICommand MoveCommand => new RelayCommand(async o =>
         {
-            try
+            DialogResult = true;
+            await _mainViewModel.RunProcessWithProgressBarAsync(async (progressCallback, ct) =>
             {
-                IsProgressBarVisible = true;
-                IsEnabled = false;
                 for (int i = 0; i < DroppedEntries.Count; i++)
                     await Task.Run(() =>
                     {
@@ -146,22 +116,19 @@ namespace PhotoLocator
                             FileSystem.MoveDirectory(DroppedEntries[i], destinationPath, UIOption.AllDialogs);
                         else
                             FileSystem.MoveFile(DroppedEntries[i], destinationPath, UIOption.AllDialogs);
-                        ProgressBarValue = (double)(i + 1) / DroppedEntries.Count;
-                    });
+                        progressCallback((double)(i + 1) / DroppedEntries.Count);
+                    }, ct);
                 await SelectFirstDroppedAsync();
-            }
-            finally
-            {
-                DialogResult = true;
-            }
+            }, "Moving...");
         });
 
         private async Task SelectFirstDroppedAsync()
         {
-            await _mainViewModel.WaitForFileSystemWatcherOperation();
-            var firstDropped = Path.GetFileName(DroppedEntries.First());
-            var selectItem = _mainViewModel.Items.FirstOrDefault(item => item.Name == firstDropped);
-            _mainViewModel.SelectIfNotNull(selectItem);
+            var firstDropped = Path.Combine(CurrentPath!, Path.GetFileName(DroppedEntries.First()));
+            if (Directory.Exists(firstDropped))
+                await _mainViewModel.AddOrUpdateItemAsync(firstDropped, true, true);
+            else if (File.Exists(firstDropped))
+                await _mainViewModel.AddOrUpdateItemAsync(firstDropped, false, true);
         }
     }
 }

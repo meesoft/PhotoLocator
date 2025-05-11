@@ -41,7 +41,6 @@ namespace PhotoLocator
         CancellationTokenSource? _previewCancellation;
         CancellationTokenSource? _processCancellation;
         FileSystemWatcher? _fileSystemWatcher;
-        DispatcherOperation? _fileSystemWatcherUpdate;
         double _loadImagesProgress;
         bool _titleUpdatePending;
         bool _loadPicturesPending;
@@ -890,7 +889,7 @@ namespace PhotoLocator
                         progressCallback((double)Interlocked.Increment(ref i) / selectedItems.Length);
                     });
                 await Task.Delay(10, ct);
-            }, "Adjust timestamps");
+            }, "Adjust timestamps...");
         });
 
         public ICommand ShowMetadataCommand => new RelayCommand(o =>
@@ -1051,18 +1050,9 @@ namespace PhotoLocator
             });
         }
 
-        public async Task WaitForFileSystemWatcherOperation()
-        {
-            if (_fileSystemWatcherUpdate is null)
-                return;
-            await _fileSystemWatcherUpdate;
-            if (_fileSystemWatcherUpdate.Result is Task operationTask)
-                await operationTask;
-        }
-
         private void HandleFileSystemWatcherChange(object sender, FileSystemEventArgs e)
         {
-            _fileSystemWatcherUpdate = Application.Current.Dispatcher.BeginInvoke(async () =>
+            Application.Current.Dispatcher.BeginInvoke(async () =>
             {
                 if (e.ChangeType == WatcherChangeTypes.Deleted)
                 {
@@ -1215,7 +1205,7 @@ namespace PhotoLocator
                     progressCallback(_loadImagesProgress);
                     while (_loadPicturesTask != null && await Task.WhenAny(_loadPicturesTask, Task.Delay(TimeSpan.FromSeconds(1), ct)) != _loadPicturesTask)
                         progressCallback(_loadImagesProgress);
-                }, "Loading images");
+                }, "Loading images...");
         }
 
         private void CancelPictureLoading()

@@ -691,7 +691,7 @@ namespace PhotoLocator
                 Directory.CreateDirectory(Path.GetDirectoryName(outFileName)!);
                 var args = $"{InputArguments} -filter_complex \"[0:v:0]pad=iw*2:ih[bg]; [bg][1:v:0]overlay=w\" -y \"{outFileName}\"";
                 await _videoTransforms.RunFFmpegAsync(args, ProcessStdError, ct);
-            }, "Processing");
+            }, "Processing...");
             await _mainViewModel.AddOrUpdateItemAsync(outFileName, false, true);
         });
 
@@ -849,7 +849,7 @@ namespace PhotoLocator
                     File.Delete(InputListFileName);
                 if (IsStabilizeChecked)
                     File.Delete(TransformsFileName);
-            }, "Processing");
+            }, "Processing...");
             await _mainViewModel.AddOrUpdateItemAsync(outFileName, false, true);
             if (!string.IsNullOrEmpty(message))
                 MessageBox.Show(App.Current.MainWindow, message);
