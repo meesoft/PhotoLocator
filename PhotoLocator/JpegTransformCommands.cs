@@ -84,7 +84,7 @@ namespace PhotoLocator
                 }
                 await Task.Run(() => JpegTransformations.Crop(sourceFileName, targetFileName, cropRectangle), ct);
                 await _mainViewModel.AddOrUpdateItemAsync(targetFileName, false, true);
-            }, "Cropping");
+            }, "Cropping...");
         }
 
         public ICommand LocalContrastCommand => new RelayCommand(async o =>

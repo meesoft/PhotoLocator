@@ -22,7 +22,5 @@
         <Button Content="Copy files here" Command="{Binding CopyCommand}" Visibility="{Binding IsCopyAndMoveAvailable, Converter={StaticResource BooleanToVisibility}}" Margin="4" />
         <Button Content="Move files here" Command="{Binding MoveCommand}" Visibility="{Binding IsCopyAndMoveAvailable, Converter={StaticResource BooleanToVisibility}}" Margin="4" />
         <Button Content="Cancel" IsCancel="True" Margin="4"/>
-        <ProgressBar Height="20" Margin="4" Value="{Binding ProgressBarValue}" Maximum="1"
-                     Visibility="{Binding IsProgressBarVisible, Converter={StaticResource BooleanToVisibility}}"/>
     </StackPanel>
 </Window>
