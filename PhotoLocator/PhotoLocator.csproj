@@ -6,18 +6,18 @@
     <Nullable>enable</Nullable>
     <UseWPF>true</UseWPF>
     <ApplicationManifest>app.manifest</ApplicationManifest>
-	  <Version>2025.4.28.0</Version>
-	  <Copyright>(c) 2022-2025 Michael Vinther</Copyright>
-	  <Company>MeeSoft</Company>
-	  <ApplicationIcon>Resources\PhotoLocator.ico</ApplicationIcon>
-	  <EnableNETAnalyzers>true</EnableNETAnalyzers>
-	  <AnalysisMode>All</AnalysisMode>
-	  <NoWarn>CA1014,CA1309,CA1814,CA1819,IDE0017</NoWarn>
-	  <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <Version>2025.4.28.0</Version>
+    <Copyright>(c) 2022-2025 Michael Vinther</Copyright>
+    <Company>MeeSoft</Company>
+    <ApplicationIcon>Resources\PhotoLocator.ico</ApplicationIcon>
+    <EnableNETAnalyzers>true</EnableNETAnalyzers>
+    <AnalysisMode>All</AnalysisMode>
+    <NoWarn>CA1014,CA1309,CA1814,CA1819,IDE0017</NoWarn>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)' == 'Release'">
-  	<TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
   </PropertyGroup>
 
   <ItemGroup>
@@ -29,8 +29,8 @@
 
   <ItemGroup>
     <PackageReference Include="Microsoft-WindowsAPICodePack-ShellExtensions" Version="1.1.5" />
-	  <PackageReference Include="OpenCvSharp4.Windows" Version="4.10.0.20240616" />
-	  <PackageReference Include="XAML.MapControl.WPF" Version="12.0.0" />
+    <PackageReference Include="OpenCvSharp4.Windows" Version="4.10.0.20240616" />
+    <PackageReference Include="XAML.MapControl.WPF" Version="12.0.0" />
   </ItemGroup>
 
   <ItemGroup>
@@ -40,21 +40,21 @@
 
   <ItemGroup>
     <EmbeddedResource Include="..\LICENSE" Link="Resources\LICENSE" />
-	  <EmbeddedResource Include="..\PsdPlugin\License.txt" Link="Resources\PsdLicense" />
-	  <EmbeddedResource Include="..\XamlMapControlLicense" Link="Resources\XamlMapControlLicense" />
+    <EmbeddedResource Include="..\PsdPlugin\License.txt" Link="Resources\PsdLicense" />
+    <EmbeddedResource Include="..\XamlMapControlLicense" Link="Resources\XamlMapControlLicense" />
     <EmbeddedResource Include="..\Windows-API-Code-PackLicense" Link="Resources\Windows-API-Code-PackLicense" />
     <EmbeddedResource Include="Resources\Apache2License.txt" />
     <EmbeddedResource Include="Resources\ArtisticLicense.txt" />
     <EmbeddedResource Include="Resources\ExplorerShellContextMenuLicense.txt" />
     <EmbeddedResource Include="Resources\GPLv3License.txt" />
     <EmbeddedResource Include="Resources\JPEG-XL-LICENSE.txt" />
-  	<Resource Include="Resources\PhotoLocator.ico" />
+    <Resource Include="Resources\PhotoLocator.ico" />
   </ItemGroup>
 
   <ItemGroup>
-	  <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleToAttribute">
-		  <_Parameter1>PhotoLocatorTest</_Parameter1>
-	  </AssemblyAttribute>
+    <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleToAttribute">
+      <_Parameter1>PhotoLocatorTest</_Parameter1>
+    </AssemblyAttribute>
   </ItemGroup>
 
   <ItemGroup>

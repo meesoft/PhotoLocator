@@ -124,7 +124,7 @@ namespace PhotoLocator
 
         private async Task SelectFirstDroppedAsync()
         {
-            var firstDropped = Path.Combine(CurrentPath!, Path.GetFileName(DroppedEntries.First()));
+            var firstDropped = Path.Combine(CurrentPath!, Path.GetFileName(DroppedEntries[0]));
             if (Directory.Exists(firstDropped))
                 await _mainViewModel.AddOrUpdateItemAsync(firstDropped, true, true);
             else if (File.Exists(firstDropped))
