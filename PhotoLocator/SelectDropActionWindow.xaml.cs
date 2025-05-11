@@ -29,7 +29,7 @@ namespace PhotoLocator
             Activate();
         }
 
-        public event PropertyChangedEventHandler? PropertyChanged;
+        public event PropertyChangedEventHandler? PropertyChanged { add { } remove { } }
 
         public IList<string> DroppedEntries { get; }
 
