@@ -227,13 +227,14 @@ namespace PhotoLocator
             new ComboBoxItem { Content = "Rotate 180°", Tag = "transpose=2,transpose=2" },
             new ComboBoxItem { Content = "Mirror left half to right", Tag = "crop=iw/2:ih:0:0,split[left][tmp];[tmp]hflip[right];[left][right] hstack" },
             new ComboBoxItem { Content = "Mirror top half to bottom", Tag = "crop=iw:ih/2:0:0,split[top][tmp];[tmp]vflip[bottom];[top][bottom] vstack" },
+            new ComboBoxItem { Content = "Zoom", Tag = ( "scale=4*iw:4*ih, zoompan=z='if(lte(it,0),1,min(pzoom+{0},10))':d=1:x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':s=1920x1080:fps=30", "0.001" ) },
             new ComboBoxItem { Content = "Normalize", Tag = ( "normalize=smoothing={0}:independence=0", "50" ) },
             new ComboBoxItem { Content = "Saturation", Tag = ( "eq=saturation={0}", "1.3" ) },
-            new ComboBoxItem { Content = "High contrast", Tag = ( "eq=brightness=0.05:contrast={0}", "1.3" ) },
+            new ComboBoxItem { Content = "Contrast", Tag = ( "eq=brightness=0.05:contrast={0}", "1.3" ) },
             new ComboBoxItem { Content = "Denoise (atadenoise)", Tag = ( "atadenoise=s={0}", "9" ) },
             new ComboBoxItem { Content = "Denoise (hqdn3d)", Tag = ( "hqdn3d=luma_spatial={0}", "4" ) },
             new ComboBoxItem { Content = "Denoise (nlmeans)", Tag = ( "nlmeans=s={0}", "1.0" ) },
-            new ComboBoxItem { Content = "Add noise", Tag = ( "noise=c0s={0}:c0f=t+u", "60" ) },
+            new ComboBoxItem { Content = "Noise", Tag = ( "noise=c0s={0}:c0f=t+u", "60" ) },
             new ComboBoxItem { Content = "Sharpen", Tag = ( "unsharp=7:7:{0}", "2.5" ) },
         ];
 
@@ -871,6 +872,8 @@ namespace PhotoLocator
                         postfix = "stabilized";
                     else if (allSelected.Length > 1)
                         postfix = "combined";
+                    else if (SelectedEffect.Tag is not null)
+                        postfix = SelectedEffect.Content.ToString()!.Split(' ')[0].ToLowerInvariant();
                     else
                         postfix = "processed";
                     dlg.Filter = SaveVideoFilter;
