@@ -32,7 +32,7 @@ namespace PhotoLocator.Gps
                 var lat = coordinates[1].GetDouble();
 
                 var properties = feature.GetProperty("properties");
-                var time = properties.GetProperty("time").GetString();
+                var time = properties.GetProperty("time").GetString()!;
 
                 trace.Locations.Add(new Location(lat, lon));
                 trace.TimeStamps.Add(DateTime.Parse(time, CultureInfo.InvariantCulture, DateTimeStyles.AdjustToUniversal | DateTimeStyles.AssumeUniversal));
