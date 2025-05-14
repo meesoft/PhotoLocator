@@ -32,7 +32,7 @@ namespace PhotoLocator.Gps
                             trace.Locations.Add(new Location(
                                 double.Parse(lat.InnerText, CultureInfo.InvariantCulture),
                                 double.Parse(lon.InnerText, CultureInfo.InvariantCulture)));
-                            trace.TimeStamps.Add(DateTime.Parse(time.InnerText, CultureInfo.InvariantCulture, DateTimeStyles.AdjustToUniversal));
+                            trace.TimeStamps.Add(DateTime.Parse(time.InnerText, CultureInfo.InvariantCulture, DateTimeStyles.AdjustToUniversal | DateTimeStyles.AssumeUniversal));
                         }
                     }
                     if (trace.Locations.Count > 0)
