@@ -155,8 +155,7 @@ namespace PhotoLocator
             Directory.SetCurrentDirectory(Path.GetDirectoryName(_selectedItems.First().FullPath)!);
             if (File.Exists(TraceFilePath))
                 return GpsTraces.Concat(GpsTrace.DecodeGpsTraceFile(TraceFilePath, minDistance));
-            return GpsTraces.Concat(
-                Directory.EnumerateFiles(TraceFilePath)
+            return GpsTraces.Concat(Directory.EnumerateFiles(TraceFilePath)
                 .Where(fileName => GpsTrace.TraceExtensions.Contains(Path.GetExtension(fileName).ToLowerInvariant()))
                 .SelectMany(fileName => GpsTrace.DecodeGpsTraceFile(fileName, minDistance)));
         }
