@@ -32,8 +32,13 @@ namespace PhotoLocator.Gps
                 var lat = coordinates[1].GetDouble();
 
                 var properties = feature.GetProperty("properties");
-                var time = properties.GetProperty("time").GetString()!;
+                // Check if time property exists
+                if (!properties.TryGetProperty("time", out var timeProperty))
+                    continue; // Skip features without time
 
+                var time = timeProperty.GetString();
+                if (string.IsNullOrEmpty(time))
+                    continue; // Skip features with null/empty time
                 trace.Locations.Add(new Location(lat, lon));
                 trace.TimeStamps.Add(DateTime.Parse(time, CultureInfo.InvariantCulture, DateTimeStyles.AdjustToUniversal | DateTimeStyles.AssumeUniversal));
             }
