@@ -10,8 +10,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		.coderabbit.yaml = .coderabbit.yaml
 		.editorconfig = .editorconfig
 		.gitignore = .gitignore
-		Directory.Build.props = Directory.Build.props
 		.sonarcloud.properties = .sonarcloud.properties
+		Directory.Build.props = Directory.Build.props
 		.github\workflows\dotnet.yml = .github\workflows\dotnet.yml
 		LICENSE = LICENSE
 		README.md = README.md
@@ -23,28 +23,36 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "PhotoLocatorTest", "PhotoLo
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "PhotoLocator.PhotoshopImageLoader", "PhotoshopImageLoader\PhotoLocator.PhotoshopImageLoader.csproj", "{AB3CFAFD-1E8D-4EC8-9B58-0BA7B8B08198}"
 EndProject
+Project("{C7167F0D-BC9F-4E6E-AFE1-012C56B48DB5}") = "PhotoLocatorSetup", "PhotoLocatorSetup\PhotoLocatorSetup.wapproj", "{F9135A60-517C-4A74-A6A5-E0BEA43025F8}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
-		Debug|Any CPU = Debug|Any CPU
-		Release|Any CPU = Release|Any CPU
+		Debug|x64 = Debug|x64
+		Release|x64 = Release|x64
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{D9DD58A6-DE57-4DDB-92A8-2AF08B1D8309}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{D9DD58A6-DE57-4DDB-92A8-2AF08B1D8309}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{D9DD58A6-DE57-4DDB-92A8-2AF08B1D8309}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{D9DD58A6-DE57-4DDB-92A8-2AF08B1D8309}.Release|Any CPU.Build.0 = Release|Any CPU
-		{F3B40BD6-38BB-4F20-BC77-07C368CE0753}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{F3B40BD6-38BB-4F20-BC77-07C368CE0753}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{F3B40BD6-38BB-4F20-BC77-07C368CE0753}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{F3B40BD6-38BB-4F20-BC77-07C368CE0753}.Release|Any CPU.Build.0 = Release|Any CPU
-		{AF564DC9-3BE9-4D56-9403-017DB2D00A88}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{AF564DC9-3BE9-4D56-9403-017DB2D00A88}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{AF564DC9-3BE9-4D56-9403-017DB2D00A88}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{AF564DC9-3BE9-4D56-9403-017DB2D00A88}.Release|Any CPU.Build.0 = Release|Any CPU
-		{AB3CFAFD-1E8D-4EC8-9B58-0BA7B8B08198}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{AB3CFAFD-1E8D-4EC8-9B58-0BA7B8B08198}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{AB3CFAFD-1E8D-4EC8-9B58-0BA7B8B08198}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{AB3CFAFD-1E8D-4EC8-9B58-0BA7B8B08198}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D9DD58A6-DE57-4DDB-92A8-2AF08B1D8309}.Debug|x64.ActiveCfg = Debug|x64
+		{D9DD58A6-DE57-4DDB-92A8-2AF08B1D8309}.Debug|x64.Build.0 = Debug|x64
+		{D9DD58A6-DE57-4DDB-92A8-2AF08B1D8309}.Release|x64.ActiveCfg = Release|x64
+		{D9DD58A6-DE57-4DDB-92A8-2AF08B1D8309}.Release|x64.Build.0 = Release|x64
+		{F3B40BD6-38BB-4F20-BC77-07C368CE0753}.Debug|x64.ActiveCfg = Debug|x64
+		{F3B40BD6-38BB-4F20-BC77-07C368CE0753}.Debug|x64.Build.0 = Debug|x64
+		{F3B40BD6-38BB-4F20-BC77-07C368CE0753}.Release|x64.ActiveCfg = Release|x64
+		{F3B40BD6-38BB-4F20-BC77-07C368CE0753}.Release|x64.Build.0 = Release|x64
+		{AF564DC9-3BE9-4D56-9403-017DB2D00A88}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{AF564DC9-3BE9-4D56-9403-017DB2D00A88}.Debug|x64.Build.0 = Debug|Any CPU
+		{AF564DC9-3BE9-4D56-9403-017DB2D00A88}.Release|x64.ActiveCfg = Release|Any CPU
+		{AF564DC9-3BE9-4D56-9403-017DB2D00A88}.Release|x64.Build.0 = Release|Any CPU
+		{AB3CFAFD-1E8D-4EC8-9B58-0BA7B8B08198}.Debug|x64.ActiveCfg = Debug|x64
+		{AB3CFAFD-1E8D-4EC8-9B58-0BA7B8B08198}.Debug|x64.Build.0 = Debug|x64
+		{AB3CFAFD-1E8D-4EC8-9B58-0BA7B8B08198}.Release|x64.ActiveCfg = Release|x64
+		{AB3CFAFD-1E8D-4EC8-9B58-0BA7B8B08198}.Release|x64.Build.0 = Release|x64
+		{F9135A60-517C-4A74-A6A5-E0BEA43025F8}.Debug|x64.ActiveCfg = Debug|x64
+		{F9135A60-517C-4A74-A6A5-E0BEA43025F8}.Debug|x64.Build.0 = Debug|x64
+		{F9135A60-517C-4A74-A6A5-E0BEA43025F8}.Debug|x64.Deploy.0 = Debug|x64
+		{F9135A60-517C-4A74-A6A5-E0BEA43025F8}.Release|x64.ActiveCfg = Release|x64
+		{F9135A60-517C-4A74-A6A5-E0BEA43025F8}.Release|x64.Build.0 = Release|x64
+		{F9135A60-517C-4A74-A6A5-E0BEA43025F8}.Release|x64.Deploy.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

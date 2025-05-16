@@ -14,6 +14,7 @@
     <AnalysisMode>All</AnalysisMode>
     <NoWarn>CA1014,CA1309,CA1814,CA1819,IDE0017</NoWarn>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <Platforms>AnyCPU;x64</Platforms>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)' == 'Release'">
