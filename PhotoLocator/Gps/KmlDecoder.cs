@@ -38,7 +38,7 @@ namespace PhotoLocator.Gps
                     {
                         if (child.Name == "when")
                         {
-                            placemark.StartTime = DateTime.Parse(child.InnerText, CultureInfo.InvariantCulture, DateTimeStyles.AdjustToUniversal);
+                            placemark.StartTime = DateTime.Parse(child.InnerText, CultureInfo.InvariantCulture, DateTimeStyles.AdjustToUniversal | DateTimeStyles.AssumeUniversal);
                             placemark.EndTime = placemark.StartTime;
                         }
                         else if (child.Name == "gx:coord")
@@ -61,8 +61,8 @@ namespace PhotoLocator.Gps
                     placemark.Name = node["name"]?.InnerText;
 
                     var timeSpanNode = node["TimeSpan"] ?? throw new FileFormatException("TimeSpan node missing");
-                    placemark.StartTime = DateTime.Parse(timeSpanNode["begin"]!.InnerText, CultureInfo.InvariantCulture, DateTimeStyles.AdjustToUniversal);
-                    placemark.EndTime = DateTime.Parse(timeSpanNode["end"]!.InnerText, CultureInfo.InvariantCulture, DateTimeStyles.AdjustToUniversal);
+                    placemark.StartTime = DateTime.Parse(timeSpanNode["begin"]!.InnerText, CultureInfo.InvariantCulture, DateTimeStyles.AdjustToUniversal | DateTimeStyles.AssumeUniversal);
+                    placemark.EndTime = DateTime.Parse(timeSpanNode["end"]!.InnerText, CultureInfo.InvariantCulture, DateTimeStyles.AdjustToUniversal | DateTimeStyles.AssumeUniversal);
 
                     var coordContainerNode = node["LineString"] ?? node["Point"]!;
                     var coordsNode = coordContainerNode["coordinates"] ?? throw new FileFormatException("coordinates node missing");

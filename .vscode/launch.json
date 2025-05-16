@@ -1,0 +1,16 @@
+{
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "C#: PhotoLocator Debug",
+            "type": "coreclr",
+            "request": "launch",
+            "program": "${workspaceFolder}/PhotoLocator/bin/Debug/net8.0-windows/PhotoLocator.exe",
+            "args": [],
+            "cwd": "${workspaceFolder}/PhotoLocator/bin/Debug/net8.0-windows/",
+            "stopAtEntry": false,
+            "preLaunchTask": "build"
+        }  
+    ]
+}

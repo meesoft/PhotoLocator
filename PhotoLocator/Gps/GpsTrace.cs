@@ -10,7 +10,7 @@ namespace PhotoLocator.Gps
 {
     public class GpsTrace : PolylineItem
     {
-        public static readonly HashSet<string> TraceExtensions = [".gpx", ".kml", ".json"];
+        public static readonly HashSet<string> TraceExtensions = [".gpx", ".kml", ".json", ".geojson"];
 
         public string? Name { get; set; }
         
@@ -32,6 +32,8 @@ namespace PhotoLocator.Gps
                     return KmlDecoder.DecodeStream(file, minimumInterval).ToArray();
                 if (ext == ".json")
                     return TimelineDecoder.DecodeStream(file).ToArray();
+                if (ext == ".geojson")
+                    return GeoJsonDecoder.DecodeStream(file).ToArray();
             }
             catch (Exception ex)
             {
