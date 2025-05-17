@@ -850,7 +850,10 @@ namespace PhotoLocator
                 if (IsStabilizeChecked)
                     File.Delete(TransformsFileName);
             }, "Processing...");
-            await _mainViewModel.AddOrUpdateItemAsync(outFileName, false, true);
+            if (OutputMode == OutputMode.ImageSequence)
+                outFileName = Path.GetDirectoryName(outFileName)!;
+            if (string.Equals(Path.GetDirectoryName(outFileName), Path.GetDirectoryName(_mainViewModel.SelectedItem?.FullPath), StringComparison.CurrentCultureIgnoreCase))
+                await _mainViewModel.AddOrUpdateItemAsync(outFileName, OutputMode == OutputMode.ImageSequence, true);
             if (!string.IsNullOrEmpty(message))
                 MessageBox.Show(App.Current.MainWindow, message);
         });
