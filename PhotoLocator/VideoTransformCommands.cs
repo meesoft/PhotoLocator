@@ -229,6 +229,7 @@ namespace PhotoLocator
             new ComboBoxItem { Content = "Mirror top half to bottom", Tag = "crop=iw:ih/2:0:0,split[top][tmp];[tmp]vflip[bottom];[top][bottom] vstack" },
             new ComboBoxItem { Content = "Zoom", Tag = ( "scale=4*iw:4*ih, zoompan=z='if(lte(it,0),1,min(pzoom+{0},10))':d=1:x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':s=1920x1080:fps=30", "0.001" ) },
             new ComboBoxItem { Content = "Normalize", Tag = ( "normalize=smoothing={0}:independence=0", "50" ) },
+            new ComboBoxItem { Content = "Midtones", Tag = ( "colorbalance=rm={0}:gm={0}:bm={0}", "0.05" ) },
             new ComboBoxItem { Content = "Saturation", Tag = ( "eq=saturation={0}", "1.3" ) },
             new ComboBoxItem { Content = "Contrast", Tag = ( "eq=brightness=0.05:contrast={0}", "1.3" ) },
             new ComboBoxItem { Content = "Denoise (atadenoise)", Tag = ( "atadenoise=s={0}", "9" ) },
