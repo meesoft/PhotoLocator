@@ -72,7 +72,10 @@
 
   <Target Name="RemoveX86Assets" AfterTargets="Build" Condition="'$(Configuration)' == 'Release'">
     <RemoveDir Directories="$(OutputPath)runtimes\win-x86" />
-    <Delete Files="$(OutputPath)runtimes\win-x64\native\opencv_videoio_ffmpeg4100_64.dll" />
+    <ItemGroup>
+      <DllsToDelete Include="$(OutputPath)runtimes\win-x64\native\opencv_videoio_ffmpeg*_64.dll" />
+    </ItemGroup>
+    <Delete Files="@(DllsToDelete)" />
   </Target>
   
 </Project>
