@@ -43,6 +43,7 @@
     <EmbeddedResource Include="..\PsdPlugin\License.txt" Link="Resources\PsdLicense" />
     <EmbeddedResource Include="..\XamlMapControlLicense" Link="Resources\XamlMapControlLicense" />
     <EmbeddedResource Include="..\Windows-API-Code-PackLicense" Link="Resources\Windows-API-Code-PackLicense" />
+    <EmbeddedResource Include="..\JpegTransform\JpegTransformLicense.txt" Link="Resources\JpegTransformLicense.txt" />
     <EmbeddedResource Include="Resources\Apache2License.txt" />
     <EmbeddedResource Include="Resources\ArtisticLicense.txt" />
     <EmbeddedResource Include="Resources\ExplorerShellContextMenuLicense.txt" />
@@ -52,18 +53,29 @@
   </ItemGroup>
 
   <ItemGroup>
+    <None Include="..\JpegTransform\JpegTransform.exe" Link="JpegTransform.exe">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="exiftool\*.*" Condition="Exists('exiftool')">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="ffmpeg\*.*" Condition="Exists('ffmpeg')">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
+  <ItemGroup>
     <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleToAttribute">
       <_Parameter1>PhotoLocatorTest</_Parameter1>
     </AssemblyAttribute>
   </ItemGroup>
 
-  <ItemGroup>
-    <EmbeddedResource Include="..\JpegTransform\JpegTransformLicense.txt" Link="Resources\JpegTransformLicense.txt" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <None Include="..\JpegTransform\JpegTransform.exe" Link="JpegTransform.exe">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-  </ItemGroup>
+  <Target Name="RemoveX86Assets" AfterTargets="Build" Condition="'$(Configuration)' == 'Release'">
+    <RemoveDir Directories="$(OutputPath)runtimes\win-x86" />
+    <ItemGroup>
+      <DllsToDelete Include="$(OutputPath)runtimes\win-x64\native\opencv_videoio_ffmpeg*_64.dll" />
+    </ItemGroup>
+    <Delete Files="@(DllsToDelete)" />
+  </Target>
+  
 </Project>

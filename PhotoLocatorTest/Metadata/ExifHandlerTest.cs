@@ -9,7 +9,7 @@ namespace PhotoLocator.Metadata
     [TestClass]
     public class ExifHandlerTest
     {
-        const string ExifToolPath = @"TestData\exiftool.exe";
+        const string ExifToolPath = @"exiftool\exiftool(-m).exe";
 
         static readonly DateTimeOffset _jpegTestDataTimestamp = LocalTimeToDateTimeOffset(new DateTime(2022, 6, 17, 19, 3, 2));
         

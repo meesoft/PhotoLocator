@@ -7,14 +7,14 @@ namespace PhotoLocator.Helpers
     [TestClass]
     public class VideoProcessingTest
     {
-        const string FFmpegPath = @"";
-        const string SourceVideoPath = @"";
+        const string FFmpegPath = @"ffmpeg\ffmpeg.exe";
+        const string SourceVideoPath = @"TestData\Test.mp4";
 
         [TestMethod]
         public async Task RunFFmpegWithStreamOutputImagesAsync_ShouldProcessImages()
         {
-            if (string.IsNullOrEmpty(FFmpegPath))
-                Assert.Inconclusive("FFmpegPath not set");
+            if (!File.Exists(FFmpegPath))
+                Assert.Inconclusive("FFmpegPath not found");
             var settings = new ObservableSettings() { FFmpegPath = FFmpegPath };
             var videoTransforms = new VideoProcessing(settings);
 
@@ -25,53 +25,31 @@ namespace PhotoLocator.Helpers
                 Debug.WriteLine(frame.PixelWidth + "x" + frame.PixelHeight);
                 i++;
             }, stdError => Debug.WriteLine(stdError), default);
-            Debug.WriteLine(i);
-            Assert.IsTrue(i > 0);
+
+            Assert.AreEqual(15, i);
         }      
 
         [TestMethod]
         public async Task RunFFmpegWithStreamInputImagesAsync_ShouldEncodeImages()
         {
-            if (string.IsNullOrEmpty(FFmpegPath))
-                Assert.Inconclusive("FFmpegPath not set");
+            if (!File.Exists(FFmpegPath))
+                Assert.Inconclusive("FFmpegPath not found");
             var settings = new ObservableSettings() { FFmpegPath = FFmpegPath };
             var videoTransforms = new VideoProcessing(settings);
 
             using var frameEnumerator = new QueueEnumerable<BitmapSource>();
 
             var readerArgs = $" -i \"{SourceVideoPath}\"";
-            var readTask = videoTransforms.RunFFmpegWithStreamOutputImagesAsync(readerArgs, frameEnumerator.AddItem, stdError => { }, default); // Debug.WriteLine(stdError));
+            var readTask = videoTransforms.RunFFmpegWithStreamOutputImagesAsync(readerArgs, frameEnumerator.AddItem, stdError => Debug.WriteLine("Out: " + stdError), default);
 
             var writerArgs = $"-pix_fmt yuv420p -y out.mp4";
-            var writeTask = videoTransforms.RunFFmpegWithStreamInputImagesAsync(25, writerArgs, frameEnumerator, stdError => Debug.WriteLine(stdError), default);
+            var writeTask = videoTransforms.RunFFmpegWithStreamInputImagesAsync(25, writerArgs, frameEnumerator, stdError => Debug.WriteLine("In: " + stdError), default);
 
             await readTask;
             frameEnumerator.Break();
             await writeTask;
-        }
 
-        [TestMethod]
-        public async Task RunFFmpegWithStreamInputImagesAsync_ShouldProcessImages()
-        {
-            if (string.IsNullOrEmpty(FFmpegPath))
-                Assert.Inconclusive("FFmpegPath not set");
-            var settings = new ObservableSettings() { FFmpegPath = FFmpegPath };
-            var videoTransforms = new VideoProcessing(settings);
-
-            using var frameEnumerator = new QueueEnumerable<BitmapSource>();
-
-            var readerArgs = $" -i \"{SourceVideoPath}\"";
-            var op = new LocalContrastViewModel();
-            var readTask = videoTransforms.RunFFmpegWithStreamOutputImagesAsync(readerArgs, 
-                source => frameEnumerator.AddItem(op.ApplyOperations(source)),
-                stdError => { }, default); 
-
-            var writerArgs = $"-pix_fmt yuv420p -y out.mp4";
-            var writeTask = videoTransforms.RunFFmpegWithStreamInputImagesAsync(25, writerArgs, frameEnumerator, stdError => Debug.WriteLine(stdError), default);
-
-            await readTask;
-            frameEnumerator.Break();
-            await writeTask;
+            Debug.Assert(File.Exists("out.mp4"), "Output file not found");
         }
     }
 }

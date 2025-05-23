@@ -4,5 +4,6 @@ obj/
 bin/
 PublishProfiles/
 Properties/
-PhotoLocatorTest/TestData/exiftool*.exe
+PhotoLocator/exiftool/
+PhotoLocator/ffmpeg/
 PhotoLocatorTest/TestData/*.cr3
