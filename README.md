@@ -2,7 +2,7 @@
 
 ![Icon](./PhotoLocator/Resources/PhotoLocator.png)
 
-## Photo geotagging and location browsing
+## Photo and video geotagging and location browsing
 PhotoLocator can import GPS traces from GPX and KML files and then apply the GPS positions to picture and video files by 
 synchronizing with the photo timestamps. GPS tags can also be imported from other already geotagged photos.
 The locations can either be set automatically based on timestamps or manually by copy/pasting from other files or selecting 
