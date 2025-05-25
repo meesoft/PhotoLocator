@@ -71,7 +71,7 @@
     </AssemblyAttribute>
   </ItemGroup>
 
-  <Target Name="RemoveX86Assets" AfterTargets="Build" Condition="'$(Configuration)' == 'Release'">
+  <Target Name="RemoveUnusedAssets" AfterTargets="Build" Condition="'$(Configuration)' == 'Release'">
     <RemoveDir Directories="$(OutputPath)runtimes\win-x86" />
     <ItemGroup>
       <DllsToDelete Include="$(OutputPath)runtimes\win-x64\native\opencv_videoio_ffmpeg*_64.dll" />
