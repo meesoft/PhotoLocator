@@ -54,6 +54,9 @@
   </ItemGroup>
 
   <ItemGroup>
+    <None Include="$(SolutionDir)jpegli\*.*" >
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
     <None Include="..\JpegTransform\JpegTransform.exe" Link="JpegTransform.exe">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
