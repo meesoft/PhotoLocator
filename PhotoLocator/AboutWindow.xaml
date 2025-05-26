@@ -25,7 +25,7 @@
         <TextBox Grid.Row="1" Text="{Binding LicenseText, Mode=OneTime}" Padding="5" TextWrapping="Wrap"
                  ScrollViewer.VerticalScrollBarVisibility="Visible" Margin="10,0" />
 
-        <Button Grid.Row="2" Content="Check for updates" Margin="10" Padding="10,0" HorizontalAlignment="Left" Command="{Binding CheckForUpdatesCommand}"/>
+        <Button Grid.Row="2" Content="Website" Margin="10" Padding="10,0" HorizontalAlignment="Left" Command="{Binding OpenWebsiteCommand}"/>
         <Button Grid.Row="2" Content="Close" Width="80" Margin="10" IsDefault="True" IsCancel="True" HorizontalAlignment="Right"/>
     </Grid>
 </Window>

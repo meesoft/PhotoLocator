@@ -105,11 +105,18 @@ namespace PhotoLocator
             }
         }
 
+        public static ICommand OpenWebsiteCommand => new RelayCommand(o =>
+        {
+            using var cursor = new MouseCursorOverride();
+            var url = $"https://meesoft.com/PhotoLocator";
+            Process.Start(new ProcessStartInfo(url) { UseShellExecute = true });
+        });
+
         public ICommand CheckForUpdatesCommand => new RelayCommand(o =>
         {
             using var cursor = new MouseCursorOverride();
             var version = GetType().Assembly.GetName().Version!;
-            var url = $"http://meesoft.com/PhotoLocator/CheckForUpdates.php?Version={(version.Major % 100):D3}{version.Minor:D3}{version.Build:D3}";
+            var url = $"https://meesoft.com/PhotoLocator/CheckForUpdates.php?Version={(version.Major % 100):D3}{version.Minor:D3}{version.Build:D3}";
             Process.Start(new ProcessStartInfo(url) { UseShellExecute = true });
         });
     }
