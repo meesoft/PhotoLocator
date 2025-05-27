@@ -1,5 +1,4 @@
-﻿using MapControl;
-using PhotoLocator.Gps;
+﻿using PhotoLocator.Gps;
 using PhotoLocator.Helpers;
 using PhotoLocator.Settings;
 using System;
@@ -18,15 +17,17 @@ namespace PhotoLocator
     {
         readonly IEnumerable<PictureItemViewModel> _allItems;
         readonly IEnumerable<PictureItemViewModel> _selectedItems;
+        readonly IEnumerable<GpsTrace> _gpsTraces;
+        readonly Action _completedAction;
         readonly IRegistrySettings _settings;
 
-        public AutoTagViewModel(IEnumerable<PictureItemViewModel> allItems, IEnumerable<PictureItemViewModel> selectedItems, IEnumerable<GpsTrace> polylines, 
+        public AutoTagViewModel(IEnumerable<PictureItemViewModel> allItems, IEnumerable<PictureItemViewModel> selectedItems, IEnumerable<GpsTrace> gpsTraces, 
             Action completedAction, IRegistrySettings settings)
         {
             _allItems = allItems;
             _selectedItems = selectedItems;
-            GpsTraces = polylines;
-            CompletedAction = completedAction;
+            _gpsTraces = gpsTraces;
+            _completedAction = completedAction;
             _settings = settings;
             _traceFilePath = _settings.GetValue(nameof(TraceFilePath)) as string;
             _maxTimestampDifference = (_settings.GetValue(nameof(MaxTimestampDifference)) as int? ?? 15 * 60) / 60.0;
@@ -35,20 +36,14 @@ namespace PhotoLocator
 
         public event PropertyChangedEventHandler? PropertyChanged;
 
-        public IEnumerable<GpsTrace> GpsTraces { get; }
-
         public string? TraceFilePath { get => _traceFilePath; set => SetProperty(ref _traceFilePath, value?.Trim(' ', '"')); }
         private string? _traceFilePath;
 
-        /// <summary>
-        /// In minutes
-        /// </summary>
+        /// <summary> In minutes </summary>
         public double MaxTimestampDifference { get => _maxTimestampDifference; set => SetProperty(ref _maxTimestampDifference, value); }
         private double _maxTimestampDifference;
 
-        /// <summary>
-        /// In hours or hh:mm:nn
-        /// </summary>
+        /// <summary> In hours or hh:mm:nn </summary>
         public string TimestampOffset 
         { 
             get => (IntMath.Round(_timestampOffset.TotalSeconds) % 3600) != 0 ? 
@@ -60,8 +55,6 @@ namespace PhotoLocator
                     TimeSpan.FromHours(double.Parse(value, CultureInfo.CurrentCulture))); 
         }
         private TimeSpan _timestampOffset;
-
-        public Action CompletedAction { get; }
 
         public bool IsWindowEnabled { get => _isWindowEnabled; set => SetProperty(ref _isWindowEnabled, value); }
         private bool _isWindowEnabled = true;
@@ -81,12 +74,12 @@ namespace PhotoLocator
             try
             {
                 using var cursor = new MouseCursorOverride();
-                var gpsTraces = LoadAdditionalGpsTraces().ToArray();
-                var (tagged, notTagged) = AutoTag(gpsTraces);
-                if (MessageBox.Show($"{tagged} photos with timestamps were tagged, {notTagged} were not.", "Auto tag", 
+                var allGpsTraces = LoadAdditionalGpsTraces().ToArray();
+                var (tagged, notTagged) = AutoTag(allGpsTraces);
+                if (MessageBox.Show($"{tagged} photos with timestamps were tagged, {notTagged} were not.", "Auto tag",
                     MessageBoxButton.OKCancel, MessageBoxImage.Information) != MessageBoxResult.OK)
                     return;
-                CompletedAction();
+                _completedAction();
                 SaveSettings();
             }
             finally
@@ -95,67 +88,21 @@ namespace PhotoLocator
             }
         });
 
-        private Location? GetBestGeoFix(PictureItemViewModel[] sourceImages, IEnumerable<GpsTrace> gpsTraces, DateTimeOffset timeStamp)
+        internal (int Tagged, int NotTagged) AutoTag(GpsTrace[] gpsTraces)
         {
-            Location? bestFix = null;
-            var minDistance = TimeSpan.FromMinutes(MaxTimestampDifference + 0.001);
-            // Search in other images
-            foreach (var geoFix in sourceImages)
-            {
-                var distance = (timeStamp - geoFix.TimeStamp!.Value).Duration();
-                if (distance < minDistance)
-                {
-                    minDistance = distance;
-                    bestFix = geoFix.GeoTag;
-                }
-            }
-            // Search in GPS traces
-            timeStamp += _timestampOffset;
-            foreach (var trace in gpsTraces)
-                for (int i = 0; i < trace.TimeStamps.Count; i++)
-                {
-                    var distance = (timeStamp - trace.TimeStamps[i]).Duration();
-                    if (distance < minDistance)
-                    {
-                        minDistance = distance;
-                        bestFix = trace.Locations![i];
-                    }
-                }
-            return bestFix;
+            var autoTagger = new AutoTagger(_allItems, gpsTraces, _timestampOffset, MaxTimestampDifference);
+            return autoTagger.AutoTag(_selectedItems);
         }
 
-        internal (int Tagged, int NotTagged) AutoTag(IEnumerable<GpsTrace> gpsTraces)
-        {
-            int tagged = 0, notTagged = 0;
-            var sourceImages = _allItems.Where(item => item.GeoTag != null && item.TimeStamp.HasValue && !_selectedItems.Contains(item)).ToArray();
-            foreach (var item in _selectedItems.Where(item => item.TimeStamp.HasValue && item.CanSaveGeoTag))
-            {
-                var bestTag = GetBestGeoFix(sourceImages, gpsTraces, item.TimeStamp!.Value);
-                if (bestTag != null)
-                {
-                    if (!Equals(item.GeoTag, bestTag))
-                    {
-                        item.GeoTag = bestTag;
-                        item.GeoTagSaved = false;
-                        item.IsChecked = false;
-                    }
-                    tagged++;
-                }
-                else
-                    notTagged++;
-            }
-            return (tagged, notTagged);
-        }
-        
         private IEnumerable<GpsTrace> LoadAdditionalGpsTraces()
         {
             if (string.IsNullOrEmpty(TraceFilePath))
-                return GpsTraces;
+                return _gpsTraces;
             var minDistance = TimeSpan.FromMinutes(MaxTimestampDifference);
             Directory.SetCurrentDirectory(Path.GetDirectoryName(_selectedItems.First().FullPath)!);
             if (File.Exists(TraceFilePath))
-                return GpsTraces.Concat(GpsTrace.DecodeGpsTraceFile(TraceFilePath, minDistance));
-            return GpsTraces.Concat(Directory.EnumerateFiles(TraceFilePath)
+                return _gpsTraces.Concat(GpsTrace.DecodeGpsTraceFile(TraceFilePath, minDistance));
+            return _gpsTraces.Concat(Directory.EnumerateFiles(TraceFilePath)
                 .Where(fileName => GpsTrace.TraceExtensions.Contains(Path.GetExtension(fileName).ToLowerInvariant()))
                 .SelectMany(fileName => GpsTrace.DecodeGpsTraceFile(fileName, minDistance)));
         }
