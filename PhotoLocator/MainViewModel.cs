@@ -1046,7 +1046,7 @@ namespace PhotoLocator
                 if (renamed != null)
                     renamed.Renamed(e.FullPath);
                 else
-                    HandleFileSystemWatcherChange(this, e);
+                    HandleFileSystemWatcherChange(sender, e);
             });
         }
 
@@ -1065,6 +1065,8 @@ namespace PhotoLocator
                 else if (e.ChangeType is WatcherChangeTypes.Created or WatcherChangeTypes.Renamed) // Renamed may be forwarded from HandleFileSystemWatcherRename
                 {
                     await Task.Delay(1000);
+                    if (_fileSystemWatcher != sender)
+                        return; // Folder changed, ignore event
                     var ext = Path.GetExtension(e.FullPath).ToLowerInvariant();
                     if (File.Exists(e.FullPath) && PhotoFileExtensions.Contains(ext))
                     {
