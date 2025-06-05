@@ -73,7 +73,7 @@ PhotoLocator is written in C# targeting .net8.0 for Windows.
 
 The source code is available at https://github.com/meesoft/PhotoLocator
 
-Released binaries will be made available at http://meesoft.com/PhotoLocator
+Released binaries will be made available at http://meesoft.com/PhotoLocator and the [Microsoft Store](https://apps.microsoft.com/store/detail/9P22GWVGDWN9?cid=DevShareMCLPCS)
 
 Note that the source code for JpegTransform will not build. It is only included to document the command line interface.
 
