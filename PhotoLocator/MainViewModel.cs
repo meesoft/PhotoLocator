@@ -33,7 +33,9 @@ namespace PhotoLocator
 #if DEBUG
         static readonly bool _isInDesignMode = DesignerProperties.GetIsInDesignMode(new DependencyObject());
 #else
+#pragma warning disable IDE1006 // Naming Styles
         const bool _isInDesignMode = false;
+#pragma warning restore IDE1006 // Naming Styles
 #endif
 
         Task? _loadPicturesTask;

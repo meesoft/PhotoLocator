@@ -2,8 +2,13 @@
 .vs/
 obj/
 bin/
+jpegli/
 PublishProfiles/
 Properties/
 PhotoLocator/exiftool/
 PhotoLocator/ffmpeg/
 PhotoLocatorTest/TestData/*.cr3
+PhotoLocatorSetup/*.cache
+PhotoLocatorSetup/*.pfx
+PhotoLocatorSetup/AppPackages/
+PhotoLocatorSetup/BundleArtifacts/

@@ -9,6 +9,7 @@
         <Authors>Clemens Fischer</Authors>
         <Copyright>Copyright © 2023 Clemens Fischer</Copyright>
         <SignAssembly>true</SignAssembly>
+        <Platforms>x64</Platforms>
     </PropertyGroup>
 
     <ItemGroup>

@@ -6,7 +6,7 @@
     <Nullable>enable</Nullable>
     <UseWPF>true</UseWPF>
     <ApplicationManifest>app.manifest</ApplicationManifest>
-    <Version>2025.4.28.0</Version>
+    <Version>2025.6.3.0</Version>
     <Copyright>(c) 2022-2025 Michael Vinther</Copyright>
     <Company>MeeSoft</Company>
     <ApplicationIcon>Resources\PhotoLocator.ico</ApplicationIcon>
@@ -14,6 +14,7 @@
     <AnalysisMode>All</AnalysisMode>
     <NoWarn>CA1014,CA1309,CA1814,CA1819,IDE0017</NoWarn>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <Platforms>x64</Platforms>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)' == 'Release'">
@@ -53,6 +54,9 @@
   </ItemGroup>
 
   <ItemGroup>
+    <None Include="$(SolutionDir)jpegli\*.*" >
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
     <None Include="..\JpegTransform\JpegTransform.exe" Link="JpegTransform.exe">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
@@ -70,7 +74,7 @@
     </AssemblyAttribute>
   </ItemGroup>
 
-  <Target Name="RemoveX86Assets" AfterTargets="Build" Condition="'$(Configuration)' == 'Release'">
+  <Target Name="RemoveUnusedAssets" AfterTargets="Build" Condition="'$(Configuration)' == 'Release'">
     <RemoveDir Directories="$(OutputPath)runtimes\win-x86" />
     <ItemGroup>
       <DllsToDelete Include="$(OutputPath)runtimes\win-x64\native\opencv_videoio_ffmpeg*_64.dll" />

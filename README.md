@@ -2,8 +2,8 @@
 
 ![Icon](./PhotoLocator/Resources/PhotoLocator.png)
 
-## Photo geotagging and location browsing
-PhotoLocator can import GPS traces from GPX and KML files and then apply the GPS positions to picture and video files by 
+## Photo and video geotagging and location browsing
+PhotoLocator can import GPS traces from various formats and then apply the GPS positions to picture and video files by 
 synchronizing with the photo timestamps. GPS tags can also be imported from other already geotagged photos.
 The locations can either be set automatically based on timestamps or manually by copy/pasting from other files or selecting 
 on the map. PhotoLocator can perform a lossless update of the EXIF data in the target files directly or in copies of the files.
@@ -11,7 +11,7 @@ on the map. PhotoLocator can perform a lossless update of the EXIF data in the t
 If you need to save geotags to other than JPEG files you need to download [ExifTool](https://exiftool.org/) and setup the path 
 to it in the Settings dialog.
 
-KML files can be obtained directly from the Google Maps location history. GPX files can be exported by many location and 
+PhotoLocator supports GPX, KML, GeoJSON and Google timeline export files. GPX files can be exported by many location and 
 sports tracking apps. 
 
 ![Screenshot](./Screenshot.jpg)
@@ -52,7 +52,7 @@ Note that it is possible to use Chrome's full screen cast feature to display the
 
 * Stabilize shaky video.
 
-* Rotate, adjust saturation and contrast and denoise video files
+* Rotate, adjust brightness, saturation and contrast and denoise video files
 
 * Generate average and max frames for video for e.g. timelapse or long exposure simulation.
 
@@ -69,11 +69,11 @@ for me. Since I was unable to find a suitable replacement I decided to make a ne
 https://github.com/meesoft/PhotoLocator/releases
 
 ## Source code
-PhotoLocator is written in C# targeting .net6.0 for Windows.
+PhotoLocator is written in C# targeting .net8.0 for Windows.
 
 The source code is available at https://github.com/meesoft/PhotoLocator
 
-Released binaries will be made available at http://meesoft.com/PhotoLocator
+Released binaries will be made available at http://meesoft.com/PhotoLocator and the [Microsoft Store](https://apps.microsoft.com/store/detail/9P22GWVGDWN9?cid=DevShareMCLPCS)
 
 Note that the source code for JpegTransform will not build. It is only included to document the command line interface.
 

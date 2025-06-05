@@ -6,6 +6,7 @@
     <Nullable>enable</Nullable>
 	<RootNamespace>PhotoLocator</RootNamespace>
     <IsPackable>false</IsPackable>
+    <Platforms>x64</Platforms>
   </PropertyGroup>
 
   <ItemGroup>
