@@ -142,6 +142,7 @@ namespace PhotoLocator
                 metadata = new BitmapMetadata("jpg");
                 ExifHandler.SetDateTaken(metadata, item.TimeStamp ?? File.GetLastWriteTime(item.FullPath));
                 ExifHandler.SetGeotag(metadata, item.GeoTag);
+                metadata.Freeze();
             }
             return (image, metadata);
         }

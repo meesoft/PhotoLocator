@@ -270,7 +270,10 @@ namespace PhotoLocator
             try
             {
                 Log.Write("Loading preview of " + Name);
-                return LoadPreviewInternal(maxWidth, preservePixelFormat, skipTo, ct);
+                var sw = Stopwatch.StartNew();
+                var preview = LoadPreviewInternal(maxWidth, preservePixelFormat, skipTo, ct);
+                Log.Write($"Loaded preview of {Name} in {sw.ElapsedMilliseconds} ms");
+                return preview;
             }
             catch (OperationCanceledException)
             {

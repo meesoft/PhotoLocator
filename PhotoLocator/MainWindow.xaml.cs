@@ -96,13 +96,14 @@ namespace PhotoLocator
 
         private void CheckToolPaths()
         {
-            if (string.IsNullOrEmpty(_viewModel.Settings.ExifToolPath))
+            if (string.IsNullOrEmpty(_viewModel.Settings.ExifToolPath) || !File.Exists(_viewModel.Settings.ExifToolPath))
             {
                 var exifToolPath = Path.Combine(Path.GetDirectoryName(GetType().Assembly.Location)!, "exiftool");
-                if (Directory.Exists(exifToolPath))
-                    _viewModel.Settings.ExifToolPath = Directory.EnumerateFiles(exifToolPath, "*.exe").FirstOrDefault();
+                exifToolPath = Directory.Exists(exifToolPath) ? Directory.EnumerateFiles(exifToolPath, "*.exe").FirstOrDefault() : null;
+                if (exifToolPath is not null)
+                    _viewModel.Settings.ExifToolPath = exifToolPath;
             }
-            if (string.IsNullOrEmpty(_viewModel.Settings.FFmpegPath))
+            if (string.IsNullOrEmpty(_viewModel.Settings.FFmpegPath) || !File.Exists(_viewModel.Settings.FFmpegPath))
             {
                 var ffmpegPath = Path.Combine(Path.GetDirectoryName(GetType().Assembly.Location)!, "ffmpeg", "ffmpeg.exe");
                 if (File.Exists(ffmpegPath))
@@ -228,9 +229,11 @@ namespace PhotoLocator
                  e.Key == Key.Down || e.Key == Key.Up || e.Key == Key.Left || e.Key == Key.Right) && 
                 (e.KeyboardDevice.IsKeyDown(Key.LeftShift) || e.KeyboardDevice.IsKeyDown(Key.RightShift)) && PictureListBox.SelectedIndex >= 0)
             {
+                var first = Math.Min(_selectStartIndex, PictureListBox.SelectedIndex);
                 var last = Math.Max(_selectStartIndex, PictureListBox.SelectedIndex);
-                for (int i = Math.Min(_selectStartIndex, PictureListBox.SelectedIndex); i <= last; i++)
+                for (int i = first; i <= last; i++)
                     ((PictureItemViewModel)PictureListBox.Items[i]).IsChecked = true;
+                Log.Write($"Selected range {first} to {last}");
                 Dispatcher.BeginInvoke(() => _viewModel.UpdatePoints(), DispatcherPriority.ApplicationIdle); // This can take some time
             }
         }
@@ -243,8 +246,10 @@ namespace PhotoLocator
                 {
                     var clickedIndex = PictureListBox.Items.IndexOf(item);
                     var selectedIndex = Math.Max(0, PictureListBox.SelectedIndex);
+                    var first = Math.Min(clickedIndex, selectedIndex);
                     var last = Math.Max(clickedIndex, selectedIndex);
-                    for (int i = Math.Min(clickedIndex, selectedIndex); i <= last; i++)
+                    Log.Write($"Selected range {first} to {last}");
+                    for (int i = first; i <= last; i++)
                         ((PictureItemViewModel)PictureListBox.Items[i]).IsChecked = true;
                 }
                 else if (Keyboard.IsKeyDown(Key.LeftCtrl) || Keyboard.IsKeyDown(Key.RightCtrl))
@@ -492,6 +497,7 @@ namespace PhotoLocator
             var MaxHeight = PreviewCanvas.ActualHeight * screenDpi.DpiScaleY;
             var scale = Math.Min(maxWidth / sourceImage.PixelWidth, MaxHeight / sourceImage.PixelHeight);
             BitmapSource? resampled = null;
+            var sw = Stopwatch.StartNew();
             if (scale > 1 && _viewModel.Settings.LanczosUpscaling || scale < 1 && _viewModel.Settings.LanczosDownscaling)
             {
                 var resizeOperation = new LanczosResizeOperation();
@@ -517,6 +523,7 @@ namespace PhotoLocator
                     FullPreviewImage.Visibility = Visibility.Collapsed;
                 }
                 ZoomedPreviewImage.Visibility = Visibility.Collapsed;
+                Log.Write($"Resampled image to {resampled?.PixelWidth}x{resampled?.PixelHeight} in {sw.ElapsedMilliseconds} ms");
             }
         }
 
