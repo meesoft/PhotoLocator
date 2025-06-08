@@ -1,4 +1,4 @@
-﻿// Geotagging based on example from https://www.codeproject.com/Questions/815338/Inserting-GPS-tags-into-jpeg-EXIF-metadata-using-n
+﻿// JPEG geotagging based on example from https://www.codeproject.com/Questions/815338/Inserting-GPS-tags-into-jpeg-EXIF-metadata-using-n
 
 using MapControl;
 using PhotoLocator.Helpers;
@@ -581,8 +581,12 @@ namespace PhotoLocator.Metadata
                 return string.Empty;
             return GetMetadataString(metadata);
         }
-
         public static string GetMetadataString(BitmapMetadata metadata)
+        {
+            return GetMetadataString(metadata, DecodeTimeStamp(metadata));
+        }
+
+        public static string GetMetadataString(BitmapMetadata metadata, DateTimeOffset? timeStamp)
         {
             var metadataStrings = new List<string>();
 
@@ -620,9 +624,8 @@ namespace PhotoLocator.Metadata
             if (iso != null)
                 metadataStrings.Add("ISO" + iso.ToString());
 
-            var timestamp = DecodeTimeStamp(metadata);
-            if (timestamp.HasValue)
-                metadataStrings.Add(FormatTimestampForDisplay(timestamp.Value));
+            if (timeStamp.HasValue)
+                metadataStrings.Add(FormatTimestampForDisplay(timeStamp.Value));
 
             return string.Join(", ", metadataStrings);
         }
@@ -650,7 +653,8 @@ namespace PhotoLocator.Metadata
                     8 => Rotation.Rotate270,
                     _ => Rotation.Rotate0
                 };
-                return (GetGeotag(metadata), DecodeTimeStamp(metadata), GetMetadataString(metadata), orientation);
+                var timeStamp = DecodeTimeStamp(metadata);
+                return (GetGeotag(metadata), timeStamp, GetMetadataString(metadata, timeStamp), orientation);
             }
             catch (NotSupportedException)
             {
@@ -709,22 +713,33 @@ namespace PhotoLocator.Metadata
 
         internal static DateTimeOffset? DecodeTimeStampFromExifTool(Dictionary<string, string> metadata)
         {
-            if (!metadata.TryGetValue("SubSecCreateDate", out var timestampStr) &&
-                !metadata.TryGetValue("SubSecDateTimeOriginal", out timestampStr) &&
-                !metadata.TryGetValue("CreationDate", out timestampStr) &&
-                !metadata.TryGetValue("CreateDate", out timestampStr) &&
-                !metadata.TryGetValue("DateTimeOriginal", out timestampStr))
+            if (!metadata.TryGetValue("SubSecCreateDate", out var timeStampStr) &&
+                !metadata.TryGetValue("SubSecDateTimeOriginal", out timeStampStr) &&
+                !metadata.TryGetValue("CreationDate", out timeStampStr) &&
+                !metadata.TryGetValue("CreateDate", out timeStampStr) &&
+                !metadata.TryGetValue("DateTimeOriginal", out timeStampStr))
                 return null;
-            if (DateTimeOffset.TryParseExact(timestampStr, "yyyy:MM:dd HH:mm:sszzz", CultureInfo.InvariantCulture, DateTimeStyles.AllowWhiteSpaces, out var timestampOffset) ||
-                DateTimeOffset.TryParseExact(timestampStr, "yyyy:MM:dd HH:mm:ss.ffzzz", CultureInfo.InvariantCulture, DateTimeStyles.AllowWhiteSpaces, out timestampOffset))
+            var fractionStart = timeStampStr.IndexOf('.', StringComparison.Ordinal);
+            if (fractionStart > 0)
+            {
+                var fractionEnd = timeStampStr.IndexOfAny(['+', '-'], fractionStart);
+                if (fractionEnd > 0)
+                    timeStampStr = string.Concat(timeStampStr.AsSpan(0, fractionStart), timeStampStr.AsSpan(fractionEnd));
+                else
+                    timeStampStr = timeStampStr[..fractionStart];
+            }
+            if (DateTimeOffset.TryParseExact(timeStampStr, "yyyy:MM:dd HH:mm:sszzz", CultureInfo.InvariantCulture, DateTimeStyles.AllowWhiteSpaces, out var timestampOffset))
                 return timestampOffset;
-            if ((metadata.TryGetValue("OffsetTimeOriginal", out var offsetStr) ||
-                 metadata.TryGetValue("OffsetTime", out offsetStr) ||
-                 metadata.TryGetValue("TimeZone", out offsetStr)) &&
-                DateTimeOffset.TryParseExact(timestampStr + offsetStr, "yyyy:MM:dd HH:mm:sszzz", CultureInfo.InvariantCulture, DateTimeStyles.AllowWhiteSpaces, out timestampOffset))
-                return timestampOffset;
+            if (metadata.TryGetValue("OffsetTimeOriginal", out var offsetStr) ||
+                metadata.TryGetValue("OffsetTime", out offsetStr) ||
+                metadata.TryGetValue("TimeZone", out offsetStr))
+            {
+                var timeStampWithOffsetStr = timeStampStr + offsetStr;
+                if (DateTimeOffset.TryParseExact(timeStampWithOffsetStr, "yyyy:MM:dd HH:mm:sszzz", CultureInfo.InvariantCulture, DateTimeStyles.AllowWhiteSpaces, out timestampOffset))
+                    return timestampOffset;
+            }
             var timeZone = metadata.TryGetValue("FileType", out var fileType) && fileType=="JPEG" ? DateTimeStyles.AssumeLocal : DateTimeStyles.AssumeUniversal;
-            if (DateTime.TryParseExact(timestampStr, "yyyy:MM:dd HH:mm:ss", CultureInfo.InvariantCulture, DateTimeStyles.AllowWhiteSpaces | timeZone, out var timestamp))
+            if (DateTime.TryParseExact(timeStampStr, "yyyy:MM:dd HH:mm:ss", CultureInfo.InvariantCulture, DateTimeStyles.AllowWhiteSpaces | timeZone, out var timestamp))
                 return timestamp;
             return null;
         }

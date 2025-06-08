@@ -168,7 +168,7 @@ namespace PhotoLocator
                 if (_metadataString is null && IsFile)
                 {
                     var metadataString = GetMetadataString();
-                    _metadataString ??= metadataString;
+                    _metadataString ??= metadataString; // Don't overwrite with string from ffmpeg if it was already set while preview is loading
                 }
                 return _metadataString;
             }

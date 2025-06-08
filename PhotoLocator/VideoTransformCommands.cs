@@ -94,14 +94,13 @@ namespace PhotoLocator
             get => _skipTo;
             set
             {
-                if (SetProperty(ref _skipTo, value.Trim()))
-                {
-                    UpdateInputArgs();
-                    UpdateOutputArgs();
-                    if (_localContrastSetup is not null)
-                        _localContrastSetup.SourceBitmap = null;
-                    _mainViewModel.UpdatePreviewPictureAsync(_skipTo).WithExceptionLogging();
-                }
+                if (!SetProperty(ref _skipTo, value.Trim()))
+                    return;
+                UpdateInputArgs();
+                UpdateOutputArgs();
+                if (_localContrastSetup is not null)
+                    _localContrastSetup.SourceBitmap = null;
+                _mainViewModel.UpdatePreviewPictureAsync(SkipTo).WithExceptionLogging();
             }
         }
         string _skipTo = string.Empty;
@@ -111,11 +110,14 @@ namespace PhotoLocator
             get => _duration;
             set
             {
-                if (SetProperty(ref _duration, value.Trim()))
-                {
-                    UpdateInputArgs();
-                    UpdateOutputArgs();
-                }
+                if (!SetProperty(ref _duration, value.Trim()))
+                    return;
+                UpdateInputArgs();
+                UpdateOutputArgs();
+                if (string.IsNullOrEmpty(SkipTo))
+                    _mainViewModel.UpdatePreviewPictureAsync(Duration).WithExceptionLogging();
+                else if (double.TryParse(SkipTo, CultureInfo.InvariantCulture, out var skipToSeconds) && double.TryParse(Duration, CultureInfo.InvariantCulture, out var durationSeconds))
+                    _mainViewModel.UpdatePreviewPictureAsync((skipToSeconds + durationSeconds).ToString(CultureInfo.InvariantCulture)).WithExceptionLogging();
             }
         }
         string _duration = string.Empty;
@@ -654,7 +656,8 @@ namespace PhotoLocator
         {
             if (_mainViewModel.GetSelectedItems(true).All(item => item.IsVideo))
             {
-                SelectedVideoFormat = VideoFormats[CopyVideoFormatIndex];
+                if (!IsAnyProcessingSelected())
+                    SelectedVideoFormat = VideoFormats[CopyVideoFormatIndex];
                 FrameRate = "";
             }
             else
@@ -666,6 +669,11 @@ namespace PhotoLocator
             }
             ProcessSelected.Execute(null);
         });
+
+        private bool IsAnyProcessingSelected()
+        {
+            return IsCropChecked || IsScaleChecked || IsRotateChecked || IsStabilizeChecked || IsSpeedupChecked || IsLocalContrastChecked || SelectedEffect?.Tag is not null;
+        }
 
         public ICommand Compare => new RelayCommand(async o =>
         {
@@ -747,6 +755,8 @@ namespace PhotoLocator
                     return;
                 outFileName = outputPath;
             }
+            else if (OutputMode == OutputMode.Video && SelectedVideoFormat == VideoFormats[CopyVideoFormatIndex] && IsAnyProcessingSelected())
+                throw new UserMessageException("Copy video format is not supported with any processing selected, please select another format or disable processing options");
             else
             {
                 var dlg = SetupSaveFileDialog(allSelected, inPath); 

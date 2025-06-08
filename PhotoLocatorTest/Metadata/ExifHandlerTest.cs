@@ -328,7 +328,7 @@ namespace PhotoLocator.Metadata
         }
 
         [TestMethod]
-        [DataRow(@"TestData\Canon90DVideo.txt", 2024, 7, 9, 14, 38, 53, 390, +2)]
+        [DataRow(@"TestData\Canon90DVideo.txt", 2024, 7, 9, 14, 38, 53, 0, +2)]
         [DataRow(@"TestData\DJIAction2Video.txt", 2022, 4, 16, 18, 46, 28, 0, +2)]
         [DataRow(@"TestData\iPhoneVideo.txt", 2022, 9, 23, 12, 50, 53, 0, +2)]
         [DataRow(@"TestData\Mini2Video.txt", 2024, 7, 9, 13, 9, 22, 0, +2)]
