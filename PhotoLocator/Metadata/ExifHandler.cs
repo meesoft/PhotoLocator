@@ -192,12 +192,12 @@ namespace PhotoLocator.Metadata
                     result = new BitmapMetadata("png");
                     var exposureTime = Rational.Decode(source.GetQuery(ExposureTimeQuery1) ?? source.GetQuery(ExposureTimeQuery2));
                     var location = GetGeotag(source);
-                    return EncodePngMetadata(exposureTime, location, DecodeTimeStamp(source));
+                    return EncodePngMetadata(exposureTime, location, DecodeTimeStamp(source, null));
                 }
                 else
                     return null;
 
-                var dateTaken = DecodeTimeStamp(source);
+                var dateTaken = DecodeTimeStamp(source, null);
                 if (dateTaken.HasValue)
                     SetDateTaken(result, dateTaken.Value);
 
@@ -448,7 +448,7 @@ namespace PhotoLocator.Metadata
             return new Location(latitude: latitude.AngleInDegrees, longitude: longitude.AngleInDegrees);
         }
 
-        public static DateTimeOffset? DecodeTimeStamp(BitmapMetadata metadata)
+        public static DateTimeOffset? DecodeTimeStamp(BitmapMetadata metadata, Stream? imageStream)
         {
             try
             {
@@ -475,6 +475,24 @@ namespace PhotoLocator.Metadata
                     return new DateTimeOffset(timeStamp, offset);
                 if (TimeSpan.TryParseExact(offsetStr, @"\-hh\:mm", CultureInfo.InvariantCulture, out offset))
                     return new DateTimeOffset(timeStamp, -offset);
+                if (imageStream is not null && metadata.CameraManufacturer == "Canon")
+                {
+                    var makerNotes = metadata.GetQuery(ExifMakerNoteQuery1) as BitmapMetadataBlob;
+                    if (makerNotes is not null)
+                    {
+                        using var ifdDecoder = new IfdDecoder(new MemoryStream(makerNotes.GetBlobValue(), false), 0);
+                        foreach (var tag in ifdDecoder.EnumerateIfdTags())
+                        {
+                            if (tag.TagId == 0x35 && tag.ValueCount == 4) // Canon time zone tag
+                            {
+                                using var tagDecoder = new IfdDecoder(imageStream, 10);
+                                var timeZone = tagDecoder.DecodeUInt32Tag(tag);
+                                offset = TimeSpan.FromMinutes((Int16)(timeZone[1] >> 16)); //TODO: Check negative offsets
+                                return new DateTimeOffset(timeStamp, offset);
+                            }
+                        }
+                    }
+                }
 
                 return DateTime.SpecifyKind(timeStamp, DateTimeKind.Local);
             }
@@ -577,7 +595,7 @@ namespace PhotoLocator.Metadata
                             {
                                 if (tag.FieldType == IfdDecoder.FieldType.Ascii)
                                     yield return fullQuery + $"/{tag.TagId} = {tag.FieldType}*{tag.ValueCount} '{tagDecoder.DecodeStringTag(tag)}'";
-                                else if (tag.FieldType == IfdDecoder.FieldType.Long && tag.ValueCount >= 1 && tag.ValueCount < 100)
+                                else if (tag.FieldType == IfdDecoder.FieldType.Long && tag.ValueCount > 0 && tag.ValueCount < 100)
                                     yield return fullQuery + $"/{tag.TagId} = {tag.FieldType} {string.Join(", ", tagDecoder.DecodeUInt32Tag(tag).Select(a => a.ToString(CultureInfo.InvariantCulture)))}";
                                 else
                                     yield return fullQuery + $"/{tag.TagId} = {tag.FieldType} {tag.ValueCount} * {tag.ValueOrOffset}";
@@ -601,9 +619,9 @@ namespace PhotoLocator.Metadata
             return output.Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
         }
 
-        public static string GetMetadataString(BitmapMetadata metadata)
+        public static string GetMetadataString(BitmapMetadata metadata, Stream? imageStream)
         {
-            return GetMetadataString(metadata, DecodeTimeStamp(metadata));
+            return GetMetadataString(metadata, DecodeTimeStamp(metadata, imageStream));
         }
 
         private static string GetMetadataString(BitmapMetadata metadata, DateTimeOffset? timeStamp)
@@ -673,7 +691,7 @@ namespace PhotoLocator.Metadata
                     8 => Rotation.Rotate270,
                     _ => Rotation.Rotate0
                 };
-                var timeStamp = DecodeTimeStamp(metadata);
+                var timeStamp = DecodeTimeStamp(metadata, file);
                 return (GetGeotag(metadata), timeStamp, GetMetadataString(metadata, timeStamp), orientation);
             }
             catch (NotSupportedException)

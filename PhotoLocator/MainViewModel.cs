@@ -1168,7 +1168,7 @@ namespace PhotoLocator
             _loadCancellation?.Dispose();
             _loadCancellation = new CancellationTokenSource();
             var ct = _loadCancellation.Token;
-
+            var sw = Stopwatch.StartNew();
             do
             {
                 _loadPicturesPending = false;
@@ -1196,6 +1196,7 @@ namespace PhotoLocator
                 _loadPicturesTask = null;
             }
             while (_loadPicturesPending && !ct.IsCancellationRequested);
+            Log.Write($"Loaded thumbnails and metadata in {sw.Elapsed.TotalSeconds} s");
         }
 
         private static void AssertInMainThread()
