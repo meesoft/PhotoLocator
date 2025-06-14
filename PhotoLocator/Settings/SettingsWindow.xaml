@@ -64,9 +64,11 @@
         <TextBlock Text="Slideshow interval in seconds:" Margin="0,20,0,0"/>
         <TextBox Text="{Binding SlideShowInterval}"/>
 
-        <CheckBox Content="Show EXIF metadata in slide show" IsChecked="{Binding ShowMetadataInSlideShow}"  Margin="0,10,0,0" />
+        <CheckBox Content="Always use ExifTool to load metadata (slower, but supports more file types)" IsChecked="{Binding ForceUseExifTool}" Margin="0,10,0,0" />
 
-        <CheckBox Content="Rename and delete sidecar files" IsChecked="{Binding IncludeSidecarFiles}"  Margin="0,20,0,0" />
+        <CheckBox Content="Show EXIF metadata in slide show" IsChecked="{Binding ShowMetadataInSlideShow}" Margin="0,10,0,0" />
+
+        <CheckBox Content="Rename and delete sidecar files" IsChecked="{Binding IncludeSidecarFiles}" Margin="0,10,0,0" />
         
         <TextBlock Text="Default crop ratio (0 for none):" Margin="0,20,0,0" />
         <StackPanel Orientation="Horizontal" Margin="0,0,0,0">

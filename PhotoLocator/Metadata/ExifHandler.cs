@@ -72,6 +72,8 @@ namespace PhotoLocator.Metadata
         public const string DjiRelativeAltitude1 = @"/xmp/http\:\/\/www.dji.com\/drone-dji\/1.0\/:RelativeAltitude"; // Decimal string
         public const string DjiRelativeAltitude2 = @"/ifd/{ushort=700}/http\:\/\/www.dji.com\/drone-dji\/1.0\/:RelativeAltitude";
 
+        private const string ExifMakerNoteQuery1 = "/app1/{ushort=0}/{ushort=34665}/{ushort=37500}";
+
         public const BitmapCreateOptions CreateOptions = BitmapCreateOptions.PreservePixelFormat | BitmapCreateOptions.IgnoreColorProfile;
 
         /// <summary> Note that the stream must still be valid when the metadata is used </summary>
@@ -507,9 +509,9 @@ namespace PhotoLocator.Metadata
                 using var file = File.OpenRead(fileName);
                 var metadata = LoadMetadata(file) ?? throw new UserMessageException("Unable to list metadata for file");
                 if (metadata.Any())
-                    return EnumerateMetadata(metadata, string.Empty).ToArray();
+                    return EnumerateMetadata(metadata, string.Empty, file).ToArray();
                 if (metadata.GetQuery("/ifd") is BitmapMetadata ifd)
-                    return EnumerateMetadata(ifd, "/ifd").ToArray();
+                    return EnumerateMetadata(ifd, "/ifd", file).ToArray();
                 throw new UserMessageException("Unable to list metadata for file");
             }
             catch (Exception ex) when (ex is UserMessageException or NotSupportedException)
@@ -520,7 +522,7 @@ namespace PhotoLocator.Metadata
             }
         }
 
-        public static IEnumerable<string> EnumerateMetadata(BitmapMetadata metadata, string query)
+        public static IEnumerable<string> EnumerateMetadata(BitmapMetadata metadata, string query, Stream imageStream)
         {
             foreach (string relativeQuery in metadata)
             {
@@ -535,7 +537,7 @@ namespace PhotoLocator.Metadata
                     continue;
                 }
                 if (metadataValue is BitmapMetadata innerBitmapMetadata)
-                    foreach (var inner in EnumerateMetadata(innerBitmapMetadata, fullQuery))
+                    foreach (var inner in EnumerateMetadata(innerBitmapMetadata, fullQuery, imageStream))
                         yield return inner;
                 else if (metadataValue is long or ulong)
                 {
@@ -557,6 +559,32 @@ namespace PhotoLocator.Metadata
                     else
                         yield return fullQuery + $" = {metadataValue.GetType().Name} with {arrayValue.Length} elements";
                 }
+                else if (metadataValue is BitmapMetadataBlob blob)
+                {
+                    var value = blob.GetBlobValue();
+                    if (value.Length <= 10)
+                    {
+                        yield return fullQuery + $" = [{string.Join(", ", value.Select(a => a.ToString(CultureInfo.InvariantCulture)))}] ({metadataValue.GetType().Name})";
+                    }
+                    else 
+                    {
+                        yield return fullQuery + $" = {value.Length} bytes ({metadataValue.GetType().Name})";
+                        if (fullQuery == ExifMakerNoteQuery1)
+                        {
+                            using var ifdDecoder = new IfdDecoder(new MemoryStream(value, false), 0);
+                            using var tagDecoder = new IfdDecoder(imageStream, 10);
+                            foreach (var tag in ifdDecoder.EnumerateIfdTags())
+                            {
+                                if (tag.FieldType == IfdDecoder.FieldType.Ascii)
+                                    yield return fullQuery + $"/{tag.TagId} = {tag.FieldType}*{tag.ValueCount} '{tagDecoder.DecodeStringTag(tag)}'";
+                                else if (tag.FieldType == IfdDecoder.FieldType.Long && tag.ValueCount >= 1 && tag.ValueCount < 100)
+                                    yield return fullQuery + $"/{tag.TagId} = {tag.FieldType} {string.Join(", ", tagDecoder.DecodeUInt32Tag(tag).Select(a => a.ToString(CultureInfo.InvariantCulture)))}";
+                                else
+                                    yield return fullQuery + $"/{tag.TagId} = {tag.FieldType} {tag.ValueCount} * {tag.ValueOrOffset}";
+                            }
+                        }
+                    }
+                }
                 else if (metadataValue != null)
                     yield return fullQuery + $" = {metadataValue} ({metadataValue.GetType().Name})";
             }
@@ -573,20 +601,12 @@ namespace PhotoLocator.Metadata
             return output.Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
         }
 
-        public static string GetMetadataString(string fileName)
-        {
-            using var file = File.OpenRead(fileName);
-            var metadata = LoadMetadata(file);
-            if (metadata is null)
-                return string.Empty;
-            return GetMetadataString(metadata);
-        }
         public static string GetMetadataString(BitmapMetadata metadata)
         {
             return GetMetadataString(metadata, DecodeTimeStamp(metadata));
         }
 
-        public static string GetMetadataString(BitmapMetadata metadata, DateTimeOffset? timeStamp)
+        private static string GetMetadataString(BitmapMetadata metadata, DateTimeOffset? timeStamp)
         {
             var metadataStrings = new List<string>();
 
@@ -635,7 +655,7 @@ namespace PhotoLocator.Metadata
             return timestamp.ToString(CultureInfo.CurrentCulture);
         }
 
-        public static async Task<(Location? Location, DateTimeOffset? TimeStamp, string? Metadata, Rotation Orientation)> DecodeMetadataAsync(string fileName, bool isVideo, string? exifToolPath, CancellationToken ct)
+        public static async Task<(Location? Location, DateTimeOffset? TimeStamp, string Metadata, Rotation Orientation)> DecodeMetadataAsync(string fileName, bool isVideo, string? exifToolPath, CancellationToken ct)
         {
             if (isVideo && !string.IsNullOrEmpty(exifToolPath))
                 return DecodeMetadataUsingExifTool(fileName, exifToolPath);
@@ -644,7 +664,7 @@ namespace PhotoLocator.Metadata
                 using var file = await FileHelpers.OpenFileWithRetryAsync(fileName, ct);
                 var metadata = LoadMetadata(file);
                 if (metadata is null)
-                    return (null, null, null, Rotation.Rotate0);
+                    return (null, null, string.Empty, Rotation.Rotate0);
                 var orientationStr = metadata.GetQuery(OrientationQuery1) as ushort? ?? metadata.GetQuery(OrientationQuery2) as ushort? ?? 0;
                 var orientation = orientationStr switch
                 {
@@ -664,7 +684,7 @@ namespace PhotoLocator.Metadata
             }
         }
 
-        public static (Location? Location, DateTimeOffset? TimeStamp, string? Metadata, Rotation Orientation) DecodeMetadataUsingExifTool(string fileName, string exifToolPath)
+        public static (Location? Location, DateTimeOffset? TimeStamp, string Metadata, Rotation Orientation) DecodeMetadataUsingExifTool(string fileName, string exifToolPath)
         {
             var metadata = DecodeExifToolMetadataToDictionary(EnumerateMetadataUsingExifTool(fileName, exifToolPath));
 
@@ -696,7 +716,7 @@ namespace PhotoLocator.Metadata
             var location = DecodeLocationFromExifTool(metadata);
             var orientation = DecodeOrientationFromExifTool(metadata);
 
-            return (location, creationTimestamp, metadataStrings.Count > 0 ? string.Join(", ", metadataStrings) : null, orientation);
+            return (location, creationTimestamp, string.Join(", ", metadataStrings), orientation);
         }
 
         internal static Dictionary<string, string> DecodeExifToolMetadataToDictionary(string[] lines)

@@ -569,7 +569,6 @@ namespace PhotoLocator
         public ICommand SettingsCommand => new RelayCommand(o =>
         {
             var previousPhotoFileExtensions = Settings.PhotoFileExtensions;
-            var previousThumbnailSize = Settings.ThumbnailSize;
             var previousScalingMode = Settings.BitmapScalingMode;
             var previousResamplingOptions = Settings.ResamplingOptions;
             var settingsWin = new SettingsWindow();
@@ -587,8 +586,9 @@ namespace PhotoLocator
             {
                 bool refresh =
                     settingsWin.Settings.PhotoFileExtensions != previousPhotoFileExtensions ||
-                    settingsWin.Settings.ThumbnailSize != previousThumbnailSize ||
-                    settingsWin.Settings.ShowFolders != Settings.ShowFolders;
+                    settingsWin.Settings.ThumbnailSize != Settings.ThumbnailSize ||
+                    settingsWin.Settings.ShowFolders != Settings.ShowFolders ||
+                    settingsWin.Settings.ForceUseExifTool != Settings.ForceUseExifTool;
                 Settings.AssignSettings(settingsWin.Settings);
                 PhotoFileExtensions = Settings.CleanPhotoFileExtensions();
                 Settings.PhotoFileExtensions = String.Join(", ", PhotoFileExtensions);
@@ -903,8 +903,10 @@ namespace PhotoLocator
             {
                 metadataWin.Owner = App.Current.MainWindow;
                 metadataWin.Title = SelectedItem.Name;
-                metadataWin.Metadata = String.Join("\n", ExifHandler.EnumerateMetadata(SelectedItem.FullPath, Settings.ExifToolPath));
-                //metadataWin.Metadata = String.Join("\n", ExifHandler.EnumerateMetadataUsingExifTool(SelectedItem.FullPath, Settings.ExifToolPath));
+                if (Settings.ForceUseExifTool && !string.IsNullOrEmpty(Settings.ExifToolPath))
+                    metadataWin.Metadata = String.Join("\n", ExifHandler.EnumerateMetadataUsingExifTool(SelectedItem.FullPath, Settings.ExifToolPath));
+                else
+                    metadataWin.Metadata = String.Join("\n", ExifHandler.EnumerateMetadata(SelectedItem.FullPath, Settings.ExifToolPath));
             }
             metadataWin.DataContext = metadataWin;
             metadataWin.ShowDialog();
