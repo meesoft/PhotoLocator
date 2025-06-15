@@ -482,15 +482,13 @@ namespace PhotoLocator.Metadata
                     {
                         using var ifdDecoder = new IfdDecoder(new MemoryStream(makerNotes.GetBlobValue(), false), 0);
                         foreach (var tag in ifdDecoder.EnumerateIfdTags())
-                        {
                             if (tag.TagId == 0x35 && tag.ValueCount == 4) // Canon time zone tag
                             {
                                 using var tagDecoder = new IfdDecoder(imageStream, 10);
                                 var timeZone = tagDecoder.DecodeUInt32Tag(tag);
-                                offset = TimeSpan.FromMinutes((Int16)(timeZone[1] >> 16)); //TODO: Check negative offsets
+                                offset = TimeSpan.FromMinutes((Int16)(timeZone[1] >> 16));
                                 return new DateTimeOffset(timeStamp, offset);
                             }
-                        }
                     }
                 }
 

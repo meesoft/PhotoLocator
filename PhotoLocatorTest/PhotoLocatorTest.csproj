@@ -30,7 +30,6 @@
     <EmbeddedResource Include="TestData\history-2022-07-09.kml">
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </EmbeddedResource>
-    <EmbeddedResource Include="TestData\2025-05-04_15.13.08-04.jpg" />
   </ItemGroup>
 
   <ItemGroup>
@@ -45,7 +44,13 @@
   </ItemGroup>
 
   <ItemGroup>
+    <None Update="TestData\2025-05-04_15.13.08-04.jpg">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
     <None Update="TestData\Canon90DVideo.txt">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="TestData\CanonR10-2025-05-11 14.26.42+9.jpg">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Update="TestData\DJIAction2Video.txt">

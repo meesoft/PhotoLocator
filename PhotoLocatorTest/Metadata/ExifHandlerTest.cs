@@ -165,22 +165,33 @@ namespace PhotoLocator.Metadata
             var decoder = BitmapDecoder.Create(stream, ExifHandler.CreateOptions, BitmapCacheOption.OnDemand);
             var metadata = (BitmapMetadata)decoder.Frames[0].Metadata;
 
-            var tag = ExifHandler.DecodeTimeStamp(metadata, stream) ?? throw new FileFormatException("Failed to decode timestamp");
+            var timeStamp = ExifHandler.DecodeTimeStamp(metadata, stream) ?? throw new FileFormatException("Failed to decode timestamp");
 
-            Assert.AreEqual(_jpegTestDataTimestamp, tag);
+            Assert.AreEqual(_jpegTestDataTimestamp, timeStamp);
         }
 
         [TestMethod]
         public void DecodeTimeStamp_ShouldDecodeTimeStamp_WithOffset()
         {
-            using var stream = GetType().Assembly.GetManifestResourceStream(@"PhotoLocator.TestData.2025-05-04_15.13.08-04.jpg")
-                ?? throw new FileNotFoundException("Resource not found");
+            using var stream = File.OpenRead(@"TestData\2025-05-04_15.13.08-04.jpg");
             var decoder = BitmapDecoder.Create(stream, ExifHandler.CreateOptions, BitmapCacheOption.OnDemand);
             var metadata = (BitmapMetadata)decoder.Frames[0].Metadata;
 
-            var tag = ExifHandler.DecodeTimeStamp(metadata, stream) ?? throw new FileFormatException("Failed to decode timestamp");
+            var timeStamp = ExifHandler.DecodeTimeStamp(metadata, stream) ?? throw new FileFormatException("Failed to decode timestamp");
 
-            Assert.AreEqual(new(2025, 5, 4, 15, 13, 8, TimeSpan.FromHours(-4)), tag);
+            Assert.AreEqual(new(2025, 5, 4, 15, 13, 8, TimeSpan.FromHours(-4)), timeStamp);
+        }
+
+        [TestMethod]
+        public void DecodeTimeStamp_ShouldDecodeTimeStamp_WithOffsetInCanonMakerNotes()
+        {
+            using var stream = File.OpenRead(@"TestData\CanonR10-2025-05-11 14.26.42+9.jpg");
+            var decoder = BitmapDecoder.Create(stream, ExifHandler.CreateOptions, BitmapCacheOption.OnDemand);
+            var metadata = (BitmapMetadata)decoder.Frames[0].Metadata;
+
+            var timeStamp = ExifHandler.DecodeTimeStamp(metadata, stream) ?? throw new FileFormatException("Failed to decode timestamp");
+
+            Assert.AreEqual(new(2025, 5, 11, 14, 26, 42, TimeSpan.FromHours(9)), timeStamp);
         }
 
         [TestMethod]
