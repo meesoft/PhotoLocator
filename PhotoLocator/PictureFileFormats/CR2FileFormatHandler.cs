@@ -60,7 +60,8 @@ namespace PhotoLocator.PictureFileFormats
                         {
                             stream.Position = imageOffset;
                             var buf = new byte[imageSize];
-                            stream.Read(buf, 0, (int)imageSize);
+                            if (stream.Read(buf, 0, (int)imageSize) < 10)
+                                throw new FileFormatException();
                             return GeneralFileFormatHandler.LoadFromStream(new MemoryStream(buf, false), rotation, maxWidth, preservePixelFormat, ct);
                         }
                         // Unknown compression, try general reader on whole file
