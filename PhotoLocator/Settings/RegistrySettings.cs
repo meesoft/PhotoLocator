@@ -82,7 +82,7 @@ namespace PhotoLocator.Settings
 
         public bool ForceUseExifTool
         {
-            get => (Key.GetValue(nameof(ForceUseExifTool)) as int? ?? 1) != 0;
+            get => (Key.GetValue(nameof(ForceUseExifTool)) as int? ?? 0) != 0;
             set => Key.SetValue(nameof(ForceUseExifTool), value ? 1 : 0);
         }
 

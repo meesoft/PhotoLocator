@@ -50,7 +50,7 @@ namespace PhotoLocator.Metadata
 
             GeneralFileFormatHandler.SaveToFile(bitmap, TestFileName, source);
 
-            var targetStream = File.OpenRead(TestFileName);
+            using var targetStream = File.OpenRead(TestFileName);
             var target = ExifHandler.LoadMetadata(targetStream)!;
             Assert.AreEqual(source.CameraModel, target.CameraModel);
             Assert.AreEqual(ExifHandler.GetMetadataString(source, sourceStream), ExifHandler.GetMetadataString(target, targetStream));

@@ -68,7 +68,10 @@ namespace PhotoLocator.Metadata
                 _stream.Position = _offset + tag.ValueOrOffset;
                 var chars = _reader.ReadChars(tag.ValueCount);
                 _stream.Position = previousPosition;
-                return new string(chars).TrimEnd('\0');
+                var length = Array.IndexOf(chars, '\0');
+                if (length >= 0)
+                    return new string(chars, 0, length);
+                return new string(chars);
             }
             Span<byte> buf = stackalloc byte[4];
             BitConverter.TryWriteBytes(buf, tag.ValueOrOffset);

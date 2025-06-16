@@ -484,9 +484,9 @@ namespace PhotoLocator.Metadata
                         foreach (var tag in ifdDecoder.EnumerateIfdTags())
                             if (tag.TagId == 0x35 && tag.ValueCount == 4) // Canon time zone tag
                             {
-                                using var tagDecoder = new IfdDecoder(imageStream, 10);
+                                using var tagDecoder = new IfdDecoder(imageStream, 12);
                                 var timeZone = tagDecoder.DecodeUInt32Tag(tag);
-                                offset = TimeSpan.FromMinutes((Int16)(timeZone[1] >> 16));
+                                offset = TimeSpan.FromMinutes((Int16)(timeZone[1]));
                                 return new DateTimeOffset(timeStamp, offset);
                             }
                     }
@@ -588,7 +588,7 @@ namespace PhotoLocator.Metadata
                         if (fullQuery == ExifMakerNoteQuery1)
                         {
                             using var ifdDecoder = new IfdDecoder(new MemoryStream(value, false), 0);
-                            using var tagDecoder = new IfdDecoder(imageStream, 10);
+                            using var tagDecoder = new IfdDecoder(imageStream, 12);
                             foreach (var tag in ifdDecoder.EnumerateIfdTags())
                             {
                                 if (tag.FieldType == IfdDecoder.FieldType.Ascii)
