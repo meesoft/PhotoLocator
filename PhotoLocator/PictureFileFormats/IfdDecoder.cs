@@ -52,7 +52,7 @@ namespace PhotoLocator.PictureFileFormats
                         yield break;
                     yield return new IfdTag(_reader.ReadUInt16(), (FieldType)_reader.ReadInt16(), _reader.ReadInt32(), _reader.ReadUInt32());
                 }
-                if (_stream.Position + 2 > length)
+                if (_stream.Position + 4 > length)
                     yield break;
                 offset = _reader.ReadUInt32();
             }
