@@ -4,7 +4,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Text;
 
-namespace PhotoLocator.Metadata
+namespace PhotoLocator.PictureFileFormats
 {
     sealed class IfdDecoder : IDisposable
     {

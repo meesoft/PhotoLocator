@@ -2,6 +2,7 @@
 
 using MapControl;
 using PhotoLocator.Helpers;
+using PhotoLocator.PictureFileFormats;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
