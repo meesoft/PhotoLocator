@@ -166,28 +166,12 @@ namespace PhotoLocator
             get
             {
                 if (_metadataString is null && IsFile)
-                {
-                    var metadataString = GetMetadataString();
-                    _metadataString ??= metadataString;
-                }
+                    Task.Run(() => LoadMetadataAsync(default)).GetAwaiter().GetResult();
                 return _metadataString;
             }
             set => SetProperty(ref _metadataString, value);
         }
         string? _metadataString;
-
-        private string GetMetadataString()
-        {
-            try
-            {
-                return ExifHandler.GetMetadataString(FullPath);
-            }
-            catch (Exception ex)
-            {
-                Log.Write($"Failed to loads metadata for {Name}: {ex}");
-                return string.Empty;
-            }
-        }
 
         public string? ErrorMessage
         {
@@ -254,7 +238,10 @@ namespace PhotoLocator
         {
             try
             {
-                (GeoTag, _timeStamp, _metadataString, Orientation) = await Task.Run(() => ExifHandler.DecodeMetadataAsync(FullPath, IsVideo, _settings?.ExifToolPath, ct), ct);
+                if (_settings is not null && _settings.ForceUseExifTool && !string.IsNullOrEmpty(_settings.ExifToolPath))
+                    (GeoTag, _timeStamp, _metadataString, Orientation) = await Task.Run(() => ExifHandler.DecodeMetadataUsingExifTool(FullPath, _settings.ExifToolPath), ct);
+                else
+                    (GeoTag, _timeStamp, _metadataString, Orientation) = await Task.Run(() => ExifHandler.DecodeMetadataAsync(FullPath, IsVideo, _settings?.ExifToolPath, ct), ct);
                 GeoTagSaved = GeoTag != null;
             }
             catch (NotSupportedException) { }

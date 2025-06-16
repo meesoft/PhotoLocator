@@ -75,6 +75,13 @@ namespace PhotoLocator.Settings
         }
         string? _ffmpegPath;
 
+        public bool ForceUseExifTool
+        {
+            get => _forceUseExifTool;
+            set => SetProperty(ref _forceUseExifTool, value);
+        }
+        bool _forceUseExifTool;
+
         public int SlideShowInterval
         {
             get => _slideShowInterval;

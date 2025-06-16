@@ -14,6 +14,7 @@ namespace PhotoLocator.Settings
             target.JpegQuality = source.JpegQuality;
             target.ExifToolPath = source.ExifToolPath;
             target.FFmpegPath = source.FFmpegPath;
+            target.ForceUseExifTool = source.ForceUseExifTool;
             target.SlideShowInterval = source.SlideShowInterval;
             target.BitmapScalingMode = source.BitmapScalingMode;
             target.ResamplingOptions = source.ResamplingOptions;

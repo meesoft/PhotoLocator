@@ -20,18 +20,19 @@ namespace PhotoLocator.Metadata
         {
             const string TestFileName = "fromJpeg.jpg";
 
-            using var stream = GetType().Assembly.GetManifestResourceStream(@"PhotoLocator.TestData.2022-06-17_19.03.02.jpg")
+            using var sourceStream = GetType().Assembly.GetManifestResourceStream(@"PhotoLocator.TestData.2022-06-17_19.03.02.jpg")
                 ?? throw new FileNotFoundException("Resource not found");
-            var source = ExifHandler.LoadMetadata(stream) ?? throw new Exception("Unable to load metadata");
+            var source = ExifHandler.LoadMetadata(sourceStream) ?? throw new Exception("Unable to load metadata");
             Assert.IsFalse(string.IsNullOrEmpty(source.CameraModel));
 
             var bitmap = BitmapSource.Create(2, 2, 96, 96, PixelFormats.Gray8, null, new byte[4], 2);
 
             GeneralFileFormatHandler.SaveToFile(bitmap, TestFileName, source);
 
-            var target = ExifHandler.LoadMetadata(File.OpenRead(TestFileName))!;
+            using var targetStream = File.OpenRead(TestFileName);
+            var target = ExifHandler.LoadMetadata(targetStream)!;
             Assert.AreEqual(source.CameraModel, target.CameraModel);
-            Assert.AreEqual(ExifHandler.GetMetadataString(source), ExifHandler.GetMetadataString(target));
+            Assert.AreEqual(ExifHandler.GetMetadataString(source, sourceStream), ExifHandler.GetMetadataString(target, targetStream));
             Assert.AreEqual(ExifHandler.GetGeotag(source), ExifHandler.GetGeotag(target));
         }
 
@@ -40,18 +41,19 @@ namespace PhotoLocator.Metadata
         {
             const string TestFileName = "fromJpeg.tif";
 
-            using var stream = GetType().Assembly.GetManifestResourceStream(@"PhotoLocator.TestData.2022-06-17_19.03.02.jpg")
+            using var sourceStream = GetType().Assembly.GetManifestResourceStream(@"PhotoLocator.TestData.2022-06-17_19.03.02.jpg")
                 ?? throw new FileNotFoundException("Resource not found");
-            var source = ExifHandler.LoadMetadata(stream) ?? throw new Exception("Unable to load metadata");
+            var source = ExifHandler.LoadMetadata(sourceStream) ?? throw new Exception("Unable to load metadata");
             Assert.IsFalse(string.IsNullOrEmpty(source.CameraModel));
 
             var bitmap = BitmapSource.Create(2, 2, 96, 96, PixelFormats.Gray8, null, new byte[4], 2);
 
             GeneralFileFormatHandler.SaveToFile(bitmap, TestFileName, source);
 
-            var target = ExifHandler.LoadMetadata(File.OpenRead(TestFileName))!;
+            using var targetStream = File.OpenRead(TestFileName);
+            var target = ExifHandler.LoadMetadata(targetStream)!;
             Assert.AreEqual(source.CameraModel, target.CameraModel);
-            Assert.AreEqual(ExifHandler.GetMetadataString(source), ExifHandler.GetMetadataString(target));
+            Assert.AreEqual(ExifHandler.GetMetadataString(source, sourceStream), ExifHandler.GetMetadataString(target, targetStream));
             //Assert.AreEqual(ExifHandler.GetGeotag(source), ExifHandler.GetGeotag(target));
         }
 
@@ -69,9 +71,10 @@ namespace PhotoLocator.Metadata
 
             GeneralFileFormatHandler.SaveToFile(bitmap, TestFileName, source);
 
-            var target = ExifHandler.LoadMetadata(File.OpenRead(TestFileName))!;
+            using var targetStream = File.OpenRead(TestFileName);
+            var target = ExifHandler.LoadMetadata(targetStream)!;
             Assert.AreEqual(source.CameraModel, target.CameraModel);
-            Assert.AreEqual("FC7303, " + _jpegTestDataTimestamp, ExifHandler.GetMetadataString(target));
+            Assert.AreEqual("FC7303, " + _jpegTestDataTimestamp, ExifHandler.GetMetadataString(target, targetStream));
             //Assert.AreEqual(ExifHandler.GetGeotag(source), ExifHandler.GetGeotag(target));
         }
 
@@ -88,8 +91,9 @@ namespace PhotoLocator.Metadata
 
             GeneralFileFormatHandler.SaveToFile(bitmap, TestFileName, source);
 
-            var target = ExifHandler.LoadMetadata(File.OpenRead(TestFileName))!;
-            Assert.AreEqual("1/80s, " + _jpegTestDataTimestamp, ExifHandler.GetMetadataString(target));
+            using var targetStream = File.OpenRead(TestFileName);
+            var target = ExifHandler.LoadMetadata(targetStream)!;
+            Assert.AreEqual("1/80s, " + _jpegTestDataTimestamp, ExifHandler.GetMetadataString(target, targetStream));
             Assert.AreEqual(1e-4, ExifHandler.GetGeotag(source)!.Latitude, ExifHandler.GetGeotag(target)!.Latitude);
         }
 
@@ -107,8 +111,9 @@ namespace PhotoLocator.Metadata
 
             GeneralFileFormatHandler.SaveToFile(bitmap, TestFileName, source);
 
-            var target = ExifHandler.LoadMetadata(File.OpenRead(TestFileName))!;
-            Assert.AreEqual("1/80s, " + _jpegTestDataTimestamp, ExifHandler.GetMetadataString(target));
+            using var targetStream = File.OpenRead(TestFileName);
+            var target = ExifHandler.LoadMetadata(targetStream)!;
+            Assert.AreEqual("1/80s, " + _jpegTestDataTimestamp, ExifHandler.GetMetadataString(target, targetStream));
             Assert.AreEqual(1e-4, ExifHandler.GetGeotag(source)!.Longitude, ExifHandler.GetGeotag(target)!.Longitude);
         }
 
@@ -126,8 +131,9 @@ namespace PhotoLocator.Metadata
 
             GeneralFileFormatHandler.SaveToFile(bitmap, TestFileName, source);
 
-            var target = ExifHandler.LoadMetadata(File.OpenRead(TestFileName))!;
-            Assert.AreEqual("1/80s, " + _jpegTestDataTimestamp, ExifHandler.GetMetadataString(target));
+            using var targetStream = File.OpenRead(TestFileName);
+            var target = ExifHandler.LoadMetadata(targetStream)!;
+            Assert.AreEqual("1/80s, " + _jpegTestDataTimestamp, ExifHandler.GetMetadataString(target, targetStream));
             //Assert.AreEqual(ExifHandler.GetGeotag(source), ExifHandler.GetGeotag(target));
         }
 
@@ -136,17 +142,18 @@ namespace PhotoLocator.Metadata
         {
             const string TestFileName = "fromTiff.jpg";
 
-            using var stream = File.OpenRead(@"TestData\RGB48.tif");
-            var source = ExifHandler.LoadMetadata(stream) ?? throw new Exception("Unable to load metadata");
+            using var sourceStream = File.OpenRead(@"TestData\RGB48.tif");
+            var source = ExifHandler.LoadMetadata(sourceStream) ?? throw new Exception("Unable to load metadata");
             Assert.IsFalse(string.IsNullOrEmpty(source.CameraModel));
 
             var bitmap = BitmapSource.Create(2, 2, 96, 96, PixelFormats.Gray8, null, new byte[4], 2);
 
             GeneralFileFormatHandler.SaveToFile(bitmap, TestFileName, source);
 
-            var target = ExifHandler.LoadMetadata(File.OpenRead(TestFileName))!;
+            using var targetStream = File.OpenRead(TestFileName);
+            var target = ExifHandler.LoadMetadata(targetStream)!;
             Assert.AreEqual(source.CameraModel, target.CameraModel);
-            Assert.AreEqual(ExifHandler.GetMetadataString(source), ExifHandler.GetMetadataString(target));
+            Assert.AreEqual(ExifHandler.GetMetadataString(source, sourceStream), ExifHandler.GetMetadataString(target, targetStream));
             Assert.AreEqual(ExifHandler.GetGeotag(source), ExifHandler.GetGeotag(target));
         }
 
@@ -158,22 +165,33 @@ namespace PhotoLocator.Metadata
             var decoder = BitmapDecoder.Create(stream, ExifHandler.CreateOptions, BitmapCacheOption.OnDemand);
             var metadata = (BitmapMetadata)decoder.Frames[0].Metadata;
 
-            var tag = ExifHandler.DecodeTimeStamp(metadata) ?? throw new FileFormatException("Failed to decode timestamp");
+            var timeStamp = ExifHandler.DecodeTimeStamp(metadata, stream) ?? throw new FileFormatException("Failed to decode timestamp");
 
-            Assert.AreEqual(_jpegTestDataTimestamp, tag);
+            Assert.AreEqual(_jpegTestDataTimestamp, timeStamp);
         }
 
         [TestMethod]
         public void DecodeTimeStamp_ShouldDecodeTimeStamp_WithOffset()
         {
-            using var stream = GetType().Assembly.GetManifestResourceStream(@"PhotoLocator.TestData.2025-05-04_15.13.08-04.jpg")
-                ?? throw new FileNotFoundException("Resource not found");
+            using var stream = File.OpenRead(@"TestData\2025-05-04_15.13.08-04.jpg");
             var decoder = BitmapDecoder.Create(stream, ExifHandler.CreateOptions, BitmapCacheOption.OnDemand);
             var metadata = (BitmapMetadata)decoder.Frames[0].Metadata;
 
-            var tag = ExifHandler.DecodeTimeStamp(metadata) ?? throw new FileFormatException("Failed to decode timestamp");
+            var timeStamp = ExifHandler.DecodeTimeStamp(metadata, stream) ?? throw new FileFormatException("Failed to decode timestamp");
 
-            Assert.AreEqual(new(2025, 5, 4, 15, 13, 8, TimeSpan.FromHours(-4)), tag);
+            Assert.AreEqual(new(2025, 5, 4, 15, 13, 8, TimeSpan.FromHours(-4)), timeStamp);
+        }
+
+        [TestMethod]
+        public void DecodeTimeStamp_ShouldDecodeTimeStamp_WithOffsetInCanonMakerNotes()
+        {
+            using var stream = File.OpenRead(@"TestData\CanonR10-2025-05-11 14.26.42+9.jpg");
+            var decoder = BitmapDecoder.Create(stream, ExifHandler.CreateOptions, BitmapCacheOption.OnDemand);
+            var metadata = (BitmapMetadata)decoder.Frames[0].Metadata;
+
+            var timeStamp = ExifHandler.DecodeTimeStamp(metadata, stream) ?? throw new FileFormatException("Failed to decode timestamp");
+
+            Assert.AreEqual(new(2025, 5, 11, 14, 26, 42, TimeSpan.FromHours(9)), timeStamp);
         }
 
         [TestMethod]
@@ -186,8 +204,9 @@ namespace PhotoLocator.Metadata
 
             await ExifHandler.AdjustTimeStampAsync(@"TestData\2022-06-17_19.03.02.jpg", TargetFileName, "-01:00:00", ExifToolPath, default);
 
-            var metadata = ExifHandler.LoadMetadata(File.OpenRead(TargetFileName));
-            var tag = ExifHandler.DecodeTimeStamp(metadata!) ?? throw new FileFormatException("Failed to decode timestamp");
+            using var targetFile = File.OpenRead(TargetFileName);
+            var metadata = ExifHandler.LoadMetadata(targetFile);
+            var tag = ExifHandler.DecodeTimeStamp(metadata!, targetFile) ?? throw new FileFormatException("Failed to decode timestamp");
             Assert.AreEqual(new DateTime(2022, 06, 17, 18, 03, 02, DateTimeKind.Local), tag);
         }
 
@@ -293,7 +312,7 @@ namespace PhotoLocator.Metadata
                 ?? throw new FileNotFoundException("Resource not found");
             var metadata = ExifHandler.LoadMetadata(stream);
             Assert.IsNotNull(metadata);
-            var str = ExifHandler.GetMetadataString(metadata);
+            var str = ExifHandler.GetMetadataString(metadata, stream);
             Assert.AreEqual("FC7303, 100.7m, 1/80s, f/2.8, 4.49mm, ISO100, " + _jpegTestDataTimestamp, str);
         }
 
@@ -328,7 +347,7 @@ namespace PhotoLocator.Metadata
         }
 
         [TestMethod]
-        [DataRow(@"TestData\Canon90DVideo.txt", 2024, 7, 9, 14, 38, 53, 390, +2)]
+        [DataRow(@"TestData\Canon90DVideo.txt", 2024, 7, 9, 14, 38, 53, 0, +2)]
         [DataRow(@"TestData\DJIAction2Video.txt", 2022, 4, 16, 18, 46, 28, 0, +2)]
         [DataRow(@"TestData\iPhoneVideo.txt", 2022, 9, 23, 12, 50, 53, 0, +2)]
         [DataRow(@"TestData\Mini2Video.txt", 2024, 7, 9, 13, 9, 22, 0, +2)]
@@ -352,7 +371,7 @@ namespace PhotoLocator.Metadata
                 using var stream = File.OpenRead(@"TestData\2022-06-17_19.03.02.jpg");
                 var metadata = ExifHandler.LoadMetadata(stream);
                 Assert.IsNotNull(metadata);
-                var str = ExifHandler.GetMetadataString(metadata);
+                var str = ExifHandler.GetMetadataString(metadata, stream);
                 Assert.AreEqual("FC7303, 100.7m, 1/80s, f/2.8, 4.49mm, ISO100, 06/17/2022 19:03:02", str);
             }
             Console.WriteLine(sw.ElapsedMilliseconds);
