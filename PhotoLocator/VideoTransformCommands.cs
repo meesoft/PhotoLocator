@@ -686,8 +686,8 @@ namespace PhotoLocator
             if (allSelected.Length < 2)
                 throw new UserMessageException("Select at least 2 videos");
 
-            var clipDurations = new double[allSelected.Length - 1];
-            for (int i = 0; i < allSelected.Length - 1; i++)
+            var clipDurations = new double[allSelected.Length];
+            for (int i = 0; i < allSelected.Length; i++)
             {
                 var metadata = ExifHandler.LoadMetadataUsingExifTool(allSelected[i].FullPath, _mainViewModel.Settings.ExifToolPath);
                 var spanStr = metadata["Duration"];
@@ -697,8 +697,10 @@ namespace PhotoLocator
 
             var fadeDuration = 1;
 
-            var sb = new StringBuilder();
+            _inputDuration = TimeSpan.FromSeconds(clipDurations.Sum() - (allSelected.Length - 1) * fadeDuration);
+            _hasDuration = true;
 
+            var sb = new StringBuilder();
             for (int i = 0; i < allSelected.Length; i++)
                 sb.Append("-i \"").Append(allSelected[i].FullPath).Append("\" ");
             sb.Append("-filter_complex \"");
