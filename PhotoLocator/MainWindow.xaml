@@ -172,6 +172,7 @@
                         <Separator />
                         <MenuItem Header="Stabilize video" Command="{Binding VideoTransformCommands.StabilizeVideo}" />
                         <MenuItem Header="Combine images or videos" Command="{Binding VideoTransformCommands.Combine}" />
+                        <MenuItem Header="Combine videos with crossfade" Command="{Binding VideoTransformCommands.CombineFade}" />
                         <MenuItem Header="Compare side by side" Command="{Binding VideoTransformCommands.Compare}" />
                         <MenuItem Header="Extract frames" Command="{Binding VideoTransformCommands.ExtractFrames}" />
                         <MenuItem Header="Generate Average frame" Command="{Binding VideoTransformCommands.GenerateAverageFrame}" />

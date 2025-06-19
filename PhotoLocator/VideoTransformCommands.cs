@@ -12,6 +12,7 @@ using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Runtime.CompilerServices;
+using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
@@ -20,6 +21,8 @@ using System.Windows.Media.Imaging;
 
 namespace PhotoLocator
 {
+    //https://stackoverflow.com/questions/63553906/merging-multiple-video-files-with-ffmpeg-and-xfade-filter
+
     public enum OutputMode
     {
         Video,
@@ -475,8 +478,8 @@ namespace PhotoLocator
             {
                 if (SetProperty(ref _isRemoveAudioChecked, value))
                     UpdateOutputArgs();
+                }
             }
-        }
         bool _isRemoveAudioChecked;
 
         public bool IsCombineFramesOperation => RollingAverageMode > RollingAverageMode.None || OutputMode is OutputMode.Average or OutputMode.Max;
@@ -559,7 +562,7 @@ namespace PhotoLocator
                 var args = string.Empty;
                 if (HasOnlyImageInput && !string.IsNullOrEmpty(FrameRate))
                     args += $"-r {FrameRate} ";
-                InputArguments = args + $"-f concat -safe 0 -i {VideoTransformCommands.InputListFileName}";
+                    InputArguments = args + $"-f concat -safe 0 -i {VideoTransformCommands.InputListFileName}";
             }
             return allSelected;
         }
@@ -674,6 +677,70 @@ namespace PhotoLocator
         {
             return IsCropChecked || IsScaleChecked || IsRotateChecked || IsStabilizeChecked || IsSpeedupChecked || IsLocalContrastChecked || SelectedEffect?.Tag is not null;
         }
+
+        public ICommand CombineFade => new RelayCommand(async o =>
+        {
+            if (string.IsNullOrEmpty(_mainViewModel.Settings.ExifToolPath))
+                throw new UserMessageException("ExifTool path is not set in settings, please set it before using this command");
+            var allSelected = _mainViewModel.GetSelectedItems(true).Where(item => item.IsVideo).ToArray();
+            if (allSelected.Length < 2)
+                throw new UserMessageException("Select at least 2 videos");
+
+            var clipDurations = new double[allSelected.Length - 1];
+            for (int i = 0; i < allSelected.Length - 1; i++)
+            {
+                var metadata = ExifHandler.LoadMetadataUsingExifTool(allSelected[i].FullPath, _mainViewModel.Settings.ExifToolPath);
+                var spanStr = metadata["Duration"];
+                if (!double.TryParse(spanStr.Trim('s'), CultureInfo.InvariantCulture, out clipDurations[i]))
+                    clipDurations[i] = TimeSpan.Parse(spanStr, CultureInfo.InvariantCulture).TotalSeconds;
+            }
+
+            var fadeDuration = 1;
+
+            var sb = new StringBuilder();
+
+            for (int i = 0; i < allSelected.Length; i++)
+                sb.Append("-i \"").Append(allSelected[i].FullPath).Append("\" ");
+            sb.Append("-filter_complex \"");
+            double offset = 0;
+            for (int i = 0; i < allSelected.Length - 1; i++)
+            {
+                offset += clipDurations[i] - fadeDuration;
+                if (i == 0)
+                    sb.Append("[0]");
+                else
+                    sb.Append(CultureInfo.InvariantCulture, $"[vfade{i}]");
+                sb.Append(CultureInfo.InvariantCulture, $"[{i + 1}:v]xfade=transition=fade:duration={fadeDuration}:offset={offset}");
+
+                if (i < allSelected.Length - 2)
+                    sb.Append(CultureInfo.InvariantCulture, $"[vfade{i + 1}]; ");
+            }
+            sb.Append(", format=yuv420p\" "); //-movflags +faststart
+            sb.Append(VideoFormats[DefaultVideoFormatIndex].Tag);
+
+            var dlg = new SaveFileDialog();
+            dlg.InitialDirectory = Path.GetDirectoryName(allSelected[0].FullPath);
+            dlg.FileName = Path.GetFileNameWithoutExtension(allSelected[0].Name) + "[fade].mp4";
+            dlg.Filter = SaveVideoFilter;
+            dlg.DefaultExt = ".mp4";
+            dlg.CheckPathExists = false;
+            if (dlg.ShowDialog() != true)
+                return;
+            var outFileName = dlg.FileName;
+
+            sb.Append(CultureInfo.InvariantCulture, $" -y \"{outFileName}\"");
+
+
+            await using var pause = _mainViewModel.PauseFileSystemWatcher();
+            await _mainViewModel.RunProcessWithProgressBarAsync(async (progressCallback, ct) =>
+            {
+                progressCallback(-1);
+                PrepareProgressDisplay(progressCallback);
+                Directory.CreateDirectory(Path.GetDirectoryName(outFileName)!);
+                await _videoTransforms.RunFFmpegAsync(sb.ToString(), ProcessStdError, ct);
+            }, "Processing...");
+            await _mainViewModel.AddOrUpdateItemAsync(outFileName, false, true);
+        });
 
         public ICommand Compare => new RelayCommand(async o =>
         {
@@ -888,6 +955,8 @@ namespace PhotoLocator
                         postfix = "combined";
                     else if (SelectedEffect.Tag is not null)
                         postfix = SelectedEffect.Content.ToString()!.Split(' ')[0].ToLowerInvariant();
+                    else if (SelectedVideoFormat == VideoFormats[CopyVideoFormatIndex] && (!string.IsNullOrEmpty(SkipTo) || !string.IsNullOrEmpty(Duration)))
+                        postfix = "trim";
                     else
                         postfix = "processed";
                     dlg.Filter = SaveVideoFilter;
