@@ -21,8 +21,6 @@ using System.Windows.Media.Imaging;
 
 namespace PhotoLocator
 {
-    //https://stackoverflow.com/questions/63553906/merging-multiple-video-files-with-ffmpeg-and-xfade-filter
-
     public enum OutputMode
     {
         Video,
@@ -562,7 +560,7 @@ namespace PhotoLocator
                 var args = string.Empty;
                 if (HasOnlyImageInput && !string.IsNullOrEmpty(FrameRate))
                     args += $"-r {FrameRate} ";
-                    InputArguments = args + $"-f concat -safe 0 -i {VideoTransformCommands.InputListFileName}";
+                InputArguments = args + $"-f concat -safe 0 -i {VideoTransformCommands.InputListFileName}";
             }
             return allSelected;
         }
@@ -636,7 +634,7 @@ namespace PhotoLocator
                 if (!string.IsNullOrEmpty(VideoBitRate))
                     args.Add($"-b:v {VideoBitRate}M");
                 else if ((SelectedVideoFormat.Tag as string)?.StartsWith("-c:v", StringComparison.Ordinal) == true)
-                    args.Add("-crf 20");
+                    args.Add("-crf 20"); // Lower values give better quality
                 OutputArguments = string.Join(" ", args);
             }
             else
@@ -680,6 +678,11 @@ namespace PhotoLocator
 
         public ICommand CombineFade => new RelayCommand(async o =>
         {
+            // Based on https://stackoverflow.com/questions/63553906/merging-multiple-video-files-with-ffmpeg-and-xfade-filter
+
+            const double FadeDuration = 1;
+            const string Transition = "fade"; // See https://ffmpeg.org/ffmpeg-filters.html#xfade
+
             if (string.IsNullOrEmpty(_mainViewModel.Settings.ExifToolPath))
                 throw new UserMessageException("ExifTool path is not set in settings, please set it before using this command");
             var allSelected = _mainViewModel.GetSelectedItems(true).Where(item => item.IsVideo).ToArray();
@@ -687,18 +690,16 @@ namespace PhotoLocator
                 throw new UserMessageException("Select at least 2 videos");
 
             var clipDurations = new double[allSelected.Length];
-            for (int i = 0; i < allSelected.Length; i++)
+            using (var cursor = new MouseCursorOverride())
             {
-                var metadata = ExifHandler.LoadMetadataUsingExifTool(allSelected[i].FullPath, _mainViewModel.Settings.ExifToolPath);
-                var spanStr = metadata["Duration"];
-                if (!double.TryParse(spanStr.Trim('s'), CultureInfo.InvariantCulture, out clipDurations[i]))
-                    clipDurations[i] = TimeSpan.Parse(spanStr, CultureInfo.InvariantCulture).TotalSeconds;
+                for (int i = 0; i < allSelected.Length; i++)
+                {
+                    var metadata = ExifHandler.LoadMetadataUsingExifTool(allSelected[i].FullPath, _mainViewModel.Settings.ExifToolPath);
+                    var spanStr = metadata["Duration"];
+                    if (!double.TryParse(spanStr.Trim('s'), CultureInfo.InvariantCulture, out clipDurations[i]))
+                        clipDurations[i] = TimeSpan.Parse(spanStr, CultureInfo.InvariantCulture).TotalSeconds;
+                }
             }
-
-            var fadeDuration = 1;
-
-            _inputDuration = TimeSpan.FromSeconds(clipDurations.Sum() - (allSelected.Length - 1) * fadeDuration);
-            _hasDuration = true;
 
             var sb = new StringBuilder();
             for (int i = 0; i < allSelected.Length; i++)
@@ -707,18 +708,18 @@ namespace PhotoLocator
             double offset = 0;
             for (int i = 0; i < allSelected.Length - 1; i++)
             {
-                offset += clipDurations[i] - fadeDuration;
+                offset += clipDurations[i] - FadeDuration;
                 if (i == 0)
                     sb.Append("[0]");
                 else
                     sb.Append(CultureInfo.InvariantCulture, $"[vfade{i}]");
-                sb.Append(CultureInfo.InvariantCulture, $"[{i + 1}:v]xfade=transition=fade:duration={fadeDuration}:offset={offset}");
+                sb.Append(CultureInfo.InvariantCulture, $"[{i + 1}:v]xfade=transition={Transition}:duration={FadeDuration}:offset={offset}");
 
                 if (i < allSelected.Length - 2)
                     sb.Append(CultureInfo.InvariantCulture, $"[vfade{i + 1}]; ");
             }
-            sb.Append(", format=yuv420p\" "); //-movflags +faststart
-            sb.Append(VideoFormats[DefaultVideoFormatIndex].Tag);
+            sb.Append(", format=yuv420p\" ");
+            sb.Append(OutputArguments);
 
             var dlg = new SaveFileDialog();
             dlg.InitialDirectory = Path.GetDirectoryName(allSelected[0].FullPath);
@@ -732,12 +733,14 @@ namespace PhotoLocator
 
             sb.Append(CultureInfo.InvariantCulture, $" -y \"{outFileName}\"");
 
-
             await using var pause = _mainViewModel.PauseFileSystemWatcher();
             await _mainViewModel.RunProcessWithProgressBarAsync(async (progressCallback, ct) =>
             {
                 progressCallback(-1);
                 PrepareProgressDisplay(progressCallback);
+                _inputDuration = TimeSpan.FromSeconds(clipDurations.Sum() - (allSelected.Length - 1) * FadeDuration);
+                _hasDuration = true;
+
                 Directory.CreateDirectory(Path.GetDirectoryName(outFileName)!);
                 await _videoTransforms.RunFFmpegAsync(sb.ToString(), ProcessStdError, ct);
             }, "Processing...");
