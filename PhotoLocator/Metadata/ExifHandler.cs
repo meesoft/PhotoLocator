@@ -701,9 +701,14 @@ namespace PhotoLocator.Metadata
             }
         }
 
+        public static Dictionary<string, string> LoadMetadataUsingExifTool(string fileName, string exifToolPath)
+        {
+            return DecodeExifToolMetadataToDictionary(EnumerateMetadataUsingExifTool(fileName, exifToolPath));
+        }
+
         public static (Location? Location, DateTimeOffset? TimeStamp, string Metadata, Rotation Orientation) DecodeMetadataUsingExifTool(string fileName, string exifToolPath)
         {
-            var metadata = DecodeExifToolMetadataToDictionary(EnumerateMetadataUsingExifTool(fileName, exifToolPath));
+            var metadata = LoadMetadataUsingExifTool(fileName, exifToolPath);
 
             var metadataStrings = new List<string>();
             if (metadata.TryGetValue("Model", out var value) || metadata.TryGetValue("Encoder", out value))
