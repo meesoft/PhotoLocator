@@ -476,8 +476,8 @@ namespace PhotoLocator
             {
                 if (SetProperty(ref _isRemoveAudioChecked, value))
                     UpdateOutputArgs();
-                }
             }
+        }
         bool _isRemoveAudioChecked;
 
         public bool IsCombineFramesOperation => RollingAverageMode > RollingAverageMode.None || OutputMode is OutputMode.Average or OutputMode.Max;
