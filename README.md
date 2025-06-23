@@ -4,7 +4,7 @@
 
 ## Photo and video geotagging and location browsing
 PhotoLocator can import GPS traces from various formats and then apply the GPS positions to picture and video files by 
-synchronizing with the photo timestamps. GPS tags can also be imported from other already geotagged photos.
+synchronizing with the file metadata timestamps. GPS tags can also be imported from other already geotagged photos.
 The locations can either be set automatically based on timestamps or manually by copy/pasting from other files or selecting 
 on the map. PhotoLocator can perform a lossless update of the EXIF data in the target files directly or in copies of the files.
 
