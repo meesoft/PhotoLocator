@@ -30,6 +30,8 @@ namespace PhotoLocator
     {
         private const int MaxParallelExifToolOperations = 1;
 
+        private const string ExifToolNotConfigured = "ExifTool not configured";
+
 #if DEBUG
         static readonly bool _isInDesignMode = DesignerProperties.GetIsInDesignMode(new DependencyObject());
 #else
@@ -544,7 +546,7 @@ namespace PhotoLocator
             {
                 progressCallback(-1);
                 await ExifHandler.TransferMetadataAsync(sourceFileName, SelectedItem.FullPath, SelectedItem.GetProcessedFileName(),
-                    Settings.ExifToolPath ?? throw new UserMessageException("ExifTool not configured"), ct);
+                    Settings.ExifToolPath ?? throw new UserMessageException(ExifToolNotConfigured), ct);
             }, "Pasting metadata...");
         });
 
@@ -906,7 +908,8 @@ namespace PhotoLocator
                 await Parallel.ForEachAsync(selectedItems, new ParallelOptions { MaxDegreeOfParallelism = MaxParallelExifToolOperations, CancellationToken = ct }, 
                     async (item, ct) =>
                     {
-                        await ExifHandler.AdjustTimeStampAsync(item.FullPath, item.GetProcessedFileName(), offset, Settings.ExifToolPath, ct);
+                        await ExifHandler.AdjustTimeStampAsync(item.FullPath, item.GetProcessedFileName(), offset, 
+                            Settings.ExifToolPath ?? throw new UserMessageException(ExifToolNotConfigured), ct);
                         progressCallback((double)Interlocked.Increment(ref i) / selectedItems.Length);
                     });
                 await Task.Delay(10, ct);

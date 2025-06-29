@@ -76,6 +76,8 @@ namespace PhotoLocator.Metadata
         private const string ExifMakerNoteQuery1 = "/app1/{ushort=0}/{ushort=34665}/{ushort=37500}";
 
         public const BitmapCreateOptions CreateOptions = BitmapCreateOptions.PreservePixelFormat | BitmapCreateOptions.IgnoreColorProfile;
+        
+        private const string ExifToolStartError = "Failed to start ExifTool";
 
         /// <summary> Note that the stream must still be valid when the metadata is used </summary>
         public static BitmapMetadata? LoadMetadata(Stream stream)
@@ -324,7 +326,7 @@ namespace PhotoLocator.Metadata
                 return;
             }
 
-            var startInfo = new ProcessStartInfo(exifToolPath!,
+            var startInfo = new ProcessStartInfo(exifToolPath,
                 //"-m " + // Ignore minor errors and warnings
                 $"-GPSLatitude={location.Latitude.ToString(CultureInfo.InvariantCulture)} " +
                 $"-GPSLatitudeRef={Math.Sign(location.Latitude)} " +
@@ -341,7 +343,7 @@ namespace PhotoLocator.Metadata
             startInfo.CreateNoWindow = true;
             startInfo.RedirectStandardOutput = true;
             startInfo.RedirectStandardError = true;
-            var process = Process.Start(startInfo) ?? throw new IOException("Failed to start ExifTool");
+            var process = Process.Start(startInfo) ?? throw new IOException(ExifToolStartError);
             var output = await process.StandardOutput.ReadToEndAsync(ct) + '\n' + await process.StandardError.ReadToEndAsync(ct);
             await process.WaitForExitAsync(ct);
             Log.Write(output);
@@ -349,12 +351,11 @@ namespace PhotoLocator.Metadata
                 throw new UserMessageException(output);
         }
 
-        public static async Task AdjustTimeStampAsync(string sourceFileName, string targetFileName, string offset, string? exifToolPath, CancellationToken ct)
+        public static async Task AdjustTimeStampAsync(string sourceFileName, string targetFileName, string offset, string exifToolPath, CancellationToken ct)
         {
             var sign = offset[0];
             offset = offset[1..];
-            var startInfo = new ProcessStartInfo(exifToolPath ?? throw new UserMessageException("ExifTool not configured"),
-               $"\"-AllDates{sign}={offset}\" \"{sourceFileName}\" ");
+            var startInfo = new ProcessStartInfo(exifToolPath, $"\"-AllDates{sign}={offset}\" \"{sourceFileName}\" ");
             if (targetFileName == sourceFileName)
                 startInfo.Arguments += "-overwrite_original";
             else
@@ -365,7 +366,7 @@ namespace PhotoLocator.Metadata
             startInfo.CreateNoWindow = true;
             startInfo.RedirectStandardOutput = true;
             startInfo.RedirectStandardError = true;
-            var process = Process.Start(startInfo) ?? throw new IOException("Failed to start ExifTool");
+            var process = Process.Start(startInfo) ?? throw new IOException(ExifToolStartError);
             var output = await process.StandardOutput.ReadToEndAsync(ct) + '\n' + await process.StandardError.ReadToEndAsync(ct);  // We must read before waiting
             await process.WaitForExitAsync(ct);
             Log.Write(output);
@@ -614,7 +615,7 @@ namespace PhotoLocator.Metadata
             var startInfo = new ProcessStartInfo(exifToolPath, $"-s2 -c +%.6f \"{fileName}\""); // -H to add hexadecimal values
             startInfo.CreateNoWindow = true;
             startInfo.RedirectStandardOutput = true;
-            var process = Process.Start(startInfo) ?? throw new IOException("Failed to start ExifTool");
+            var process = Process.Start(startInfo) ?? throw new IOException(ExifToolStartError);
             var output = process.StandardOutput.ReadToEnd();
             process.WaitForExit();
             return output.Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
@@ -828,7 +829,7 @@ namespace PhotoLocator.Metadata
                 File.Delete(targetFileName);
                 startInfo.Arguments += $"-out \"{targetFileName}\"";
             }
-            var process = Process.Start(startInfo) ?? throw new IOException("Failed to start ExifTool");
+            var process = Process.Start(startInfo) ?? throw new IOException(ExifToolStartError);
             var output = await process.StandardOutput.ReadToEndAsync(ct) + '\n' + await process.StandardError.ReadToEndAsync(ct);
             await process.WaitForExitAsync(ct);
             Log.Write(output);
