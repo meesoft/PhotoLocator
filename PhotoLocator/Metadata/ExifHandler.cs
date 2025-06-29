@@ -368,6 +368,7 @@ namespace PhotoLocator.Metadata
             var process = Process.Start(startInfo) ?? throw new IOException("Failed to start ExifTool");
             var output = await process.StandardOutput.ReadToEndAsync(ct) + '\n' + await process.StandardError.ReadToEndAsync(ct);  // We must read before waiting
             await process.WaitForExitAsync(ct);
+            Log.Write(output);
             if (process.ExitCode != 0)
                 throw new UserMessageException(output);
         }
@@ -488,7 +489,8 @@ namespace PhotoLocator.Metadata
                                 using var tagDecoder = new IfdDecoder(imageStream, 12);
                                 var timeZone = tagDecoder.DecodeUInt32Tag(tag);
                                 offset = TimeSpan.FromMinutes((Int16)(timeZone[1]));
-                                return new DateTimeOffset(timeStamp, offset);
+                                if (offset.TotalHours < 13)
+                                    return new DateTimeOffset(timeStamp, offset);
                             }
                     }
                 }
@@ -811,6 +813,27 @@ namespace PhotoLocator.Metadata
                     return new Location(latitude, longitude);
             }
             return null;
+        }
+
+        public static async Task TransferMetadataAsync(string metadataFileName, string sourceFileName, string targetFileName, string exifToolPath, CancellationToken ct)
+        {
+            var startInfo = new ProcessStartInfo(exifToolPath, $"-tagsfromfile \"{metadataFileName}\" \"{sourceFileName}\" "); // -exif 
+            startInfo.CreateNoWindow = true;
+            startInfo.RedirectStandardOutput = true;
+            startInfo.RedirectStandardError = true;
+            if (targetFileName == sourceFileName)
+                startInfo.Arguments += "-overwrite_original";
+            else
+            {
+                File.Delete(targetFileName);
+                startInfo.Arguments += $"-out \"{targetFileName}\"";
+            }
+            var process = Process.Start(startInfo) ?? throw new IOException("Failed to start ExifTool");
+            var output = await process.StandardOutput.ReadToEndAsync(ct) + '\n' + await process.StandardError.ReadToEndAsync(ct);
+            await process.WaitForExitAsync(ct);
+            Log.Write(output);
+            if (process.ExitCode != 0)
+                throw new UserMessageException("Failed to transfer metadata: " + output);
         }
     }
 }

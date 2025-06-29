@@ -528,7 +528,26 @@ namespace PhotoLocator
                 await Task.Delay(10, ct);
             }, "Saving...");
         });
-       
+
+        public ICommand PasteMetadataCommand => new RelayCommand(async o =>
+        {
+            if (SelectedItem is null || SelectedItem.IsDirectory)
+                return;
+            string? sourceFileName;
+            if (Clipboard.ContainsFileDropList())
+                sourceFileName = Clipboard.GetFileDropList().Cast<string>().SingleOrDefault();
+            else
+                sourceFileName = Clipboard.GetText();
+            if (!File.Exists(sourceFileName))
+                throw new UserMessageException("Clipboard does not contain a valid file name.");
+            await RunProcessWithProgressBarAsync(async (progressCallback, ct) =>
+            {
+                progressCallback(-1);
+                await ExifHandler.TransferMetadataAsync(sourceFileName, SelectedItem.FullPath, SelectedItem.GetProcessedFileName(),
+                    Settings.ExifToolPath ?? throw new UserMessageException("ExifTool not configured"), ct);
+            }, "Pasting metadata...");
+        });
+
         public ICommand RenameCommand => new RelayCommand(async o =>
         {
             var selectedItems = GetSelectedItems(false).ToArray();

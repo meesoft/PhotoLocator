@@ -376,5 +376,45 @@ namespace PhotoLocator.Metadata
             }
             Console.WriteLine(sw.ElapsedMilliseconds);
         }
+
+        [TestMethod]
+        public async Task TransferMetadataAsync_ShouldCopyMetadataToTargetFile()
+        {
+            if (!File.Exists(ExifToolPath))
+                Assert.Inconclusive("ExifTool not found");
+
+            const string MetadataFile = @"TestData\2022-06-17_19.03.02.jpg";
+            const string SourceFile = @"TestData\2025-05-04_15.13.08-04.jpg";
+            const string TargetFile = @"TestData\2025-05-04_15.13.08-04-metadata.jpg";
+            File.Delete(TargetFile);
+
+            await ExifHandler.TransferMetadataAsync(MetadataFile, SourceFile, TargetFile, ExifToolPath, CancellationToken.None);
+
+            var sourceMetadata = ExifHandler.LoadMetadataUsingExifTool(MetadataFile, ExifToolPath);
+            var targetMetadata = ExifHandler.LoadMetadataUsingExifTool(TargetFile, ExifToolPath);
+            Assert.AreEqual(sourceMetadata["Model"], targetMetadata["Model"]);
+            Assert.AreEqual(sourceMetadata["DateTimeOriginal"], targetMetadata["DateTimeOriginal"]);
+            Assert.AreEqual(sourceMetadata["ISO"], targetMetadata["ISO"]);
+        }
+
+        [TestMethod]
+        public async Task TransferMetadataAsync_ShouldWorkInPlace()
+        {
+            if (!File.Exists(ExifToolPath))
+                Assert.Inconclusive("ExifTool not found");
+
+            const string MetadataFile = @"TestData\2022-06-17_19.03.02.jpg";
+            const string SourceFile = @"TestData\2025-05-04_15.13.08-04.jpg";
+            const string TempFile = @"TestData\2025-05-04_15.13.08-04-inplace.jpg";
+            File.Copy(SourceFile, TempFile, true);
+
+            await ExifHandler.TransferMetadataAsync(MetadataFile, TempFile, TempFile, ExifToolPath, CancellationToken.None);
+
+            var sourceMetadata = ExifHandler.LoadMetadataUsingExifTool(MetadataFile, ExifToolPath);
+            var targetMetadata = ExifHandler.LoadMetadataUsingExifTool(TempFile, ExifToolPath);
+            Assert.AreEqual(sourceMetadata["Model"], targetMetadata["Model"]);
+            Assert.AreEqual(sourceMetadata["DateTimeOriginal"], targetMetadata["DateTimeOriginal"]);
+            Assert.AreEqual(sourceMetadata["ISO"], targetMetadata["ISO"]);
+        }
     }
 }

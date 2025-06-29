@@ -198,10 +198,10 @@ namespace PhotoLocator
                 selectedItem.IsChecked = !selectedItem.IsChecked;
                 e.Handled = true;
             }
-            else if (e.Key == Key.Insert && !e.KeyboardDevice.IsKeyDown(Key.LeftCtrl) && !e.KeyboardDevice.IsKeyDown(Key.RightCtrl))
+            else if (e.Key == Key.Insert && !e.KeyboardDevice.IsKeyDown(Key.LeftCtrl) && !e.KeyboardDevice.IsKeyDown(Key.RightCtrl) 
+                && !e.KeyboardDevice.IsKeyDown(Key.LeftShift) && !e.KeyboardDevice.IsKeyDown(Key.RightShift))
             {
-                if (!(e.KeyboardDevice.IsKeyDown(Key.LeftShift) || e.KeyboardDevice.IsKeyDown(Key.RightShift)))
-                    selectedItem.IsChecked = !selectedItem.IsChecked;
+                selectedItem.IsChecked = !selectedItem.IsChecked;
                 if (PictureListBox.SelectedIndex < PictureListBox.Items.Count - 1)
                 {
                     PictureListBox.SelectedItem = PictureListBox.Items[PictureListBox.SelectedIndex + 1];
@@ -497,15 +497,16 @@ namespace PhotoLocator
             var MaxHeight = PreviewCanvas.ActualHeight * screenDpi.DpiScaleY;
             var scale = Math.Min(maxWidth / sourceImage.PixelWidth, MaxHeight / sourceImage.PixelHeight);
             BitmapSource? resampled = null;
-            var sw = Stopwatch.StartNew();
             if (scale > 1 && _viewModel.Settings.LanczosUpscaling || scale < 1 && _viewModel.Settings.LanczosDownscaling)
             {
+                var sw = Stopwatch.StartNew();
                 var resizeOperation = new LanczosResizeOperation();
                 _resamplerCancellation = new CancellationTokenSource();
                 resampled = await Task.Run(() => resizeOperation.Apply(sourceImage,
                     (int)(sourceImage.PixelWidth * scale), (int)(sourceImage.PixelHeight * scale),
                     screenDpi.PixelsPerInchX, screenDpi.PixelsPerInchY,
                     _resamplerCancellation.Token), _resamplerCancellation.Token);
+                Log.Write($"Resampled image to {resampled?.PixelWidth}x{resampled?.PixelHeight} in {sw.ElapsedMilliseconds} ms");
             }
             if (sourceImage == _viewModel.PreviewPictureSource)
             {
@@ -523,7 +524,6 @@ namespace PhotoLocator
                     FullPreviewImage.Visibility = Visibility.Collapsed;
                 }
                 ZoomedPreviewImage.Visibility = Visibility.Collapsed;
-                Log.Write($"Resampled image to {resampled?.PixelWidth}x{resampled?.PixelHeight} in {sw.ElapsedMilliseconds} ms");
             }
         }
 
