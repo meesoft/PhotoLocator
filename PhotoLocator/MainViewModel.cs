@@ -545,7 +545,7 @@ namespace PhotoLocator
             await RunProcessWithProgressBarAsync(async (progressCallback, ct) =>
             {
                 progressCallback(-1);
-                await ExifHandler.TransferMetadataAsync(sourceFileName, SelectedItem.FullPath, SelectedItem.GetProcessedFileName(),
+                await ExifTool.TransferMetadataAsync(sourceFileName, SelectedItem.FullPath, SelectedItem.GetProcessedFileName(),
                     Settings.ExifToolPath ?? throw new UserMessageException(ExifToolNotConfigured), ct);
             }, "Pasting metadata...");
         });
@@ -908,7 +908,7 @@ namespace PhotoLocator
                 await Parallel.ForEachAsync(selectedItems, new ParallelOptions { MaxDegreeOfParallelism = MaxParallelExifToolOperations, CancellationToken = ct }, 
                     async (item, ct) =>
                     {
-                        await ExifHandler.AdjustTimeStampAsync(item.FullPath, item.GetProcessedFileName(), offset, 
+                        await ExifTool.AdjustTimeStampAsync(item.FullPath, item.GetProcessedFileName(), offset, 
                             Settings.ExifToolPath ?? throw new UserMessageException(ExifToolNotConfigured), ct);
                         progressCallback((double)Interlocked.Increment(ref i) / selectedItems.Length);
                     });
@@ -926,7 +926,7 @@ namespace PhotoLocator
                 metadataWin.Owner = App.Current.MainWindow;
                 metadataWin.Title = SelectedItem.Name;
                 if (Settings.ForceUseExifTool && !string.IsNullOrEmpty(Settings.ExifToolPath))
-                    metadataWin.Metadata = String.Join("\n", ExifHandler.EnumerateMetadataUsingExifTool(SelectedItem.FullPath, Settings.ExifToolPath));
+                    metadataWin.Metadata = String.Join("\n", ExifTool.EnumerateMetadata(SelectedItem.FullPath, Settings.ExifToolPath));
                 else
                     metadataWin.Metadata = String.Join("\n", ExifHandler.EnumerateMetadata(SelectedItem.FullPath, Settings.ExifToolPath));
             }
