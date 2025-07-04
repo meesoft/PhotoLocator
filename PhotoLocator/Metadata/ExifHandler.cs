@@ -431,7 +431,7 @@ namespace PhotoLocator.Metadata
                                 using var tagDecoder = new IfdDecoder(imageStream, 12);
                                 var timeZone = tagDecoder.DecodeUInt32Tag(tag);
                                 offset = TimeSpan.FromMinutes((Int16)(timeZone[1]));
-                                if (Math.Abs(offset.TotalHours) < 14)
+                                if (Math.Abs(offset.TotalHours) <= 14)
                                     return new DateTimeOffset(timeStamp, offset);
                             }
                     }

@@ -17,6 +17,8 @@ static class ExifTool
 
     public static async Task AdjustTimeStampAsync(string sourceFileName, string targetFileName, string offset, string exifToolPath, CancellationToken ct)
     {
+        if (offset is null || offset.Length < 2)
+            throw new UserMessageException("Offset must have a sign followed by a value");
         var sign = offset[0];
         offset = offset[1..];
         var startInfo = new ProcessStartInfo(exifToolPath, $"\"-AllDates{sign}={offset}\" \"{sourceFileName}\" ");
@@ -59,7 +61,7 @@ static class ExifTool
         startInfo.CreateNoWindow = true;
         startInfo.RedirectStandardOutput = true;
         startInfo.RedirectStandardError = true;
-        var process = Process.Start(startInfo) ?? throw new IOException(ExifToolStartError);
+        using var process = Process.Start(startInfo) ?? throw new IOException(ExifToolStartError);
         var output = await process.StandardOutput.ReadToEndAsync(ct) + '\n' + await process.StandardError.ReadToEndAsync(ct);
         await process.WaitForExitAsync(ct);
         Log.Write(output);
@@ -72,7 +74,7 @@ static class ExifTool
         var startInfo = new ProcessStartInfo(exifToolPath, $"-s2 -c +%.6f \"{fileName}\""); // -H to add hexadecimal values
         startInfo.CreateNoWindow = true;
         startInfo.RedirectStandardOutput = true;
-        var process = Process.Start(startInfo) ?? throw new IOException(ExifToolStartError);
+        using var process = Process.Start(startInfo) ?? throw new IOException(ExifToolStartError);
         var output = process.StandardOutput.ReadToEnd();
         process.WaitForExit();
         return output.Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
