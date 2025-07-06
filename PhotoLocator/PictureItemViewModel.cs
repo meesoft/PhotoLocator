@@ -239,7 +239,7 @@ namespace PhotoLocator
             try
             {
                 if (_settings is not null && _settings.ForceUseExifTool && !string.IsNullOrEmpty(_settings.ExifToolPath))
-                    (GeoTag, _timeStamp, _metadataString, Orientation) = await Task.Run(() => ExifHandler.DecodeMetadataUsingExifTool(FullPath, _settings.ExifToolPath), ct);
+                    (GeoTag, _timeStamp, _metadataString, Orientation) = await Task.Run(() => ExifTool.DecodeMetadata(FullPath, _settings.ExifToolPath), ct);
                 else
                     (GeoTag, _timeStamp, _metadataString, Orientation) = await Task.Run(() => ExifHandler.DecodeMetadataAsync(FullPath, IsVideo, _settings?.ExifToolPath, ct), ct);
                 GeoTagSaved = GeoTag != null;
@@ -350,7 +350,7 @@ namespace PhotoLocator
         {
             try
             {
-                await ExifHandler.SetGeotagAsync(FullPath, GetProcessedFileName(),
+                await ExifTool.SetGeotagAsync(FullPath, GetProcessedFileName(),
                     GeoTag ?? throw new InvalidOperationException(nameof(GeoTag) + " not set"),
                     _settings?.ExifToolPath, ct);
                 GeoTagSaved = true;

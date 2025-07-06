@@ -138,6 +138,7 @@
                 <KeyBinding Key="OemMinus" Command="{Binding DeselectAllCommand}" />
                 <KeyBinding Key="Divide" Command="{Binding QuickSearchCommand}" />
                 <KeyBinding Key="Insert" Modifiers="Ctrl" Command="{Binding CopyFilesToClipboardCommand}" />
+                <KeyBinding Key="Insert" Modifiers="Shift" Command="{Binding PasteLocationCommand}" />
             </ListBox.InputBindings>
             <ListBox.ContextMenu>
                 <ContextMenu>
@@ -152,6 +153,7 @@
                         <MenuItem Header="Adjust timestamps" Command="{Binding AdjustTimestampsCommand}"/>
                         <MenuItem Header="Auto geotag (Ctrl+T)" Command="{Binding AutoGeotagCommand}"/>
                         <MenuItem Header="Save changed geotags to files (Ctrl+S)" Command="{Binding SaveGeotagsCommand}"/>
+                        <MenuItem Header="Paste metadata from copied file" Command="{Binding PasteMetadataCommand}"/>
                         <MenuItem Header="Show metadata" Command="{Binding ShowMetadataCommand}" />
                     </MenuItem>
                     <Separator />

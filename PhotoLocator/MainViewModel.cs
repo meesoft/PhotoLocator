@@ -30,6 +30,8 @@ namespace PhotoLocator
     {
         private const int MaxParallelExifToolOperations = 1;
 
+        private const string ExifToolNotConfigured = "ExifTool not configured";
+
 #if DEBUG
         static readonly bool _isInDesignMode = DesignerProperties.GetIsInDesignMode(new DependencyObject());
 #else
@@ -528,7 +530,26 @@ namespace PhotoLocator
                 await Task.Delay(10, ct);
             }, "Saving...");
         });
-       
+
+        public ICommand PasteMetadataCommand => new RelayCommand(async o =>
+        {
+            if (SelectedItem is null || SelectedItem.IsDirectory)
+                return;
+            string? sourceFileName;
+            if (Clipboard.ContainsFileDropList())
+                sourceFileName = Clipboard.GetFileDropList().Cast<string>().SingleOrDefault();
+            else
+                sourceFileName = Clipboard.GetText();
+            if (!File.Exists(sourceFileName))
+                throw new UserMessageException("Clipboard does not contain a valid file name.");
+            await RunProcessWithProgressBarAsync(async (progressCallback, ct) =>
+            {
+                progressCallback(-1);
+                await ExifTool.TransferMetadataAsync(sourceFileName, SelectedItem.FullPath, SelectedItem.GetProcessedFileName(),
+                    Settings.ExifToolPath ?? throw new UserMessageException(ExifToolNotConfigured), ct);
+            }, "Pasting metadata...");
+        });
+
         public ICommand RenameCommand => new RelayCommand(async o =>
         {
             var selectedItems = GetSelectedItems(false).ToArray();
@@ -887,7 +908,8 @@ namespace PhotoLocator
                 await Parallel.ForEachAsync(selectedItems, new ParallelOptions { MaxDegreeOfParallelism = MaxParallelExifToolOperations, CancellationToken = ct }, 
                     async (item, ct) =>
                     {
-                        await ExifHandler.AdjustTimeStampAsync(item.FullPath, item.GetProcessedFileName(), offset, Settings.ExifToolPath, ct);
+                        await ExifTool.AdjustTimeStampAsync(item.FullPath, item.GetProcessedFileName(), offset, 
+                            Settings.ExifToolPath ?? throw new UserMessageException(ExifToolNotConfigured), ct);
                         progressCallback((double)Interlocked.Increment(ref i) / selectedItems.Length);
                     });
                 await Task.Delay(10, ct);
@@ -904,7 +926,7 @@ namespace PhotoLocator
                 metadataWin.Owner = App.Current.MainWindow;
                 metadataWin.Title = SelectedItem.Name;
                 if (Settings.ForceUseExifTool && !string.IsNullOrEmpty(Settings.ExifToolPath))
-                    metadataWin.Metadata = String.Join("\n", ExifHandler.EnumerateMetadataUsingExifTool(SelectedItem.FullPath, Settings.ExifToolPath));
+                    metadataWin.Metadata = String.Join("\n", ExifTool.EnumerateMetadata(SelectedItem.FullPath, Settings.ExifToolPath));
                 else
                     metadataWin.Metadata = String.Join("\n", ExifHandler.EnumerateMetadata(SelectedItem.FullPath, Settings.ExifToolPath));
             }

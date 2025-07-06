@@ -694,7 +694,7 @@ namespace PhotoLocator
             {
                 for (int i = 0; i < allSelected.Length; i++)
                 {
-                    var metadata = ExifHandler.LoadMetadataUsingExifTool(allSelected[i].FullPath, _mainViewModel.Settings.ExifToolPath);
+                    var metadata = ExifTool.LoadMetadata(allSelected[i].FullPath, _mainViewModel.Settings.ExifToolPath);
                     var spanStr = metadata["Duration"];
                     if (!double.TryParse(spanStr.Trim('s'), CultureInfo.InvariantCulture, out clipDurations[i]))
                         clipDurations[i] = TimeSpan.Parse(spanStr, CultureInfo.InvariantCulture).TotalSeconds;

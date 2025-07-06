@@ -40,7 +40,7 @@ namespace PhotoLocator.PictureFileFormats
             startInfo.CreateNoWindow = true;
             startInfo.RedirectStandardOutput = true;
             Log.Write($"{startInfo.FileName} {startInfo.Arguments}");
-            var process = Process.Start(startInfo) ?? throw new IOException("Failed to start JpegTransform");
+            using var process = Process.Start(startInfo) ?? throw new IOException("Failed to start JpegTransform");
             var output = process.StandardOutput.ReadToEnd(); // We must read before waiting
             if (!process.WaitForExit(60000))
                 throw new TimeoutException();
