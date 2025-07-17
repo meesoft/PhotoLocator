@@ -15,19 +15,23 @@ namespace PhotoLocator.Helpers
         {
             Debug.WriteLine(message);
             message = $"{DateTime.Now:yyyy-MM-dd HH:mm:ss} {message}";
-            _history[_next] = message;
-            _next = (_next + 1) % _history.Length;
+            lock (_history)
+            {
+                _history[_next] = message;
+                _next = (_next + 1) % _history.Length;
+            }
             EventAdded?.Invoke(message);
         }
 
         public static IEnumerable<string> GetHistory()
         {
-            for (int i = 0; i < _history.Length; i++)
-            {
-                var index = (_next + i) % _history.Length;
-                if (_history[index] is not null)
-                    yield return _history[index];
-            }
+            lock (_history)
+                for (int i = 0; i < _history.Length; i++)
+                {
+                    var index = (_next + i) % _history.Length;
+                    if (_history[index] is not null)
+                        yield return _history[index];
+                }
         }
     }
 }

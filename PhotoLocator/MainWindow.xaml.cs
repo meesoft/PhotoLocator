@@ -327,7 +327,7 @@ namespace PhotoLocator
             if (e.PropertyName == nameof(_viewModel.PreviewPictureSource))
             {
                 if (_viewModel.PreviewZoom > 0)
-                    _zoomPreviewViewHelper.InitializePreviewRenderTransform(false);
+                    _zoomPreviewViewHelper.InitializePreviewRenderTransform(false, TrackZoomCheckBox.IsChecked == true);
                 else
                 {
                     if (_viewModel.Settings.LanczosUpscaling || _viewModel.Settings.LanczosDownscaling)

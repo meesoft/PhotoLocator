@@ -1,7 +1,11 @@
-﻿using System.Windows;
+﻿using PhotoLocator.BitmapOperations;
+using System;
+using System.Threading.Tasks;
+using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
+using System.Windows.Media.Imaging;
 
 namespace PhotoLocator.Helpers
 {
@@ -10,6 +14,7 @@ namespace PhotoLocator.Helpers
         readonly Canvas _previewCanvas;
         readonly Image _zoomedPreviewImage;
         readonly IImageZoomPreviewViewModel _viewModel;
+        Task<RegistrationOperation>? _previousImage;
         Point _previousMousePosition;
         bool _isDraggingPreview;
 
@@ -22,19 +27,46 @@ namespace PhotoLocator.Helpers
             _zoomedPreviewImage.PreviewMouseMove += HandlePreviewImageMouseMove;
         }
 
-        public void InitializePreviewRenderTransform(bool forceReset)
+        public void InitializePreviewRenderTransform(bool forceReset, bool registerToPrevious = false)
         {
             if (_viewModel.PreviewPictureSource is null)
+            {
+                _previousImage = null;
                 return;
+            }
             var screenDpi = VisualTreeHelper.GetDpi(_zoomedPreviewImage);
             var zoom = _viewModel.PreviewZoom;
             var sx = _viewModel.PreviewPictureSource.DpiX / screenDpi.PixelsPerInchX * zoom;
             var sy = _viewModel.PreviewPictureSource.DpiY / screenDpi.PixelsPerInchY * zoom;
             var tx = CalcCenterTranslation(_previewCanvas.ActualWidth, _viewModel.PreviewPictureSource.PixelWidth, zoom, screenDpi.PixelsPerInchX);
             var ty = CalcCenterTranslation(_previewCanvas.ActualHeight, _viewModel.PreviewPictureSource.PixelHeight, zoom, screenDpi.PixelsPerInchY);
+
+            var previousImage = _previousImage;
+            if (registerToPrevious)
+                _previousImage = Task.Run(() => new RegistrationOperation(_viewModel.PreviewPictureSource));
+
             if (!forceReset && _zoomedPreviewImage.RenderTransform is MatrixTransform m &&
                 m.Matrix.M11 == sx && m.Matrix.M22 == sy && m.Matrix.OffsetX <= 0 && m.Matrix.OffsetY <= 0 && tx <= 0 && ty <= 0)
+            {
+                if (registerToPrevious && previousImage is not null)
+                {
+                    try
+                    {
+                        var registration = previousImage.Result;
+                        var translation = registration.GetTranslation(_viewModel.PreviewPictureSource);
+                        _zoomedPreviewImage.RenderTransform = new MatrixTransform(
+                            m.Matrix.M11, m.Matrix.M12,
+                            m.Matrix.M21, m.Matrix.M22,
+                            m.Matrix.OffsetX + translation.X, m.Matrix.OffsetY + translation.Y);
+                    }
+                    catch (Exception ex)
+                    {
+                        Log.Write($"Registration failed: {ex.Message}");
+                    }
+                }
                 return;
+            }
+
             _zoomedPreviewImage.RenderTransform = new MatrixTransform(
                 sx, 0,
                 0, sy,

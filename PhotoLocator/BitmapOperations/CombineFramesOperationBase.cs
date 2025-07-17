@@ -19,16 +19,13 @@ namespace PhotoLocator.BitmapOperations
         byte[]? _darkFramePixels;
         double _dpiX;
         double _dpiY;
-        int _width;
-        int _height;
         PixelFormat _pixelFormat;
-        int _pixelSize;
         RegistrationOperation? _registrationOperation;
         protected uint[]? _accumulatorPixels;
 
-        protected int Width => _width;
-        protected int Height => _height;
-        protected int PixelSize => _pixelSize;
+        protected int Width { get; private set; }
+        protected int Height { get; private set; }
+        protected int PixelSize { get; private set; }
 
         public int ProcessedImages { get; private set; }
 
@@ -64,7 +61,7 @@ namespace PhotoLocator.BitmapOperations
             var resultPixels = new byte[_accumulatorPixels.Length];
             var scaling = GetResultScaling();
             Parallel.For(0, _accumulatorPixels.Length, i => resultPixels[i] = (byte)(_accumulatorPixels[i] * scaling + 0.5));
-            var result = BitmapSource.Create(_width, _height, _dpiX, _dpiY, _pixelFormat, null, resultPixels, _width * _pixelSize);
+            var result = BitmapSource.Create(Width, Height, _dpiX, _dpiY, _pixelFormat, null, resultPixels, Width * PixelSize);
             result.Freeze();
             return result;
         }
@@ -82,14 +79,14 @@ namespace PhotoLocator.BitmapOperations
                 pixelFormat16 = PixelFormats.Rgb48;
             else if (_pixelFormat == PixelFormats.Bgr24)
             {
-                Parallel.For(0, _width * _height, i => (resultPixels[i * 3], resultPixels[i * 3 + 2]) = (resultPixels[i * 3 + 2], resultPixels[i * 3]));
+                Parallel.For(0, Width * Height, i => (resultPixels[i * 3], resultPixels[i * 3 + 2]) = (resultPixels[i * 3 + 2], resultPixels[i * 3]));
                 pixelFormat16 = PixelFormats.Rgb48;
             }
             else if (_pixelFormat == PixelFormats.Gray8)
                 pixelFormat16 = PixelFormats.Gray16;
             else
                 throw new UserMessageException("Unsupported pixel format for 16 bit output" + _pixelFormat);
-            var result = BitmapSource.Create(_width, _height, _dpiX, _dpiY, pixelFormat16, null, resultPixels, _width * _pixelSize * 2);
+            var result = BitmapSource.Create(Width, Height, _dpiX, _dpiY, pixelFormat16, null, resultPixels, Width * PixelSize * 2);
             result.Freeze();
             return result;
         }
@@ -102,47 +99,47 @@ namespace PhotoLocator.BitmapOperations
 
             if (_accumulatorPixels is null)
             {
-                _width = image.PixelWidth;
-                _height = image.PixelHeight;
+                Width = image.PixelWidth;
+                Height = image.PixelHeight;
                 _dpiX = image.DpiX;
                 _dpiY = image.DpiY;
                 _pixelFormat = image.Format;
                 if (_pixelFormat == PixelFormats.Bgr32 || _pixelFormat == PixelFormats.Cmyk32)
-                    _pixelSize = 4;
+                    PixelSize = 4;
                 else if (_pixelFormat == PixelFormats.Rgb24 || _pixelFormat == PixelFormats.Bgr24)
-                    _pixelSize = 3;
+                    PixelSize = 3;
                 else if (_pixelFormat == PixelFormats.Gray8)
-                    _pixelSize = 1;
+                    PixelSize = 1;
                 else
                     throw new UserMessageException("Unsupported pixel format " + _pixelFormat);
-                _accumulatorPixels = new uint[_width * _height * _pixelSize];
+                _accumulatorPixels = new uint[Width * Height * PixelSize];
 
                 if (_darkFrame is not null)
                 {
-                    if (_darkFrame.PixelWidth != _width || _darkFrame.PixelHeight != _height)
+                    if (_darkFrame.PixelWidth != Width || _darkFrame.PixelHeight != Height)
                         throw new UserMessageException("Dark frame size does not match");
                     if (_darkFrame.Format != _pixelFormat)
                         throw new UserMessageException($"Dark frame pixel format {_darkFrame.Format} does not match frame format {_pixelFormat}");
-                    _darkFramePixels = new byte[_width * _height * _pixelSize];
-                    _darkFrame.CopyPixels(_darkFramePixels, _width * _pixelSize, 0);
+                    _darkFramePixels = new byte[Width * Height * PixelSize];
+                    _darkFrame.CopyPixels(_darkFramePixels, Width * PixelSize, 0);
                 }
             }
             else if (_pixelFormat != image.Format)
                 throw new UserMessageException("Pixel format changed");
-            else if (_width != image.PixelWidth || _height != image.PixelHeight)
+            else if (Width != image.PixelWidth || Height != image.PixelHeight)
                 throw new UserMessageException("Size changed");
 
             ProcessedImages++;
 
-            var pixels = new byte[_width * _height * _pixelSize];
-            image.CopyPixels(pixels, _width * _pixelSize, 0);
+            var pixels = new byte[Width * Height * PixelSize];
+            image.CopyPixels(pixels, Width * PixelSize, 0);
 
             SubtractDarkFrame(pixels);
 
             if (_registrationMethod > RegistrationMethod.None)
             {
                 if (_registrationOperation is null)
-                    _registrationOperation = new RegistrationOperation(pixels, _width, _height, _pixelSize, _registrationMethod == RegistrationMethod.MirrorBorders, _registrationRegion);
+                    _registrationOperation = new RegistrationOperation(pixels, Width, Height, PixelSize, _registrationMethod == RegistrationMethod.MirrorBorders, _registrationRegion);
                 else
                     _registrationOperation.Apply(pixels);
             }
