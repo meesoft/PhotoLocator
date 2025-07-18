@@ -15,7 +15,8 @@
         IsEnabled="{Binding IsWindowEnabled}"
         WindowState="Maximized"
         Title="{Binding WindowTitle}" 
-        Height="500" Width="1024" 
+        Height="500" Width="1200"
+        d:DesignWidth="1600"
         Background="Black">
 
     <Window.Resources>
@@ -118,6 +119,7 @@
                     ToolTip="Settings (F12)" Width="32" />
             <Button Content="i" FontFamily="Webdings" FontSize="20" Command="{Binding AboutCommand}"
                     ToolTip="About (F1)" Width="32" />
+            <CheckBox Content="Track zoom" Name="TrackZoomCheckBox" VerticalAlignment="Center" IsChecked="True" Focusable="False" />
         </StackPanel>
 
         <ListBox Grid.Column="0" Grid.Row="1" Margin="0,0,10,0" ItemsSource="{Binding Items}" Name="PictureListBox"
