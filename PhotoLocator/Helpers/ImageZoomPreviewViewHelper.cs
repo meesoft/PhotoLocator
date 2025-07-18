@@ -14,7 +14,7 @@ namespace PhotoLocator.Helpers
         readonly Canvas _previewCanvas;
         readonly Image _zoomedPreviewImage;
         readonly IImageZoomPreviewViewModel _viewModel;
-        Task<RegistrationOperation>? _previousImage;
+        Task<RegistrationOperation>? _previousImageRegistration;
         Point _previousMousePosition;
         bool _isDraggingPreview;
 
@@ -31,7 +31,7 @@ namespace PhotoLocator.Helpers
         {
             if (_viewModel.PreviewPictureSource is null)
             {
-                _previousImage = null;
+                _previousImageRegistration = null;
                 return;
             }
             var screenDpi = VisualTreeHelper.GetDpi(_zoomedPreviewImage);
@@ -41,23 +41,25 @@ namespace PhotoLocator.Helpers
             var tx = CalcCenterTranslation(_previewCanvas.ActualWidth, _viewModel.PreviewPictureSource.PixelWidth, zoom, screenDpi.PixelsPerInchX);
             var ty = CalcCenterTranslation(_previewCanvas.ActualHeight, _viewModel.PreviewPictureSource.PixelHeight, zoom, screenDpi.PixelsPerInchY);
 
-            var previousImage = _previousImage;
+            var previousImageRegistration = _previousImageRegistration;
             if (registerToPrevious)
-                _previousImage = Task.Run(() => new RegistrationOperation(_viewModel.PreviewPictureSource));
+                _previousImageRegistration = Task.Run(() => new RegistrationOperation(_viewModel.PreviewPictureSource));
+            else
+                _previousImageRegistration = null;
 
             if (!forceReset && _zoomedPreviewImage.RenderTransform is MatrixTransform m &&
                 m.Matrix.M11 == sx && m.Matrix.M22 == sy && m.Matrix.OffsetX <= 0 && m.Matrix.OffsetY <= 0 && tx <= 0 && ty <= 0)
             {
-                if (registerToPrevious && previousImage is not null)
+                if (registerToPrevious && previousImageRegistration is not null)
                 {
                     try
                     {
-                        var registration = previousImage.Result;
+                        var registration = previousImageRegistration.Result;
                         var translation = registration.GetTranslation(_viewModel.PreviewPictureSource);
                         _zoomedPreviewImage.RenderTransform = new MatrixTransform(
                             m.Matrix.M11, m.Matrix.M12,
                             m.Matrix.M21, m.Matrix.M22,
-                            m.Matrix.OffsetX + translation.X, m.Matrix.OffsetY + translation.Y);
+                            m.Matrix.OffsetX + translation.X * sx, m.Matrix.OffsetY + translation.Y * sy);
                     }
                     catch (Exception ex)
                     {

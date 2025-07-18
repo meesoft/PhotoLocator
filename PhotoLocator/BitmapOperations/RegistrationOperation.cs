@@ -43,7 +43,7 @@ namespace PhotoLocator.BitmapOperations
             _width = image.PixelWidth;
             _height = image.PixelHeight;
             var pixelFormat = image.Format;
-            if (pixelFormat == PixelFormats.Bgr32 || pixelFormat == PixelFormats.Cmyk32)
+            if (pixelFormat == PixelFormats.Bgr32 || pixelFormat == PixelFormats.Bgra32 || pixelFormat == PixelFormats.Cmyk32)
                 _pixelSize = 4;
             else if (pixelFormat == PixelFormats.Rgb24 || pixelFormat == PixelFormats.Bgr24)
                 _pixelSize = 3;
@@ -145,7 +145,7 @@ namespace PhotoLocator.BitmapOperations
             yValues.Sort();
             var medianPoint = new Point2f(xValues[xValues.Count / 2], yValues[yValues.Count / 2]);
 
-            Log.Write($"{xValues.Count} / {features.Length} features matched in {sw.ElapsedMilliseconds} ms, median translation: {IntMath.Round(medianPoint.X)}, {IntMath.Round(medianPoint.Y)}");
+            Log.Write($"{xValues.Count}/{features.Length} features matched in {sw.ElapsedMilliseconds} ms, median translation: ({IntMath.Round(medianPoint.X)},{IntMath.Round(medianPoint.Y)})");
 
             return medianPoint;
         }
