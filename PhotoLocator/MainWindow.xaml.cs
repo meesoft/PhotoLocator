@@ -474,7 +474,7 @@ namespace PhotoLocator
             {
                 ZoomedPreviewImage.Visibility = Visibility.Visible;
                 UpdateLayout();
-                _zoomPreviewViewHelper.InitializePreviewRenderTransform(true);
+                _zoomPreviewViewHelper.InitializePreviewRenderTransform(true, TrackZoomCheckBox.IsChecked == true);
                 FullPreviewImage.Visibility = Visibility.Collapsed;
                 ResampledPreviewImage.Visibility = Visibility.Collapsed;
                 ResampledPreviewImage.Source = null;
