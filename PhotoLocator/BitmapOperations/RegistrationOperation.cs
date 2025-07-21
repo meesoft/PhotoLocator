@@ -132,13 +132,13 @@ namespace PhotoLocator.BitmapOperations
                 }
 
             if (xValues.Count < features.Length * 0.8)
-                throw new UserMessageException($"Not enough features matched ({xValues.Count}/{features.Length})");
+                throw new UserMessageException($"Not enough features matched ({xValues.Count}/{features.Length}={(double)xValues.Count / features.Length:F2})");
 
             xValues.Sort();
             yValues.Sort();
             var medianPoint = new Point2f(xValues[xValues.Count / 2], yValues[yValues.Count / 2]);
 
-            Log.Write($"{xValues.Count}/{features.Length} features matched in {sw.ElapsedMilliseconds} ms, median translation: ({IntMath.Round(medianPoint.X)},{IntMath.Round(medianPoint.Y)})");
+            Log.Write($"{xValues.Count}/{features.Length} ({(double)xValues.Count / features.Length:F2}) features matched in {sw.ElapsedMilliseconds} ms, median translation: ({IntMath.Round(medianPoint.X)},{IntMath.Round(medianPoint.Y)})");
 
             return medianPoint;
         }

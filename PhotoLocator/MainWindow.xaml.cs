@@ -506,7 +506,8 @@ namespace PhotoLocator
                     (int)(sourceImage.PixelWidth * scale), (int)(sourceImage.PixelHeight * scale),
                     screenDpi.PixelsPerInchX, screenDpi.PixelsPerInchY,
                     _resamplerCancellation.Token), _resamplerCancellation.Token);
-                Log.Write($"Resampled image to {resampled?.PixelWidth}x{resampled?.PixelHeight} in {sw.ElapsedMilliseconds} ms");
+                if (resampled is not null)
+                    Log.Write($"Resampled image to {resampled.PixelWidth}x{resampled.PixelHeight} in {sw.ElapsedMilliseconds} ms");
             }
             if (sourceImage == _viewModel.PreviewPictureSource)
             {
