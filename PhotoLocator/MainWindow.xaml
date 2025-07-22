@@ -119,7 +119,8 @@
                     ToolTip="Settings (F12)" Width="32" />
             <Button Content="i" FontFamily="Webdings" FontSize="20" Command="{Binding AboutCommand}"
                     ToolTip="About (F1)" Width="32" />
-            <CheckBox Content="Track zoom" Name="TrackZoomCheckBox" VerticalAlignment="Center" IsChecked="True" Focusable="False" />
+            <CheckBox Content="Track zoom" Name="TrackZoomCheckBox" VerticalAlignment="Center" Margin="4,0,0,0"
+                      Focusable="False" IsChecked="{Binding Settings.TrackZoom}" />
         </StackPanel>
 
         <ListBox Grid.Column="0" Grid.Row="1" Margin="0,0,10,0" ItemsSource="{Binding Items}" Name="PictureListBox"

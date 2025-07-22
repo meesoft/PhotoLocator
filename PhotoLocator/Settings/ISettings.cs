@@ -38,6 +38,8 @@ namespace PhotoLocator.Settings
 
         ResamplingOptions ResamplingOptions { get; set; }
 
+        bool TrackZoom { get; set; }
+
         int CropRatioNominator { get; set; }
 
         int CropRatioDenominator { get; set; }

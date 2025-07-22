@@ -24,7 +24,7 @@ namespace PhotoLocator.Settings
             get => _photoFileExtensions;
             set => SetProperty(ref _photoFileExtensions, value ?? RegistrySettings.DefaultPhotoFileExtensions);
         }
-        private string _photoFileExtensions = RegistrySettings.DefaultPhotoFileExtensions;
+        string _photoFileExtensions = RegistrySettings.DefaultPhotoFileExtensions;
 
         public bool ShowFolders
         {
@@ -125,6 +125,13 @@ namespace PhotoLocator.Settings
                 ? _resamplingOptions | ResamplingOptions.LanczosDownscaling
                 : _resamplingOptions & ~ResamplingOptions.LanczosDownscaling);
         }
+
+        public bool TrackZoom
+        {
+            get => _trackZoom;
+            set => SetProperty(ref _trackZoom, value);
+        }
+        bool _trackZoom;
 
         public int CropRatioNominator
         {

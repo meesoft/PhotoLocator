@@ -134,6 +134,12 @@ namespace PhotoLocator.Settings
             set => Key.SetValue(nameof(RenameMasks), value);
         }
 
+        public bool TrackZoom
+        {
+            get => (Key.GetValue(nameof(TrackZoom)) as int? ?? 1) != 0;
+            set => Key.SetValue(nameof(TrackZoom), value ? 1 : 0);
+        }
+
         public int CropRatioNominator
         {
             get => Key.GetValue(nameof(CropRatioNominator)) as int? ?? 0;

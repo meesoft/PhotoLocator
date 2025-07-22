@@ -454,6 +454,7 @@ namespace PhotoLocator
             Zoom100Item.IsChecked = _viewModel.PreviewZoom == 1;
             Zoom200Item.IsChecked = _viewModel.PreviewZoom == 2;
             Zoom400Item.IsChecked = _viewModel.PreviewZoom == 4;
+            TrackZoomCheckBox.Visibility = _viewModel.PreviewZoom > 0 ? Visibility.Visible : Visibility.Collapsed;
             if (_viewModel.PreviewZoom == 0)
             {
                 if (_viewModel.Settings.LanczosUpscaling || _viewModel.Settings.LanczosDownscaling)
