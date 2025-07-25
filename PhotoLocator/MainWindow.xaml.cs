@@ -327,7 +327,7 @@ namespace PhotoLocator
             if (e.PropertyName == nameof(_viewModel.PreviewPictureSource))
             {
                 if (_viewModel.PreviewZoom > 0)
-                    _zoomPreviewViewHelper.InitializePreviewRenderTransform(false, TrackZoomCheckBox.IsChecked == true);
+                    _zoomPreviewViewHelper.InitializePreviewRenderTransform(false, _viewModel.Settings.TrackZoom);
                 else
                 {
                     if (_viewModel.Settings.LanczosUpscaling || _viewModel.Settings.LanczosDownscaling)
@@ -475,7 +475,7 @@ namespace PhotoLocator
             {
                 ZoomedPreviewImage.Visibility = Visibility.Visible;
                 UpdateLayout();
-                _zoomPreviewViewHelper.InitializePreviewRenderTransform(true, TrackZoomCheckBox.IsChecked == true);
+                _zoomPreviewViewHelper.InitializePreviewRenderTransform(true, _viewModel.Settings.TrackZoom);
                 FullPreviewImage.Visibility = Visibility.Collapsed;
                 ResampledPreviewImage.Visibility = Visibility.Collapsed;
                 ResampledPreviewImage.Source = null;

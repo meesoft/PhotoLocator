@@ -5,7 +5,6 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
-using System.Windows.Media.Imaging;
 
 namespace PhotoLocator.Helpers
 {
@@ -31,6 +30,7 @@ namespace PhotoLocator.Helpers
         {
             if (_viewModel.PreviewPictureSource is null)
             {
+                _previousImageRegistration?.ContinueWith(t => t.Result.Dispose(), TaskScheduler.Default);
                 _previousImageRegistration = null;
                 return;
             }
@@ -48,7 +48,7 @@ namespace PhotoLocator.Helpers
                 _previousImageRegistration = null;
 
             if (!forceReset && _zoomedPreviewImage.RenderTransform is MatrixTransform m &&
-                m.Matrix.M11 == sx && m.Matrix.M22 == sy && m.Matrix.OffsetX <= 0 && m.Matrix.OffsetY <= 0 && tx <= 0 && ty <= 0)
+                m.Matrix.M11 == sx && m.Matrix.M22 == sy && m.Matrix.OffsetX <= 0 && m.Matrix.OffsetY <= 0 && tx <= 0 && ty <= 0) // Keep translation
             {
                 if (registerToPrevious && previousImageRegistration is not null)
                 {
@@ -60,19 +60,23 @@ namespace PhotoLocator.Helpers
                             m.Matrix.M11, m.Matrix.M12,
                             m.Matrix.M21, m.Matrix.M22,
                             m.Matrix.OffsetX + translation.X * sx, m.Matrix.OffsetY + translation.Y * sy);
+                        previousImageRegistration = null;
+                        registration.Dispose();
                     }
                     catch (Exception ex)
                     {
                         Log.Write($"Registration failed: {ex.Message}");
                     }
                 }
-                return;
             }
-
-            _zoomedPreviewImage.RenderTransform = new MatrixTransform(
-                sx, 0,
-                0, sy,
-                tx, ty);
+            else // Reset translation
+            {
+                _zoomedPreviewImage.RenderTransform = new MatrixTransform(
+                    sx, 0,
+                    0, sy,
+                    tx, ty);
+            }
+            previousImageRegistration?.ContinueWith(t => t.Result.Dispose(), TaskScheduler.Default);
         }
 
         public static double CalcCenterTranslation(double canvasSizeIn96, int imageSize, int zoom, double screenDpi)
