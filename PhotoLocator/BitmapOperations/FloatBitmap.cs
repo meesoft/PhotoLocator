@@ -1,4 +1,5 @@
 ﻿using PhotoLocator.Helpers;
+using PhotoLocator.PictureFileFormats;
 using System;
 using System.Buffers;
 using System.Diagnostics;
@@ -232,6 +233,11 @@ namespace PhotoLocator.BitmapOperations
             result.Freeze();
             ArrayPool<byte>.Shared.Return(pixels);
             return result;
+        }
+
+        public void SaveToFile(string fileName, double gamma = 1)
+        {
+            GeneralFileFormatHandler.SaveToFile(ToBitmapSource(96, 96, gamma), fileName);
         }
 
         static float[] CreateDeGammaLookup(double gamma, int range)
