@@ -19,6 +19,7 @@ namespace PhotoLocator.Settings
             target.BitmapScalingMode = source.BitmapScalingMode;
             target.ResamplingOptions = source.ResamplingOptions;
             target.ShowMetadataInSlideShow = source.ShowMetadataInSlideShow;
+            target.TrackZoom = source.TrackZoom;
             target.CropRatioNominator = source.CropRatioNominator;
             target.CropRatioDenominator = source.CropRatioDenominator;
         }

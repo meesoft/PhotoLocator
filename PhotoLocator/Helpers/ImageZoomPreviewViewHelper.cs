@@ -1,4 +1,7 @@
-﻿using System.Windows;
+﻿using PhotoLocator.BitmapOperations;
+using System;
+using System.Threading.Tasks;
+using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
@@ -10,6 +13,7 @@ namespace PhotoLocator.Helpers
         readonly Canvas _previewCanvas;
         readonly Image _zoomedPreviewImage;
         readonly IImageZoomPreviewViewModel _viewModel;
+        Task<RegistrationOperation>? _previousImageRegistration;
         Point _previousMousePosition;
         bool _isDraggingPreview;
 
@@ -22,23 +26,57 @@ namespace PhotoLocator.Helpers
             _zoomedPreviewImage.PreviewMouseMove += HandlePreviewImageMouseMove;
         }
 
-        public void InitializePreviewRenderTransform(bool forceReset)
+        public void InitializePreviewRenderTransform(bool forceReset, bool registerToPrevious = false)
         {
             if (_viewModel.PreviewPictureSource is null)
+            {
+                _previousImageRegistration?.ContinueWith(t => t.Result.Dispose(), TaskScheduler.Default);
+                _previousImageRegistration = null;
                 return;
+            }
             var screenDpi = VisualTreeHelper.GetDpi(_zoomedPreviewImage);
             var zoom = _viewModel.PreviewZoom;
             var sx = _viewModel.PreviewPictureSource.DpiX / screenDpi.PixelsPerInchX * zoom;
             var sy = _viewModel.PreviewPictureSource.DpiY / screenDpi.PixelsPerInchY * zoom;
             var tx = CalcCenterTranslation(_previewCanvas.ActualWidth, _viewModel.PreviewPictureSource.PixelWidth, zoom, screenDpi.PixelsPerInchX);
             var ty = CalcCenterTranslation(_previewCanvas.ActualHeight, _viewModel.PreviewPictureSource.PixelHeight, zoom, screenDpi.PixelsPerInchY);
+
+            var previousImageRegistration = _previousImageRegistration;
+            if (registerToPrevious)
+                _previousImageRegistration = Task.Run(() => new RegistrationOperation(_viewModel.PreviewPictureSource));
+            else
+                _previousImageRegistration = null;
+
             if (!forceReset && _zoomedPreviewImage.RenderTransform is MatrixTransform m &&
-                m.Matrix.M11 == sx && m.Matrix.M22 == sy && m.Matrix.OffsetX <= 0 && m.Matrix.OffsetY <= 0 && tx <= 0 && ty <= 0)
-                return;
-            _zoomedPreviewImage.RenderTransform = new MatrixTransform(
-                sx, 0,
-                0, sy,
-                tx, ty);
+                m.Matrix.M11 == sx && m.Matrix.M22 == sy && m.Matrix.OffsetX <= 0 && m.Matrix.OffsetY <= 0 && tx <= 0 && ty <= 0) // Keep translation
+            {
+                if (registerToPrevious && previousImageRegistration is not null)
+                {
+                    try
+                    {
+                        var registration = previousImageRegistration.Result;
+                        var translation = registration.GetTranslation(_viewModel.PreviewPictureSource);
+                        _zoomedPreviewImage.RenderTransform = new MatrixTransform(
+                            m.Matrix.M11, m.Matrix.M12,
+                            m.Matrix.M21, m.Matrix.M22,
+                            m.Matrix.OffsetX + translation.X * sx, m.Matrix.OffsetY + translation.Y * sy);
+                        previousImageRegistration = null;
+                        registration.Dispose();
+                    }
+                    catch (Exception ex)
+                    {
+                        Log.Write($"Registration failed: {ex.Message}");
+                    }
+                }
+            }
+            else // Reset translation
+            {
+                _zoomedPreviewImage.RenderTransform = new MatrixTransform(
+                    sx, 0,
+                    0, sy,
+                    tx, ty);
+            }
+            previousImageRegistration?.ContinueWith(t => t.Result.Dispose(), TaskScheduler.Default);
         }
 
         public static double CalcCenterTranslation(double canvasSizeIn96, int imageSize, int zoom, double screenDpi)

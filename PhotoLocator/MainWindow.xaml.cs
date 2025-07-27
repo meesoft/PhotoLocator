@@ -327,7 +327,7 @@ namespace PhotoLocator
             if (e.PropertyName == nameof(_viewModel.PreviewPictureSource))
             {
                 if (_viewModel.PreviewZoom > 0)
-                    _zoomPreviewViewHelper.InitializePreviewRenderTransform(false);
+                    _zoomPreviewViewHelper.InitializePreviewRenderTransform(false, _viewModel.Settings.TrackZoom);
                 else
                 {
                     if (_viewModel.Settings.LanczosUpscaling || _viewModel.Settings.LanczosDownscaling)
@@ -454,6 +454,7 @@ namespace PhotoLocator
             Zoom100Item.IsChecked = _viewModel.PreviewZoom == 1;
             Zoom200Item.IsChecked = _viewModel.PreviewZoom == 2;
             Zoom400Item.IsChecked = _viewModel.PreviewZoom == 4;
+            TrackZoomCheckBox.Visibility = _viewModel.PreviewZoom > 0 ? Visibility.Visible : Visibility.Collapsed;
             if (_viewModel.PreviewZoom == 0)
             {
                 if (_viewModel.Settings.LanczosUpscaling || _viewModel.Settings.LanczosDownscaling)
@@ -474,7 +475,7 @@ namespace PhotoLocator
             {
                 ZoomedPreviewImage.Visibility = Visibility.Visible;
                 UpdateLayout();
-                _zoomPreviewViewHelper.InitializePreviewRenderTransform(true);
+                _zoomPreviewViewHelper.InitializePreviewRenderTransform(true, _viewModel.Settings.TrackZoom);
                 FullPreviewImage.Visibility = Visibility.Collapsed;
                 ResampledPreviewImage.Visibility = Visibility.Collapsed;
                 ResampledPreviewImage.Source = null;
@@ -506,7 +507,8 @@ namespace PhotoLocator
                     (int)(sourceImage.PixelWidth * scale), (int)(sourceImage.PixelHeight * scale),
                     screenDpi.PixelsPerInchX, screenDpi.PixelsPerInchY,
                     _resamplerCancellation.Token), _resamplerCancellation.Token);
-                Log.Write($"Resampled image to {resampled?.PixelWidth}x{resampled?.PixelHeight} in {sw.ElapsedMilliseconds} ms");
+                if (resampled is not null)
+                    Log.Write($"Resampled image to {resampled.PixelWidth}x{resampled.PixelHeight} in {sw.ElapsedMilliseconds} ms");
             }
             if (sourceImage == _viewModel.PreviewPictureSource)
             {
