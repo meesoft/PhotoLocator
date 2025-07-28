@@ -24,9 +24,9 @@ namespace PhotoLocator.BitmapOperations
             var videoTransforms = new VideoProcessing(settings);
 
             var timeSlice = new TimeSliceOperation();
-            timeSlice.SelectionMap = new FloatBitmap();
-            timeSlice.SelectionMap.Assign(GeneralFileFormatHandler.LoadFromStream(File.OpenRead(@"Resources\LeftToRight.png"), Rotation.Rotate0, int.MaxValue, true, default), 1);
-
+            timeSlice.SelectionMapExpression = TimeSliceSelectionMaps.Circle;
+            //timeSlice.SelectionMap.Assign(GeneralFileFormatHandler.LoadFromStream(File.OpenRead(@"Resources\DownRight.png"), Rotation.Rotate0, int.MaxValue, true, default), 1);
+            
             var readerArgs = $" -i \"{SourceVideoPath}\" -vf \"setpts=PTS/(4)\"";
             var readTask = videoTransforms.RunFFmpegWithStreamOutputImagesAsync(readerArgs, timeSlice.AddFrame, stdError => Debug.WriteLine("Out: " + stdError), default);
 
