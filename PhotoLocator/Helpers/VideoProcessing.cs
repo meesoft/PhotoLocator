@@ -103,7 +103,6 @@ namespace PhotoLocator.Helpers
         public async Task RunFFmpegWithStreamInputImagesAsync(double inFrameRate, string args, IEnumerable<BitmapSource> images, Action<string> stdErrorCallback, CancellationToken ct)
         {
             var enumerator = images.GetEnumerator();
-            enumerator.Reset();
             await Task.Yield();
             if (!enumerator.MoveNext())
                 throw new UserMessageException("No source frames");
