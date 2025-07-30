@@ -15,12 +15,16 @@ namespace PhotoLocator.BitmapOperations
         int _width, _height;
         double _dpiX, _dpiY;
         PixelFormat _pixelFormat;
+        int _takeFrameInterval = 1;
+        int _maxFrames, _addedFrames;
 
         public SelectionMapFunction? SelectionMapExpression { get; set; }
 
         public FloatBitmap? SelectionMap { get; set; }
 
-        public int NumberOfFrames => _frames.Count;
+        public int UsedFrames => _frames.Count;
+
+        public int SkippedFrames => _addedFrames - UsedFrames;
 
         public void AddFrame(BitmapSource image)
         {
@@ -33,13 +37,28 @@ namespace PhotoLocator.BitmapOperations
                 _pixelFormat = image.Format;
                 if (image.Format != PixelFormats.Rgb24 && image.Format != PixelFormats.Bgr24)
                     throw new UserMessageException("Unsupported pixel format: " + image.Format);
+
+                var availableMemory = GC.GetGCMemoryInfo().TotalAvailableMemoryBytes;
+                var frameSize = _width * _height * PixelSize;
+                _maxFrames = (int)Math.Ceiling(availableMemory * 0.75 / frameSize);
             }
             else if (_width != image.PixelWidth || _height != image.PixelHeight || _pixelFormat != image.Format)
                 throw new UserMessageException("All frames must have the same dimensions and format.");
 
-            var pixels = new byte[_width * _height * PixelSize];
-            image.CopyPixels(pixels, _width * PixelSize, 0);
-            _frames.Add(pixels);
+            if (_addedFrames % _takeFrameInterval == 0)
+            {
+                var pixels = new byte[_width * _height * PixelSize];
+                image.CopyPixels(pixels, _width * PixelSize, 0);
+                _frames.Add(pixels);
+
+                if (_frames.Count > _maxFrames) // Remove every second frame to limit memory usage
+                {
+                    _takeFrameInterval *= 2;
+                    for (int i = _frames.Count - 1; i > 0; i -= 2)
+                        _frames.RemoveAt(i);
+                }
+            }
+            _addedFrames++;
         }
 
         FloatBitmap GenerateSelectionMap()
@@ -47,25 +66,27 @@ namespace PhotoLocator.BitmapOperations
             if (_frames.Count == 0)
                 throw new UserMessageException("No frames added to the time slice operation.");
 
+            FloatBitmap selectionMap;
             if (SelectionMapExpression != null)
-                return TimeSliceSelectionMaps.GenerateSelectionMap(_width, _height, SelectionMapExpression);
+                selectionMap = TimeSliceSelectionMaps.GenerateSelectionMap(_width, _height, SelectionMapExpression);
+            else
+            {
+                if (SelectionMap == null)
+                    throw new UserMessageException("SelectionMap must be set before generating the time slice image.");
+                if (SelectionMap.PlaneCount > 1)
+                    throw new UserMessageException("SelectionMap must be a single plane bitmap.");
+                selectionMap = new FloatBitmap(_width, _height, 1);
+                BilinearResizeOperation.ApplyToPlaneParallel(SelectionMap, selectionMap);
+            }
 
-            if (SelectionMap == null)
-                throw new UserMessageException("SelectionMap must be set before generating the time slice image.");
-            if (SelectionMap.PlaneCount > 1)
-                throw new UserMessageException("SelectionMap must be a single plane bitmap.");
-
-            var selectionMap = new FloatBitmap(_width, _height, 1);
-            BilinearResizeOperation.ApplyToPlaneParallel(SelectionMap, selectionMap);
+            var scale = _frames.Count - 1e-3f;
+            selectionMap.ProcessElementWise(a => a * scale);
             return selectionMap;
         }
 
         public BitmapSource GenerateTimeSliceImage()
         {
             var selectionMap = GenerateSelectionMap();
-
-            var scale = _frames.Count - 1e-3f;
-            selectionMap.ProcessElementWise(a => a * scale);
 
             var resultPixels = new byte[_width * _height * PixelSize];
             Parallel.For(0, _height, y =>
@@ -98,8 +119,6 @@ namespace PhotoLocator.BitmapOperations
             var selectionMap = GenerateSelectionMap();
 
             int maxIndex = _frames.Count - 1;
-            selectionMap.ProcessElementWise(a => a * maxIndex);
-
             var resultPixels = new byte[_width * _height * PixelSize];
             Parallel.For(0, _height, y =>
             {
@@ -142,15 +161,12 @@ namespace PhotoLocator.BitmapOperations
             return result;
         }
 
-        public IEnumerable<BitmapSource> GenerateTimeSliceVideo()
+        public IEnumerable<BitmapSource> GenerateTimeSliceVideo(int loops = 1)
         {
             var selectionMap = GenerateSelectionMap();
 
-            var scale = _frames.Count - 1e-3f;
-            selectionMap.ProcessElementWise(a => a * scale);
-
             var resultPixels = new byte[_width * _height * PixelSize];
-
+            for (int loop = 0; loop < loops; loop++)
             for (int i = 0; i < _frames.Count; i++)
             {
                 Parallel.For(0, _height, y =>
@@ -179,15 +195,13 @@ namespace PhotoLocator.BitmapOperations
             }
         }
 
-        public IEnumerable<BitmapSource> GenerateTimeSliceVideoInterpolated()
+        public IEnumerable<BitmapSource> GenerateTimeSliceVideoInterpolated(int loops = 1)
         {
             var selectionMap = GenerateSelectionMap();
 
             int maxIndex = _frames.Count - 1;
-            selectionMap.ProcessElementWise(a => a * maxIndex);
-
             var resultPixels = new byte[_width * _height * PixelSize];
-
+            for (int loop = 0; loop < loops; loop++)
             for (int i = 0; i < _frames.Count; i++)
             {
                 Parallel.For(0, _height, y =>

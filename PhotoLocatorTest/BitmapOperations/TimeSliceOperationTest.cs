@@ -2,7 +2,6 @@
 using PhotoLocator.PictureFileFormats;
 using PhotoLocator.Settings;
 using System.Diagnostics;
-using System.Windows.Media.Imaging;
 
 namespace PhotoLocator.BitmapOperations
 {
@@ -10,33 +9,33 @@ namespace PhotoLocator.BitmapOperations
     public class TimeSliceOperationTest
     {
         [TestMethod]
-        public async Task TimeSlice()
+        public async Task GenerateTimeSliceImage_ShouldGenerateFromImages()
         {
-            const string SourceVideoPath = @"";
+            var images = new string[] {
+            };
 
             if (!File.Exists(VideoProcessingTest.FFmpegPath))
                 Assert.Inconclusive("FFmpegPath not found");
-            if (!File.Exists(SourceVideoPath))
-                Assert.Inconclusive("SourceVideoPath not found");
-
+            if (images.Any(f => !File.Exists(f)))
+                Assert.Inconclusive("Input images not found");
 
             var settings = new ObservableSettings() { FFmpegPath = VideoProcessingTest.FFmpegPath };
             var videoTransforms = new VideoProcessing(settings);
 
             var timeSlice = new TimeSliceOperation();
-            timeSlice.SelectionMapExpression = TimeSliceSelectionMaps.Circle;
-            //timeSlice.SelectionMap.Assign(GeneralFileFormatHandler.LoadFromStream(File.OpenRead(@"Resources\DownRight.png"), Rotation.Rotate0, int.MaxValue, true, default), 1);
-            
-            var readerArgs = $" -i \"{SourceVideoPath}\" -vf \"setpts=PTS/(4)\"";
-            var readTask = videoTransforms.RunFFmpegWithStreamOutputImagesAsync(readerArgs, timeSlice.AddFrame, stdError => Debug.WriteLine("Out: " + stdError), default);
+            timeSlice.SelectionMapExpression = TimeSliceSelectionMaps.TopRightToBottomLeft;
 
-            await readTask;
+            const string InputListFileName = "input.txt";
+            await File.WriteAllLinesAsync(InputListFileName, images.Select(f => $"file '{f}'")).ConfigureAwait(false);
+            var readerArgs = $"-f concat -safe 0 -i \"{InputListFileName}\"";
+            await videoTransforms.RunFFmpegWithStreamOutputImagesAsync(readerArgs, timeSlice.AddFrame, stdError => Debug.WriteLine("Out: " + stdError), default);
 
-            Debug.WriteLine("Number of frames: " + timeSlice.NumberOfFrames);
+            Debug.WriteLine("Number of frames: " + timeSlice.UsedFrames);
+            Debug.WriteLine("Skipped frames: " + timeSlice.SkippedFrames);
 
-            var result = timeSlice.GenerateTimeSliceImage();
+            var result = timeSlice.GenerateTimeSliceImageInterpolated();
 
-            GeneralFileFormatHandler.SaveToFile(result, @"z:\TimeSlice.png");
+            GeneralFileFormatHandler.SaveToFile(result, @"TimeSlice.png");
         }
     }
 }
