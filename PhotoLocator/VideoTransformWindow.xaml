@@ -32,7 +32,7 @@
 
         <TextBlock Text="Video filters:" Margin="0,4,0,0"/>
         <DockPanel Margin="10,4,0,0">
-            <CheckBox Content="Rotate:" IsChecked="{Binding IsRotateChecked}" Width="130" />
+            <CheckBox Content="Rotate in frame:" IsChecked="{Binding IsRotateChecked}" Width="130" />
             <TextBox Text="{Binding RotationAngle}" IsEnabled="{Binding IsRotateChecked}" Width="140"
                      ToolTip="Clockwise rotation angle in degrees"/>
             <TextBlock Text="°" IsEnabled="{Binding IsRotateChecked}" Margin="4,0,0,0" Width="16"/>
@@ -68,23 +68,31 @@
         <TextBlock Text="Stabilize arguments:" Margin="10,4,0,0" IsEnabled="{Binding IsStabilizeChecked}"/>
         <TextBox Text="{Binding StabilizeArguments}" Margin="10,0,0,0" IsEnabled="{Binding IsStabilizeChecked}"/>
 
-        <StackPanel Orientation="Horizontal" Margin="0,8,0,0" Visibility="{Binding IsFrameProcessingEnabled, Converter={StaticResource BooleanToHiddenVisibility}}" >
+        <StackPanel Orientation="Horizontal" Margin="0,10,0,4" Visibility="{Binding IsFrameProcessingEnabled, Converter={StaticResource BooleanToHiddenVisibility}}" >
             <CheckBox Content="Adjust local contrast, brightness and colors" Width="300" IsChecked="{Binding IsLocalContrastChecked}" />
             <Button Content="Setup" Command="{Binding SetupLocalContrastCommand}" Width="80" IsEnabled="{Binding IsLocalContrastChecked}" />
         </StackPanel>
 
-        <DockPanel Margin="0,4" Visibility="{Binding IsFrameProcessingEnabled, Converter={StaticResource BooleanToHiddenVisibility}}">
-            <TextBlock Text="Combine frames:" />
-            <RadioButton Content="Off" Margin="10,0,0,0"
-                     IsChecked="{Binding Path=RollingAverageMode, Converter={StaticResource ComparisonConverter}, ConverterParameter={x:Static local:RollingAverageMode.None}}"/>
+        <TextBlock Text="Combine frames:"/>
+        <DockPanel Margin="10,4,0,0" Visibility="{Binding IsFrameProcessingEnabled, Converter={StaticResource BooleanToHiddenVisibility}}">
+            <RadioButton Content="Off"
+                     IsChecked="{Binding Path=CombineFramesMode, Converter={StaticResource ComparisonConverter}, ConverterParameter={x:Static local:CombineFramesMode.None}}"/>
             <RadioButton Content="Rolling average" Margin="10,0,0,0"
-                     IsChecked="{Binding Path=RollingAverageMode, Converter={StaticResource ComparisonConverter}, ConverterParameter={x:Static local:RollingAverageMode.RollingAverage}}"/>
-            <RadioButton Content="Fading" Margin="10,0,0,0"
-                     IsChecked="{Binding Path=RollingAverageMode, Converter={StaticResource ComparisonConverter}, ConverterParameter={x:Static local:RollingAverageMode.FadingAverage}}"/>
+                     IsChecked="{Binding Path=CombineFramesMode, Converter={StaticResource ComparisonConverter}, ConverterParameter={x:Static local:CombineFramesMode.RollingAverage}}"/>
+            <RadioButton Content="Fading average" Margin="10,0,0,0"
+                     IsChecked="{Binding Path=CombineFramesMode, Converter={StaticResource ComparisonConverter}, ConverterParameter={x:Static local:CombineFramesMode.FadingAverage}}"/>
             <RadioButton Content="Fading max" Margin="10,0,0,0"
-                     IsChecked="{Binding Path=RollingAverageMode, Converter={StaticResource ComparisonConverter}, ConverterParameter={x:Static local:RollingAverageMode.FadingMax}}"/>
+                     IsChecked="{Binding Path=CombineFramesMode, Converter={StaticResource ComparisonConverter}, ConverterParameter={x:Static local:CombineFramesMode.FadingMax}}"/>
             <TextBox Text="{Binding RollingAverageFrames}" Width="140" HorizontalAlignment="Right" IsEnabled="{Binding IsCombineFramesOperation}"
                      ToolTip="Number of frames to combine"/>
+        </DockPanel>
+        <DockPanel Margin="10,4,0,0" Visibility="{Binding IsFrameProcessingEnabled, Converter={StaticResource BooleanToHiddenVisibility}}">
+            <RadioButton Content="Time slice"
+                IsChecked="{Binding Path=CombineFramesMode, Converter={StaticResource ComparisonConverter}, ConverterParameter={x:Static local:CombineFramesMode.TimeSlice}}"/>
+            <RadioButton Content="Interpolated time slice" Margin="10,0,0,0"
+                IsChecked="{Binding Path=CombineFramesMode, Converter={StaticResource ComparisonConverter}, ConverterParameter={x:Static local:CombineFramesMode.TimeSliceInterpolated}}"/>
+            <ComboBox ItemsSource="{Binding TimeSliceDirections}" SelectedItem="{Binding SelectedTimeSliceDirection}" Width="140" Height="30"
+                      HorizontalAlignment="Right"/>
         </DockPanel>
 
         <TextBlock Text="Output" Margin="0,4,0,0"/>
@@ -121,6 +129,11 @@
             <RadioButton Content="Frame max" Width="130"
                      IsChecked="{Binding Path=OutputMode, Converter={StaticResource ComparisonConverter}, ConverterParameter={x:Static local:OutputMode.Max}}"/>
             <TextBox Text="{Binding DarkFramePath}" IsEnabled="{Binding IsCombineFramesOperation}"/>
+        </DockPanel>
+        <DockPanel Margin="10,4,0,0" >
+            <RadioButton Content="Time slice image" Width="130"
+                     IsChecked="{Binding Path=OutputMode, Converter={StaticResource ComparisonConverter}, ConverterParameter={x:Static local:OutputMode.TimeSliceImage}}"/>
+            <CheckBox Content="Interpolate" IsEnabled="{Binding IsInterpolateTimeSliceChecked}"/>
         </DockPanel>
         <TextBlock Text="Process arguments:" Margin="0,4,0,0"/>
         <TextBox Text="{Binding InputArguments}" Margin="10,0,0,0"/>

@@ -20,7 +20,7 @@ namespace PhotoLocator.BitmapOperations
 
         public static SelectionMapFunction TopRightToBottomLeft = (x, y) => (1 - x + y) / 2;
 
-        public static SelectionMapFunction Circle = (x, y) => Math.Max(0, 1 - 2 * Math.Sqrt(RealMath.Sqr(x - 0.5) + RealMath.Sqr(y - 0.5)));
+        public static SelectionMapFunction Ellipse = (x, y) => Math.Max(0, 1 - 2 * Math.Sqrt(RealMath.Sqr(x - 0.5) + RealMath.Sqr(y - 0.5)));
 
         public static SelectionMapFunction Clock = (x, y) => (Math.PI - Math.Atan2(x - 0.5, y - 0.5)) / (2 * Math.PI);
 
