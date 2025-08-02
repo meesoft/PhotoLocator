@@ -343,11 +343,14 @@ namespace PhotoLocator
         }
         string _stabilizeArguments = string.Empty;
 
-        public bool IsFrameProcessingEnabled => OutputMode == OutputMode.Video && SelectedVideoFormat != VideoFormats[CopyVideoFormatIndex]
+        public bool IsLocalContrastEnabled => OutputMode == OutputMode.Video && SelectedVideoFormat != VideoFormats[CopyVideoFormatIndex]
+            || OutputMode is OutputMode.ImageSequence or OutputMode.TimeSliceImage;
+
+        public bool IsFrameAveragingEnabled => OutputMode == OutputMode.Video && SelectedVideoFormat != VideoFormats[CopyVideoFormatIndex]
             || OutputMode == OutputMode.ImageSequence;
 
         public bool IsTimeSliceEnabled => OutputMode == OutputMode.Video && SelectedVideoFormat != VideoFormats[CopyVideoFormatIndex]
-            || OutputMode == OutputMode.TimeSliceImage;
+            || OutputMode is OutputMode.ImageSequence or OutputMode.TimeSliceImage;
 
         public bool IsLocalContrastChecked
         {
@@ -465,7 +468,8 @@ namespace PhotoLocator
                     UpdateProcessArgs();
                     UpdateOutputArgs();
                     PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(IsCombineFramesOperation)));
-                    PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(IsFrameProcessingEnabled)));
+                    PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(IsLocalContrastEnabled)));
+                    PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(IsFrameAveragingEnabled)));
                     PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(IsTimeSliceEnabled)));                    
                 }
             }
@@ -483,7 +487,13 @@ namespace PhotoLocator
                 {
                     UpdateProcessArgs();
                     UpdateOutputArgs();
-                    PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(IsFrameProcessingEnabled)));
+                    if (value == VideoFormats[CopyVideoFormatIndex])
+                    {
+                        IsLocalContrastChecked = false;
+                        CombineFramesMode = CombineFramesMode.None;
+                    }
+                    PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(IsLocalContrastEnabled)));
+                    PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(IsFrameAveragingEnabled)));
                     PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(IsTimeSliceEnabled)));
                 }
             }
@@ -922,7 +932,6 @@ namespace PhotoLocator
                     File.Delete(TransformsFileName);
                     await _videoTransforms.RunFFmpegAsync($"{InputArguments} {StabilizeArguments}", ProcessStdError, ct).ConfigureAwait(false);
                     _progressOffset = 0.5;
-                    _progressCallback?.Invoke(0.5);
                 }
 
                 Directory.CreateDirectory(Path.GetDirectoryName(outFileName)!);
@@ -944,15 +953,50 @@ namespace PhotoLocator
                     GeneralFileFormatHandler.SaveToFile(process.GetResult8(), outFileName, CreateImageMetadata(), _mainViewModel.Settings.JpegQuality);
                     message = $"Processed {process.ProcessedImages} frames in {sw.Elapsed.TotalSeconds:N1}s";
                 }
-                else if (OutputMode is OutputMode.TimeSliceImage)
+                else if (CombineFramesMode is CombineFramesMode.TimeSlice or CombineFramesMode.TimeSliceInterpolated)
                 {
                     var timeSlice = new TimeSliceOperation();
                     timeSlice.SelectionMapExpression = (SelectionMapFunction)selectedTimeSliceDirection;
-                    await _videoTransforms.RunFFmpegWithStreamOutputImagesAsync(args, timeSlice.AddFrame, ProcessStdError, ct).ConfigureAwait(false);
-                    var timeSliceImage = CombineFramesMode == CombineFramesMode.TimeSliceInterpolated
-                        ? timeSlice.GenerateTimeSliceImageInterpolated()
-                        : timeSlice.GenerateTimeSliceImage();
-                    GeneralFileFormatHandler.SaveToFile(timeSliceImage, outFileName, CreateImageMetadata(), _mainViewModel.Settings.JpegQuality);
+
+                    var runningAverage = (IsRegisterFramesChecked || !string.IsNullOrEmpty(DarkFramePath)) ?
+                        new RollingAverageOperation(1, DarkFramePath, IsRegisterFramesChecked, ParseRegistrationRegion(), ct) : null;
+
+                    if (!string.IsNullOrEmpty(FrameRate))
+                    {
+                        _fps = double.Parse(FrameRate, CultureInfo.InvariantCulture);
+                        _hasFps = true;
+                    }
+                    if (OutputMode is OutputMode.Video)
+                        _progressScale = 0.5;
+                    await _videoTransforms.RunFFmpegWithStreamOutputImagesAsync($"{InputArguments} {ProcessArguments}", frame =>
+                    {
+                        if (runningAverage is not null)
+                        {
+                            runningAverage.ProcessImage(frame);
+                            frame = runningAverage.GetResult8();
+                        }
+                        if (_localContrastSetup is not null && !_localContrastSetup.IsNoOperation)
+                            frame = _localContrastSetup.ApplyOperations(frame);
+                        timeSlice.AddFrame(frame);
+                    }, ProcessStdError, ct).ConfigureAwait(false);
+
+                    if (OutputMode is OutputMode.TimeSliceImage)
+                    {
+                        var timeSliceImage = CombineFramesMode == CombineFramesMode.TimeSliceInterpolated
+                            ? timeSlice.GenerateTimeSliceImageInterpolated()
+                            : timeSlice.GenerateTimeSliceImage();
+                        GeneralFileFormatHandler.SaveToFile(timeSliceImage, outFileName, CreateImageMetadata(), _mainViewModel.Settings.JpegQuality);
+                    }
+                    else
+                    {
+                        if (!_hasFps)
+                            throw new UserMessageException("Unable to determine frame rate, please specify manually");
+                        _progressOffset = 0.5;
+                        var frames = CombineFramesMode == CombineFramesMode.TimeSliceInterpolated
+                            ? timeSlice.GenerateTimeSliceVideoInterpolated()
+                            : timeSlice.GenerateTimeSliceVideo();
+                        await _videoTransforms.RunFFmpegWithStreamInputImagesAsync(_fps, $"{OutputArguments} -y \"{outFileName}\"", frames, ProcessStdError, ct).ConfigureAwait(false);
+                    }
                     message = $"Processed {timeSlice.UsedFrames} frames and skipped {timeSlice.SkippedFrames} in {sw.Elapsed.TotalSeconds:N1}s";
                 }
                 else if (IsLocalContrastChecked || CombineFramesMode > CombineFramesMode.None)
@@ -971,7 +1015,7 @@ namespace PhotoLocator
                     };
 
                     using var frameEnumerator = new QueueEnumerable<BitmapSource>();
-                    var readTask = _videoTransforms.RunFFmpegWithStreamOutputImagesAsync($"{InputArguments} {ProcessArguments}", 
+                    var readTask = _videoTransforms.RunFFmpegWithStreamOutputImagesAsync($"{InputArguments} {ProcessArguments}",
                         source =>
                         {
                             if (runningAverage is not null)
@@ -989,7 +1033,7 @@ namespace PhotoLocator
                     await Task.WhenAny(frameEnumerator.GotFirst, Task.Delay(TimeSpan.FromSeconds(10), ct)).ConfigureAwait(false);
                     if (!_hasFps)
                         throw new UserMessageException("Unable to determine frame rate, please specify manually");
-                    var writeTask = _videoTransforms.RunFFmpegWithStreamInputImagesAsync(_fps, $"{OutputArguments} -y \"{outFileName}\"", frameEnumerator, 
+                    var writeTask = _videoTransforms.RunFFmpegWithStreamInputImagesAsync(_fps, $"{OutputArguments} -y \"{outFileName}\"", frameEnumerator,
                         stdError => Log.Write("Writer: " + stdError), ct);
                     await await Task.WhenAny(readTask, writeTask).ConfigureAwait(false); // Write task is not expected to finish here, only if it fails
                     frameEnumerator.Break();

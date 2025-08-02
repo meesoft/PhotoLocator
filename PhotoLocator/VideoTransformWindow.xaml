@@ -68,13 +68,13 @@
         <TextBlock Text="Stabilize arguments:" Margin="10,4,0,0" IsEnabled="{Binding IsStabilizeChecked}"/>
         <TextBox Text="{Binding StabilizeArguments}" Margin="10,0,0,0" IsEnabled="{Binding IsStabilizeChecked}"/>
 
-        <StackPanel Orientation="Horizontal" Margin="0,10,0,4" Visibility="{Binding IsFrameProcessingEnabled, Converter={StaticResource BooleanToHiddenVisibility}}" >
+        <StackPanel Orientation="Horizontal" Margin="0,10,0,4" Visibility="{Binding IsLocalContrastEnabled, Converter={StaticResource BooleanToHiddenVisibility}}" >
             <CheckBox Content="Adjust local contrast, brightness and colors" Width="300" IsChecked="{Binding IsLocalContrastChecked}" />
             <Button Content="Setup" Command="{Binding SetupLocalContrastCommand}" Width="80" IsEnabled="{Binding IsLocalContrastChecked}" />
         </StackPanel>
 
-        <TextBlock Text="Combine frames:"/>
-        <DockPanel Margin="10,4,0,0" Visibility="{Binding IsFrameProcessingEnabled, Converter={StaticResource BooleanToHiddenVisibility}}">
+        <TextBlock Text="Combine frames:" Visibility="{Binding IsFrameAveragingEnabled, Converter={StaticResource BooleanToHiddenVisibility}}" />
+        <DockPanel Margin="10,4,0,0" Visibility="{Binding IsFrameAveragingEnabled, Converter={StaticResource BooleanToHiddenVisibility}}">
             <RadioButton Content="Off"
                      IsChecked="{Binding Path=CombineFramesMode, Converter={StaticResource ComparisonConverter}, ConverterParameter={x:Static local:CombineFramesMode.None}}"/>
             <RadioButton Content="Rolling average" Margin="10,0,0,0"

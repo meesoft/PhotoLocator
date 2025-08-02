@@ -22,7 +22,7 @@ namespace PhotoLocator.BitmapOperations
 
         public static SelectionMapFunction Ellipse = (x, y) => Math.Max(0, 1 - 2 * Math.Sqrt(RealMath.Sqr(x - 0.5) + RealMath.Sqr(y - 0.5)));
 
-        public static SelectionMapFunction Clock = (x, y) => (Math.PI - Math.Atan2(x - 0.5, y - 0.5)) / (2 * Math.PI);
+        public static SelectionMapFunction Clock = (x, y) => (Math.PI + Math.Atan2(x - 0.5, y - 0.5)) / (2 * Math.PI);
 
         public static FloatBitmap GenerateSelectionMap(int width, int height, SelectionMapFunction expression)
         {

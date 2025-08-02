@@ -24,8 +24,7 @@ namespace PhotoLocator.BitmapOperations
             var settings = new ObservableSettings() { FFmpegPath = VideoProcessingTest.FFmpegPath };
             var videoTransforms = new VideoProcessing(settings);
 
-            var timeSlice = new TimeSliceOperation();
-            timeSlice.SelectionMapExpression = TimeSliceSelectionMaps.TopRightToBottomLeft;
+            var timeSlice = new TimeSliceOperation { SelectionMapExpression = TimeSliceSelectionMaps.TopRightToBottomLeft };
 
             const string InputListFileName = "input.txt";
             await File.WriteAllLinesAsync(InputListFileName, images.Select(f => $"file '{f}'")).ConfigureAwait(false);
@@ -83,8 +82,7 @@ namespace PhotoLocator.BitmapOperations
             var settings = new ObservableSettings() { FFmpegPath = VideoProcessingTest.FFmpegPath };
             var videoTransforms = new VideoProcessing(settings);
 
-            var timeSlice = new TimeSliceOperation();
-            timeSlice.SelectionMapExpression = TimeSliceSelectionMaps.Clock;
+            var timeSlice = new TimeSliceOperation { SelectionMapExpression = TimeSliceSelectionMaps.Clock };
 
             var readerArgs = $" -i \"{SourceVideoPath}\" -vf \"setpts=PTS/(4)\"";
             await videoTransforms.RunFFmpegWithStreamOutputImagesAsync(readerArgs, timeSlice.AddFrame, stdError => Debug.WriteLine("Decode: " + stdError), default);
