@@ -346,6 +346,9 @@ namespace PhotoLocator
         public bool IsFrameProcessingEnabled => OutputMode == OutputMode.Video && SelectedVideoFormat != VideoFormats[CopyVideoFormatIndex]
             || OutputMode == OutputMode.ImageSequence;
 
+        public bool IsTimeSliceEnabled => OutputMode == OutputMode.Video && SelectedVideoFormat != VideoFormats[CopyVideoFormatIndex]
+            || OutputMode == OutputMode.TimeSliceImage;
+
         public bool IsLocalContrastChecked
         {
             get => _localContrastSetup is not null;
@@ -456,10 +459,14 @@ namespace PhotoLocator
             {
                 if (SetProperty(ref _outputMode, value))
                 {
+                    if (value is OutputMode.TimeSliceImage && !(CombineFramesMode is CombineFramesMode.TimeSlice or CombineFramesMode.TimeSliceInterpolated))
+                        CombineFramesMode = CombineFramesMode.TimeSlice;
+
                     UpdateProcessArgs();
                     UpdateOutputArgs();
                     PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(IsCombineFramesOperation)));
                     PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(IsFrameProcessingEnabled)));
+                    PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(IsTimeSliceEnabled)));                    
                 }
             }
         }
@@ -477,6 +484,7 @@ namespace PhotoLocator
                     UpdateProcessArgs();
                     UpdateOutputArgs();
                     PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(IsFrameProcessingEnabled)));
+                    PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(IsTimeSliceEnabled)));
                 }
             }
         }

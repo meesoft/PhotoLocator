@@ -76,7 +76,10 @@ namespace PhotoLocator.BitmapOperations
                 if (SelectionMap.PlaneCount > 1)
                     throw new UserMessageException("SelectionMap must be a single plane bitmap.");
                 selectionMap = new FloatBitmap(_width, _height, 1);
-                BilinearResizeOperation.ApplyToPlaneParallel(SelectionMap, selectionMap);
+                if (SelectionMap.Width == _width && SelectionMap.Height == _height)
+                    Array.Copy(SelectionMap.Elements, selectionMap.Elements, SelectionMap.Elements.Length);
+                else
+                    BilinearResizeOperation.ApplyToPlaneParallel(SelectionMap, selectionMap);
             }
 
             var scale = _frames.Count - 1e-3f;

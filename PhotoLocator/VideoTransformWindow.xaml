@@ -86,7 +86,7 @@
             <TextBox Text="{Binding RollingAverageFrames}" Width="140" HorizontalAlignment="Right" IsEnabled="{Binding IsCombineFramesOperation}"
                      ToolTip="Number of frames to combine"/>
         </DockPanel>
-        <DockPanel Margin="10,4,0,0" Visibility="{Binding IsFrameProcessingEnabled, Converter={StaticResource BooleanToHiddenVisibility}}">
+        <DockPanel Margin="10,4,0,0" Visibility="{Binding IsTimeSliceEnabled, Converter={StaticResource BooleanToHiddenVisibility}}">
             <RadioButton Content="Time slice"
                 IsChecked="{Binding Path=CombineFramesMode, Converter={StaticResource ComparisonConverter}, ConverterParameter={x:Static local:CombineFramesMode.TimeSlice}}"/>
             <RadioButton Content="Interpolated time slice" Margin="10,0,0,0"
@@ -116,7 +116,7 @@
         </DockPanel>
         <RadioButton Content="Image sequence" Margin="10,0,0,0"
                      IsChecked="{Binding Path=OutputMode, Converter={StaticResource ComparisonConverter}, ConverterParameter={x:Static local:OutputMode.ImageSequence}}"/>
-        <DockPanel Margin="10,4,0,0" >
+        <DockPanel Margin="10,6,0,0" >
             <RadioButton Content="Frame average" Width="130"
                          IsChecked="{Binding Path=OutputMode, Converter={StaticResource ComparisonConverter}, ConverterParameter={x:Static local:OutputMode.Average}}"/>
             <TextBlock Text="Dark frame path:"  Width="160"/>
@@ -127,14 +127,11 @@
         </DockPanel>
         <DockPanel Margin="10,4,0,0" >
             <RadioButton Content="Frame max" Width="130"
-                     IsChecked="{Binding Path=OutputMode, Converter={StaticResource ComparisonConverter}, ConverterParameter={x:Static local:OutputMode.Max}}"/>
+                         IsChecked="{Binding Path=OutputMode, Converter={StaticResource ComparisonConverter}, ConverterParameter={x:Static local:OutputMode.Max}}"/>
             <TextBox Text="{Binding DarkFramePath}" IsEnabled="{Binding IsCombineFramesOperation}"/>
         </DockPanel>
-        <DockPanel Margin="10,4,0,0" >
-            <RadioButton Content="Time slice image" Width="130"
+        <RadioButton Content="Time slice image" Margin="10,2,0,0"
                      IsChecked="{Binding Path=OutputMode, Converter={StaticResource ComparisonConverter}, ConverterParameter={x:Static local:OutputMode.TimeSliceImage}}"/>
-            <CheckBox Content="Interpolate" IsEnabled="{Binding IsInterpolateTimeSliceChecked}"/>
-        </DockPanel>
         <TextBlock Text="Process arguments:" Margin="0,4,0,0"/>
         <TextBox Text="{Binding InputArguments}" Margin="10,0,0,0"/>
         <TextBox Text="{Binding ProcessArguments}" Margin="10,0,0,0"/>
