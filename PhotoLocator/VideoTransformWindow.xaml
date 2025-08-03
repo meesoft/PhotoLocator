@@ -13,8 +13,8 @@
 
     <Window.Resources>
         <BooleanToVisibilityConverter x:Key="BooleanToVisibility" />
-        <helpers:BooleanToHiddenVisibilityConverter x:Key="BooleanToHiddenVisibility" />
         <helpers:ComparisonConverter x:Key="ComparisonConverter" />
+        <helpers:OrComparisonConverter x:Key="OrComparisonConverter" />
         <Style TargetType="TextBlock">
             <Setter Property="Foreground" Value="#FFEEEEEE" />
         </Style>
@@ -68,13 +68,30 @@
         <TextBlock Text="Stabilize arguments:" Margin="10,4,0,0" IsEnabled="{Binding IsStabilizeChecked}"/>
         <TextBox Text="{Binding StabilizeArguments}" Margin="10,0,0,0" IsEnabled="{Binding IsStabilizeChecked}"/>
 
-        <StackPanel Orientation="Horizontal" Margin="0,10,0,4" Visibility="{Binding IsLocalContrastEnabled, Converter={StaticResource BooleanToHiddenVisibility}}" >
+        <StackPanel Orientation="Horizontal" Margin="0,10,0,4">
+            <StackPanel.IsEnabled>
+                <MultiBinding Converter="{StaticResource OrComparisonConverter}">
+                    <Binding Path="OutputMode" />
+                    <Binding Source="{x:Static local:OutputMode.Video}" />
+                    <Binding Source="{x:Static local:OutputMode.ImageSequence}" />
+                    <Binding Source="{x:Static local:OutputMode.TimeSliceImage}" />
+                </MultiBinding>
+            </StackPanel.IsEnabled>
+
             <CheckBox Content="Adjust local contrast, brightness and colors" Width="300" IsChecked="{Binding IsLocalContrastChecked}" />
             <Button Content="Setup" Command="{Binding SetupLocalContrastCommand}" Width="80" IsEnabled="{Binding IsLocalContrastChecked}" />
         </StackPanel>
 
-        <TextBlock Text="Combine frames:" Visibility="{Binding IsFrameAveragingEnabled, Converter={StaticResource BooleanToHiddenVisibility}}" />
-        <DockPanel Margin="10,4,0,0" Visibility="{Binding IsFrameAveragingEnabled, Converter={StaticResource BooleanToHiddenVisibility}}">
+        <TextBlock Text="Combine frames:" />
+        <DockPanel Margin="10,4,0,0">
+            <DockPanel.IsEnabled>
+                <MultiBinding Converter="{StaticResource OrComparisonConverter}">
+                    <Binding Path="OutputMode" />
+                    <Binding Source="{x:Static local:OutputMode.Video}" />
+                    <Binding Source="{x:Static local:OutputMode.ImageSequence}" />
+                </MultiBinding>
+            </DockPanel.IsEnabled>
+
             <RadioButton Content="Off"
                      IsChecked="{Binding Path=CombineFramesMode, Converter={StaticResource ComparisonConverter}, ConverterParameter={x:Static local:CombineFramesMode.None}}"/>
             <RadioButton Content="Rolling average" Margin="10,0,0,0"
@@ -86,13 +103,30 @@
             <TextBox Text="{Binding CombineFramesCount}" Width="140" HorizontalAlignment="Right" IsEnabled="{Binding IsCombineFramesOperation}"
                      ToolTip="{Binding NumberOfFramesHint}"/>
         </DockPanel>
-        <DockPanel Margin="10,4,0,0" Visibility="{Binding IsTimeSliceEnabled, Converter={StaticResource BooleanToHiddenVisibility}}">
+        <DockPanel Margin="10,4,0,0">
+            <DockPanel.IsEnabled>
+                <MultiBinding Converter="{StaticResource OrComparisonConverter}">
+                    <Binding Path="OutputMode" />
+                    <Binding Source="{x:Static local:OutputMode.Video}" />
+                    <Binding Source="{x:Static local:OutputMode.ImageSequence}" />
+                    <Binding Source="{x:Static local:OutputMode.TimeSliceImage}" />
+                </MultiBinding>
+            </DockPanel.IsEnabled>
+            
             <RadioButton Content="Time slice"
                 IsChecked="{Binding Path=CombineFramesMode, Converter={StaticResource ComparisonConverter}, ConverterParameter={x:Static local:CombineFramesMode.TimeSlice}}"/>
             <RadioButton Content="Interpolated time slice" Margin="10,0,0,0"
                 IsChecked="{Binding Path=CombineFramesMode, Converter={StaticResource ComparisonConverter}, ConverterParameter={x:Static local:CombineFramesMode.TimeSliceInterpolated}}"/>
             <ComboBox ItemsSource="{Binding TimeSliceDirections}" SelectedItem="{Binding SelectedTimeSliceDirection}" Width="140" Height="30"
-                      HorizontalAlignment="Right" ToolTip="Time slice direction"/>
+                      HorizontalAlignment="Right" ToolTip="Time slice direction">
+                <ComboBox.IsEnabled>
+                    <MultiBinding Converter="{StaticResource OrComparisonConverter}">
+                        <Binding Path="CombineFramesMode" />
+                        <Binding Source="{x:Static local:CombineFramesMode.TimeSlice}" />
+                        <Binding Source="{x:Static local:CombineFramesMode.TimeSliceInterpolated}" />
+                    </MultiBinding>
+                </ComboBox.IsEnabled>
+            </ComboBox>
         </DockPanel>
 
         <TextBlock Text="Output" Margin="0,4,0,0"/>
