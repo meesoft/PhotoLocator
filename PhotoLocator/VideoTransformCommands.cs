@@ -1,4 +1,5 @@
-﻿using Microsoft.Win32;
+﻿using MapControl;
+using Microsoft.Win32;
 using PhotoLocator.BitmapOperations;
 using PhotoLocator.Helpers;
 using PhotoLocator.Metadata;
@@ -45,6 +46,7 @@ namespace PhotoLocator
         const string InputListFileName = "input.txt";
         const string TransformsFileName = "transforms.trf";
         const string SaveVideoFilter = "MP4|*.mp4";
+        const int DefaultAverageFramesCount = 20;
         readonly IMainViewModel _mainViewModel;
         readonly VideoProcessing _videoTransforms;
         Action<double>? _progressCallback;
@@ -392,21 +394,28 @@ namespace PhotoLocator
             get => _combineFramesMode;
             set
             {
+                var wasTimeSlice = _combineFramesMode is CombineFramesMode.TimeSlice or CombineFramesMode.TimeSliceInterpolated;
                 if (SetProperty(ref _combineFramesMode, value))
                 {
                     PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(IsCombineFramesOperation)));
+                    PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(NumberOfFramesHint)));
+                    var isTimeSlice = _combineFramesMode is CombineFramesMode.TimeSlice or CombineFramesMode.TimeSliceInterpolated;
+                    if (wasTimeSlice != isTimeSlice)
+                        CombineFramesCount = isTimeSlice ? 1 : DefaultAverageFramesCount;
                     UpdateOutputArgs();
                 }
             }
         }
         CombineFramesMode _combineFramesMode;
 
-        public int RollingAverageFrames
+        public int CombineFramesCount
         {
-            get => _rollingAverageFrames;
-            set => SetProperty(ref _rollingAverageFrames, Math.Max(1, value));
+            get => _combineFramesCount;
+            set => SetProperty(ref _combineFramesCount, Math.Max(1, value));
         }
-        int _rollingAverageFrames = 10;
+        int _combineFramesCount = DefaultAverageFramesCount;
+
+        public string NumberOfFramesHint => CombineFramesMode < CombineFramesMode.TimeSlice ? "Number of frames to combine" : "Time slice video loops";
 
         public static ObservableCollection<ComboBoxItem> TimeSliceDirections
         {
@@ -428,12 +437,17 @@ namespace PhotoLocator
                     foreach (var mapFunction in maps)
                     {
                         var map = TimeSliceSelectionMaps.GenerateSelectionMap(30, 20, mapFunction);
+                        map.ProcessElementWise(p => (float)Math.Round(p, 1));
                         _timeSliceDirections.Add(new ComboBoxItem
                         {
                             Content = new Image { Source = map.ToBitmapSource(96, 96, 1) },
                             Tag = mapFunction
                         });
                     }
+                    _timeSliceDirections.Add(new ComboBoxItem
+                    {
+                        Content = "Load from file"
+                    });
                 }
                 return _timeSliceDirections;
             }
@@ -447,8 +461,16 @@ namespace PhotoLocator
             {
                 if (value is null)
                     return;
-                if (SetProperty(ref _selectedTimeSliceDirection, value))
+                SetProperty(ref _selectedTimeSliceDirection, value);
+                if (value.Tag is null or FloatBitmap)
                 {
+                    var dialog = new OpenFileDialog { Filter = "Image files|*.png;*.tif;*.bmp;*.jpg" };
+                    if (dialog.ShowDialog() != true)
+                        return;
+                    using var cursor = new MouseCursorOverride();
+                    var image = GeneralFileFormatHandler.LoadFromStream(dialog.OpenFile(), Rotation.Rotate0, int.MaxValue, true, default);
+                    var selectionMap = ConvertToGrayscaleOperation.ConvertToGrayscale(new FloatBitmap(image, 1), true);
+                    value.Tag = selectionMap;
                 }
             }
         }
@@ -859,6 +881,11 @@ namespace PhotoLocator
             SelectedVideoFormat = VideoFormats.First();
             ProcessSelected.Execute(null);
         });
+        public ICommand GenerateTimeSliceVideo => new RelayCommand(o =>
+        {
+            CombineFramesMode = CombineFramesMode.TimeSlice;
+            ProcessSelected.Execute(null);
+        });
 
         internal void CropSelected(Rect cropRectangle)
         {
@@ -956,7 +983,10 @@ namespace PhotoLocator
                 else if (CombineFramesMode is CombineFramesMode.TimeSlice or CombineFramesMode.TimeSliceInterpolated)
                 {
                     var timeSlice = new TimeSliceOperation();
-                    timeSlice.SelectionMapExpression = (SelectionMapFunction)selectedTimeSliceDirection;
+                    if (selectedTimeSliceDirection is FloatBitmap selectionMap)
+                        timeSlice.SelectionMap = selectionMap;
+                    else
+                        timeSlice.SelectionMapExpression = (SelectionMapFunction)selectedTimeSliceDirection;
 
                     var runningAverage = (IsRegisterFramesChecked || !string.IsNullOrEmpty(DarkFramePath)) ?
                         new RollingAverageOperation(1, DarkFramePath, IsRegisterFramesChecked, ParseRegistrationRegion(), ct) : null;
@@ -993,11 +1023,13 @@ namespace PhotoLocator
                             throw new UserMessageException("Unable to determine frame rate, please specify manually");
                         _progressOffset = 0.5;
                         var frames = CombineFramesMode == CombineFramesMode.TimeSliceInterpolated
-                            ? timeSlice.GenerateTimeSliceVideoInterpolated()
-                            : timeSlice.GenerateTimeSliceVideo();
+                            ? timeSlice.GenerateTimeSliceVideoInterpolated(CombineFramesCount)
+                            : timeSlice.GenerateTimeSliceVideo(CombineFramesCount);
                         await _videoTransforms.RunFFmpegWithStreamInputImagesAsync(_fps, $"{OutputArguments} -y \"{outFileName}\"", frames, ProcessStdError, ct).ConfigureAwait(false);
                     }
-                    message = $"Processed {timeSlice.UsedFrames} frames and skipped {timeSlice.SkippedFrames} in {sw.Elapsed.TotalSeconds:N1}s";
+                    message = $"Processed {timeSlice.UsedFrames} frames and skipped {timeSlice.SkippedFrames} in {sw.Elapsed.TotalSeconds:N1}s.\n" +
+                        "If frames are skipped it means that the video is too big to load into memory. To reduce the number of frames loaded, " +
+                        "you can set 'Speedup by' to e.g. 4 to only use every 4th frame. You can also reduce the resolution using 'Scale to'.";
                 }
                 else if (IsLocalContrastChecked || CombineFramesMode > CombineFramesMode.None)
                 {
@@ -1008,9 +1040,9 @@ namespace PhotoLocator
                     }
                     CombineFramesOperationBase? runningAverage = CombineFramesMode switch
                     {
-                        CombineFramesMode.RollingAverage => new RollingAverageOperation(RollingAverageFrames, DarkFramePath, IsRegisterFramesChecked, ParseRegistrationRegion(), ct),
-                        CombineFramesMode.FadingAverage => new FadingAverageOperation(RollingAverageFrames, DarkFramePath, IsRegisterFramesChecked, ParseRegistrationRegion(), ct),
-                        CombineFramesMode.FadingMax => new FadingMaxOperation(RollingAverageFrames, DarkFramePath, IsRegisterFramesChecked, ParseRegistrationRegion(), ct),
+                        CombineFramesMode.RollingAverage => new RollingAverageOperation(CombineFramesCount, DarkFramePath, IsRegisterFramesChecked, ParseRegistrationRegion(), ct),
+                        CombineFramesMode.FadingAverage => new FadingAverageOperation(CombineFramesCount, DarkFramePath, IsRegisterFramesChecked, ParseRegistrationRegion(), ct),
+                        CombineFramesMode.FadingMax => new FadingMaxOperation(CombineFramesCount, DarkFramePath, IsRegisterFramesChecked, ParseRegistrationRegion(), ct),
                         _ => null,
                     };
 
@@ -1066,12 +1098,12 @@ namespace PhotoLocator
                 case OutputMode.Video:
                     if (CombineFramesMode is CombineFramesMode.TimeSlice or CombineFramesMode.TimeSliceInterpolated)
                         postfix = "timeslice";
-                    else if (CombineFramesMode == CombineFramesMode.RollingAverage && RollingAverageFrames > 1)
-                        postfix = "rolling" + RollingAverageFrames;
-                    else if (CombineFramesMode == CombineFramesMode.FadingAverage && RollingAverageFrames > 1)
-                        postfix = "fadeavg" + RollingAverageFrames;
-                    else if (CombineFramesMode == CombineFramesMode.FadingMax && RollingAverageFrames > 1)
-                        postfix = "fademax" + RollingAverageFrames;
+                    else if (CombineFramesMode == CombineFramesMode.RollingAverage && CombineFramesCount > 1)
+                        postfix = "rolling" + CombineFramesCount;
+                    else if (CombineFramesMode == CombineFramesMode.FadingAverage && CombineFramesCount > 1)
+                        postfix = "fadeavg" + CombineFramesCount;
+                    else if (CombineFramesMode == CombineFramesMode.FadingMax && CombineFramesCount > 1)
+                        postfix = "fademax" + CombineFramesCount;
                     else if (IsStabilizeChecked || IsRegisterFramesChecked && CombineFramesMode > CombineFramesMode.None)
                         postfix = "stabilized";
                     else if (allSelected.Length > 1)

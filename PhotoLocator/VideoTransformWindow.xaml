@@ -83,8 +83,8 @@
                      IsChecked="{Binding Path=CombineFramesMode, Converter={StaticResource ComparisonConverter}, ConverterParameter={x:Static local:CombineFramesMode.FadingAverage}}"/>
             <RadioButton Content="Fading max" Margin="10,0,0,0"
                      IsChecked="{Binding Path=CombineFramesMode, Converter={StaticResource ComparisonConverter}, ConverterParameter={x:Static local:CombineFramesMode.FadingMax}}"/>
-            <TextBox Text="{Binding RollingAverageFrames}" Width="140" HorizontalAlignment="Right" IsEnabled="{Binding IsCombineFramesOperation}"
-                     ToolTip="Number of frames to combine"/>
+            <TextBox Text="{Binding CombineFramesCount}" Width="140" HorizontalAlignment="Right" IsEnabled="{Binding IsCombineFramesOperation}"
+                     ToolTip="{Binding NumberOfFramesHint}"/>
         </DockPanel>
         <DockPanel Margin="10,4,0,0" Visibility="{Binding IsTimeSliceEnabled, Converter={StaticResource BooleanToHiddenVisibility}}">
             <RadioButton Content="Time slice"
@@ -92,7 +92,7 @@
             <RadioButton Content="Interpolated time slice" Margin="10,0,0,0"
                 IsChecked="{Binding Path=CombineFramesMode, Converter={StaticResource ComparisonConverter}, ConverterParameter={x:Static local:CombineFramesMode.TimeSliceInterpolated}}"/>
             <ComboBox ItemsSource="{Binding TimeSliceDirections}" SelectedItem="{Binding SelectedTimeSliceDirection}" Width="140" Height="30"
-                      HorizontalAlignment="Right"/>
+                      HorizontalAlignment="Right" ToolTip="Time slice direction"/>
         </DockPanel>
 
         <TextBlock Text="Output" Margin="0,4,0,0"/>

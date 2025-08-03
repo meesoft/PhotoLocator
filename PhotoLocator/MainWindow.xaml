@@ -182,6 +182,7 @@
                         <MenuItem Header="Extract frames" Command="{Binding VideoTransformCommands.ExtractFrames}" />
                         <MenuItem Header="Generate Average frame" Command="{Binding VideoTransformCommands.GenerateAverageFrame}" />
                         <MenuItem Header="Generate Max frame" Command="{Binding VideoTransformCommands.GenerateMaxFrame}" />
+                        <MenuItem Header="Generate time slice video" Command="{Binding VideoTransformCommands.GenerateTimeSliceVideo}" />
                     </MenuItem>
                     <Separator />
                     <MenuItem Header="Rename (F2)" Command="{Binding RenameCommand}" />
