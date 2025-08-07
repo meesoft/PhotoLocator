@@ -144,7 +144,6 @@ namespace PhotoLocator.BitmapOperations
                             }
                             else
                             {
-                                
                                 nextFrameIndex = frameIndex;
                                 nextWeight = 0; // No interpolation needed for the last frame
                             }
@@ -170,32 +169,32 @@ namespace PhotoLocator.BitmapOperations
 
             var resultPixels = new byte[_width * _height * PixelSize];
             for (int loop = 0; loop < loops; loop++)
-            for (int i = 0; i < _frames.Count; i++)
-            {
-                Parallel.For(0, _height, y =>
+                for (int i = 0; i < _frames.Count; i++)
                 {
-                    unsafe
+                    Parallel.For(0, _height, y =>
                     {
-                        int pixIndex = y * _width * PixelSize;
-                        fixed (float* selectionRow = &selectionMap.Elements[y, 0])
-                        fixed (byte* result = resultPixels)
+                        unsafe
                         {
-                            for (int x = 0; x < _width; x++)
+                            int pixIndex = y * _width * PixelSize;
+                            fixed (float* selectionRow = &selectionMap.Elements[y, 0])
+                            fixed (byte* result = resultPixels)
                             {
-                                var frame = _frames[((int)selectionRow[x] + i) % _frames.Count];
-                                result[pixIndex] = frame[pixIndex];
-                                result[pixIndex + 1] = frame[pixIndex + 1];
-                                result[pixIndex + 2] = frame[pixIndex + 2];
-                                pixIndex += PixelSize;
+                                for (int x = 0; x < _width; x++)
+                                {
+                                    var frame = _frames[((int)selectionRow[x] + i) % _frames.Count];
+                                    result[pixIndex] = frame[pixIndex];
+                                    result[pixIndex + 1] = frame[pixIndex + 1];
+                                    result[pixIndex + 2] = frame[pixIndex + 2];
+                                    pixIndex += PixelSize;
+                                }
                             }
                         }
-                    }
-                });
+                    });
 
-                var result = BitmapSource.Create(_width, _height, _dpiX, _dpiY, _pixelFormat, null, resultPixels, _width * PixelSize);
-                result.Freeze();
-                yield return result;
-            }
+                    var result = BitmapSource.Create(_width, _height, _dpiX, _dpiY, _pixelFormat, null, resultPixels, _width * PixelSize);
+                    result.Freeze();
+                    yield return result;
+                }
         }
 
         public IEnumerable<BitmapSource> GenerateTimeSliceVideoInterpolated(int loops = 1)
@@ -205,47 +204,47 @@ namespace PhotoLocator.BitmapOperations
             int maxIndex = _frames.Count - 1;
             var resultPixels = new byte[_width * _height * PixelSize];
             for (int loop = 0; loop < loops; loop++)
-            for (int i = 0; i < _frames.Count; i++)
-            {
-                Parallel.For(0, _height, y =>
+                for (int i = 0; i < _frames.Count; i++)
                 {
-                    unsafe
+                    Parallel.For(0, _height, y =>
                     {
-                        int pixIndex = y * _width * PixelSize;
-                        fixed (float* selectionRow = &selectionMap.Elements[y, 0])
-                        fixed (byte* result = resultPixels)
+                        unsafe
                         {
-                            for (int x = 0; x < _width; x++)
+                            int pixIndex = y * _width * PixelSize;
+                            fixed (float* selectionRow = &selectionMap.Elements[y, 0])
+                            fixed (byte* result = resultPixels)
                             {
-                                var selected = selectionRow[x];
-                                var frameIndex = (int)selected;
-                                int nextFrameIndex;
-                                var nextWeight = selected - frameIndex;
-                                frameIndex = (frameIndex + i) % _frames.Count; // Wrap around to allow looping through frames
-                                if (frameIndex < maxIndex)
+                                for (int x = 0; x < _width; x++)
                                 {
-                                    nextFrameIndex = frameIndex + 1;
+                                    var selected = selectionRow[x];
+                                    var frameIndex = (int)selected;
+                                    int nextFrameIndex;
+                                    var nextWeight = selected - frameIndex;
+                                    frameIndex = (frameIndex + i) % _frames.Count; // Wrap around to allow looping through frames
+                                    if (frameIndex < maxIndex)
+                                    {
+                                        nextFrameIndex = frameIndex + 1;
+                                    }
+                                    else
+                                    {
+                                        nextFrameIndex = frameIndex;
+                                        nextWeight = 0; // No interpolation needed for the last frame
+                                    }
+                                    var frame = _frames[frameIndex];
+                                    var nextFrame = _frames[nextFrameIndex];
+                                    result[pixIndex] = (byte)Math.Round(frame[pixIndex] * (1 - nextWeight) + nextFrame[pixIndex] * nextWeight);
+                                    result[pixIndex + 1] = (byte)Math.Round(frame[pixIndex + 1] * (1 - nextWeight) + nextFrame[pixIndex + 1] * nextWeight);
+                                    result[pixIndex + 2] = (byte)Math.Round(frame[pixIndex + 2] * (1 - nextWeight) + nextFrame[pixIndex + 2] * nextWeight);
+                                    pixIndex += PixelSize;
                                 }
-                                else
-                                {
-                                    nextFrameIndex = frameIndex;
-                                    nextWeight = 0; // No interpolation needed for the last frame
-                                }
-                                var frame = _frames[frameIndex];
-                                var nextFrame = _frames[nextFrameIndex];
-                                result[pixIndex] = (byte)Math.Round(frame[pixIndex] * (1 - nextWeight) + nextFrame[pixIndex] * nextWeight);
-                                result[pixIndex + 1] = (byte)Math.Round(frame[pixIndex + 1] * (1 - nextWeight) + nextFrame[pixIndex + 1] * nextWeight);
-                                result[pixIndex + 2] = (byte)Math.Round(frame[pixIndex + 2] * (1 - nextWeight) + nextFrame[pixIndex + 2] * nextWeight);
-                                pixIndex += PixelSize;
                             }
                         }
-                    }
-                });
+                    });
 
-                var result = BitmapSource.Create(_width, _height, _dpiX, _dpiY, _pixelFormat, null, resultPixels, _width * PixelSize);
-                result.Freeze();
-                yield return result;
-            }
+                    var result = BitmapSource.Create(_width, _height, _dpiX, _dpiY, _pixelFormat, null, resultPixels, _width * PixelSize);
+                    result.Freeze();
+                    yield return result;
+                }
         }
     }
 }

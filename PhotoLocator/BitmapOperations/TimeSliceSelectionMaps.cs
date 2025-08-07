@@ -27,10 +27,12 @@ namespace PhotoLocator.BitmapOperations
         public static FloatBitmap GenerateSelectionMap(int width, int height, SelectionMapFunction expression)
         {
             var selectionMap = new FloatBitmap(width, height, 1);
+            double xDivisor = Math.Max(1, width - 1);
+            double yDivisor = Math.Max(1, height - 1);
             Parallel.For(0, height, y =>
             {
                 for (int x = 0; x < width; x++)
-                    selectionMap.Elements[y, x] = (float)expression(x / (double)(width - 1), y / (double)(height - 1));
+                    selectionMap.Elements[y, x] = (float)expression(x / xDivisor, y / yDivisor);
             });
             return selectionMap;
         }
