@@ -82,7 +82,7 @@
             <Button Content="Setup" Command="{Binding SetupLocalContrastCommand}" Width="80" IsEnabled="{Binding IsLocalContrastChecked}" />
         </StackPanel>
 
-        <TextBlock Text="Combine frames:" />
+        <TextBlock Text="Combine frames" />
         <DockPanel Margin="10,4,0,0">
             <DockPanel.IsEnabled>
                 <MultiBinding Converter="{StaticResource OrComparisonConverter}">

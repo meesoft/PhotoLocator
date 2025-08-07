@@ -428,7 +428,7 @@ namespace PhotoLocator
                     foreach (var mapFunction in maps)
                     {
                         var map = TimeSliceSelectionMaps.GenerateSelectionMap(30, 20, mapFunction);
-                        map.ProcessElementWise(p => (float)Math.Round(p, 1));
+                        //map.ProcessElementWise(p => (float)Math.Round(p, 1));
                         _timeSliceDirections.Add(new ComboBoxItem
                         {
                             Content = new Image { Source = map.ToBitmapSource(96, 96, 1) },
@@ -452,7 +452,6 @@ namespace PhotoLocator
             {
                 if (value is null)
                     return;
-                SetProperty(ref _selectedTimeSliceDirection, value);
                 if (value.Tag is null or FloatBitmap)
                 {
                     var dialog = new OpenFileDialog { Filter = "Image files|*.png;*.tif;*.bmp;*.jpg" };
@@ -463,10 +462,10 @@ namespace PhotoLocator
                     var selectionMap = ConvertToGrayscaleOperation.ConvertToGrayscale(new FloatBitmap(image, 1), true);
                     value.Tag = selectionMap;
                 }
+                SetProperty(ref _selectedTimeSliceDirection, value);
             }
         }
         ComboBoxItem _selectedTimeSliceDirection;
-
 
         public OutputMode OutputMode
         {
