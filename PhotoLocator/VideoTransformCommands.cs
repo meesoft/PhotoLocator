@@ -799,7 +799,7 @@ namespace PhotoLocator
 
             var dlg = new SaveFileDialog();
             dlg.InitialDirectory = Path.GetDirectoryName(allSelected[0].FullPath);
-            dlg.FileName = Path.GetFileNameWithoutExtension(allSelected[0].Name) + "[fade].mp4";
+            dlg.FileName = Path.GetFileNameWithoutExtension(allSelected[0].Name) + "[combined].mp4";
             dlg.Filter = SaveVideoFilter;
             dlg.DefaultExt = ".mp4";
             dlg.CheckPathExists = false;
