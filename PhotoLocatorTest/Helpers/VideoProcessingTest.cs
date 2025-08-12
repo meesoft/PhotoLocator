@@ -7,7 +7,7 @@ namespace PhotoLocator.Helpers
     [TestClass]
     public class VideoProcessingTest
     {
-        const string FFmpegPath = @"ffmpeg\ffmpeg.exe";
+        public const string FFmpegPath = @"ffmpeg\ffmpeg.exe";
         const string SourceVideoPath = @"TestData\Test.mp4";
 
         [TestMethod]

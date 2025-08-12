@@ -13,6 +13,7 @@ using System.IO;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
@@ -27,14 +28,17 @@ namespace PhotoLocator
         ImageSequence,
         Average,
         Max,
+        TimeSliceImage,
     }
 
-    public enum RollingAverageMode
+    public enum CombineFramesMode
     {
         None,
         RollingAverage,
         FadingAverage,
         FadingMax,
+        TimeSlice,
+        TimeSliceInterpolated,
     }
 
     public class VideoTransformCommands : INotifyPropertyChanged
@@ -42,6 +46,7 @@ namespace PhotoLocator
         const string InputListFileName = "input.txt";
         const string TransformsFileName = "transforms.trf";
         const string SaveVideoFilter = "MP4|*.mp4";
+        const int DefaultAverageFramesCount = 20;
         readonly IMainViewModel _mainViewModel;
         readonly VideoProcessing _videoTransforms;
         Action<double>? _progressCallback;
@@ -55,6 +60,7 @@ namespace PhotoLocator
         {
             _selectedVideoFormat = VideoFormats[DefaultVideoFormatIndex];
             _selectedEffect = Effects[0];
+            _selectedTimeSliceDirection = TimeSliceDirections[0];
             _mainViewModel = mainViewModel;
             _videoTransforms = new VideoProcessing(mainViewModel.Settings);
             UpdateProcessArgs();
@@ -339,9 +345,6 @@ namespace PhotoLocator
         }
         string _stabilizeArguments = string.Empty;
 
-        public bool IsFrameProcessingEnabled => OutputMode == OutputMode.Video && SelectedVideoFormat != VideoFormats[CopyVideoFormatIndex]
-            || OutputMode == OutputMode.ImageSequence;
-
         public bool IsLocalContrastChecked
         {
             get => _localContrastSetup is not null;
@@ -377,26 +380,92 @@ namespace PhotoLocator
         });
         LocalContrastViewModel? _localContrastSetup;
 
-        public RollingAverageMode RollingAverageMode
+        public CombineFramesMode CombineFramesMode
         {
-            get => _rollingAverageMode;
+            get => _combineFramesMode;
             set
             {
-                if (SetProperty(ref _rollingAverageMode, value))
+                var wasTimeSlice = _combineFramesMode is CombineFramesMode.TimeSlice or CombineFramesMode.TimeSliceInterpolated;
+                if (SetProperty(ref _combineFramesMode, value))
                 {
                     PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(IsCombineFramesOperation)));
+                    PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(NumberOfFramesHint)));
+                    var isTimeSlice = _combineFramesMode is CombineFramesMode.TimeSlice or CombineFramesMode.TimeSliceInterpolated;
+                    if (wasTimeSlice != isTimeSlice)
+                        CombineFramesCount = isTimeSlice ? 1 : DefaultAverageFramesCount;
                     UpdateOutputArgs();
                 }
             }
         }
-        RollingAverageMode _rollingAverageMode;
+        CombineFramesMode _combineFramesMode;
 
-        public int RollingAverageFrames
+        public int CombineFramesCount
         {
-            get => _rollingAverageFrames;
-            set => SetProperty(ref _rollingAverageFrames, Math.Max(1, value));
+            get => _combineFramesCount;
+            set => SetProperty(ref _combineFramesCount, Math.Max(1, value));
         }
-        int _rollingAverageFrames = 10;
+        int _combineFramesCount = DefaultAverageFramesCount;
+
+        public string NumberOfFramesHint => CombineFramesMode < CombineFramesMode.TimeSlice ? "Number of frames to combine" : "Time slice video loops";
+
+        public static ObservableCollection<ComboBoxItem> TimeSliceDirections
+        {
+            get
+            {
+                if (_timeSliceDirections is null)
+                {
+                    var maps = new SelectionMapFunction[] {
+                        TimeSliceSelectionMaps.LeftToRight,
+                        TimeSliceSelectionMaps.RightToLeft,
+                        TimeSliceSelectionMaps.TopToBottom,
+                        TimeSliceSelectionMaps.BottomToTop,
+                        TimeSliceSelectionMaps.TopLeftToBottomRight,
+                        TimeSliceSelectionMaps.TopRightToBottomLeft,
+                        TimeSliceSelectionMaps.Ellipse,
+                        TimeSliceSelectionMaps.Clock,
+                    };
+                    _timeSliceDirections = [];
+                    foreach (var mapFunction in maps)
+                    {
+                        var map = TimeSliceSelectionMaps.GenerateSelectionMap(30, 20, mapFunction);
+                        //map.ProcessElementWise(p => (float)Math.Round(p, 1));
+                        _timeSliceDirections.Add(new ComboBoxItem
+                        {
+                            Content = new Image { Source = map.ToBitmapSource(96, 96, 1) },
+                            Tag = mapFunction
+                        });
+                    }
+                    _timeSliceDirections.Add(new ComboBoxItem
+                    {
+                        Content = "Load from file"
+                    });
+                }
+                return _timeSliceDirections;
+            }
+        }
+        static ObservableCollection<ComboBoxItem>? _timeSliceDirections;
+
+        public ComboBoxItem SelectedTimeSliceDirection
+        {
+            get => _selectedTimeSliceDirection;
+            set
+            {
+                if (value is null)
+                    return;
+                if (value.Tag is null or FloatBitmap)
+                {
+                    var dialog = new OpenFileDialog { Filter = "Image files|*.png;*.tif;*.bmp;*.jpg" };
+                    if (dialog.ShowDialog() != true)
+                        return;
+                    using var cursor = new MouseCursorOverride();
+                    var image = GeneralFileFormatHandler.LoadFromStream(dialog.OpenFile(), Rotation.Rotate0, int.MaxValue, true, default);
+                    var selectionMap = ConvertToGrayscaleOperation.ConvertToGrayscale(new FloatBitmap(image, 1), true);
+                    value.Tag = selectionMap;
+                }
+                SetProperty(ref _selectedTimeSliceDirection, value);
+            }
+        }
+        ComboBoxItem _selectedTimeSliceDirection;
 
         public OutputMode OutputMode
         {
@@ -405,10 +474,12 @@ namespace PhotoLocator
             {
                 if (SetProperty(ref _outputMode, value))
                 {
+                    if (value is OutputMode.TimeSliceImage && !(CombineFramesMode is CombineFramesMode.TimeSlice or CombineFramesMode.TimeSliceInterpolated))
+                        CombineFramesMode = CombineFramesMode.TimeSlice;
+
                     UpdateProcessArgs();
                     UpdateOutputArgs();
                     PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(IsCombineFramesOperation)));
-                    PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(IsFrameProcessingEnabled)));
                 }
             }
         }
@@ -425,7 +496,11 @@ namespace PhotoLocator
                 {
                     UpdateProcessArgs();
                     UpdateOutputArgs();
-                    PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(IsFrameProcessingEnabled)));
+                    if (value == VideoFormats[CopyVideoFormatIndex])
+                    {
+                        IsLocalContrastChecked = false;
+                        CombineFramesMode = CombineFramesMode.None;
+                    }
                 }
             }
         }
@@ -480,7 +555,7 @@ namespace PhotoLocator
         }
         bool _isRemoveAudioChecked;
 
-        public bool IsCombineFramesOperation => RollingAverageMode > RollingAverageMode.None || OutputMode is OutputMode.Average or OutputMode.Max;
+        public bool IsCombineFramesOperation => CombineFramesMode > CombineFramesMode.None || OutputMode is OutputMode.Average or OutputMode.Max or OutputMode.TimeSliceImage;
 
         public bool IsRegisterFramesChecked
         {
@@ -614,12 +689,12 @@ namespace PhotoLocator
 
         private void UpdateOutputArgs()
         {
-            if (OutputMode == OutputMode.Video)
+            if (OutputMode is OutputMode.Video)
             {
                 var args = new List<string>();
                 if (IsRemoveAudioChecked)
                     args.Add("-an");
-                else if ((IsLocalContrastChecked || RollingAverageMode > RollingAverageMode.None) && HasSingleInput && !HasOnlyImageInput)
+                else if ((IsLocalContrastChecked || CombineFramesMode > CombineFramesMode.None) && HasSingleInput && !HasOnlyImageInput)
                 {
                     if (!string.IsNullOrEmpty(SkipTo))
                         args.Add($"-ss {SkipTo}");
@@ -673,7 +748,8 @@ namespace PhotoLocator
 
         private bool IsAnyProcessingSelected()
         {
-            return IsCropChecked || IsScaleChecked || IsRotateChecked || IsStabilizeChecked || IsSpeedupChecked || IsLocalContrastChecked || SelectedEffect?.Tag is not null;
+            return IsCropChecked || IsScaleChecked || IsRotateChecked || IsStabilizeChecked || IsSpeedupChecked || IsLocalContrastChecked || 
+                IsCombineFramesOperation || SelectedEffect?.Tag is not null;
         }
 
         public ICommand CombineFade => new RelayCommand(async o =>
@@ -723,7 +799,7 @@ namespace PhotoLocator
 
             var dlg = new SaveFileDialog();
             dlg.InitialDirectory = Path.GetDirectoryName(allSelected[0].FullPath);
-            dlg.FileName = Path.GetFileNameWithoutExtension(allSelected[0].Name) + "[fade].mp4";
+            dlg.FileName = Path.GetFileNameWithoutExtension(allSelected[0].Name) + "[combined].mp4";
             dlg.Filter = SaveVideoFilter;
             dlg.DefaultExt = ".mp4";
             dlg.CheckPathExists = false;
@@ -789,6 +865,11 @@ namespace PhotoLocator
             SelectedVideoFormat = VideoFormats.First();
             ProcessSelected.Execute(null);
         });
+        public ICommand GenerateTimeSliceVideo => new RelayCommand(o =>
+        {
+            CombineFramesMode = CombineFramesMode.TimeSlice;
+            ProcessSelected.Execute(null);
+        });
 
         internal void CropSelected(Rect cropRectangle)
         {
@@ -839,6 +920,7 @@ namespace PhotoLocator
 
             await using var pause = _mainViewModel.PauseFileSystemWatcher();
             string? message = null;
+            var selectedTimeSliceDirection = SelectedTimeSliceDirection.Tag;
             await _mainViewModel.RunProcessWithProgressBarAsync(async (progressCallback, ct) =>
             {
                 var sw = Stopwatch.StartNew();
@@ -856,77 +938,19 @@ namespace PhotoLocator
                     await File.WriteAllLinesAsync(InputListFileName, allSelected.Select(f => $"file '{f.Name}'"), ct).ConfigureAwait(false);
 
                 if (IsStabilizeChecked)
-                {
-                    _progressScale = 0.5;
-                    File.Delete(TransformsFileName);
-                    await _videoTransforms.RunFFmpegAsync($"{InputArguments} {StabilizeArguments}", ProcessStdError, ct).ConfigureAwait(false);
-                    _progressOffset = 0.5;
-                    _progressCallback?.Invoke(0.5);
-                }
+                    await RunStabilizePreProcessingAsync(ct).ConfigureAwait(false);
 
                 Directory.CreateDirectory(Path.GetDirectoryName(outFileName)!);
-                var args = $"{InputArguments} {ProcessArguments} {OutputArguments}";
                 if (OutputMode is OutputMode.Average)
-                {
-                    using var process = new AverageFramesOperation(DarkFramePath, IsRegisterFramesChecked, ParseRegistrationRegion(), ct);
-                    await _videoTransforms.RunFFmpegWithStreamOutputImagesAsync(args, process.ProcessImage, ProcessStdError, ct).ConfigureAwait(false);
-                    if (process.Supports16BitResult() && Path.GetExtension(outFileName).ToUpperInvariant() is ".PNG" or ".TIF" or ".TIFF" or ".JXR")
-                        GeneralFileFormatHandler.SaveToFile(process.GetResult16(), outFileName, CreateImageMetadata());
-                    else
-                        GeneralFileFormatHandler.SaveToFile(process.GetResult8(), outFileName, CreateImageMetadata(), _mainViewModel.Settings.JpegQuality);
-                    message = $"Processed {process.ProcessedImages} frames in {sw.Elapsed.TotalSeconds:N1}s";
-                }
+                    message = await RunAverageProcessingAsync(outFileName, sw, ct).ConfigureAwait(false);
                 else if (OutputMode is OutputMode.Max)
-                {
-                    using var process = new MaxFramesOperation(DarkFramePath, IsRegisterFramesChecked, ParseRegistrationRegion(), ct);
-                    await _videoTransforms.RunFFmpegWithStreamOutputImagesAsync(args, process.ProcessImage, ProcessStdError, ct).ConfigureAwait(false);
-                    GeneralFileFormatHandler.SaveToFile(process.GetResult8(), outFileName, CreateImageMetadata(), _mainViewModel.Settings.JpegQuality);
-                    message = $"Processed {process.ProcessedImages} frames in {sw.Elapsed.TotalSeconds:N1}s";
-                }
-                else if (IsLocalContrastChecked || RollingAverageMode > RollingAverageMode.None)
-                {
-                    if (!string.IsNullOrEmpty(FrameRate))
-                    {
-                        _fps = double.Parse(FrameRate, CultureInfo.InvariantCulture);
-                        _hasFps = true;
-                    }
-                    CombineFramesOperationBase? runningAverage = RollingAverageMode switch
-                    {
-                        RollingAverageMode.RollingAverage => new RollingAverageOperation(RollingAverageFrames, DarkFramePath, IsRegisterFramesChecked, ParseRegistrationRegion(), ct),
-                        RollingAverageMode.FadingAverage => new FadingAverageOperation(RollingAverageFrames, DarkFramePath, IsRegisterFramesChecked, ParseRegistrationRegion(), ct),
-                        RollingAverageMode.FadingMax => new FadingMaxOperation(RollingAverageFrames, DarkFramePath, IsRegisterFramesChecked, ParseRegistrationRegion(), ct),
-                        _ => null,
-                    };
-
-                    using var frameEnumerator = new QueueEnumerable<BitmapSource>();
-                    var readTask = _videoTransforms.RunFFmpegWithStreamOutputImagesAsync($"{InputArguments} {ProcessArguments}", 
-                        source =>
-                        {
-                            if (runningAverage is not null)
-                            {
-                                runningAverage.ProcessImage(source);
-                                if (_localContrastSetup is null || _localContrastSetup.IsNoOperation)
-                                {
-                                    frameEnumerator.AddItem(runningAverage.GetResult8());
-                                    return;
-                                }
-                                source = runningAverage.GetResult16();
-                            }
-                            frameEnumerator.AddItem(_localContrastSetup!.ApplyOperations(source));
-                        }, ProcessStdError, ct);
-                    await Task.WhenAny(frameEnumerator.GotFirst, Task.Delay(TimeSpan.FromSeconds(10), ct)).ConfigureAwait(false);
-                    if (!_hasFps)
-                        throw new UserMessageException("Unable to determine frame rate, please specify manually");
-                    var writeTask = _videoTransforms.RunFFmpegWithStreamInputImagesAsync(_fps, $"{OutputArguments} -y \"{outFileName}\"", frameEnumerator, 
-                        stdError => Log.Write("Writer: " + stdError), ct);
-                    await await Task.WhenAny(readTask, writeTask).ConfigureAwait(false); // Write task is not expected to finish here, only if it fails
-                    frameEnumerator.Break();
-                    await writeTask.ConfigureAwait(false);
-                }
+                    message = await RunMaxProcessingAsync(outFileName, sw, ct).ConfigureAwait(false);
+                else if (CombineFramesMode is CombineFramesMode.TimeSlice or CombineFramesMode.TimeSliceInterpolated)
+                    message = await RunTimeSliceProcessingAsync(outFileName, selectedTimeSliceDirection, sw, ct).ConfigureAwait(false);
+                else if (IsLocalContrastChecked || CombineFramesMode > CombineFramesMode.None)
+                    await RunLocalFrameProcessingAsync(outFileName, ct).ConfigureAwait(false);
                 else
-                {
-                    await _videoTransforms.RunFFmpegAsync(args + $" -y \"{outFileName}\"", ProcessStdError, ct).ConfigureAwait(false);
-                }
+                    await _videoTransforms.RunFFmpegAsync($"{InputArguments} {ProcessArguments} {OutputArguments} -y \"{outFileName}\"", ProcessStdError, ct).ConfigureAwait(false);
                 _progressCallback?.Invoke(1);
                 if (allSelected.Length > 1)
                     File.Delete(InputListFileName);
@@ -939,22 +963,144 @@ namespace PhotoLocator
                 await _mainViewModel.AddOrUpdateItemAsync(outFileName, OutputMode == OutputMode.ImageSequence, true);
             if (!string.IsNullOrEmpty(message))
                 MessageBox.Show(App.Current.MainWindow, message);
-        });
+        });               
 
-        private SaveFileDialog SetupSaveFileDialog(PictureItemViewModel[] allSelected, string inPath)
+        async Task RunStabilizePreProcessingAsync(CancellationToken ct)
+        {
+            _progressScale = 0.5;
+            File.Delete(TransformsFileName);
+            await _videoTransforms.RunFFmpegAsync($"{InputArguments} {StabilizeArguments}", ProcessStdError, ct).ConfigureAwait(false);
+            _progressOffset = 0.5;
+        }
+
+        async Task<string> RunAverageProcessingAsync(string outFileName, Stopwatch sw, CancellationToken ct)
+        {
+            using var process = new AverageFramesOperation(DarkFramePath, IsRegisterFramesChecked, ParseRegistrationRegion(), ct);
+            await _videoTransforms.RunFFmpegWithStreamOutputImagesAsync($"{InputArguments} {ProcessArguments}", process.ProcessImage, ProcessStdError, ct).ConfigureAwait(false);
+            if (process.Supports16BitResult() && Path.GetExtension(outFileName).ToUpperInvariant() is ".PNG" or ".TIF" or ".TIFF" or ".JXR")
+                GeneralFileFormatHandler.SaveToFile(process.GetResult16(), outFileName, CreateImageMetadata());
+            else
+                GeneralFileFormatHandler.SaveToFile(process.GetResult8(), outFileName, CreateImageMetadata(), _mainViewModel.Settings.JpegQuality);
+            return $"Processed {process.ProcessedImages} frames in {sw.Elapsed.TotalSeconds:N1}s";
+        }
+
+        async Task<string> RunMaxProcessingAsync(string outFileName, Stopwatch sw, CancellationToken ct)
+        {
+            using var process = new MaxFramesOperation(DarkFramePath, IsRegisterFramesChecked, ParseRegistrationRegion(), ct);
+            await _videoTransforms.RunFFmpegWithStreamOutputImagesAsync($"{InputArguments} {ProcessArguments}", process.ProcessImage, ProcessStdError, ct).ConfigureAwait(false);
+            GeneralFileFormatHandler.SaveToFile(process.GetResult8(), outFileName, CreateImageMetadata(), _mainViewModel.Settings.JpegQuality);
+            return $"Processed {process.ProcessedImages} frames in {sw.Elapsed.TotalSeconds:N1}s";
+        }
+
+        async Task<string> RunTimeSliceProcessingAsync(string outFileName, object selectedTimeSliceDirection, Stopwatch sw, CancellationToken ct)
+        {
+            var timeSlice = new TimeSliceOperation();
+            if (selectedTimeSliceDirection is FloatBitmap selectionMap)
+                timeSlice.SelectionMap = selectionMap;
+            else
+                timeSlice.SelectionMapExpression = (SelectionMapFunction)selectedTimeSliceDirection;
+
+            using var runningAverage = (IsRegisterFramesChecked || !string.IsNullOrEmpty(DarkFramePath)) ?
+                new RollingAverageOperation(1, DarkFramePath, IsRegisterFramesChecked, ParseRegistrationRegion(), ct) : null;
+
+            if (!string.IsNullOrEmpty(FrameRate))
+            {
+                _fps = double.Parse(FrameRate, CultureInfo.InvariantCulture);
+                _hasFps = true;
+            }
+            if (OutputMode is OutputMode.Video)
+                _progressScale = 0.5;
+            await _videoTransforms.RunFFmpegWithStreamOutputImagesAsync($"{InputArguments} {ProcessArguments}", frame =>
+            {
+                if (runningAverage is not null)
+                {
+                    runningAverage.ProcessImage(frame);
+                    frame = runningAverage.GetResult8();
+                }
+                if (_localContrastSetup is not null && !_localContrastSetup.IsNoOperation)
+                    frame = _localContrastSetup.ApplyOperations(frame);
+                timeSlice.AddFrame(frame);
+            }, ProcessStdError, ct).ConfigureAwait(false);
+
+            if (OutputMode is OutputMode.TimeSliceImage)
+            {
+                var timeSliceImage = CombineFramesMode == CombineFramesMode.TimeSliceInterpolated
+                    ? timeSlice.GenerateTimeSliceImageInterpolated()
+                    : timeSlice.GenerateTimeSliceImage();
+                GeneralFileFormatHandler.SaveToFile(timeSliceImage, outFileName, CreateImageMetadata(), _mainViewModel.Settings.JpegQuality);
+            }
+            else
+            {
+                if (!_hasFps)
+                    throw new UserMessageException("Unable to determine frame rate, please specify manually");
+                _progressOffset = 0.5;
+                var frames = CombineFramesMode == CombineFramesMode.TimeSliceInterpolated
+                    ? timeSlice.GenerateTimeSliceVideoInterpolated(CombineFramesCount)
+                    : timeSlice.GenerateTimeSliceVideo(CombineFramesCount);
+                await _videoTransforms.RunFFmpegWithStreamInputImagesAsync(_fps, $"{OutputArguments} -y \"{outFileName}\"", frames, ProcessStdError, ct).ConfigureAwait(false);
+            }
+            return $"Processed {timeSlice.UsedFrames} frames and skipped {timeSlice.SkippedFrames} in {sw.Elapsed.TotalSeconds:N1}s.\n" +
+                "If frames are skipped it means that the video is too big to load into memory. To reduce the number of frames loaded, " +
+                "you can set 'Speedup by' to e.g. 4 to only use every 4th frame. You can also reduce the resolution using 'Scale to'.";
+        }
+
+        async Task RunLocalFrameProcessingAsync(string outFileName, CancellationToken ct)
+        {
+            if (!string.IsNullOrEmpty(FrameRate))
+            {
+                _fps = double.Parse(FrameRate, CultureInfo.InvariantCulture);
+                _hasFps = true;
+            }
+            using CombineFramesOperationBase? runningAverage = CombineFramesMode switch
+            {
+                CombineFramesMode.RollingAverage => new RollingAverageOperation(CombineFramesCount, DarkFramePath, IsRegisterFramesChecked, ParseRegistrationRegion(), ct),
+                CombineFramesMode.FadingAverage => new FadingAverageOperation(CombineFramesCount, DarkFramePath, IsRegisterFramesChecked, ParseRegistrationRegion(), ct),
+                CombineFramesMode.FadingMax => new FadingMaxOperation(CombineFramesCount, DarkFramePath, IsRegisterFramesChecked, ParseRegistrationRegion(), ct),
+                _ => null,
+            };
+
+            using var frameEnumerator = new QueueEnumerable<BitmapSource>();
+            var readTask = _videoTransforms.RunFFmpegWithStreamOutputImagesAsync($"{InputArguments} {ProcessArguments}",
+                source =>
+                {
+                    if (runningAverage is not null)
+                    {
+                        runningAverage.ProcessImage(source);
+                        if (_localContrastSetup is null || _localContrastSetup.IsNoOperation)
+                        {
+                            frameEnumerator.AddItem(runningAverage.GetResult8());
+                            return;
+                        }
+                        source = runningAverage.GetResult16();
+                    }
+                    frameEnumerator.AddItem(_localContrastSetup!.ApplyOperations(source));
+                }, ProcessStdError, ct);
+            await Task.WhenAny(frameEnumerator.GotFirst, Task.Delay(TimeSpan.FromSeconds(10), ct)).ConfigureAwait(false);
+            if (!_hasFps)
+                throw new UserMessageException("Unable to determine frame rate, please specify manually");
+            var writeTask = _videoTransforms.RunFFmpegWithStreamInputImagesAsync(_fps, $"{OutputArguments} -y \"{outFileName}\"", frameEnumerator,
+                stdError => Log.Write("Writer: " + stdError), ct);
+            await await Task.WhenAny(readTask, writeTask).ConfigureAwait(false); // Write task is not expected to finish here, only if it fails
+            frameEnumerator.Break();
+            await writeTask.ConfigureAwait(false);
+        }
+
+        SaveFileDialog SetupSaveFileDialog(PictureItemViewModel[] allSelected, string inPath)
         {
             string postfix, ext;
             var dlg = new SaveFileDialog();
             switch (OutputMode)
             {
                 case OutputMode.Video:
-                    if (RollingAverageMode == RollingAverageMode.RollingAverage && RollingAverageFrames > 1)
-                        postfix = "rolling" + RollingAverageFrames;
-                    else if (RollingAverageMode == RollingAverageMode.FadingAverage && RollingAverageFrames > 1)
-                        postfix = "fadeavg" + RollingAverageFrames;
-                    else if (RollingAverageMode == RollingAverageMode.FadingMax && RollingAverageFrames > 1)
-                        postfix = "fademax" + RollingAverageFrames;
-                    else if (IsStabilizeChecked || IsRegisterFramesChecked && RollingAverageMode > RollingAverageMode.None)
+                    if (CombineFramesMode is CombineFramesMode.TimeSlice or CombineFramesMode.TimeSliceInterpolated)
+                        postfix = "timeslice";
+                    else if (CombineFramesMode == CombineFramesMode.RollingAverage && CombineFramesCount > 1)
+                        postfix = "rolling" + CombineFramesCount;
+                    else if (CombineFramesMode == CombineFramesMode.FadingAverage && CombineFramesCount > 1)
+                        postfix = "fadeavg" + CombineFramesCount;
+                    else if (CombineFramesMode == CombineFramesMode.FadingMax && CombineFramesCount > 1)
+                        postfix = "fademax" + CombineFramesCount;
+                    else if (IsStabilizeChecked || IsRegisterFramesChecked && CombineFramesMode > CombineFramesMode.None)
                         postfix = "stabilized";
                     else if (allSelected.Length > 1)
                         postfix = "combined";
@@ -979,6 +1125,12 @@ namespace PhotoLocator
                     dlg.FilterIndex = 2;
                     ext = ".png";
                     break;
+                case OutputMode.TimeSliceImage:
+                    postfix = "timeslice";
+                    dlg.Filter = GeneralFileFormatHandler.SaveImageFilter;
+                    dlg.FilterIndex = 1;
+                    ext = ".jpg";
+                    break;
                 default:
                     throw new ArgumentException("Unknown output mode");
             }
@@ -989,7 +1141,7 @@ namespace PhotoLocator
             return dlg;
         }
 
-        private BitmapMetadata? CreateImageMetadata()
+        BitmapMetadata? CreateImageMetadata()
         {
             var firstSelected = _mainViewModel.GetSelectedItems(true).First();
             return ExifHandler.EncodePngMetadata(
