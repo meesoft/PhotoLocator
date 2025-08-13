@@ -18,7 +18,7 @@ namespace PhotoLocator.BitmapOperations
 
             if (!File.Exists(VideoProcessingTest.FFmpegPath))
                 Assert.Inconclusive("FFmpegPath not found");
-            if (images.Any(f => !File.Exists(f)))
+            if (images.Length == 0 || images.Any(f => !File.Exists(f)))
                 Assert.Inconclusive("Input images not found");
 
             var settings = new ObservableSettings() { FFmpegPath = VideoProcessingTest.FFmpegPath };
