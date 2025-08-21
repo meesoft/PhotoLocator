@@ -962,15 +962,15 @@ namespace PhotoLocator
                     if (SelectedItem is null || CropControl is null || PreviewPictureSource  is null || o is not true &&
                         MessageBox.Show("Crop to selection?", "Crop", MessageBoxButton.OKCancel, MessageBoxImage.Question) != MessageBoxResult.OK)
                         return;
-                    if (SelectedItem.IsVideo)
-                        VideoTransformCommandsShared.CropSelected(CropControl.CropRectangle);
-                    else
-                        await new JpegTransformCommands(this).CropSelectedItemAsync(PreviewPictureSource, CropControl.CropRectangle);
                 }
                 finally
                 {
                     IsCropControlVisible = false;
                 }
+                if (SelectedItem.IsVideo)
+                    VideoTransformCommandsShared.CropSelected(CropControl.CropRectangle);
+                else
+                    await new JpegTransformCommands(this).CropSelectedItemAsync(PreviewPictureSource, CropControl.CropRectangle);
             }
             else
             {
