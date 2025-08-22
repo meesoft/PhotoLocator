@@ -50,17 +50,19 @@ namespace PhotoLocator
 
         public async Task CropSelectedItemAsync(BitmapSource pictureSource, Rect cropRectangle)
         {
-            var SelectedItem = _mainViewModel.SelectedItem!;
+            var selectedItem = _mainViewModel.SelectedItem;
+            if (selectedItem is null || !selectedItem.IsFile)
+                return;
             string sourceFileName, targetFileName;
-            if (JpegTransformations.IsFileTypeSupported(SelectedItem.Name))
+            if (JpegTransformations.IsFileTypeSupported(selectedItem.Name))
             {
-                sourceFileName = SelectedItem.FullPath;
-                targetFileName = SelectedItem.GetProcessedFileName();
-                SelectedItem.Orientation = Rotation.Rotate0;
+                sourceFileName = selectedItem.FullPath;
+                targetFileName = selectedItem.GetProcessedFileName();
+                selectedItem.Orientation = Rotation.Rotate0;
             }
             else
             {
-                sourceFileName = targetFileName = Path.ChangeExtension(SelectedItem.GetProcessedFileName(), "jpg");
+                sourceFileName = targetFileName = Path.ChangeExtension(selectedItem.GetProcessedFileName(), "jpg");
                 if (File.Exists(sourceFileName) && MessageBox.Show($"Do you wish to overwrite the file '{Path.GetFileName(sourceFileName)}'?", "Crop", MessageBoxButton.OKCancel, MessageBoxImage.Question) != MessageBoxResult.OK)
                     return;
             }
@@ -68,9 +70,9 @@ namespace PhotoLocator
             {
                 progressCallback(-1);
                 await using var pause = _mainViewModel.PauseFileSystemWatcher();
-                if (sourceFileName != SelectedItem.FullPath)
+                if (sourceFileName != selectedItem.FullPath)
                 {
-                    using var file = await FileHelpers.OpenFileWithRetryAsync(SelectedItem.FullPath, ct);
+                    using var file = await FileHelpers.OpenFileWithRetryAsync(selectedItem.FullPath, ct);
                     await Task.Run(() =>
                     {
                         BitmapMetadata? metadata = null;
@@ -104,7 +106,7 @@ namespace PhotoLocator
             window.DataContext = localContrastViewModel;
             try
             {
-                if (window.ShowDialog() != true)
+                if (window.ShowDialog() is not true)
                     return;
             }
             finally
@@ -154,7 +156,7 @@ namespace PhotoLocator
             dlg.FileName = Path.GetFileNameWithoutExtension(selectedItem.Name) + ".jpg";
             dlg.Filter = GeneralFileFormatHandler.SaveImageFilter;
             dlg.DefaultExt = "jpg";
-            if (dlg.ShowDialog() != true)
+            if (dlg.ShowDialog() is not true)
                 return;
             using (new MouseCursorOverride(Cursors.AppStarting))
             {

@@ -393,7 +393,7 @@ namespace PhotoLocator
                 registrySettings);
             autoTagWin.Owner = App.Current.MainWindow;
             autoTagWin.DataContext = autoTagViewModel;
-            if (autoTagWin.ShowDialog() == true)
+            if (autoTagWin.ShowDialog() is true)
             {
                 UpdatePushpins();
                 UpdatePoints();
@@ -579,7 +579,7 @@ namespace PhotoLocator
             var pictures = Items.Where(item => item.IsFile).ToList();
             if (pictures.Count == 0)
                 return;
-            var slideShowWin = new SlideShowWindow(pictures, SelectedItem?.IsFile == true ? SelectedItem : Items.First(),
+            var slideShowWin = new SlideShowWindow(pictures, SelectedItem?.IsFile is true ? SelectedItem : Items.First(),
                 GetSelectedMapLayerName?.Invoke(), Settings);
             slideShowWin.Owner = App.Current.MainWindow;
             slideShowWin.ShowDialog();
@@ -603,7 +603,7 @@ namespace PhotoLocator
                     Settings.ResamplingOptions = settingsWin.Settings.ResamplingOptions;
             };
             settingsWin.DataContext = settingsWin.Settings;
-            if (settingsWin.ShowDialog() == true)
+            if (settingsWin.ShowDialog() is true)
             {
                 bool refresh =
                     settingsWin.Settings.PhotoFileExtensions != previousPhotoFileExtensions ||
@@ -957,20 +957,18 @@ namespace PhotoLocator
         {
             if (IsCropControlVisible)
             {
-                try
-                {
-                    if (SelectedItem is null || CropControl is null || PreviewPictureSource  is null || o is not true &&
-                        MessageBox.Show("Crop to selection?", "Crop", MessageBoxButton.OKCancel, MessageBoxImage.Question) != MessageBoxResult.OK)
-                        return;
-                }
-                finally
+                if (CropControl is null || PreviewPictureSource is null || o is not true &&
+                    MessageBox.Show("Crop to selection?", "Crop", MessageBoxButton.OKCancel, MessageBoxImage.Question) != MessageBoxResult.OK)
                 {
                     IsCropControlVisible = false;
+                    return;
                 }
-                if (SelectedItem.IsVideo)
-                    VideoTransformCommandsShared.CropSelected(CropControl.CropRectangle);
+                var cropRectangle = CropControl.CropRectangle;
+                IsCropControlVisible = false;
+                if (SelectedItem is not null && SelectedItem.IsVideo)
+                    VideoTransformCommandsShared.CropSelected(cropRectangle);
                 else
-                    await new JpegTransformCommands(this).CropSelectedItemAsync(PreviewPictureSource, CropControl.CropRectangle);
+                    await JpegTransformCommands.CropSelectedItemAsync(PreviewPictureSource, cropRectangle);
             }
             else
             {

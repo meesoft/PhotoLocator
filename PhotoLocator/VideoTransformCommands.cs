@@ -455,7 +455,7 @@ namespace PhotoLocator
                 if (value.Tag is null or FloatBitmap)
                 {
                     var dialog = new OpenFileDialog { Filter = "Image files|*.png;*.tif;*.bmp;*.jpg" };
-                    if (dialog.ShowDialog() != true)
+                    if (dialog.ShowDialog() is not true)
                         return;
                     using var cursor = new MouseCursorOverride();
                     var image = GeneralFileFormatHandler.LoadFromStream(dialog.OpenFile(), Rotation.Rotate0, int.MaxValue, true, default);
@@ -708,7 +708,7 @@ namespace PhotoLocator
                     args.Add($"-r {FrameRate}");
                 if (!string.IsNullOrEmpty(VideoBitRate))
                     args.Add($"-b:v {VideoBitRate}M");
-                else if ((SelectedVideoFormat.Tag as string)?.StartsWith("-c:v", StringComparison.Ordinal) == true)
+                else if ((SelectedVideoFormat.Tag as string)?.StartsWith("-c:v", StringComparison.Ordinal) is true)
                     args.Add("-crf 20"); // Lower values give better quality
                 OutputArguments = string.Join(" ", args);
             }
@@ -836,7 +836,7 @@ namespace PhotoLocator
             dlg.Filter = SaveVideoFilter;
             dlg.DefaultExt = ".mp4";
             dlg.CheckPathExists = false;
-            if (dlg.ShowDialog() != true)
+            if (dlg.ShowDialog() is not true)
                 return;
             var outFileName = dlg.FileName;
 
@@ -913,7 +913,7 @@ namespace PhotoLocator
             else
             {
                 var dlg = SetupSaveFileDialog(allSelected, inPath); 
-                if (dlg.ShowDialog() != true)
+                if (dlg.ShowDialog() is not true)
                     return;
                 outFileName = dlg.FileName;
             }

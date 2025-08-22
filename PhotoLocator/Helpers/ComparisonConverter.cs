@@ -13,7 +13,7 @@ namespace PhotoLocator.Helpers
 
         public object? ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
         {
-            return value?.Equals(true) == true ? parameter : Binding.DoNothing;
+            return value?.Equals(true) is true ? parameter : Binding.DoNothing;
         }
     }
 }
