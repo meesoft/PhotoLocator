@@ -708,7 +708,7 @@ namespace PhotoLocator
                     args.Add($"-r {FrameRate}");
                 if (!string.IsNullOrEmpty(VideoBitRate))
                     args.Add($"-b:v {VideoBitRate}M");
-                else if ((SelectedVideoFormat.Tag as string)?.StartsWith("-c:v", StringComparison.Ordinal) is true)
+                else if (SelectedVideoFormat.Tag is string tag && tag.StartsWith("-c:v", StringComparison.Ordinal))
                     args.Add("-crf 20"); // Lower values give better quality
                 OutputArguments = string.Join(" ", args);
             }
