@@ -458,7 +458,8 @@ namespace PhotoLocator
                     if (dialog.ShowDialog() is not true)
                         return;
                     using var cursor = new MouseCursorOverride();
-                    var image = GeneralFileFormatHandler.LoadFromStream(dialog.OpenFile(), Rotation.Rotate0, int.MaxValue, true, default);
+                    using var sourceStream = dialog.OpenFile();
+                    var image = GeneralFileFormatHandler.LoadFromStream(sourceStream, Rotation.Rotate0, int.MaxValue, true, default);
                     var selectionMap = ConvertToGrayscaleOperation.ConvertToGrayscale(new FloatBitmap(image, 1), true);
                     value.Tag = selectionMap;
                 }
@@ -803,7 +804,7 @@ namespace PhotoLocator
             dlg.Filter = SaveVideoFilter;
             dlg.DefaultExt = ".mp4";
             dlg.CheckPathExists = false;
-            if (dlg.ShowDialog() != true)
+            if (dlg.ShowDialog() is not true)
                 return;
             var outFileName = dlg.FileName;
 
@@ -888,7 +889,7 @@ namespace PhotoLocator
             var window = new VideoTransformWindow() { Owner = App.Current.MainWindow, DataContext = this };
             try
             {
-                if (window.ShowDialog() != true)
+                if (window.ShowDialog() is not true)
                     return;
             }
             finally
