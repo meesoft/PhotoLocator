@@ -504,7 +504,7 @@ namespace PhotoLocator.Metadata
                 {
                     var rational = Rational.Decode(metadataValue);
                     if (rational != null && rational.Denominator > 0)
-                        yield return fullQuery + $" = {metadataValue} ({rational.Numerator} / {rational.Denominator})";
+                        yield return fullQuery + $" = {metadataValue} ({rational.Numerator} / {rational.Denominator} = {rational.ToDouble()})";
                     else
                         yield return fullQuery + $" = {metadataValue} ({metadataValue.GetType().Name})";
                 }

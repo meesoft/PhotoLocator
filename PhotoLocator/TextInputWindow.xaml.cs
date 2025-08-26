@@ -62,7 +62,7 @@ namespace PhotoLocator
             window.InitializeWindow(label, title, defaultText);
             window.ShowDialog();
             window.DataContext = null;
-            return window.DialogResult == true ? window.Text : null;
+            return window.DialogResult is true ? window.Text : null;
         }
 
         public static string? Show(string label, Func<string?, bool> textChanged, string? title = null, string? defaultText = null)
@@ -81,7 +81,7 @@ namespace PhotoLocator
             window.ShowDialog();
             window.PropertyChanged -= HandlePropertyChanged;
             window.DataContext = null;
-            return window.DialogResult == true ? window.Text : null;
+            return window.DialogResult is true ? window.Text : null;
         }
     }
 }

@@ -28,25 +28,6 @@
         SourceName="Seamarks"
         MinZoomLevel="9"
         MaxZoomLevel="18"/>
-    <map:BingMapsTileLayer
-        x:Key="BingMapsRoad"
-        Mode="Road"
-        SourceName="Bing Maps Road"
-        Description="© [Microsoft](http://www.bing.com/maps/)"/>
-    <map:BingMapsTileLayer
-        x:Key="BingMapsAerial"
-        Mode="Aerial"
-        SourceName="Bing Maps Aerial"
-        Description="© [Microsoft](http://www.bing.com/maps/)"
-        MapBackground="Black"
-        MapForeground="White"/>
-    <map:BingMapsTileLayer
-        x:Key="BingMapsHybrid"
-        Mode="AerialWithLabels"
-        SourceName="Bing Maps Hybrid"
-        Description="© [Microsoft](http://www.bing.com/maps/)"
-        MapBackground="Black"
-        MapForeground="White"/>
     <map:WmtsTileLayer
         x:Key="TopPlusOpenWMTS"
         CapabilitiesUri="https://sgx.geodatenzentrum.de/wmts_topplus_open/1.0.0/WMTSCapabilities.xml"
