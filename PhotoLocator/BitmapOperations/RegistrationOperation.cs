@@ -14,18 +14,31 @@ namespace PhotoLocator.BitmapOperations
         readonly int _width;
         readonly int _height;
         readonly int _pixelSize;
-        readonly bool _mirrorBorders;
-        readonly Mat _firstGrayImage;
-        readonly Point2f[] _firstFeatures;
+        readonly Reference _reference;
+        readonly Borders _borderHandling;
+        Mat _referenceGrayImage;
+        Point2f[] _referenceFeatures;
+        Mat? _previousTrans;
 
-        public RegistrationOperation(byte[] pixels, int width, int height, int pixelSize, bool mirrorBorders, ROI? roi = null)
+        public enum Borders
+        {
+            Black, Mirror
+        }
+
+        public enum Reference
+        {
+            First, Previous
+        }
+
+        public RegistrationOperation(byte[] pixels, int width, int height, int pixelSize, Reference reference, Borders borderHandling, ROI? roi = null)
         {
             _width = width;
             _height = height;
             _pixelSize = pixelSize;
-            _mirrorBorders = mirrorBorders;
-            _firstGrayImage = ConvertToGrayscale(pixels);
-            _firstFeatures = FindFirstFeatures(roi);
+            _reference = reference;
+            _borderHandling = borderHandling;
+            _referenceGrayImage = ConvertToGrayscale(pixels);
+            _referenceFeatures = FindFirstFeatures(roi);
         }
 
         public RegistrationOperation(BitmapSource image, ROI? roi = null)
@@ -43,15 +56,15 @@ namespace PhotoLocator.BitmapOperations
                 throw new UserMessageException("Unsupported pixel format " + pixelFormat);
             var pixels = new byte[_width * _height * _pixelSize];
             image.CopyPixels(pixels, _width * _pixelSize, 0);
-            _firstGrayImage = ConvertToGrayscale(pixels);
-            _firstFeatures = FindFirstFeatures(roi);
+            _referenceGrayImage = ConvertToGrayscale(pixels);
+            _referenceFeatures = FindFirstFeatures(roi);
         }
 
         private Point2f[] FindFirstFeatures(ROI? roi)
         {
             var sw = Stopwatch.StartNew();
             using var mask = CreateRegionOfInterestMask(roi);
-            var firstFeatures = _firstGrayImage.GoodFeaturesToTrack(1000, 0.01, 30, mask!, 7, false, 0);
+            var firstFeatures = _referenceGrayImage.GoodFeaturesToTrack(1000, 0.01, 30, mask!, 7, false, 0);
             Log.Write($"{firstFeatures.Length} features found in {sw.ElapsedMilliseconds} ms");
             if (firstFeatures.Length < 10)
                 throw new UserMessageException("Not enough features found in first image");
@@ -89,22 +102,49 @@ namespace PhotoLocator.BitmapOperations
 
         public void Apply(byte[] pixels)
         {
+            var sw = Stopwatch.StartNew();
+
             using var image = Mat.FromPixelData(_height, _width, _pixelSize == 1 ? MatType.CV_8U : MatType.CV_8UC3, pixels);
-            using var grayImage = _pixelSize == 1 ? image : image.CvtColor(ColorConversionCodes.RGB2GRAY);
+            var grayImage = _pixelSize == 1 ? image : image.CvtColor(ColorConversionCodes.RGB2GRAY);
 
             TrackFeatures(grayImage, out var features, out var status);
 
-            using var trans = Cv2.FindHomography(
+            var trans = Cv2.FindHomography(
                 features.Where((p, i) => status[i] != 0).Select(p => new Point2d(p.X, p.Y)),
-                _firstFeatures.Where((p, i) => status[i] != 0).Select(p => new Point2d(p.X, p.Y)), HomographyMethods.Ransac);
+                _referenceFeatures.Where((p, i) => status[i] != 0).Select(p => new Point2d(p.X, p.Y)), HomographyMethods.Ransac);
 
-            using var warped = image.WarpPerspective(trans, image.Size(), InterpolationFlags.Cubic, _mirrorBorders ? BorderTypes.Reflect101 : BorderTypes.Constant, new Scalar(0));
+            if (_reference == Reference.Previous && _previousTrans is not null)
+            {
+                var toFirst = _previousTrans * trans;
+                trans.Dispose();
+                trans = toFirst;
+            }
+
+            using var warped = image.WarpPerspective(trans, image.Size(), InterpolationFlags.Cubic, 
+                _borderHandling == Borders.Mirror ? BorderTypes.Reflect101 : BorderTypes.Constant, new Scalar(0));
 
             int size = _width * _height * _pixelSize;
             unsafe
             {
                 fixed (byte* dst = pixels)
                     Buffer.MemoryCopy(warped.Ptr(0).ToPointer(), dst, size, size);
+            }
+
+            if (_reference == Reference.First)
+            {
+                grayImage.Dispose();
+                trans.Dispose();
+                Log.Write($"{status.Count(s => s != 0)}/{features.Length} features matched in {sw.ElapsedMilliseconds} ms");
+            }
+            else
+            {
+                _referenceGrayImage.Dispose();
+                _referenceGrayImage = grayImage;
+                _referenceFeatures = features.Where((p, i) => status[i] != 0).ToArray();
+                _previousTrans = trans;
+                Log.Write($"{_referenceFeatures.Length}/{features.Length} features matched in {sw.ElapsedMilliseconds} ms");
+                if (_referenceFeatures.Length < 5)
+                    throw new UserMessageException($"Not enough features matched ({_referenceFeatures.Length}/{features.Length})");
             }
         }
 
@@ -127,8 +167,8 @@ namespace PhotoLocator.BitmapOperations
             for (int i = 0; i < features.Length; i++)
                 if (status[i] != 0)
                 {
-                    xValues.Add(_firstFeatures[i].X - features[i].X);
-                    yValues.Add(_firstFeatures[i].Y - features[i].Y);
+                    xValues.Add(_referenceFeatures[i].X - features[i].X);
+                    yValues.Add(_referenceFeatures[i].Y - features[i].Y);
                 }
 
             if (xValues.Count < features.Length * 0.8)
@@ -145,8 +185,8 @@ namespace PhotoLocator.BitmapOperations
 
         private void TrackFeatures(Mat grayImage, out Point2f[] features, out byte[] status)
         {
-            features = new Point2f[_firstFeatures.Length];
-            Cv2.CalcOpticalFlowPyrLK(_firstGrayImage, grayImage, _firstFeatures, ref features, out status, out _,
+            features = new Point2f[_referenceFeatures.Length];
+            Cv2.CalcOpticalFlowPyrLK(_referenceGrayImage, grayImage, _referenceFeatures, ref features, out status, out _,
                 maxLevel: 10, minEigThreshold: 0.001);
         }
 
@@ -163,7 +203,8 @@ namespace PhotoLocator.BitmapOperations
 
         public void Dispose()
         {
-            _firstGrayImage.Dispose();
+            _referenceGrayImage.Dispose();
+            _previousTrans?.Dispose();
         }
     }
 }

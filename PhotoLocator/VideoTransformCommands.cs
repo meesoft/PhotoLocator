@@ -1032,13 +1032,13 @@ namespace PhotoLocator
             }
             else
             {
-                if (!_hasFps)
+                if (!_hasFps && _outputMode != OutputMode.ImageSequence)
                     throw new UserMessageException("Unable to determine frame rate, please specify manually");
                 _progressOffset = 0.5;
                 var frames = CombineFramesMode == CombineFramesMode.TimeSliceInterpolated
                     ? timeSlice.GenerateTimeSliceVideoInterpolated(CombineFramesCount)
                     : timeSlice.GenerateTimeSliceVideo(CombineFramesCount);
-                await _videoTransforms.RunFFmpegWithStreamInputImagesAsync(_fps, $"{OutputArguments} -y \"{outFileName}\"", frames, ProcessStdError, ct).ConfigureAwait(false);
+                await _videoTransforms.RunFFmpegWithStreamInputImagesAsync(_hasFps ? _fps : null, $"{OutputArguments} -y \"{outFileName}\"", frames, ProcessStdError, ct).ConfigureAwait(false);
             }
             return $"Processed {timeSlice.UsedFrames} frames and skipped {timeSlice.SkippedFrames} in {sw.Elapsed.TotalSeconds:N1}s.\n" +
                 "If frames are skipped it means that the video is too big to load into memory. To reduce the number of frames loaded, " +
@@ -1077,9 +1077,9 @@ namespace PhotoLocator
                     frameEnumerator.AddItem(_localContrastSetup!.ApplyOperations(source));
                 }, ProcessStdError, ct);
             await Task.WhenAny(frameEnumerator.GotFirst, Task.Delay(TimeSpan.FromSeconds(10), ct)).ConfigureAwait(false);
-            if (!_hasFps)
+            if (!_hasFps && _outputMode != OutputMode.ImageSequence)
                 throw new UserMessageException("Unable to determine frame rate, please specify manually");
-            var writeTask = _videoTransforms.RunFFmpegWithStreamInputImagesAsync(_fps, $"{OutputArguments} -y \"{outFileName}\"", frameEnumerator,
+            var writeTask = _videoTransforms.RunFFmpegWithStreamInputImagesAsync(_hasFps ? _fps : null, $"{OutputArguments} -y \"{outFileName}\"", frameEnumerator,
                 stdError => Log.Write("Writer: " + stdError), ct);
             await await Task.WhenAny(readTask, writeTask).ConfigureAwait(false); // Write task is not expected to finish here, only if it fails
             frameEnumerator.Break();

@@ -139,7 +139,10 @@ namespace PhotoLocator.BitmapOperations
             if (_registrationMethod > RegistrationMethod.None)
             {
                 if (_registrationOperation is null)
-                    _registrationOperation = new RegistrationOperation(pixels, Width, Height, PixelSize, _registrationMethod == RegistrationMethod.MirrorBorders, _registrationRegion);
+                    _registrationOperation = new RegistrationOperation(pixels, Width, Height, PixelSize, 
+                        RegistrationOperation.Reference.First,
+                        _registrationMethod == RegistrationMethod.MirrorBorders ? RegistrationOperation.Borders.Mirror : RegistrationOperation.Borders.Black, 
+                        _registrationRegion);
                 else
                     _registrationOperation.Apply(pixels);
             }
