@@ -11,8 +11,8 @@ namespace PhotoLocator.BitmapOperations
         readonly int _numberOfFramesToCombine;
         readonly List<byte[]> _previousFrames;
 
-        public FadingMaxOperation(int numberOfFramesToCombine, string? darkFramePath, bool enableRegistration, ROI? registrationRegion, CancellationToken ct)
-            : base(darkFramePath, enableRegistration ? RegistrationMethod.MirrorBorders : RegistrationMethod.None, registrationRegion, ct)
+        public FadingMaxOperation(int numberOfFramesToCombine, string? darkFramePath, CombineFramesRegistration? registrationSettings, CancellationToken ct)
+            : base(darkFramePath, registrationSettings?.ToCombineFramesRegistrationFull(RegistrationOperation.Borders.Mirror), ct)
         {
             _numberOfFramesToCombine  = numberOfFramesToCombine;
             _previousFrames = new List<byte[]>(_numberOfFramesToCombine);

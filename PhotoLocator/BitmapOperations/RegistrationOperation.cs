@@ -134,7 +134,10 @@ namespace PhotoLocator.BitmapOperations
             {
                 grayImage.Dispose();
                 trans.Dispose();
-                Log.Write($"{status.Count(s => s != 0)}/{features.Length} features matched in {sw.ElapsedMilliseconds} ms");
+                var matches = status.Count(s => s != 0);
+                Log.Write($"{matches}/{features.Length} features matched in {sw.ElapsedMilliseconds} ms");
+                if (matches < 5)
+                    throw new UserMessageException($"Not enough features matched ({matches}/{features.Length})");
             }
             else
             {

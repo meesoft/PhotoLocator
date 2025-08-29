@@ -41,6 +41,11 @@ namespace PhotoLocator
         TimeSliceInterpolated,
     }
 
+    public enum RegistrationMode
+    {
+        Off, ToFirst, ToPrevious
+    }
+
     public class VideoTransformCommands : INotifyPropertyChanged
     {
         const string InputListFileName = "input.txt";
@@ -558,12 +563,12 @@ namespace PhotoLocator
 
         public bool IsCombineFramesOperation => CombineFramesMode > CombineFramesMode.None || OutputMode is OutputMode.Average or OutputMode.Max or OutputMode.TimeSliceImage;
 
-        public bool IsRegisterFramesChecked
+        public RegistrationMode RegistrationMode
         {
-            get => _isRegisterFramesChecked;
-            set => SetProperty(ref _isRegisterFramesChecked, value);
+            get => _registrationMode;
+            set => SetProperty(ref _registrationMode, value);
         }
-        bool _isRegisterFramesChecked;
+        RegistrationMode _registrationMode;
 
         public string RegistrationRegion
         {
@@ -572,18 +577,25 @@ namespace PhotoLocator
         }
         string _registrationRegion = "w:h:x:y";
 
-        ROI? ParseRegistrationRegion()
+        CombineFramesRegistration? ParseRegistrationSettings()
         {
-            if (string.IsNullOrEmpty(RegistrationRegion) || RegistrationRegion[0] == 'w')
+            if (RegistrationMode == RegistrationMode.Off)
                 return null;
-            var parts = RegistrationRegion.Split(':');
-            return new ROI
+            
+            ROI? roi = null;
+            if (!string.IsNullOrEmpty(RegistrationRegion) && RegistrationRegion[0] != 'w')
             {
-                Left = int.Parse(parts[2], CultureInfo.CurrentCulture),
-                Top = int.Parse(parts[3], CultureInfo.CurrentCulture),
-                Width = int.Parse(parts[0], CultureInfo.CurrentCulture),
-                Height = int.Parse(parts[1], CultureInfo.CurrentCulture),
-            };
+                var parts = RegistrationRegion.Split(':');
+                roi = new ROI
+                {
+                    Left = int.Parse(parts[2], CultureInfo.CurrentCulture),
+                    Top = int.Parse(parts[3], CultureInfo.CurrentCulture),
+                    Width = int.Parse(parts[0], CultureInfo.CurrentCulture),
+                    Height = int.Parse(parts[1], CultureInfo.CurrentCulture),
+                };
+            }
+            return new CombineFramesRegistration(
+                RegistrationMode == RegistrationMode.ToFirst ? RegistrationOperation.Reference.First : RegistrationOperation.Reference.Previous, roi);
         }
 
         public string DarkFramePath
@@ -976,7 +988,7 @@ namespace PhotoLocator
 
         async Task<string> RunAverageProcessingAsync(string outFileName, Stopwatch sw, CancellationToken ct)
         {
-            using var process = new AverageFramesOperation(DarkFramePath, IsRegisterFramesChecked, ParseRegistrationRegion(), ct);
+            using var process = new AverageFramesOperation(DarkFramePath, ParseRegistrationSettings(), ct);
             await _videoTransforms.RunFFmpegWithStreamOutputImagesAsync($"{InputArguments} {ProcessArguments}", process.ProcessImage, ProcessStdError, ct).ConfigureAwait(false);
             if (process.Supports16BitResult() && Path.GetExtension(outFileName).ToUpperInvariant() is ".PNG" or ".TIF" or ".TIFF" or ".JXR")
                 GeneralFileFormatHandler.SaveToFile(process.GetResult16(), outFileName, CreateImageMetadata());
@@ -987,7 +999,7 @@ namespace PhotoLocator
 
         async Task<string> RunMaxProcessingAsync(string outFileName, Stopwatch sw, CancellationToken ct)
         {
-            using var process = new MaxFramesOperation(DarkFramePath, IsRegisterFramesChecked, ParseRegistrationRegion(), ct);
+            using var process = new MaxFramesOperation(DarkFramePath, ParseRegistrationSettings(), ct);
             await _videoTransforms.RunFFmpegWithStreamOutputImagesAsync($"{InputArguments} {ProcessArguments}", process.ProcessImage, ProcessStdError, ct).ConfigureAwait(false);
             GeneralFileFormatHandler.SaveToFile(process.GetResult8(), outFileName, CreateImageMetadata(), _mainViewModel.Settings.JpegQuality);
             return $"Processed {process.ProcessedImages} frames in {sw.Elapsed.TotalSeconds:N1}s";
@@ -1001,8 +1013,8 @@ namespace PhotoLocator
             else
                 timeSlice.SelectionMapExpression = (SelectionMapFunction)selectedTimeSliceDirection;
 
-            using var runningAverage = (IsRegisterFramesChecked || !string.IsNullOrEmpty(DarkFramePath)) ?
-                new RollingAverageOperation(1, DarkFramePath, IsRegisterFramesChecked, ParseRegistrationRegion(), ct) : null;
+            using var runningAverage = (RegistrationMode > RegistrationMode.Off || !string.IsNullOrEmpty(DarkFramePath)) ?
+                new RollingAverageOperation(1, DarkFramePath, ParseRegistrationSettings(), ct) : null;
 
             if (!string.IsNullOrEmpty(FrameRate))
             {
@@ -1054,9 +1066,9 @@ namespace PhotoLocator
             }
             using CombineFramesOperationBase? runningAverage = CombineFramesMode switch
             {
-                CombineFramesMode.RollingAverage => new RollingAverageOperation(CombineFramesCount, DarkFramePath, IsRegisterFramesChecked, ParseRegistrationRegion(), ct),
-                CombineFramesMode.FadingAverage => new FadingAverageOperation(CombineFramesCount, DarkFramePath, IsRegisterFramesChecked, ParseRegistrationRegion(), ct),
-                CombineFramesMode.FadingMax => new FadingMaxOperation(CombineFramesCount, DarkFramePath, IsRegisterFramesChecked, ParseRegistrationRegion(), ct),
+                CombineFramesMode.RollingAverage => new RollingAverageOperation(CombineFramesCount, DarkFramePath, ParseRegistrationSettings(), ct),
+                CombineFramesMode.FadingAverage => new FadingAverageOperation(CombineFramesCount, DarkFramePath, ParseRegistrationSettings(), ct),
+                CombineFramesMode.FadingMax => new FadingMaxOperation(CombineFramesCount, DarkFramePath, ParseRegistrationSettings(), ct),
                 _ => null,
             };
 
@@ -1101,7 +1113,7 @@ namespace PhotoLocator
                         postfix = "fadeavg" + CombineFramesCount;
                     else if (CombineFramesMode == CombineFramesMode.FadingMax && CombineFramesCount > 1)
                         postfix = "fademax" + CombineFramesCount;
-                    else if (IsStabilizeChecked || IsRegisterFramesChecked && CombineFramesMode > CombineFramesMode.None)
+                    else if (IsStabilizeChecked || RegistrationMode > RegistrationMode.Off && CombineFramesMode > CombineFramesMode.None)
                         postfix = "stabilized";
                     else if (allSelected.Length > 1)
                         postfix = "combined";

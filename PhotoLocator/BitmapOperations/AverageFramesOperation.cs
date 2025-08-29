@@ -7,8 +7,8 @@ namespace PhotoLocator.BitmapOperations
 {
     sealed class AverageFramesOperation : CombineFramesOperationBase
     {
-        public AverageFramesOperation(string? darkFramePath, bool enableRegistration, ROI? registrationRegion, CancellationToken ct)
-            : base(darkFramePath, enableRegistration ? RegistrationMethod.MirrorBorders : RegistrationMethod.None, registrationRegion, ct)
+        public AverageFramesOperation(string? darkFramePath, CombineFramesRegistration? registrationSettings, CancellationToken ct)
+            : base(darkFramePath, registrationSettings?.ToCombineFramesRegistrationFull(RegistrationOperation.Borders.Mirror), ct)
         {
         }
 
