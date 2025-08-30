@@ -12,7 +12,7 @@ namespace PhotoLocator.BitmapOperations
         readonly List<byte[]> _previousFrames;
 
         public FadingAverageOperation(int numberOfFramesToAverage, string? darkFramePath, CombineFramesRegistration? registrationSettings, CancellationToken ct)
-            : base(darkFramePath, registrationSettings?.ToCombineFramesRegistrationFull(RegistrationOperation.Borders.Mirror), ct)
+            : base(darkFramePath, registrationSettings?.ToCombineFramesRegistrationBase(RegistrationOperation.Borders.Mirror), ct)
         {
             _numberOfFramesToAverage = numberOfFramesToAverage;
             _previousFrames = new List<byte[]>(_numberOfFramesToAverage);

@@ -10,17 +10,17 @@ namespace PhotoLocator.BitmapOperations
 {
     record CombineFramesRegistration(RegistrationOperation.Reference Reference, ROI? Region)
     {
-        public CombineFramesRegistrationFull ToCombineFramesRegistrationFull(RegistrationOperation.Borders borders) => 
-            new CombineFramesRegistrationFull(Reference, borders, Region);
+        public CombineFramesRegistrationBase ToCombineFramesRegistrationBase(RegistrationOperation.Borders borders) => 
+            new CombineFramesRegistrationBase(Reference, borders, Region);
     }
 
-    record CombineFramesRegistrationFull(RegistrationOperation.Reference Reference, RegistrationOperation.Borders Borders, ROI? Region);
+    record CombineFramesRegistrationBase(RegistrationOperation.Reference Reference, RegistrationOperation.Borders Borders, ROI? Region);
 
     abstract class CombineFramesOperationBase : IDisposable
     {
         protected readonly CancellationToken _ct;
         readonly BitmapSource? _darkFrame;
-        readonly CombineFramesRegistrationFull? _registrationSettings;
+        readonly CombineFramesRegistrationBase? _registrationSettings;
         byte[]? _darkFramePixels;
         double _dpiX;
         double _dpiY;
@@ -34,7 +34,7 @@ namespace PhotoLocator.BitmapOperations
 
         public int ProcessedImages { get; private set; }
 
-        protected CombineFramesOperationBase(string? darkFramePath, CombineFramesRegistrationFull? registrationSettings, CancellationToken ct)
+        protected CombineFramesOperationBase(string? darkFramePath, CombineFramesRegistrationBase? registrationSettings, CancellationToken ct)
         {
             _registrationSettings = registrationSettings;
             _ct = ct;

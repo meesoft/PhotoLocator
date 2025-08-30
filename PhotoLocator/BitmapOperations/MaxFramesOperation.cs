@@ -8,7 +8,7 @@ namespace PhotoLocator.BitmapOperations
     sealed class MaxFramesOperation : CombineFramesOperationBase
     {
         public MaxFramesOperation(string? darkFramePath, CombineFramesRegistration? registrationSettings, CancellationToken ct)
-            : base(darkFramePath, registrationSettings?.ToCombineFramesRegistrationFull(RegistrationOperation.Borders.Black), ct)
+            : base(darkFramePath, registrationSettings?.ToCombineFramesRegistrationBase(RegistrationOperation.Borders.Black), ct)
         {
         }
 
