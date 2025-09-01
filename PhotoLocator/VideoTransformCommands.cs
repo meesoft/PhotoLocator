@@ -394,6 +394,7 @@ namespace PhotoLocator
                 if (SetProperty(ref _combineFramesMode, value))
                 {
                     PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(IsCombineFramesOperation)));
+                    PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(IsRegistrationEnabled)));
                     PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(NumberOfFramesHint)));
                     var isTimeSlice = _combineFramesMode is CombineFramesMode.TimeSlice or CombineFramesMode.TimeSliceInterpolated;
                     if (wasTimeSlice != isTimeSlice)
@@ -486,6 +487,7 @@ namespace PhotoLocator
                     UpdateProcessArgs();
                     UpdateOutputArgs();
                     PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(IsCombineFramesOperation)));
+                    PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(IsRegistrationEnabled)));
                 }
             }
         }
@@ -563,10 +565,16 @@ namespace PhotoLocator
 
         public bool IsCombineFramesOperation => CombineFramesMode > CombineFramesMode.None || OutputMode is OutputMode.Average or OutputMode.Max or OutputMode.TimeSliceImage;
 
+        public bool IsRegistrationEnabled => IsCombineFramesOperation && RegistrationMode > RegistrationMode.Off;
+
         public RegistrationMode RegistrationMode
         {
             get => _registrationMode;
-            set => SetProperty(ref _registrationMode, value);
+            set
+            {
+                if (SetProperty(ref _registrationMode, value))
+                    PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(IsRegistrationEnabled)));
+            }
         }
         RegistrationMode _registrationMode;
 
@@ -585,14 +593,15 @@ namespace PhotoLocator
             ROI? roi = null;
             if (!string.IsNullOrEmpty(RegistrationRegion) && RegistrationRegion[0] != 'w')
             {
-                var parts = RegistrationRegion.Split(':');
-                roi = new ROI
-                {
-                    Left = int.Parse(parts[2], CultureInfo.CurrentCulture),
-                    Top = int.Parse(parts[3], CultureInfo.CurrentCulture),
-                    Width = int.Parse(parts[0], CultureInfo.CurrentCulture),
-                    Height = int.Parse(parts[1], CultureInfo.CurrentCulture),
-                };
+                var parts = RegistrationRegion.Split(':', StringSplitOptions.TrimEntries);
+                if (parts.Length != 4
+                    || !int.TryParse(parts[0], NumberStyles.Integer, CultureInfo.CurrentCulture, out var w)
+                    || !int.TryParse(parts[1], NumberStyles.Integer, CultureInfo.CurrentCulture, out var h)
+                    || !int.TryParse(parts[2], NumberStyles.Integer, CultureInfo.CurrentCulture, out var x)
+                    || !int.TryParse(parts[3], NumberStyles.Integer, CultureInfo.CurrentCulture, out var y)
+                    || w <= 0 || h <= 0 || x < 0 || y < 0)
+                    throw new UserMessageException("Registration region must be width:height:left:top with positive size.");
+                roi = new ROI { Left = x, Top = y, Width = w, Height = h };
             }
             return new CombineFramesRegistration(
                 RegistrationMode == RegistrationMode.ToFirst ? RegistrationOperation.Reference.First : RegistrationOperation.Reference.Previous, roi);
@@ -1044,7 +1053,7 @@ namespace PhotoLocator
             }
             else
             {
-                if (!_hasFps && _outputMode != OutputMode.ImageSequence)
+                if (!_hasFps && OutputMode != OutputMode.ImageSequence)
                     throw new UserMessageException("Unable to determine frame rate, please specify manually");
                 _progressOffset = 0.5;
                 var frames = CombineFramesMode == CombineFramesMode.TimeSliceInterpolated
@@ -1089,7 +1098,7 @@ namespace PhotoLocator
                     frameEnumerator.AddItem(_localContrastSetup!.ApplyOperations(source));
                 }, ProcessStdError, ct);
             await Task.WhenAny(frameEnumerator.GotFirst, Task.Delay(TimeSpan.FromSeconds(10), ct)).ConfigureAwait(false);
-            if (!_hasFps && _outputMode != OutputMode.ImageSequence)
+            if (!_hasFps && OutputMode != OutputMode.ImageSequence)
                 throw new UserMessageException("Unable to determine frame rate, please specify manually");
             var writeTask = _videoTransforms.RunFFmpegWithStreamInputImagesAsync(_hasFps ? _fps : null, $"{OutputArguments} -y \"{outFileName}\"", frameEnumerator,
                 stdError => Log.Write("Writer: " + stdError), ct);

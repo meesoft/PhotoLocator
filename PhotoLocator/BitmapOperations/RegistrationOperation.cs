@@ -144,6 +144,7 @@ namespace PhotoLocator.BitmapOperations
                 _referenceGrayImage.Dispose();
                 _referenceGrayImage = grayImage;
                 _referenceFeatures = features.Where((p, i) => status[i] != 0).ToArray();
+                _previousTrans?.Dispose();
                 _previousTrans = trans;
                 Log.Write($"{_referenceFeatures.Length}/{features.Length} features matched in {sw.ElapsedMilliseconds} ms");
                 if (_referenceFeatures.Length < 5)

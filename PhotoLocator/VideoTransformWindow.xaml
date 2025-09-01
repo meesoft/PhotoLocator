@@ -151,22 +151,20 @@
         <RadioButton Content="Image sequence" Margin="10,0,0,0"
                      IsChecked="{Binding Path=OutputMode, Converter={StaticResource ComparisonConverter}, ConverterParameter={x:Static local:OutputMode.ImageSequence}}"/>
         <DockPanel Margin="10,6,0,0" >
-            <Grid>
-                <RadioButton Content="Frame average" Width="130"
-                             IsChecked="{Binding Path=OutputMode, Converter={StaticResource ComparisonConverter}, ConverterParameter={x:Static local:OutputMode.Average}}"/>
-            </Grid>
+            <RadioButton Content="Frame average" Width="130"
+                            IsChecked="{Binding Path=OutputMode, Converter={StaticResource ComparisonConverter}, ConverterParameter={x:Static local:OutputMode.Average}}"/>
 
             <TextBlock Text="Registration:" />
-            <RadioButton Content="Off" Margin="8,0" IsEnabled="{Binding IsCombineFramesOperation}"
+            <RadioButton Content="Off" Margin="8,0" IsEnabled="{Binding IsCombineFramesOperation}" GroupName="RegistrationMode"
                          IsChecked="{Binding Path=RegistrationMode, Converter={StaticResource ComparisonConverter}, ConverterParameter={x:Static local:RegistrationMode.Off}}"/>
-            <RadioButton Content="To first" IsEnabled="{Binding IsCombineFramesOperation}"
+            <RadioButton Content="To first" IsEnabled="{Binding IsCombineFramesOperation}" GroupName="RegistrationMode"
                          ToolTip="Align all frames with the first to minimize camera movement. Works well if the light is constant throughout the frames."
                          IsChecked="{Binding Path=RegistrationMode, Converter={StaticResource ComparisonConverter}, ConverterParameter={x:Static local:RegistrationMode.ToFirst}}"/>
-            <RadioButton Content="To previous" Margin="8,0" IsEnabled="{Binding IsCombineFramesOperation}"
+            <RadioButton Content="To previous" Margin="8,0" IsEnabled="{Binding IsCombineFramesOperation}" GroupName="RegistrationMode"
                          ToolTip="Align each frame to the previous. Not as precise as aligning all to the first, but more tolerant to changes in lighting."
                          IsChecked="{Binding Path=RegistrationMode, Converter={StaticResource ComparisonConverter}, ConverterParameter={x:Static local:RegistrationMode.ToPrevious}}"/>
 
-            <TextBox Text="{Binding RegistrationRegion}" Width="140" HorizontalAlignment="Right" IsEnabled="{Binding IsCombineFramesOperation}" 
+            <TextBox Text="{Binding RegistrationRegion}" Width="140" HorizontalAlignment="Right" IsEnabled="{Binding IsRegistrationEnabled}"
                      ToolTip="Optional registration region of interest, width:height:left:top"/>
         </DockPanel>
         <DockPanel Margin="10,4,0,0" >
