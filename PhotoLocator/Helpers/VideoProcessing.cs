@@ -100,7 +100,7 @@ namespace PhotoLocator.Helpers
 
         /// <summary> Process video with streaming input from images </summary>
         /// <param name="args">Command line arguments excluding input specification</param>
-        public async Task RunFFmpegWithStreamInputImagesAsync(double inFrameRate, string args, IEnumerable<BitmapSource> images, Action<string> stdErrorCallback, CancellationToken ct)
+        public async Task RunFFmpegWithStreamInputImagesAsync(double? inFrameRate, string args, IEnumerable<BitmapSource> images, Action<string> stdErrorCallback, CancellationToken ct)
         {
             var enumerator = images.GetEnumerator();
             await Task.Yield();
@@ -137,7 +137,8 @@ namespace PhotoLocator.Helpers
                 throw new UserMessageException("Unsupported pixel format " + pixelFormat);
             var pixels = new byte[width * height * pixelSize];
 
-            args = string.Create(CultureInfo.InvariantCulture, $"-f rawvideo -pix_fmt {formatString} -s {width}x{height} -r {inFrameRate} -i - {args}");
+            var frameRateArg = inFrameRate.HasValue ? $"-r {inFrameRate}" : null;
+            args = string.Create(CultureInfo.InvariantCulture, $"-f rawvideo -pix_fmt {formatString} -s {width}x{height} {frameRateArg} -i - {args}");
             var startInfo = new ProcessStartInfo(GetFFmpegPath(), args);
             startInfo.RedirectStandardInput = true;
             startInfo.RedirectStandardError = true;

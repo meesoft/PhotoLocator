@@ -10,8 +10,8 @@ namespace PhotoLocator.BitmapOperations
         readonly int _numberOfFramesToAverage;
         readonly Queue<byte[]> _previousFrames;
 
-        public RollingAverageOperation(int numberOfFramesToAverage, string? darkFramePath, bool enableRegistration, ROI? registrationRegion, CancellationToken ct)
-            : base(darkFramePath, enableRegistration ? RegistrationMethod.MirrorBorders : RegistrationMethod.None, registrationRegion, ct)
+        public RollingAverageOperation(int numberOfFramesToAverage, string? darkFramePath, CombineFramesRegistration? registrationSettings, CancellationToken ct)
+            : base(darkFramePath, registrationSettings?.ToCombineFramesRegistrationBase(RegistrationOperation.Borders.Mirror), ct)
         {
             _numberOfFramesToAverage = numberOfFramesToAverage;
             _previousFrames = new Queue<byte[]>(_numberOfFramesToAverage);

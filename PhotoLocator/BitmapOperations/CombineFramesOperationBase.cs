@@ -8,14 +8,19 @@ using System.Windows.Media.Imaging;
 
 namespace PhotoLocator.BitmapOperations
 {
+    record CombineFramesRegistration(RegistrationOperation.Reference Reference, ROI? Region)
+    {
+        public CombineFramesRegistrationBase ToCombineFramesRegistrationBase(RegistrationOperation.Borders borders) => 
+            new CombineFramesRegistrationBase(Reference, borders, Region);
+    }
+
+    record CombineFramesRegistrationBase(RegistrationOperation.Reference Reference, RegistrationOperation.Borders Borders, ROI? Region);
+
     abstract class CombineFramesOperationBase : IDisposable
     {
-        protected enum RegistrationMethod { None, BlackBorders, MirrorBorders };
-
         protected readonly CancellationToken _ct;
         readonly BitmapSource? _darkFrame;
-        readonly RegistrationMethod _registrationMethod;
-        readonly ROI? _registrationRegion;
+        readonly CombineFramesRegistrationBase? _registrationSettings;
         byte[]? _darkFramePixels;
         double _dpiX;
         double _dpiY;
@@ -29,10 +34,9 @@ namespace PhotoLocator.BitmapOperations
 
         public int ProcessedImages { get; private set; }
 
-        protected CombineFramesOperationBase(string? darkFramePath, RegistrationMethod registrationMethod, ROI? registrationRegion, CancellationToken ct)
+        protected CombineFramesOperationBase(string? darkFramePath, CombineFramesRegistrationBase? registrationSettings, CancellationToken ct)
         {
-            _registrationMethod = registrationMethod;
-            _registrationRegion = registrationRegion;
+            _registrationSettings = registrationSettings;
             _ct = ct;
             if (!string.IsNullOrEmpty(darkFramePath))
             {
@@ -136,10 +140,11 @@ namespace PhotoLocator.BitmapOperations
 
             SubtractDarkFrame(pixels);
 
-            if (_registrationMethod > RegistrationMethod.None)
+            if (_registrationSettings is not null)
             {
                 if (_registrationOperation is null)
-                    _registrationOperation = new RegistrationOperation(pixels, Width, Height, PixelSize, _registrationMethod == RegistrationMethod.MirrorBorders, _registrationRegion);
+                    _registrationOperation = new RegistrationOperation(pixels, Width, Height, PixelSize,
+                        _registrationSettings.Reference, _registrationSettings.Borders, _registrationSettings.Region);
                 else
                     _registrationOperation.Apply(pixels);
             }
