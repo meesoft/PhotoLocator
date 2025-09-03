@@ -187,7 +187,13 @@ static class ExifTool
             if (parts.Length >= 4 &&
                 double.TryParse(parts[0], CultureInfo.InvariantCulture, out var latitude) &&
                 double.TryParse(parts[2], CultureInfo.InvariantCulture, out var longitude))
+            {
+                if (parts[1] is "S" or "-")
+                    latitude = -latitude;
+                if (parts[3] is "W" or "-")
+                    longitude = -longitude;
                 return new Location(latitude, longitude);
+            }
         }
         return null;
     }
