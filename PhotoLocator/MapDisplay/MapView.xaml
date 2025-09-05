@@ -21,8 +21,6 @@
             </DataTemplate>
 
             <Style x:Key="PointItemStyle" TargetType="map:MapItem">
-                <EventSetter Event="TouchDown" Handler="MapItemTouchDown"/>
-                <EventSetter Event="MouseLeftButtonDown" Handler="MapItemLeftButtonDown"/>
                 <Setter Property="AutoCollapse" Value="True"/>
                 <Setter Property="Location" Value="{Binding Location}"/>
                 <Setter Property="Template">
@@ -94,7 +92,6 @@
             </Style>
 
             <Style x:Key="PushpinItemStyle" TargetType="map:MapItem">
-                <EventSetter Event="TouchDown" Handler="MapItemTouchDown"/>
                 <Setter Property="AutoCollapse" Value="True"/>
                 <Setter Property="Location" Value="{Binding Location}"/>
                 <Setter Property="HorizontalAlignment" Value="Center"/>
@@ -110,7 +107,7 @@
                 <Style.Triggers>
                     <Trigger Property="IsSelected" Value="True">
                         <Setter Property="Panel.ZIndex" Value="1"/>
-                        <Setter Property="Foreground" Value="OrangeRed"/>
+                        <Setter Property="FontWeight" Value="Bold"/>
                     </Trigger>
                 </Style.Triggers>
             </Style>
@@ -136,7 +133,8 @@
 
             <map:MapItemsControl ItemsSource="{Binding Points}"
                                  ItemContainerStyle="{StaticResource PointItemStyle}"
-                                 SelectionMode="Extended"/>
+                                 SelectionMode="Single"
+                                 SelectionChanged="HandleMapItemsControlPointItemSelectionChanged"/>
 
             <map:MapItemsControl ItemsSource="{Binding Pushpins}"
                                  ItemContainerStyle="{StaticResource PushpinItemStyle}"/>
