@@ -5,11 +5,11 @@ namespace PhotoLocator.MapDisplay
 {
     public class MapItemEventArgs : EventArgs
     {
-        public MapItemEventArgs(object item)
+        public MapItemEventArgs(object? item)
         {
             Item = item;
         }
 
-        public object Item { get; }
+        public object? Item { get; }
     }
 }
