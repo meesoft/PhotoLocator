@@ -134,10 +134,12 @@
             <map:MapItemsControl ItemsSource="{Binding Points}"
                                  ItemContainerStyle="{StaticResource PointItemStyle}"
                                  SelectionMode="Single"
-                                 SelectionChanged="HandleMapItemsControlPointItemSelectionChanged"/>
+                                 SelectionChanged="HandleMapItemsControlSelectionChanged"/>
 
             <map:MapItemsControl ItemsSource="{Binding Pushpins}"
-                                 ItemContainerStyle="{StaticResource PushpinItemStyle}"/>
+                                 ItemContainerStyle="{StaticResource PushpinItemStyle}"
+                                 SelectionMode="Single"
+                                 SelectionChanged="HandleMapItemsControlSelectionChanged"/>
         </map:Map>
 
         <TextBlock x:Name="mouseLocation"

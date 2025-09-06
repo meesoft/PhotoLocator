@@ -112,7 +112,7 @@ namespace PhotoLocator.MapDisplay
             e.TranslationBehavior.DesiredDeceleration = 0.001;
         }
 
-        private void HandleMapItemsControlPointItemSelectionChanged(object sender, SelectionChangedEventArgs e)
+        private void HandleMapItemsControlSelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             if (e.AddedItems.Count > 0)
                 MapItemSelected?.Invoke(this, new MapItemEventArgs(e.AddedItems[0]));
