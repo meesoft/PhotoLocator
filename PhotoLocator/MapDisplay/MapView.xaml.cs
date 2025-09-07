@@ -115,7 +115,11 @@ namespace PhotoLocator.MapDisplay
         private void HandleMapItemsControlSelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             if (e.AddedItems.Count > 0)
-                MapItemSelected?.Invoke(this, new MapItemEventArgs(e.AddedItems[0]));
+            {
+                var item = e.AddedItems[0] as PointItem;
+                if (item is not null)
+                    MapItemSelected?.Invoke(this, new MapItemEventArgs(item));
+            }
         }
 
         private static string GetLatLonText(Location location)
