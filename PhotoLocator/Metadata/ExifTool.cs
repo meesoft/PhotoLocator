@@ -39,13 +39,13 @@ static class ExifTool
             return;
         }
 
-        var startInfo = new ProcessStartInfo(exifToolPath,
+        var startInfo = new ProcessStartInfo(exifToolPath, string.Create(CultureInfo.InvariantCulture,
             //"-m " + // Ignore minor errors and warnings
-            $"-GPSLatitude={location.Latitude.ToString(CultureInfo.InvariantCulture)} " +
+            $"-GPSLatitude={location.Latitude} " +
             $"-GPSLatitudeRef={Math.Sign(location.Latitude)} " +
-            $"-GPSLongitude={location.Longitude.ToString(CultureInfo.InvariantCulture)} " +
+            $"-GPSLongitude={location.Longitude} " +
             $"-GPSLongitudeRef={Math.Sign(location.Longitude)} " +
-            $"\"{sourceFileName}\" ");
+            $"\"{sourceFileName}\" "));
         await RunExifToolAsync(sourceFileName, targetFileName, startInfo, ct);
     }
 
