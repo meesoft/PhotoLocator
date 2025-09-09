@@ -112,18 +112,15 @@ namespace PhotoLocator.MapDisplay
             e.TranslationBehavior.DesiredDeceleration = 0.001;
         }
 
-        private void MapItemTouchDown(object sender, TouchEventArgs e)
+        private void HandleMapItemsControlSelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            var mapItem = (MapItem)sender;
-            mapItem.IsSelected = !mapItem.IsSelected;
-            e.Handled = true;
-            MapItemSelected?.Invoke(this, new MapItemEventArgs(mapItem));
-        }
-
-        private void MapItemLeftButtonDown(object sender, MouseEventArgs e)
-        {
-            var mapItem = (MapItem)sender;
-            MapItemSelected?.Invoke(this, new MapItemEventArgs(mapItem));
+            if (e.AddedItems.Count > 0)
+            {
+                if (e.AddedItems[0] is PointItem point)
+                    MapItemSelected?.Invoke(this, new MapItemEventArgs(point));
+                else if (e.AddedItems[0] is MapItem item && item.Content is PointItem innerPoint)
+                    MapItemSelected?.Invoke(this, new MapItemEventArgs(innerPoint));
+            }
         }
 
         private static string GetLatLonText(Location location)

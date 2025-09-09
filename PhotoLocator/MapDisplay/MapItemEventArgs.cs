@@ -1,15 +1,14 @@
-﻿using MapControl;
-using System;
+﻿using System;
 
 namespace PhotoLocator.MapDisplay
 {
     public class MapItemEventArgs : EventArgs
     {
-        public MapItemEventArgs(MapItem item)
+        public MapItemEventArgs(PointItem item)
         {
             Item = item;
         }
 
-        public MapItem Item { get; }
+        public PointItem Item { get; }
     }
 }

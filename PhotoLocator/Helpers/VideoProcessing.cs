@@ -137,7 +137,7 @@ namespace PhotoLocator.Helpers
                 throw new UserMessageException("Unsupported pixel format " + pixelFormat);
             var pixels = new byte[width * height * pixelSize];
 
-            var frameRateArg = inFrameRate.HasValue ? $"-r {inFrameRate}" : null;
+            var frameRateArg = inFrameRate.HasValue ? string.Create(CultureInfo.InvariantCulture, $"-r {inFrameRate}") : null;
             args = string.Create(CultureInfo.InvariantCulture, $"-f rawvideo -pix_fmt {formatString} -s {width}x{height} {frameRateArg} -i - {args}");
             var startInfo = new ProcessStartInfo(GetFFmpegPath(), args);
             startInfo.RedirectStandardInput = true;

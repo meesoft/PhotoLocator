@@ -66,7 +66,7 @@ public class ExifToolTest
     [TestMethod]
     public async Task SetGeotag_ShouldSet_UsingBitmapMetadata()
     {
-        var setValue = new MapControl.Location(-10, -20);
+        var setValue = new MapControl.Location(-10.1, -20.1);
         await ExifTool.SetGeotagAsync(@"TestData\2022-06-17_19.03.02.jpg", @"TestData\2022-06-17_19.03.02-out1.jpg", setValue, null, default);
 
         var newValue = ExifHandler.GetGeotag(@"TestData\2022-06-17_19.03.02-out1.jpg");
@@ -79,7 +79,7 @@ public class ExifToolTest
         if (!File.Exists(ExifToolPath))
             Assert.Inconclusive("ExifTool not found");
 
-        var setValue = new MapControl.Location(-10, -20);
+        var setValue = new MapControl.Location(-10.1, -20.1);
         await ExifTool.SetGeotagAsync(@"TestData\2022-06-17_19.03.02.jpg", @"TestData\2022-06-17_19.03.02-out2.jpg", setValue, ExifToolPath, default);
 
         var newValue = ExifHandler.GetGeotag(@"TestData\2022-06-17_19.03.02-out2.jpg");
@@ -92,7 +92,7 @@ public class ExifToolTest
         if (!File.Exists(ExifToolPath))
             Assert.Inconclusive("ExifTool not found");
 
-        var setValue = new MapControl.Location(-10, -20);
+        var setValue = new MapControl.Location(-10.1, -20.1);
         File.Copy(@"TestData\2022-06-17_19.03.02.jpg", @"TestData\2022-06-17_19.03.02_copy.jpg", true);
         await ExifTool.SetGeotagAsync(@"TestData\2022-06-17_19.03.02_copy.jpg", @"TestData\2022-06-17_19.03.02_copy.jpg", setValue, ExifToolPath, default);
 
@@ -110,7 +110,7 @@ public class ExifToolTest
         if (!File.Exists(ExifToolPath))
             Assert.Inconclusive("ExifTool not found");
 
-        var setValue = new MapControl.Location(-10, -20);
+        var setValue = new MapControl.Location(-10.1, -20.1);
         await ExifTool.SetGeotagAsync(FileName, "tagged.cr3", setValue, ExifToolPath, default);
 
         var newValue = ExifHandler.GetGeotag("tagged.cr3");
