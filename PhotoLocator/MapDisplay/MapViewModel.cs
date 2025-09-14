@@ -1,5 +1,7 @@
 ﻿using MapControl;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
+using System.Windows.Media;
 
 namespace PhotoLocator.MapDisplay
 {
@@ -12,23 +14,31 @@ namespace PhotoLocator.MapDisplay
 
     public class PolylineItem
     {
-        public PolylineItem() : this(new LocationCollection())
+        public PolylineItem() : this([])
         {
         }
 
-        public PolylineItem(LocationCollection locations)
+        public PolylineItem(LocationCollection locations) : this(locations, Colors.Red)
         {
+        }
+
+        public PolylineItem(LocationCollection locations, Color color)
+        {
+            Stroke = new SolidColorBrush(color);
+            Stroke.Freeze();
             Locations = locations;
         }
 
         public LocationCollection Locations { get; }
+
+        public Brush Stroke { get; set; }
     }
 
     public class MapViewModel
     {
-        public List<PointItem> Points { get; } = new List<PointItem>();
-        public List<PointItem> Pushpins { get; } = new List<PointItem>();
-        public List<PolylineItem> Polylines { get; } = new List<PolylineItem>();
+        public Collection<PointItem> Points { get; } = [];
+        public Collection<PointItem> Pushpins { get; } = [];
+        public Collection<PolylineItem> Polylines { get; } = [];
         public Location MapCenter { get; set; } = new Location(53.5, 8.2);
 
         public MapViewModel()

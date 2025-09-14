@@ -5,12 +5,21 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
+using System.Windows.Media;
 
 namespace PhotoLocator.Gps
 {
     public class GpsTrace : PolylineItem
     {
         public static readonly HashSet<string> TraceExtensions = [".gpx", ".kml", ".json", ".geojson"];
+
+        public GpsTrace()
+        {
+        }
+
+        public GpsTrace(LocationCollection locations, Color color) : base(locations, color)
+        {
+        }
 
         public string? Name { get; set; }
         

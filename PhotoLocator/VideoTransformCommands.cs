@@ -716,7 +716,7 @@ namespace PhotoLocator
                 var args = new List<string>();
                 if (IsRemoveAudioChecked)
                     args.Add("-an");
-                else if ((IsLocalContrastChecked || CombineFramesMode > CombineFramesMode.None) && HasSingleInput && !HasOnlyImageInput)
+                else if (IncludeAudioStream)
                 {
                     if (!string.IsNullOrEmpty(SkipTo))
                         args.Add($"-ss {SkipTo}");
@@ -737,6 +737,8 @@ namespace PhotoLocator
             else
                 OutputArguments = string.Empty;
         }
+
+        bool IncludeAudioStream => (IsLocalContrastChecked || CombineFramesMode > CombineFramesMode.None) && HasSingleInput && !HasOnlyImageInput;
 
         public ICommand ExtractFrames => new RelayCommand(o =>
         {
@@ -903,6 +905,8 @@ namespace PhotoLocator
         public ICommand ProcessSelected => new RelayCommand(async o =>
         {
             var allSelected = UpdateInputArgs();
+            if (!IsRemoveAudioChecked && IncludeAudioStream)
+                UpdateOutputArgs();
             if (HasSingleInput && !string.IsNullOrEmpty(SkipTo))
                 _mainViewModel.UpdatePreviewPictureAsync(SkipTo).WithExceptionLogging();
             if (_localContrastSetup is not null && _localContrastSetup.SourceBitmap is not null)

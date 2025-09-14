@@ -7,6 +7,8 @@
         xmlns:tools="clr-namespace:MapControl.UiTools;assembly=MapUiTools.WPF"
         xmlns:local="clr-namespace:PhotoLocator.MapDisplay"
         mc:Ignorable="d"
+        d:DesignWidth="600"
+        d:DesignHeight="600"
         d:DataContext="{d:DesignInstance Type=local:MapViewModel, IsDesignTimeCreatable=True}"
         Stylus.IsPressAndHoldEnabled="False">
 
@@ -17,7 +19,7 @@
             </ResourceDictionary.MergedDictionaries>
 
             <DataTemplate DataType="{x:Type local:PolylineItem}">
-                <map:MapPolyline Locations="{Binding Locations}" Stroke="Red" StrokeThickness="3"/>
+                <map:MapPolyline Locations="{Binding Locations}" Stroke="{Binding Stroke}" StrokeThickness="2"/>
             </DataTemplate>
 
             <Style x:Key="PointItemStyle" TargetType="map:MapItem">
@@ -111,6 +113,8 @@
                     </Trigger>
                 </Style.Triggers>
             </Style>
+
+            <BooleanToVisibilityConverter x:Key="BooleanToVisibility" />
         </ResourceDictionary>
     </UserControl.Resources>
 
@@ -173,8 +177,9 @@
         </StackPanel>
         
         <StackPanel HorizontalAlignment="Left" VerticalAlignment="Top" Margin="6" Visibility="{Binding MapToolsVisibility}">
+            
             <tools:MapLayersMenuButton x:Name="mapLayersMenuButton" Style="{StaticResource RoundedButtonStyle}"
-                Margin="2" ToolTip="Map Layers and Overlays"
+                Width="36" Height="36" Margin="2" ToolTip="Map Layers and Overlays" HorizontalAlignment="Left"
                 Map="{Binding ElementName=map}">
                 <tools:MapLayerItem Text="OpenStreetMap" Layer="{StaticResource OpenStreetMap}"/>
                 <tools:MapLayerItem Text="OpenStreetMap German" Layer="{StaticResource OpenStreetMapGerman}"/>
@@ -194,6 +199,13 @@
                 </tools:MapLayersMenuButton.MapOverlays>
             </tools:MapLayersMenuButton>
 
+            <StackPanel Orientation="Horizontal">
+                <ToggleButton Margin="2" Width="36" Height="36" ToolTip="Sun and moon" IsChecked="{Binding IsSunAndMoonVisible}"
+                              Content="&#xF08C;" FontFamily="Segoe MDL2 Assets" FontSize="25" />
+                <DatePicker Visibility="{Binding IsSunAndMoonVisible, Converter={StaticResource BooleanToVisibility}}" VerticalAlignment="Center" 
+                            SelectedDate="{Binding SunAndMoonDate}"  />
+            </StackPanel>
+
             <Slider Orientation="Vertical" Margin="8" Height="100"
                     Minimum="{Binding MinZoomLevel, ElementName=map}"
                     Maximum="{Binding MaxZoomLevel, ElementName=map}"
@@ -201,8 +213,8 @@
                     SmallChange="0.1"
                     AutoToolTipPlacement="BottomRight" AutoToolTipPrecision="0"/>
 
-            <Button Margin="2" Padding="8" ToolTip="Reset Heading" Click="ResetHeadingButtonClick"
-                    FontSize="20" FontFamily="Segoe MDL2 Assets" Content="&#xEBE6;">
+            <Button Margin="2" Padding="8" HorizontalAlignment="Left" ToolTip="Reset Heading" Click="ResetHeadingButtonClick"
+                    FontSize="20" FontFamily="Segoe MDL2 Assets" Content="&#xEBE6;" Width="36" Height="36">
                 <Button.Style>
                     <Style TargetType="Button">
                         <Style.Triggers>

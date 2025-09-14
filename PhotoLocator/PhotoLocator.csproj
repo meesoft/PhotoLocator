@@ -32,6 +32,7 @@
   <ItemGroup>
     <PackageReference Include="Microsoft-WindowsAPICodePack-ShellExtensions" Version="1.1.5" />
     <PackageReference Include="OpenCvSharp4.Windows" Version="4.10.0.20240616" />
+    <PackageReference Include="SunCalcNet" Version="1.2.3" />
     <PackageReference Include="XAML.MapControl.WPF" Version="13.6.0" />
   </ItemGroup>
 
