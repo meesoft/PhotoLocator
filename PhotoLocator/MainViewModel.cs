@@ -1046,7 +1046,8 @@ namespace PhotoLocator
 
         public ICommand ToggleLogCommand => new RelayCommand(o => LogViewHeight = LogViewHeight > 4 ? 4 : 100);
 
-        public JpegTransformCommands JpegTransformCommands => new(this);
+        public JpegTransformCommands JpegTransformCommands => _jpegTransformCommands ??= new(this);
+        JpegTransformCommands? _jpegTransformCommands;
 
         public VideoTransformCommands VideoTransformCommands => new(this);
 

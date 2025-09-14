@@ -16,7 +16,7 @@
         WindowState="Maximized"
         Title="{Binding WindowTitle}" 
         Height="500" Width="1200"
-        d:DesignWidth="1600"
+        d:DesignWidth="1800"
         Background="Black">
 
     <Window.Resources>
@@ -63,7 +63,7 @@
 
     <Grid Margin="4,4,4,2">
         <Grid.RowDefinitions>
-            <RowDefinition Height="28"/>
+            <RowDefinition Height="30"/>
             <RowDefinition/>
             <RowDefinition Height="{Binding LogViewHeight}"/>
         </Grid.RowDefinitions>
@@ -94,7 +94,7 @@
 
         <Grid Grid.Column="0" Margin="0,0,10,4" >
             <TextBox Text="{Binding PhotoFolderPath}" Margin="0,0,34,0" PreviewKeyUp="HandlePathEditPreviewKeyUp" Name="PathEdit" />
-            <Button Content="1" FontFamily="Wingdings" FontSize="20" FontWeight="Bold" Width="32" HorizontalAlignment="Right"
+            <Button Content="&#xED25;" FontFamily="Segoe MDL2 Assets" FontSize="18" Width="32" HorizontalAlignment="Right"
                     Command="{Binding BrowseForPhotosCommand}" ToolTip="Browse for folder (Ctrl+O)" />
         </Grid>
 
@@ -113,8 +113,23 @@
                     ToolTip="Apply saved location to selected photos (Ctrl+V)" />
             <Button Content="Save changes" Width="100" Command="{Binding SaveGeotagsCommand}"
                     ToolTip="Save changed geotags to photo files (Ctrl+S)" />
-            <Button Content="Slide show" Width="100" Command="{Binding SlideShowCommand}"
-                    ToolTip="Full screen slide show with map display (F3)" />
+
+            <Button Content="&#xE8AC;" FontFamily="Segoe MDL2 Assets" FontSize="18" Command="{Binding RenameCommand}"
+                    ToolTip="Rename (F2)" Width="32" />
+            <Button Content="&#xECC5;" FontFamily="Segoe MDL2 Assets" FontSize="18" Command="{Binding AdjustTimestampsCommand}"
+                    ToolTip="Adjust timestamps" Width="32" />
+            <Button Content="&#xE790;" FontFamily="Segoe MDL2 Assets" FontSize="18" Command="{Binding JpegTransformCommands.LocalContrastCommand}"
+                    ToolTip="Local contrast, brightness and colors (Ctrl+L)" Width="32" />
+            <Button Content="&#xE909;" FontFamily="Segoe MDL2 Assets" FontSize="18" Command="{Binding OpenInMapsCommand}"
+                    ToolTip="Open in Google maps" Width="32" />
+            <Button Content="&#xE74D;" FontFamily="Segoe MDL2 Assets" FontSize="18" Command="{Binding DeleteSelectedCommand}"
+                    ToolTip="Delete files (Del)" Width="32" />
+
+
+            <Button Content="&#xE768;" FontFamily="Segoe MDL2 Assets" FontSize="18" Command="{Binding SlideShowCommand}"
+                    ToolTip="Full screen slide show with map (F3)" Width="32" />
+            <Button Content="&#xE721;" FontFamily="Segoe MDL2 Assets" FontSize="18" Command="{Binding QuickSearchCommand}"
+                    ToolTip="Search (Ctrl+F)" Width="32"/>
             <Button Content="&#xE713;" FontFamily="Segoe MDL2 Assets" FontSize="18" Command="{Binding SettingsCommand}"
                     ToolTip="Settings (F12)" Width="32" />
             <Button Content="&#xE946;" FontFamily="Segoe MDL2 Assets" FontSize="18" Command="{Binding AboutCommand}"
