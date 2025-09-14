@@ -11,6 +11,9 @@ namespace PhotoLocator.BitmapOperations
 {
     sealed class RegistrationOperation : IDisposable
     {
+        const int MinimumFeatureCount = 10;
+        const int MinimumMatches = 10;
+
         readonly int _width;
         readonly int _height;
         readonly int _pixelSize;
@@ -66,8 +69,8 @@ namespace PhotoLocator.BitmapOperations
             using var mask = CreateRegionOfInterestMask(roi);
             var firstFeatures = _referenceGrayImage.GoodFeaturesToTrack(1000, 0.01, 30, mask!, 7, false, 0);
             Log.Write($"{firstFeatures.Length} features found in {sw.ElapsedMilliseconds} ms");
-            if (firstFeatures.Length < 10)
-                throw new UserMessageException("Not enough features found in first image");
+            if (firstFeatures.Length < MinimumFeatureCount)
+                throw new UserMessageException("Not enough features found in reference image");
             return firstFeatures;
         }
 
@@ -108,16 +111,43 @@ namespace PhotoLocator.BitmapOperations
             var grayImage = _pixelSize == 1 ? image : image.CvtColor(ColorConversionCodes.RGB2GRAY);
 
             TrackFeatures(grayImage, out var features, out var status);
+            var matchesCount = status.Count(s => s != 0);
+            Log.Write($"{matchesCount}/{features.Length} features matched in {sw.ElapsedMilliseconds} ms");
 
-            var trans = Cv2.FindHomography(
-                features.Where((p, i) => status[i] != 0).Select(p => new Point2d(p.X, p.Y)),
-                _referenceFeatures.Where((p, i) => status[i] != 0).Select(p => new Point2d(p.X, p.Y)), HomographyMethods.Ransac);
-
-            if (_reference == Reference.Previous && _previousTrans is not null)
+            Mat trans;
+            if (matchesCount < MinimumMatches)
             {
-                var toFirst = _previousTrans * trans;
-                trans.Dispose();
-                trans = toFirst;
+                Log.Write($"Not enough features matched ({matchesCount}/{features.Length})");
+                if (_reference == Reference.Previous)
+                {
+                    if (_previousTrans is not null)
+                        trans = _previousTrans.Clone();
+                    else
+                    {
+                        _referenceGrayImage.Dispose();
+                        _referenceGrayImage = grayImage;
+                        _referenceFeatures = FindFirstFeatures(null);
+                        return;
+                    }
+                }
+                else
+                {
+                    grayImage.Dispose();
+                    return;
+                }
+            }
+            else
+            {
+                trans = Cv2.FindHomography(
+                    features.Where((p, i) => status[i] != 0).Select(p => new Point2d(p.X, p.Y)),
+                    _referenceFeatures.Where((p, i) => status[i] != 0).Select(p => new Point2d(p.X, p.Y)), HomographyMethods.Ransac);
+
+                if (_reference == Reference.Previous && _previousTrans is not null)
+                {
+                    var toFirst = _previousTrans * trans;
+                    trans.Dispose();
+                    trans = toFirst;
+                }
             }
 
             using var warped = image.WarpPerspective(trans, image.Size(), InterpolationFlags.Cubic, 
@@ -134,21 +164,18 @@ namespace PhotoLocator.BitmapOperations
             {
                 grayImage.Dispose();
                 trans.Dispose();
-                var matches = status.Count(s => s != 0);
-                Log.Write($"{matches}/{features.Length} features matched in {sw.ElapsedMilliseconds} ms");
-                if (matches < 5)
-                    throw new UserMessageException($"Not enough features matched ({matches}/{features.Length})");
             }
-            else
+            else if (_reference == Reference.Previous)
             {
                 _referenceGrayImage.Dispose();
                 _referenceGrayImage = grayImage;
-                _referenceFeatures = features.Where((p, i) => status[i] != 0).ToArray();
                 _previousTrans?.Dispose();
                 _previousTrans = trans;
-                Log.Write($"{_referenceFeatures.Length}/{features.Length} features matched in {sw.ElapsedMilliseconds} ms");
-                if (_referenceFeatures.Length < 5)
-                    throw new UserMessageException($"Not enough features matched ({_referenceFeatures.Length}/{features.Length})");
+
+                if (matchesCount < MinimumFeatureCount)
+                    _referenceFeatures = FindFirstFeatures(null);
+                else
+                    _referenceFeatures = features.Where((p, i) => status[i] != 0).ToArray();
             }
         }
 
