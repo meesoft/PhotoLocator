@@ -10,10 +10,10 @@ public class CelestialCalculatorTest
         var date = DateTime.Today;
 
         var sun = CelestialCalculator.GetSunRiseSet(location, date);
-        if (sun.Sunrise.HasValue)
-            Console.WriteLine($"Sunrise: {sun.Sunrise.Value.ToLocalTime()} Azimuth: {sun.RiseAzimuth:F1}°");
-        if (sun.Sunset.HasValue)
-            Console.WriteLine($"Sunset: {sun.Sunset.Value.ToLocalTime()} Azimuth: {sun.SetAzimuth:F1}°");
+        Assert.IsTrue(sun.Sunrise.HasValue);
+        Assert.IsTrue(sun.Sunset.HasValue);
+        Console.WriteLine($"Sunrise: {sun.Sunrise.Value.ToLocalTime()} Azimuth: {sun.RiseAzimuth:F1}°");
+        Console.WriteLine($"Sunset: {sun.Sunset.Value.ToLocalTime()} Azimuth: {sun.SetAzimuth:F1}°");
 
         var moon = CelestialCalculator.GetMoonRiseSet(location, date);
         if (moon.Moonrise.HasValue)
