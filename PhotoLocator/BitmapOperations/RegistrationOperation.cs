@@ -11,6 +11,10 @@ namespace PhotoLocator.BitmapOperations
 {
     sealed class RegistrationOperation : IDisposable
     {
+        public enum Borders { Black, Mirror }
+
+        public enum Reference { First, Previous }
+
         const int MinimumFeatureCount = 10;
         const int MinimumMatches = 10;
 
@@ -22,16 +26,6 @@ namespace PhotoLocator.BitmapOperations
         Mat _referenceGrayImage;
         Point2f[] _referenceFeatures;
         Mat? _previousTrans;
-
-        public enum Borders
-        {
-            Black, Mirror
-        }
-
-        public enum Reference
-        {
-            First, Previous
-        }
 
         public RegistrationOperation(byte[] pixels, int width, int height, int pixelSize, Reference reference, Borders borderHandling, ROI? roi = null)
         {
@@ -114,51 +108,33 @@ namespace PhotoLocator.BitmapOperations
             var matchesCount = status.Count(s => s != 0);
             Log.Write($"{matchesCount}/{features.Length} features matched in {sw.ElapsedMilliseconds} ms");
 
-            Mat trans;
             if (matchesCount < MinimumMatches)
             {
-                Log.Write($"Not enough features matched ({matchesCount}/{features.Length})");
+                Log.Write("Not enough features matched");
                 if (_reference == Reference.Previous)
                 {
                     if (_previousTrans is not null)
-                        trans = _previousTrans.Clone();
-                    else
-                    {
-                        _referenceGrayImage.Dispose();
-                        _referenceGrayImage = grayImage;
-                        _referenceFeatures = FindFirstFeatures(null);
-                        return;
-                    }
+                        WarpImage(pixels, image, _previousTrans);
+                    _referenceGrayImage.Dispose();
+                    _referenceGrayImage = grayImage;
+                    _referenceFeatures = FindFirstFeatures(null);
                 }
                 else
-                {
                     grayImage.Dispose();
-                    return;
-                }
+                return;
             }
-            else
+
+            var trans = Cv2.FindHomography(features.Where((p, i) => status[i] != 0).Select(p => new Point2d(p.X, p.Y)),
+                _referenceFeatures.Where((p, i) => status[i] != 0).Select(p => new Point2d(p.X, p.Y)), HomographyMethods.Ransac);
+
+            if (_reference == Reference.Previous && _previousTrans is not null)
             {
-                trans = Cv2.FindHomography(
-                    features.Where((p, i) => status[i] != 0).Select(p => new Point2d(p.X, p.Y)),
-                    _referenceFeatures.Where((p, i) => status[i] != 0).Select(p => new Point2d(p.X, p.Y)), HomographyMethods.Ransac);
-
-                if (_reference == Reference.Previous && _previousTrans is not null)
-                {
-                    var toFirst = _previousTrans * trans;
-                    trans.Dispose();
-                    trans = toFirst;
-                }
+                var toFirst = _previousTrans * trans;
+                trans.Dispose();
+                trans = toFirst;
             }
-
-            using var warped = image.WarpPerspective(trans, image.Size(), InterpolationFlags.Cubic, 
-                _borderHandling == Borders.Mirror ? BorderTypes.Reflect101 : BorderTypes.Constant, new Scalar(0));
-
-            int size = _width * _height * _pixelSize;
-            unsafe
-            {
-                fixed (byte* dst = pixels)
-                    Buffer.MemoryCopy(warped.Ptr(0).ToPointer(), dst, size, size);
-            }
+            
+            WarpImage(pixels, image, trans);
 
             if (_reference == Reference.First)
             {
@@ -171,11 +147,19 @@ namespace PhotoLocator.BitmapOperations
                 _referenceGrayImage = grayImage;
                 _previousTrans?.Dispose();
                 _previousTrans = trans;
+                _referenceFeatures = features.Where((p, i) => status[i] != 0).ToArray();
+            }
+        }
 
-                if (matchesCount < MinimumFeatureCount)
-                    _referenceFeatures = FindFirstFeatures(null);
-                else
-                    _referenceFeatures = features.Where((p, i) => status[i] != 0).ToArray();
+        private void WarpImage(byte[] pixels, Mat image, Mat trans)
+        {
+            using var warped = image.WarpPerspective(trans, image.Size(), InterpolationFlags.Cubic,
+                _borderHandling == Borders.Mirror ? BorderTypes.Reflect101 : BorderTypes.Constant, new Scalar(0));
+            int size = _width * _height * _pixelSize;
+            unsafe
+            {
+                fixed (byte* dst = pixels)
+                    Buffer.MemoryCopy(warped.Ptr(0).ToPointer(), dst, size, size);
             }
         }
 
