@@ -101,6 +101,12 @@ namespace PhotoLocator
                     "PhotoLocator.Resources.JPEG-XL-LICENSE.txt")!, Encoding.Latin1);
                 text.AppendLine(jpegxlLicenseStream.ReadToEnd());
 
+                text.AppendLine(separator);
+                text.AppendLine("SunCalcNet");
+                using var sunCalcNetLicenseStream = new StreamReader(typeof(AboutWindow).Assembly.GetManifestResourceStream(
+                    "PhotoLocator.Resources.SunCalcNetLicense.txt")!, Encoding.Latin1);
+                text.AppendLine(sunCalcNetLicenseStream.ReadToEnd());                
+
                 return text.ToString();
             }
         }

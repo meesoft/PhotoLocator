@@ -13,7 +13,7 @@ namespace PhotoLocator.Helpers
         public static (DateTime? Sunrise, double? RiseAzimuth, DateTime? Sunset, double? SetAzimuth) GetSunRiseSet(
             Location location, DateTime date)
         {
-            date = date - date.TimeOfDay + TimeSpan.FromHours(12);
+            date = (date - date.TimeOfDay + TimeSpan.FromHours(12)).ToUniversalTime();
 
             DateTime? sunrise = null, sunset = null;
             double? sunriseAzimuth = null, sunsetAzimuth = null;

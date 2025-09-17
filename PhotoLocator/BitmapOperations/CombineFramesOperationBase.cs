@@ -11,7 +11,7 @@ namespace PhotoLocator.BitmapOperations
     record CombineFramesRegistration(RegistrationOperation.Reference Reference, ROI? Region)
     {
         public CombineFramesRegistrationBase ToCombineFramesRegistrationBase(RegistrationOperation.Borders borders) => 
-            new CombineFramesRegistrationBase(Reference, borders, Region);
+            new(Reference, borders, Region);
     }
 
     record CombineFramesRegistrationBase(RegistrationOperation.Reference Reference, RegistrationOperation.Borders Borders, ROI? Region);

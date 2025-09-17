@@ -27,6 +27,7 @@
     <None Remove="Resources\ArtisticLicense.txt" />
     <None Remove="Resources\GPLv3License.txt" />
     <None Remove="Resources\JPEG-XL-LICENSE.txt" />
+    <None Remove="Resources\SunCalcNetLicense.txt" />
   </ItemGroup>
 
   <ItemGroup>
@@ -52,6 +53,7 @@
     <EmbeddedResource Include="Resources\ExplorerShellContextMenuLicense.txt" />
     <EmbeddedResource Include="Resources\GPLv3License.txt" />
     <EmbeddedResource Include="Resources\JPEG-XL-LICENSE.txt" />
+    <EmbeddedResource Include="Resources\SunCalcNetLicense.txt" />
     <Resource Include="Resources\PhotoLocator.ico" />
   </ItemGroup>
 

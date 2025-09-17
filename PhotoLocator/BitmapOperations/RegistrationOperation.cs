@@ -23,6 +23,7 @@ namespace PhotoLocator.BitmapOperations
         readonly int _pixelSize;
         readonly Reference _reference;
         readonly Borders _borderHandling;
+        readonly ROI? _roi;
         Mat _referenceGrayImage;
         Point2f[] _referenceFeatures;
         Mat? _previousTrans;
@@ -35,7 +36,8 @@ namespace PhotoLocator.BitmapOperations
             _reference = reference;
             _borderHandling = borderHandling;
             _referenceGrayImage = ConvertToGrayscale(pixels);
-            _referenceFeatures = FindFirstFeatures(roi);
+            _roi = roi;
+            _referenceFeatures = FindFirstFeatures();
         }
 
         public RegistrationOperation(BitmapSource image, ROI? roi = null)
@@ -54,13 +56,14 @@ namespace PhotoLocator.BitmapOperations
             var pixels = new byte[_width * _height * _pixelSize];
             image.CopyPixels(pixels, _width * _pixelSize, 0);
             _referenceGrayImage = ConvertToGrayscale(pixels);
-            _referenceFeatures = FindFirstFeatures(roi);
+            _roi = roi;
+            _referenceFeatures = FindFirstFeatures();
         }
 
-        private Point2f[] FindFirstFeatures(ROI? roi)
+        private Point2f[] FindFirstFeatures()
         {
             var sw = Stopwatch.StartNew();
-            using var mask = CreateRegionOfInterestMask(roi);
+            using var mask = CreateRegionOfInterestMask();
             var firstFeatures = _referenceGrayImage.GoodFeaturesToTrack(1000, 0.01, 30, mask!, 7, false, 0);
             Log.Write($"{firstFeatures.Length} features found in {sw.ElapsedMilliseconds} ms");
             if (firstFeatures.Length < MinimumFeatureCount)
@@ -85,14 +88,14 @@ namespace PhotoLocator.BitmapOperations
             throw new UserMessageException("Unsupported number of planes: " + _pixelSize);
         }
 
-        private Mat? CreateRegionOfInterestMask(ROI? roi)
+        private Mat? CreateRegionOfInterestMask()
         {
             Mat? mask = null;
-            if (roi.HasValue)
+            if (_roi.HasValue)
             {
                 mask = new Mat(_height, _width, MatType.CV_8U);
                 mask.SetTo(new Scalar(0));
-                mask.Rectangle(new Rect(roi.Value.Left, roi.Value.Top, roi.Value.Width, roi.Value.Height), new Scalar(255), -1);
+                mask.Rectangle(new Rect(_roi.Value.Left, _roi.Value.Top, _roi.Value.Width, _roi.Value.Height), new Scalar(255), -1);
             }
             return mask;
         }
@@ -117,7 +120,7 @@ namespace PhotoLocator.BitmapOperations
                         WarpImage(pixels, image, _previousTrans);
                     _referenceGrayImage.Dispose();
                     _referenceGrayImage = grayImage;
-                    _referenceFeatures = FindFirstFeatures(null);
+                    _referenceFeatures = FindFirstFeatures();
                 }
                 else
                     grayImage.Dispose();
@@ -147,7 +150,10 @@ namespace PhotoLocator.BitmapOperations
                 _referenceGrayImage = grayImage;
                 _previousTrans?.Dispose();
                 _previousTrans = trans;
-                _referenceFeatures = features.Where((p, i) => status[i] != 0).ToArray();
+                if (matchesCount < MinimumFeatureCount)
+                    _referenceFeatures = FindFirstFeatures();
+                else
+                    _referenceFeatures = features.Where((p, i) => status[i] != 0).ToArray();
             }
         }
 

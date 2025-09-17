@@ -179,6 +179,8 @@ namespace PhotoLocator
                         UpdatePreviewPictureAsync().WithExceptionLogging();
                     else
                         PreviewPictureSource = null;
+                    if (!IsMapVisible)
+                        IsSunAndMoonVisible = false;
                     UpdatePoints();
                     UpdatePushpins();
                 }
