@@ -17,13 +17,13 @@
         <Grid Margin="2" >
             <CheckBox IsChecked="{Binding IsChecked}" HorizontalAlignment="Left" VerticalAlignment="Top" />
 
-            <TextBlock Text="&#xE840;" TextWrapping="Wrap" FontSize="20" FontFamily="Segoe MDL2 Assets" 
+            <TextBlock Text="&#xE840;" TextWrapping="Wrap" FontSize="18" FontFamily="Segoe MDL2 Assets" 
                        VerticalAlignment="Top" HorizontalAlignment="Right" Foreground="White" 
                        Visibility="{Binding GeoTagPresent, Converter={StaticResource BooleanToVisibility}}" />
-            <TextBlock Text="&#xE842;" TextWrapping="Wrap" FontSize="20" FontFamily="Segoe MDL2 Assets" 
+            <TextBlock Text="&#xE842;" TextWrapping="Wrap" FontSize="18" FontFamily="Segoe MDL2 Assets" 
                        VerticalAlignment="Top" HorizontalAlignment="Right" Foreground="Green" 
                        Visibility="{Binding GeoTagSaved, Converter={StaticResource BooleanToVisibility}}"/>
-            <TextBlock Text="&#xE842;" TextWrapping="Wrap" FontSize="20" FontFamily="Segoe MDL2 Assets" 
+            <TextBlock Text="&#xE842;" TextWrapping="Wrap" FontSize="18" FontFamily="Segoe MDL2 Assets" 
                        VerticalAlignment="Top"  HorizontalAlignment="Right" Foreground="#FFFFBE00" 
                        Visibility="{Binding GeoTagUpdated, Converter={StaticResource BooleanToVisibility}}"/>
 

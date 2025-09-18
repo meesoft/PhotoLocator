@@ -71,21 +71,23 @@ namespace PhotoLocator.BitmapOperations
             return firstFeatures;
         }
 
-        private Mat ConvertToGrayscale(byte[] pixels)
+        private Mat CreateMatFromPixels(byte[] pixels)
         {
             if (_pixelSize == 1)
                 return Mat.FromPixelData(_height, _width, MatType.CV_8U, pixels);
             if (_pixelSize == 3)
-            {
-                using var image = Mat.FromPixelData(_height, _width, MatType.CV_8UC3, pixels);
-                return image.CvtColor(ColorConversionCodes.RGB2GRAY);
-            }
+                return Mat.FromPixelData(_height, _width, MatType.CV_8UC3, pixels);
             if (_pixelSize == 4)
-            {
-                using var image = Mat.FromPixelData(_height, _width, MatType.CV_8UC4, pixels);
-                return image.CvtColor(ColorConversionCodes.RGB2GRAY);
-            }
+                return Mat.FromPixelData(_height, _width, MatType.CV_8UC4, pixels);
             throw new UserMessageException("Unsupported number of planes: " + _pixelSize);
+        }
+
+        private Mat ConvertToGrayscale(byte[] pixels)
+        {
+            if (_pixelSize == 1)
+                return Mat.FromPixelData(_height, _width, MatType.CV_8U, pixels);
+            using var image = CreateMatFromPixels(pixels);
+            return image.CvtColor(ColorConversionCodes.RGB2GRAY);
         }
 
         private Mat? CreateRegionOfInterestMask()
@@ -103,9 +105,8 @@ namespace PhotoLocator.BitmapOperations
         public void Apply(byte[] pixels)
         {
             var sw = Stopwatch.StartNew();
-
-            using var image = Mat.FromPixelData(_height, _width, _pixelSize == 1 ? MatType.CV_8U : MatType.CV_8UC3, pixels);
-            var grayImage = _pixelSize == 1 ? image : image.CvtColor(ColorConversionCodes.RGB2GRAY);
+            using var image = CreateMatFromPixels(pixels);
+            using var grayImage = _pixelSize == 1 ? image : image.CvtColor(ColorConversionCodes.RGB2GRAY); // Channel order is not important since it is only an internal image used for feature matching
 
             TrackFeatures(grayImage, out var features, out var status);
             var matchesCount = status.Count(s => s != 0);
@@ -119,11 +120,9 @@ namespace PhotoLocator.BitmapOperations
                     if (_previousTrans is not null)
                         WarpImage(pixels, image, _previousTrans);
                     _referenceGrayImage.Dispose();
-                    _referenceGrayImage = grayImage;
+                    _referenceGrayImage = grayImage.Clone();
                     _referenceFeatures = FindFirstFeatures();
                 }
-                else
-                    grayImage.Dispose();
                 return;
             }
 
@@ -136,18 +135,15 @@ namespace PhotoLocator.BitmapOperations
                 trans.Dispose();
                 trans = toFirst;
             }
-            
+
             WarpImage(pixels, image, trans);
 
             if (_reference == Reference.First)
-            {
-                grayImage.Dispose();
                 trans.Dispose();
-            }
             else if (_reference == Reference.Previous)
             {
                 _referenceGrayImage.Dispose();
-                _referenceGrayImage = grayImage;
+                _referenceGrayImage = grayImage.Clone();
                 _previousTrans?.Dispose();
                 _previousTrans = trans;
                 if (matchesCount < MinimumFeatureCount)
