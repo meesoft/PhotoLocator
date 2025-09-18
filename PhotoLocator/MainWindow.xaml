@@ -120,6 +120,8 @@
                     ToolTip="Adjust timestamps" Width="32" />
             <Button Content="&#xE790;" FontFamily="Segoe MDL2 Assets" FontSize="18" Command="{Binding JpegTransformCommands.LocalContrastCommand}"
                     ToolTip="Local contrast, brightness and colors (Ctrl+L)" Width="32" />
+            <Button Content="&#xE714;" FontFamily="Segoe MDL2 Assets" FontSize="18" Command="{Binding VideoTransformCommandsShared.ProcessSelected}"
+                    ToolTip="Process video (Ctrl+P)" Width="32" />
             <Button Content="&#xE909;" FontFamily="Segoe MDL2 Assets" FontSize="18" Command="{Binding OpenInMapsCommand}"
                     ToolTip="Open in Google maps" Width="32" />
             <Button Content="&#xE74D;" FontFamily="Segoe MDL2 Assets" FontSize="18" Command="{Binding DeleteSelectedCommand}"
