@@ -11,24 +11,22 @@ namespace PhotoLocator.BitmapOperations
 {
     sealed class RegistrationOperation : IDisposable
     {
+        public enum Borders { Black, Mirror }
+
+        public enum Reference { First, Previous }
+
+        const int MinimumFeatureCount = 10;
+        const int MinimumMatches = 10;
+
         readonly int _width;
         readonly int _height;
         readonly int _pixelSize;
         readonly Reference _reference;
         readonly Borders _borderHandling;
+        readonly ROI? _roi;
         Mat _referenceGrayImage;
         Point2f[] _referenceFeatures;
         Mat? _previousTrans;
-
-        public enum Borders
-        {
-            Black, Mirror
-        }
-
-        public enum Reference
-        {
-            First, Previous
-        }
 
         public RegistrationOperation(byte[] pixels, int width, int height, int pixelSize, Reference reference, Borders borderHandling, ROI? roi = null)
         {
@@ -38,7 +36,8 @@ namespace PhotoLocator.BitmapOperations
             _reference = reference;
             _borderHandling = borderHandling;
             _referenceGrayImage = ConvertToGrayscale(pixels);
-            _referenceFeatures = FindFirstFeatures(roi);
+            _roi = roi;
+            _referenceFeatures = FindFirstFeatures();
         }
 
         public RegistrationOperation(BitmapSource image, ROI? roi = null)
@@ -57,45 +56,48 @@ namespace PhotoLocator.BitmapOperations
             var pixels = new byte[_width * _height * _pixelSize];
             image.CopyPixels(pixels, _width * _pixelSize, 0);
             _referenceGrayImage = ConvertToGrayscale(pixels);
-            _referenceFeatures = FindFirstFeatures(roi);
+            _roi = roi;
+            _referenceFeatures = FindFirstFeatures();
         }
 
-        private Point2f[] FindFirstFeatures(ROI? roi)
+        private Point2f[] FindFirstFeatures()
         {
             var sw = Stopwatch.StartNew();
-            using var mask = CreateRegionOfInterestMask(roi);
+            using var mask = CreateRegionOfInterestMask();
             var firstFeatures = _referenceGrayImage.GoodFeaturesToTrack(1000, 0.01, 30, mask!, 7, false, 0);
             Log.Write($"{firstFeatures.Length} features found in {sw.ElapsedMilliseconds} ms");
-            if (firstFeatures.Length < 10)
-                throw new UserMessageException("Not enough features found in first image");
+            if (firstFeatures.Length < MinimumFeatureCount)
+                throw new UserMessageException("Not enough features found in reference image");
             return firstFeatures;
+        }
+
+        private Mat CreateMatFromPixels(byte[] pixels)
+        {
+            if (_pixelSize == 1)
+                return Mat.FromPixelData(_height, _width, MatType.CV_8U, pixels);
+            if (_pixelSize == 3)
+                return Mat.FromPixelData(_height, _width, MatType.CV_8UC3, pixels);
+            if (_pixelSize == 4)
+                return Mat.FromPixelData(_height, _width, MatType.CV_8UC4, pixels);
+            throw new UserMessageException("Unsupported number of planes: " + _pixelSize);
         }
 
         private Mat ConvertToGrayscale(byte[] pixels)
         {
             if (_pixelSize == 1)
                 return Mat.FromPixelData(_height, _width, MatType.CV_8U, pixels);
-            if (_pixelSize == 3)
-            {
-                using var image = Mat.FromPixelData(_height, _width, MatType.CV_8UC3, pixels);
-                return image.CvtColor(ColorConversionCodes.RGB2GRAY);
-            }
-            if (_pixelSize == 4)
-            {
-                using var image = Mat.FromPixelData(_height, _width, MatType.CV_8UC4, pixels);
-                return image.CvtColor(ColorConversionCodes.RGB2GRAY);
-            }
-            throw new UserMessageException("Unsupported number of planes: " + _pixelSize);
+            using var image = CreateMatFromPixels(pixels);
+            return image.CvtColor(ColorConversionCodes.RGB2GRAY);
         }
 
-        private Mat? CreateRegionOfInterestMask(ROI? roi)
+        private Mat? CreateRegionOfInterestMask()
         {
             Mat? mask = null;
-            if (roi.HasValue)
+            if (_roi.HasValue)
             {
                 mask = new Mat(_height, _width, MatType.CV_8U);
                 mask.SetTo(new Scalar(0));
-                mask.Rectangle(new Rect(roi.Value.Left, roi.Value.Top, roi.Value.Width, roi.Value.Height), new Scalar(255), -1);
+                mask.Rectangle(new Rect(_roi.Value.Left, _roi.Value.Top, _roi.Value.Width, _roi.Value.Height), new Scalar(255), -1);
             }
             return mask;
         }
@@ -103,14 +105,28 @@ namespace PhotoLocator.BitmapOperations
         public void Apply(byte[] pixels)
         {
             var sw = Stopwatch.StartNew();
-
-            using var image = Mat.FromPixelData(_height, _width, _pixelSize == 1 ? MatType.CV_8U : MatType.CV_8UC3, pixels);
-            var grayImage = _pixelSize == 1 ? image : image.CvtColor(ColorConversionCodes.RGB2GRAY);
+            using var image = CreateMatFromPixels(pixels);
+            using var grayImage = _pixelSize == 1 ? image : image.CvtColor(ColorConversionCodes.BGR2GRAY); // Channel order is not important since it is only an internal image used for feature matching
 
             TrackFeatures(grayImage, out var features, out var status);
+            var matchesCount = status.Count(s => s != 0);
+            Log.Write($"{matchesCount}/{features.Length} features matched in {sw.ElapsedMilliseconds} ms");
 
-            var trans = Cv2.FindHomography(
-                features.Where((p, i) => status[i] != 0).Select(p => new Point2d(p.X, p.Y)),
+            if (matchesCount < MinimumMatches)
+            {
+                Log.Write("Not enough features matched");
+                if (_reference == Reference.Previous)
+                {
+                    if (_previousTrans is not null)
+                        WarpImage(pixels, image, _previousTrans);
+                    _referenceGrayImage.Dispose();
+                    _referenceGrayImage = grayImage.Clone();
+                    _referenceFeatures = FindFirstFeatures();
+                }
+                return;
+            }
+
+            var trans = Cv2.FindHomography(features.Where((p, i) => status[i] != 0).Select(p => new Point2d(p.X, p.Y)),
                 _referenceFeatures.Where((p, i) => status[i] != 0).Select(p => new Point2d(p.X, p.Y)), HomographyMethods.Ransac);
 
             if (_reference == Reference.Previous && _previousTrans is not null)
@@ -120,35 +136,32 @@ namespace PhotoLocator.BitmapOperations
                 trans = toFirst;
             }
 
-            using var warped = image.WarpPerspective(trans, image.Size(), InterpolationFlags.Cubic, 
-                _borderHandling == Borders.Mirror ? BorderTypes.Reflect101 : BorderTypes.Constant, new Scalar(0));
+            WarpImage(pixels, image, trans);
 
+            if (_reference == Reference.First)
+                trans.Dispose();
+            else if (_reference == Reference.Previous)
+            {
+                _referenceGrayImage.Dispose();
+                _referenceGrayImage = grayImage.Clone();
+                _previousTrans?.Dispose();
+                _previousTrans = trans;
+                if (matchesCount < MinimumFeatureCount)
+                    _referenceFeatures = FindFirstFeatures();
+                else
+                    _referenceFeatures = features.Where((p, i) => status[i] != 0).ToArray();
+            }
+        }
+
+        private void WarpImage(byte[] pixels, Mat image, Mat trans)
+        {
+            using var warped = image.WarpPerspective(trans, image.Size(), InterpolationFlags.Cubic,
+                _borderHandling == Borders.Mirror ? BorderTypes.Reflect101 : BorderTypes.Constant, new Scalar(0));
             int size = _width * _height * _pixelSize;
             unsafe
             {
                 fixed (byte* dst = pixels)
                     Buffer.MemoryCopy(warped.Ptr(0).ToPointer(), dst, size, size);
-            }
-
-            if (_reference == Reference.First)
-            {
-                grayImage.Dispose();
-                trans.Dispose();
-                var matches = status.Count(s => s != 0);
-                Log.Write($"{matches}/{features.Length} features matched in {sw.ElapsedMilliseconds} ms");
-                if (matches < 5)
-                    throw new UserMessageException($"Not enough features matched ({matches}/{features.Length})");
-            }
-            else
-            {
-                _referenceGrayImage.Dispose();
-                _referenceGrayImage = grayImage;
-                _referenceFeatures = features.Where((p, i) => status[i] != 0).ToArray();
-                _previousTrans?.Dispose();
-                _previousTrans = trans;
-                Log.Write($"{_referenceFeatures.Length}/{features.Length} features matched in {sw.ElapsedMilliseconds} ms");
-                if (_referenceFeatures.Length < 5)
-                    throw new UserMessageException($"Not enough features matched ({_referenceFeatures.Length}/{features.Length})");
             }
         }
 

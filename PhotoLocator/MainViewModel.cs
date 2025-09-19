@@ -20,6 +20,7 @@ using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
+using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Shell;
 using System.Windows.Threading;
@@ -178,6 +179,8 @@ namespace PhotoLocator
                         UpdatePreviewPictureAsync().WithExceptionLogging();
                     else
                         PreviewPictureSource = null;
+                    if (!IsMapVisible)
+                        IsSunAndMoonVisible = false;
                     UpdatePoints();
                     UpdatePushpins();
                 }
@@ -302,6 +305,7 @@ namespace PhotoLocator
         {
             if (!IsMapVisible)
                 return;
+            IsSunAndMoonVisible = false;
             var updatedPoints = Items.Where(item => item.IsChecked && item.GeoTag != null && item != SelectedItem)
                 .ToDictionary(p => p.Name);
             for (int i = Points.Count - 1; i >= 0; i--)
@@ -621,6 +625,69 @@ namespace PhotoLocator
                 Settings.ResamplingOptions = previousResamplingOptions;
             }
         });
+
+        public bool IsSunAndMoonVisible
+        {
+            get => _isSunAndMoonVisible;
+            set
+            {
+                if (SetProperty(ref _isSunAndMoonVisible, value))
+                    UpdateSunAndMoonPosition();
+            }
+        }
+        bool _isSunAndMoonVisible;
+
+        public DateTime SunAndMoonDate
+        {
+            get => _sunAndMoonDate;
+            set
+            {
+                if (SetProperty(ref _sunAndMoonDate, value) && IsSunAndMoonVisible)
+                    UpdateSunAndMoonPosition();
+
+            }
+        }
+        DateTime _sunAndMoonDate = DateTime.Now;
+
+        private void UpdateSunAndMoonPosition()
+        {
+            Pushpins.Clear();
+            Polylines.Clear();
+            Points.Clear();
+
+            if (MapCenter is null || !IsSunAndMoonVisible)
+            {
+                UpdatePushpins();
+                return;
+            }
+
+            void AddLineSeg(double azimuth, Color color, string text)
+            {
+                var pt = CelestialCalculator.GetLocationAtDistance(MapCenter, azimuth, 5);
+                var trace = new GpsTrace(new LocationCollection(MapCenter, pt), color);
+                Polylines.Add(trace);
+                Points.Add(new PointItem { Location = trace.Locations[1], Name = text });
+            }
+
+            var now = DateTime.Now.ToUniversalTime();
+            var sun = CelestialCalculator.GetSunRiseSet(MapCenter, SunAndMoonDate);
+            if (sun.Sunrise.HasValue)
+                AddLineSeg(sun.RiseAzimuth!.Value, Colors.Yellow, $"Sunrise: {sun.Sunrise.Value.ToLocalTime()}\nAzimuth: {sun.RiseAzimuth:F0}°");
+            if (sun.Sunset.HasValue)
+                AddLineSeg(sun.SetAzimuth!.Value, Colors.Yellow, $"Sunset: {sun.Sunset.Value.ToLocalTime()}\nAzimuth: {sun.SetAzimuth:F0}°");
+            var sunPos = CelestialCalculator.GetSunPosition(MapCenter, now);
+            if (sunPos.HasValue)
+                AddLineSeg(sunPos.Value, Colors.Orange, $"Sun now:\nAzimuth: {sunPos:F1}°");
+
+            var moon = CelestialCalculator.GetMoonRiseSet(MapCenter, SunAndMoonDate);
+            if (moon.Moonrise.HasValue)
+                AddLineSeg(moon.RiseAzimuth!.Value, Colors.LightGray, $"Moonrise: {moon.Moonrise.Value.ToLocalTime()}\n{moon.RiseIllumination * 100:F0}%, azimuth: {moon.RiseAzimuth:F0}°");
+            if (moon.Moonset.HasValue)
+                AddLineSeg(moon.SetAzimuth!.Value, Colors.LightGray, $"Moonset: {moon.Moonset.Value.ToLocalTime()}\n{moon.SetIllumination * 100:F0}%, azimuth: {moon.SetAzimuth:F0}°");
+            var moonPos = CelestialCalculator.GetMoonPosition(MapCenter, now);
+            if (moonPos.Azimuth.HasValue)
+                AddLineSeg(moonPos.Azimuth.Value, Colors.Gray, $"Moon now: {moonPos.Illumination * 100:F0}%\nAzimuth: {moonPos.Azimuth:F1}°");
+        }
 
         public static ICommand AboutCommand => new RelayCommand(o =>
         {
@@ -981,7 +1048,8 @@ namespace PhotoLocator
 
         public ICommand ToggleLogCommand => new RelayCommand(o => LogViewHeight = LogViewHeight > 4 ? 4 : 100);
 
-        public JpegTransformCommands JpegTransformCommands => new(this);
+        public JpegTransformCommands JpegTransformCommands => _jpegTransformCommands ??= new(this);
+        JpegTransformCommands? _jpegTransformCommands;
 
         public VideoTransformCommands VideoTransformCommands => new(this);
 

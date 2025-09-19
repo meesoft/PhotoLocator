@@ -473,6 +473,7 @@ namespace PhotoLocator
             }
             else
             {
+                _resamplerCancellation?.Cancel();
                 ZoomedPreviewImage.Visibility = Visibility.Visible;
                 UpdateLayout();
                 _zoomPreviewViewHelper.InitializePreviewRenderTransform(true, _viewModel.Settings.TrackZoom);

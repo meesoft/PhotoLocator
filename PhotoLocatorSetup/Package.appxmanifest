@@ -9,7 +9,7 @@
   <Identity
     Name="14699MeeSoft.PhotoLocator"
     Publisher="CN=7909BF9A-F4C6-49C5-995F-BEDA3E7BAD48"
-    Version="2025.6.23.0" />
+    Version="2025.9.19.0" />
 
   <Properties>
     <DisplayName>PhotoLocator</DisplayName>

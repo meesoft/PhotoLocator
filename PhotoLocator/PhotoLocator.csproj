@@ -6,7 +6,7 @@
     <Nullable>enable</Nullable>
     <UseWPF>true</UseWPF>
     <ApplicationManifest>app.manifest</ApplicationManifest>
-    <Version>2025.6.23.0</Version>
+    <Version>2025.9.19.0</Version>
     <Copyright>(c) 2022-2025 Michael Vinther</Copyright>
     <Company>MeeSoft</Company>
     <ApplicationIcon>Resources\PhotoLocator.ico</ApplicationIcon>
@@ -27,11 +27,13 @@
     <None Remove="Resources\ArtisticLicense.txt" />
     <None Remove="Resources\GPLv3License.txt" />
     <None Remove="Resources\JPEG-XL-LICENSE.txt" />
+    <None Remove="Resources\SunCalcNetLicense.txt" />
   </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="Microsoft-WindowsAPICodePack-ShellExtensions" Version="1.1.5" />
     <PackageReference Include="OpenCvSharp4.Windows" Version="4.10.0.20240616" />
+    <PackageReference Include="SunCalcNet" Version="1.2.3" />
     <PackageReference Include="XAML.MapControl.WPF" Version="13.6.0" />
   </ItemGroup>
 
@@ -51,6 +53,7 @@
     <EmbeddedResource Include="Resources\ExplorerShellContextMenuLicense.txt" />
     <EmbeddedResource Include="Resources\GPLv3License.txt" />
     <EmbeddedResource Include="Resources\JPEG-XL-LICENSE.txt" />
+    <EmbeddedResource Include="Resources\SunCalcNetLicense.txt" />
     <Resource Include="Resources\PhotoLocator.ico" />
   </ItemGroup>
 

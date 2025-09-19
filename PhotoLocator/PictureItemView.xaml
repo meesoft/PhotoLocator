@@ -17,22 +17,16 @@
         <Grid Margin="2" >
             <CheckBox IsChecked="{Binding IsChecked}" HorizontalAlignment="Left" VerticalAlignment="Top" />
 
-            <TextBlock Text="ë" TextWrapping="Wrap" FontSize="25" FontWeight="ExtraBold" FontFamily="Webdings" 
+            <TextBlock Text="&#xE840;" FontSize="18" FontFamily="Segoe MDL2 Assets" 
                        VerticalAlignment="Top" HorizontalAlignment="Right" Foreground="White" 
-                       Visibility="{Binding GeoTagPresent, Converter={StaticResource BooleanToVisibility}}" RenderTransformOrigin="0.5,0.5">
-                <TextBlock.RenderTransform>
-                    <TransformGroup>
-                        <TranslateTransform X="1.8" Y="-1.1"/>
-                    </TransformGroup>
-                </TextBlock.RenderTransform>
-            </TextBlock>
-            <TextBlock Text="ë" TextWrapping="Wrap" FontSize="22" FontWeight="Bold" FontFamily="Webdings" 
+                       Visibility="{Binding GeoTagPresent, Converter={StaticResource BooleanToVisibility}}" />
+            <TextBlock Text="&#xE842;" FontSize="18" FontFamily="Segoe MDL2 Assets" 
                        VerticalAlignment="Top" HorizontalAlignment="Right" Foreground="Green" 
                        Visibility="{Binding GeoTagSaved, Converter={StaticResource BooleanToVisibility}}"/>
-            <TextBlock Text="ë" TextWrapping="Wrap" FontSize="22" FontWeight="Bold" FontFamily="Webdings" 
-                       VerticalAlignment="Top"  HorizontalAlignment="Right" Foreground="#FFFFDD00" 
+            <TextBlock Text="&#xE842;" FontSize="18" FontFamily="Segoe MDL2 Assets" 
+                       VerticalAlignment="Top"  HorizontalAlignment="Right" Foreground="#FFFFBE00" 
                        Visibility="{Binding GeoTagUpdated, Converter={StaticResource BooleanToVisibility}}"/>
-            
+
             <TextBlock Text="{Binding Name}" TextWrapping="Wrap" FontWeight="Bold" VerticalAlignment="Bottom" Foreground="#FFEEEEEE"/>
         </Grid>
     </Grid>
