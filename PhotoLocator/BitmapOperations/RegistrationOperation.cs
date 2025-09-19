@@ -106,7 +106,7 @@ namespace PhotoLocator.BitmapOperations
         {
             var sw = Stopwatch.StartNew();
             using var image = CreateMatFromPixels(pixels);
-            using var grayImage = _pixelSize == 1 ? image : image.CvtColor(ColorConversionCodes.RGB2GRAY); // Channel order is not important since it is only an internal image used for feature matching
+            using var grayImage = _pixelSize == 1 ? image : image.CvtColor(ColorConversionCodes.BGR2GRAY); // Channel order is not important since it is only an internal image used for feature matching
 
             TrackFeatures(grayImage, out var features, out var status);
             var matchesCount = status.Count(s => s != 0);
