@@ -239,13 +239,13 @@
 
             <mapDisplay:MapView Grid.Row="0" x:Name="Map" Visibility="{Binding IsMapVisible, Converter={StaticResource BooleanToVisibility}}"/>
 
-            <Grid Grid.Row="1" Visibility="{Binding IsPreviewVisible, Converter={StaticResource BooleanToVisibility}}" Margin="0,4,0,0" 
+            <Grid Grid.Row="1" Visibility="{Binding IsPreviewVisible, Converter={StaticResource BooleanToVisibility}}" Margin="0,1,0,0" 
                   PreviewMouseWheel="HandlePreviewMouseWheel" >
                 <Image Name="FullPreviewImage" Source="{Binding PreviewPictureSource}" 
                        RenderOptions.BitmapScalingMode="{Binding Settings.BitmapScalingMode}" SnapsToDevicePixels="True" />
 
-                <Canvas Name="PreviewCanvas" ClipToBounds="True" SizeChanged="HandlePreviewCanvasSizeChanged" UseLayoutRounding="True">
-                    <Image Name="ResampledPreviewImage" 
+                <Canvas Name="PreviewCanvas" ClipToBounds="True" SizeChanged="HandlePreviewCanvasSizeChanged">
+                    <Image Name="ResampledPreviewImage"
                            Stretch="None" RenderOptions.BitmapScalingMode="NearestNeighbor" SnapsToDevicePixels="True" />
                     <Image Name="ZoomedPreviewImage" Source="{Binding PreviewPictureSource}" Visibility="Collapsed"
                            Stretch="None" RenderOptions.BitmapScalingMode="NearestNeighbor" SnapsToDevicePixels="True" />
