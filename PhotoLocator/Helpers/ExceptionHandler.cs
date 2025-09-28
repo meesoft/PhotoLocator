@@ -10,6 +10,8 @@ namespace PhotoLocator.Helpers
         {
             if (exception is OperationCanceledException || exception.InnerException is OperationCanceledException)
                 return;
+            if (exception is AggregateException aggregateEx && aggregateEx.InnerException is UserMessageException)
+                exception = aggregateEx.InnerException;
             var message = exception is UserMessageException ? exception.Message : exception.ToString();
             try
             {

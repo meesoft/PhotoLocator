@@ -308,8 +308,12 @@ namespace PhotoLocator
         {
             if (e.Key == Key.Enter)
             {
-                _viewModel.PhotoFolderPath = PathEdit.Text;
                 e.Handled = true;
+                var path = PathEdit.Text.TrimPath();
+                if (File.Exists(path))
+                    _viewModel.SetFolderPathAsync(Path.GetDirectoryName(path), path).WithExceptionShowing();
+                else
+                    _viewModel.PhotoFolderPath = path;
             }
         }
 
