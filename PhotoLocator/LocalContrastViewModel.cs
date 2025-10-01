@@ -57,7 +57,6 @@ namespace PhotoLocator
             get => _sourceBitmap;
             set
             {
-                _sourceBitmap = value;
                 _previewPictureSource = value;
                 _laplacianFilterOperation.SourceChanged();
                 _localContrastOperation.SourceChanged();
@@ -68,6 +67,7 @@ namespace PhotoLocator
                     _laplacianFilterOperation.SrcBitmap.Assign(value, FloatBitmap.DefaultMonitorGamma);
                     _updateTimer.Start();
                 }
+                _sourceBitmap = value;
             }
         }
         private BitmapSource? _sourceBitmap;

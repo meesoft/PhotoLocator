@@ -370,10 +370,19 @@ namespace PhotoLocator
             if (_localContrastSetup.SourceBitmap is null)
                 using (var cursor = new MouseCursorOverride())
                 {
-                    var firstSelected = _mainViewModel.GetSelectedItems(true).First();
-                    var preview = firstSelected.LoadPreview(default, skipTo: HasSingleInput && !string.IsNullOrEmpty(SkipTo) ? SkipTo: null) 
-                        ?? throw new UserMessageException("Unable to load preview frame");
-                    _localContrastSetup.SourceBitmap = preview;
+                    try
+                    {
+                        var firstSelected = _mainViewModel.GetSelectedItems(true).First();
+                        var preview = firstSelected.LoadPreview(default, skipTo: HasSingleInput && !string.IsNullOrEmpty(SkipTo) ? SkipTo : null)
+                            ?? throw new FileFormatException("LoadPreview returned null");
+                        _localContrastSetup.SourceBitmap = preview;
+                    }
+                    catch (Exception ex)
+                    {
+                        ExceptionHandler.LogException(ex);
+                        ExceptionHandler.ShowException(new UserMessageException("Unable to load preview frame"));
+                        return;
+                    }
                 }
             var window = new LocalContrastView();
             window.CancelButton.Visibility = Visibility.Hidden;

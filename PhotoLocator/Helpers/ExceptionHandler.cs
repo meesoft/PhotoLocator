@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using System.Windows;
 using System.Windows.Threading;
 
@@ -13,14 +14,20 @@ namespace PhotoLocator.Helpers
             if (exception is AggregateException aggregateEx && aggregateEx.InnerException is UserMessageException)
                 exception = aggregateEx.InnerException;
             var message = exception is UserMessageException ? exception.Message : exception.ToString();
+
+            static MessageBoxResult ShowErrorBox(string message)
+            {
+                var parent = App.Current.MainWindow.OwnedWindows.OfType<Window>().FirstOrDefault(w => w.IsVisible) ?? App.Current.MainWindow;
+                return MessageBox.Show(parent, message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+
             try
             {
                 Log.Write(message);
                 if (Application.Current.Dispatcher == Dispatcher.CurrentDispatcher)
-                    MessageBox.Show(App.Current.MainWindow, message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                    ShowErrorBox(message);
                 else
-                    Application.Current.Dispatcher.BeginInvoke(() =>
-                        MessageBox.Show(App.Current.MainWindow, message, "Error", MessageBoxButton.OK, MessageBoxImage.Error));
+                    Application.Current.Dispatcher.BeginInvoke(() => ShowErrorBox(message));
             }
             catch 
             {
