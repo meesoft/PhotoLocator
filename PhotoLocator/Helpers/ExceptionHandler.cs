@@ -17,8 +17,15 @@ namespace PhotoLocator.Helpers
 
             static MessageBoxResult ShowErrorBox(string message)
             {
-                var parent = App.Current.MainWindow.OwnedWindows.OfType<Window>().FirstOrDefault(w => w.IsVisible) ?? App.Current.MainWindow;
-                return MessageBox.Show(parent, message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                var topWindow = App.Current.MainWindow;
+                while (true)
+                {
+                    var child = topWindow.OwnedWindows.OfType<Window>().FirstOrDefault(w => w.IsVisible);
+                    if (child == null)
+                        break;
+                    topWindow = child;
+                }
+                return MessageBox.Show(topWindow, message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
 
             try
