@@ -906,7 +906,13 @@ namespace PhotoLocator
 
         internal void CropSelected(Rect cropRectangle)
         {
-            _cropWindow = $"{cropRectangle.Width:0}:{cropRectangle.Height:0}:{cropRectangle.X:0}:{cropRectangle.Y:0}";
+            var w = IntMath.Round(cropRectangle.Width) & ~3;
+            var h = IntMath.Round(cropRectangle.Height) & ~3;
+            if (w == 0 || h == 0)
+                throw new UserMessageException("Crop size is too small");
+            var x = IntMath.Round(cropRectangle.X + (cropRectangle.Width - w) / 2);
+            var y = IntMath.Round(cropRectangle.Y + (cropRectangle.Height - h) / 2);
+            _cropWindow = string.Create(CultureInfo.InvariantCulture, $"{w}:{h}:{x}:{y}");
             IsCropChecked = true;
             ProcessSelected.Execute(null);
         }
