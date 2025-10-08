@@ -4,11 +4,14 @@ early_access: true
 reviews:
   profile: "chill"
   high_level_summary: true
-  poem: true
+  poem: false
   review_status: false
   collapse_walkthrough: false
   auto_review:
     enabled: true
     drafts: false
+  pre_merge_checks:
+    docstrings:
+      mode: "off"
 chat:
   auto_reply: true

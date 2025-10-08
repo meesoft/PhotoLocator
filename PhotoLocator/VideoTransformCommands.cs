@@ -370,10 +370,19 @@ namespace PhotoLocator
             if (_localContrastSetup.SourceBitmap is null)
                 using (var cursor = new MouseCursorOverride())
                 {
-                    var firstSelected = _mainViewModel.GetSelectedItems(true).First();
-                    var preview = firstSelected.LoadPreview(default, skipTo: HasSingleInput && !string.IsNullOrEmpty(SkipTo) ? SkipTo: null) 
-                        ?? throw new UserMessageException("Unable to load preview frame");
-                    _localContrastSetup.SourceBitmap = preview;
+                    try
+                    {
+                        var firstSelected = _mainViewModel.GetSelectedItems(true).First();
+                        var preview = firstSelected.LoadPreview(default, skipTo: HasSingleInput && !string.IsNullOrEmpty(SkipTo) ? SkipTo : null)
+                            ?? throw new FileFormatException("LoadPreview returned null");
+                        _localContrastSetup.SourceBitmap = preview;
+                    }
+                    catch (Exception ex)
+                    {
+                        ExceptionHandler.LogException(ex);
+                        ExceptionHandler.ShowException(new UserMessageException("Unable to load preview frame"));
+                        return;
+                    }
                 }
             var window = new LocalContrastView();
             window.CancelButton.Visibility = Visibility.Hidden;
@@ -897,7 +906,13 @@ namespace PhotoLocator
 
         internal void CropSelected(Rect cropRectangle)
         {
-            _cropWindow = $"{cropRectangle.Width:0}:{cropRectangle.Height:0}:{cropRectangle.X:0}:{cropRectangle.Y:0}";
+            var w = IntMath.Round(cropRectangle.Width) & ~3;
+            var h = IntMath.Round(cropRectangle.Height) & ~3;
+            if (w == 0 || h == 0)
+                throw new UserMessageException("Crop size is too small");
+            var x = IntMath.Round(cropRectangle.X + (cropRectangle.Width - w) / 2);
+            var y = IntMath.Round(cropRectangle.Y + (cropRectangle.Height - h) / 2);
+            _cropWindow = string.Create(CultureInfo.InvariantCulture, $"{w}:{h}:{x}:{y}");
             IsCropChecked = true;
             ProcessSelected.Execute(null);
         }

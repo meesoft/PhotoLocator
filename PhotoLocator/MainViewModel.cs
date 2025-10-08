@@ -1065,6 +1065,8 @@ namespace PhotoLocator
                 CancelPictureLoading();
                 if (string.IsNullOrEmpty(PhotoFolderPath))
                     return;
+                if (!Directory.Exists(PhotoFolderPath))
+                    throw new UserMessageException("Folder does not exist.");
                 Items.Clear();
                 Polylines.Clear();
                 _gpsTraceFiles.Clear();
