@@ -15,23 +15,28 @@ namespace PhotoLocator.Helpers
                 exception = aggregateEx.InnerException;
             var message = exception is UserMessageException ? exception.Message : exception.ToString();
 
-            static MessageBoxResult ShowErrorBox(string message)
+            static void ShowErrorBox(string message)
             {
-                var topWindow = App.Current.MainWindow;
+                var topWindow = App.Current?.MainWindow;
+                if (topWindow is null)
+                {
+                    MessageBox.Show(message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                    return;
+                }
                 while (true)
                 {
                     var child = topWindow.OwnedWindows.OfType<Window>().FirstOrDefault(w => w.IsVisible);
-                    if (child == null)
+                    if (child is null)
                         break;
                     topWindow = child;
                 }
-                return MessageBox.Show(topWindow, message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                MessageBox.Show(topWindow, message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
 
             try
             {
                 Log.Write(message);
-                if (Application.Current.Dispatcher == Dispatcher.CurrentDispatcher)
+                if (Application.Current is null || Application.Current.Dispatcher == Dispatcher.CurrentDispatcher)
                     ShowErrorBox(message);
                 else
                     Application.Current.Dispatcher.BeginInvoke(() => ShowErrorBox(message));
