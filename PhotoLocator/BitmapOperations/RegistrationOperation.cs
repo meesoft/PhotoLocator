@@ -62,10 +62,26 @@ namespace PhotoLocator.BitmapOperations
 
         private Point2f[] FindFirstFeatures()
         {
+            const int PreferredMinStartFeatures = 50;
+            const int MaxStartFeatures = 1000;
+            const int MinFeatureDistance = 30;
+            const int BlockSize = 7;
+
             var sw = Stopwatch.StartNew();
-            using var mask = CreateRegionOfInterestMask();
-            var firstFeatures = _referenceGrayImage.GoodFeaturesToTrack(1000, 0.01, 30, mask!, 7, false, 0);
-            Log.Write($"{firstFeatures.Length} features found in {sw.ElapsedMilliseconds} ms");
+            using var mask = CreateRegionOfInterestMask()!;
+            var qualityLevel = 0.01;
+            var firstFeatures = _referenceGrayImage.GoodFeaturesToTrack(MaxStartFeatures, qualityLevel, MinFeatureDistance, mask, BlockSize, false, 0);
+            if (firstFeatures.Length < PreferredMinStartFeatures)
+            {
+                qualityLevel *= 0.1;
+                firstFeatures = _referenceGrayImage.GoodFeaturesToTrack(MaxStartFeatures, qualityLevel, MinFeatureDistance, mask, BlockSize, false, 0);
+                if (firstFeatures.Length < PreferredMinStartFeatures)
+                {
+                    qualityLevel *= 0.1;
+                    firstFeatures = _referenceGrayImage.GoodFeaturesToTrack(MaxStartFeatures, qualityLevel, MinFeatureDistance, mask, BlockSize, false, 0);
+                }
+            }
+            Log.Write($"{firstFeatures.Length} features at quality level {qualityLevel} found in {sw.ElapsedMilliseconds} ms");
             if (firstFeatures.Length < MinimumFeatureCount)
                 throw new UserMessageException("Not enough features found in reference image");
             return firstFeatures;
