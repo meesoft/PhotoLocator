@@ -27,7 +27,9 @@ namespace PhotoLocator.BitmapOperations
         Mat _referenceGrayImage;
         Point2f[] _referenceFeatures;
         Mat? _previousTrans;
-
+#if DEBUG
+        //int _frameCount;
+#endif
         public RegistrationOperation(byte[] pixels, int width, int height, int pixelSize, Reference reference, Borders borderHandling, ROI? roi = null)
         {
             _width = width;
@@ -38,6 +40,7 @@ namespace PhotoLocator.BitmapOperations
             _referenceGrayImage = ConvertToGrayscale(pixels);
             _roi = roi;
             _referenceFeatures = FindFirstFeatures();
+            //SaveAnnotated(_referenceGrayImage, _referenceFeatures.Select(p => new Point(p.X, p.Y)), @"c:\temp\0.jpg");
         }
 
         public RegistrationOperation(BitmapSource image, ROI? roi = null)
@@ -128,13 +131,15 @@ namespace PhotoLocator.BitmapOperations
             var matchesCount = status.Count(s => s != 0);
             Log.Write($"{matchesCount}/{features.Length} features matched in {sw.ElapsedMilliseconds} ms");
 
+            //SaveAnnotated(grayImage, features.Where((p, i) => status[i] != 0).Select(p => new Point((int)p.X, (int)p.Y)), @$"c:\temp\{++_frameCount}.jpg");
+
             if (matchesCount < MinimumMatches)
             {
                 Log.Write("Not enough features matched");
                 if (_reference == Reference.Previous)
                 {
                     if (_previousTrans is not null)
-                        WarpImage(pixels, image, _previousTrans);
+                        WarpImage(image, pixels, _previousTrans);
                     _referenceGrayImage.Dispose();
                     _referenceGrayImage = grayImage.Clone();
                     _referenceFeatures = FindFirstFeatures();
@@ -152,7 +157,7 @@ namespace PhotoLocator.BitmapOperations
                 trans = toFirst;
             }
 
-            WarpImage(pixels, image, trans);
+            WarpImage(image, pixels, trans);
 
             if (_reference == Reference.First)
                 trans.Dispose();
@@ -169,16 +174,17 @@ namespace PhotoLocator.BitmapOperations
             }
         }
 
-        private void WarpImage(byte[] pixels, Mat image, Mat trans)
+        private void WarpImage(Mat source, byte[] target, Mat trans)
         {
-            using var warped = image.WarpPerspective(trans, image.Size(), InterpolationFlags.Cubic,
+            using var warped = source.WarpPerspective(trans, source.Size(), InterpolationFlags.Cubic,
                 _borderHandling == Borders.Mirror ? BorderTypes.Reflect101 : BorderTypes.Constant, new Scalar(0));
             int size = _width * _height * _pixelSize;
             unsafe
             {
-                fixed (byte* dst = pixels)
+                fixed (byte* dst = target)
                     Buffer.MemoryCopy(warped.Ptr(0).ToPointer(), dst, size, size);
             }
+            //warped.SaveImage(@$"c:\temp\{_frameCount}warped.jpg");
         }
 
         public Point2f GetTranslation(BitmapSource image)
@@ -220,19 +226,22 @@ namespace PhotoLocator.BitmapOperations
         {
             features = new Point2f[_referenceFeatures.Length];
             Cv2.CalcOpticalFlowPyrLK(_referenceGrayImage, grayImage, _referenceFeatures, ref features, out status, out _,
-                maxLevel: 10, minEigThreshold: 0.001);
+                maxLevel: 10, minEigThreshold: 1e-4);
         }
 
+#if DEBUG
         private static void SaveAnnotated(Mat image, IEnumerable<Point> points, string fileName)
         {
+            using var annotated = image.Clone();
             int i = 0;
             foreach (var point in points)
             {
-                Cv2.Circle(image, point, 5, new Scalar((i * 70) & 255), 1);
+                Cv2.Circle(annotated, point, 5, new Scalar((i * 70) & 255), 1);
                 i++;
             }
-            image.SaveImage(fileName);
+            annotated.SaveImage(fileName);
         }
+#endif
 
         public void Dispose()
         {
