@@ -1,4 +1,6 @@
-﻿using OpenCvSharp;
+﻿//#define SaveAnnotated
+
+using OpenCvSharp;
 using PhotoLocator.Helpers;
 using System;
 using System.Collections.Generic;
@@ -15,8 +17,12 @@ namespace PhotoLocator.BitmapOperations
 
         public enum Reference { First, Previous }
 
-        const int MinimumFeatureCount = 10;
         const int MinimumMatches = 10;
+        const int MinimumFeatureCount = 10;
+        const int PreferredMinimumStartFeatures = 50;
+        const int MaxStartFeatures = 1000;
+        const int MinFeatureDistance = 30;
+        const int BlockSize = 7;
 
         readonly int _width;
         readonly int _height;
@@ -27,9 +33,8 @@ namespace PhotoLocator.BitmapOperations
         Mat _referenceGrayImage;
         Point2f[] _referenceFeatures;
         Mat? _previousTrans;
-#if DEBUG
-        //int _frameCount;
-#endif
+        int _frameCount;
+
         public RegistrationOperation(byte[] pixels, int width, int height, int pixelSize, Reference reference, Borders borderHandling, ROI? roi = null)
         {
             _width = width;
@@ -40,7 +45,7 @@ namespace PhotoLocator.BitmapOperations
             _referenceGrayImage = ConvertToGrayscale(pixels);
             _roi = roi;
             _referenceFeatures = FindFirstFeatures();
-            //SaveAnnotated(_referenceGrayImage, _referenceFeatures.Select(p => new Point(p.X, p.Y)), @"c:\temp\0.jpg");
+            SaveAnnotated(_referenceGrayImage, _referenceFeatures, [], "0annotated.jpg");
         }
 
         public RegistrationOperation(BitmapSource image, ROI? roi = null)
@@ -65,24 +70,14 @@ namespace PhotoLocator.BitmapOperations
 
         private Point2f[] FindFirstFeatures()
         {
-            const int PreferredMinStartFeatures = 50;
-            const int MaxStartFeatures = 1000;
-            const int MinFeatureDistance = 30;
-            const int BlockSize = 7;
-
             var sw = Stopwatch.StartNew();
             using var mask = CreateRegionOfInterestMask()!;
             var qualityLevel = 0.01;
             var firstFeatures = _referenceGrayImage.GoodFeaturesToTrack(MaxStartFeatures, qualityLevel, MinFeatureDistance, mask, BlockSize, false, 0);
-            if (firstFeatures.Length < PreferredMinStartFeatures)
+            for (var i = 0; i < 2 && firstFeatures.Length < PreferredMinimumStartFeatures; i++)
             {
                 qualityLevel *= 0.1;
                 firstFeatures = _referenceGrayImage.GoodFeaturesToTrack(MaxStartFeatures, qualityLevel, MinFeatureDistance, mask, BlockSize, false, 0);
-                if (firstFeatures.Length < PreferredMinStartFeatures)
-                {
-                    qualityLevel *= 0.1;
-                    firstFeatures = _referenceGrayImage.GoodFeaturesToTrack(MaxStartFeatures, qualityLevel, MinFeatureDistance, mask, BlockSize, false, 0);
-                }
             }
             Log.Write($"{firstFeatures.Length} features at quality level {qualityLevel} found in {sw.ElapsedMilliseconds} ms");
             if (firstFeatures.Length < MinimumFeatureCount)
@@ -131,7 +126,7 @@ namespace PhotoLocator.BitmapOperations
             var matchesCount = status.Count(s => s != 0);
             Log.Write($"{matchesCount}/{features.Length} features matched in {sw.ElapsedMilliseconds} ms");
 
-            //SaveAnnotated(grayImage, features.Where((p, i) => status[i] != 0).Select(p => new Point((int)p.X, (int)p.Y)), @$"c:\temp\{++_frameCount}.jpg");
+            SaveAnnotated(grayImage, features, status, @$"{++_frameCount}annotated.jpg");
 
             if (matchesCount < MinimumMatches)
             {
@@ -167,7 +162,7 @@ namespace PhotoLocator.BitmapOperations
                 _referenceGrayImage = grayImage.Clone();
                 _previousTrans?.Dispose();
                 _previousTrans = trans;
-                if (matchesCount < MinimumFeatureCount)
+                if (matchesCount < PreferredMinimumStartFeatures)
                     _referenceFeatures = FindFirstFeatures();
                 else
                     _referenceFeatures = features.Where((p, i) => status[i] != 0).ToArray();
@@ -184,7 +179,7 @@ namespace PhotoLocator.BitmapOperations
                 fixed (byte* dst = target)
                     Buffer.MemoryCopy(warped.Ptr(0).ToPointer(), dst, size, size);
             }
-            //warped.SaveImage(@$"c:\temp\{_frameCount}warped.jpg");
+            SaveAnnotated(warped, [], null, $"{_frameCount}warped.jpg");
         }
 
         public Point2f GetTranslation(BitmapSource image)
@@ -198,8 +193,8 @@ namespace PhotoLocator.BitmapOperations
 
             TrackFeatures(grayImage, out var features, out var status);
 
-            //SaveAnnotated(_firstGrayImage, _firstFeatures.Where((p, i) => status[i] != 0).Select(p => new Point((int)p.X, (int)p.Y)), @"c:\temp\1.jpg");
-            //SaveAnnotated(grayImage, features.Where((p, i) => status[i] != 0).Select(p => new Point((int)p.X, (int)p.Y)), @"c:\temp\2.jpg");
+            SaveAnnotated(_referenceGrayImage, _referenceFeatures, status, "0annotated.jpg");
+            SaveAnnotated(grayImage, features, status, "1annotated.jpg");
 
             var xValues = new List<float>();
             var yValues = new List<float>();
@@ -229,19 +224,17 @@ namespace PhotoLocator.BitmapOperations
                 maxLevel: 10, minEigThreshold: 1e-4);
         }
 
-#if DEBUG
-        private static void SaveAnnotated(Mat image, IEnumerable<Point> points, string fileName)
+        [Conditional("SaveAnnotated")]
+        private static void SaveAnnotated(Mat image, Point2f[] points, byte[]? status, string fileName)
         {
+#if DEBUG
             using var annotated = image.Clone();
-            int i = 0;
-            foreach (var point in points)
-            {
-                Cv2.Circle(annotated, point, 5, new Scalar((i * 70) & 255), 1);
-                i++;
-            }
-            annotated.SaveImage(fileName);
-        }
+            for (int i = 0; i < points.Length; i++)
+                if (status is null || status[i] != 0)
+                    Cv2.Circle(annotated, new Point(points[i].X, points[i].Y), 5, new Scalar((i * 70) & 255), 1);
+            annotated.SaveImage(@"c:\temp\" + fileName);
 #endif
+        }
 
         public void Dispose()
         {
