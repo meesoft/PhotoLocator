@@ -1,5 +1,6 @@
 ﻿using PhotoLocator.Helpers;
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
@@ -152,11 +153,71 @@ namespace PhotoLocator.BitmapOperations
             return pixels;
         }
 
+        struct HotPixel
+        {
+            public int Target, Source;
+        }
+
+        List<HotPixel>? _hotPixels;
+
         private void SubtractDarkFrame(byte[] pixels)
         {
-            //TODO: This should be replaced by some proper hole closing where the dark frame has hot pixels
-            if (_darkFramePixels is not null)
-                Parallel.For(0, pixels.Length, i => pixels[i] = (byte)Math.Max(0, pixels[i] - _darkFramePixels[i]));
+            if (_darkFramePixels is null)
+                return;
+            //Parallel.For(0, pixels.Length, i => pixels[i] = (byte)Math.Max(0, pixels[i] - _darkFramePixels[i]));
+
+            _hotPixels ??= FindHotPixels();
+            foreach (var hotpixel in _hotPixels)
+                pixels[hotpixel.Target] = pixels[hotpixel.Source];
+        }
+
+        private List<HotPixel> FindHotPixels()
+        {
+            const int HotPixelThreshold = 32;
+
+            if (_darkFramePixels is null)
+                throw new InvalidOperationException("Dark frame not set");
+            var hotPixels = new List<HotPixel>();
+            var stride = Width * PixelSize;
+            Parallel.For(0, Height, y =>
+            {
+                var rowStart = y * stride;
+                for (var x = 0; x < stride; x++)
+                    if (_darkFramePixels[rowStart + x] >= HotPixelThreshold)
+                    {
+                        bool found = false;
+                        for (int radius = 1; !found && radius < 100; radius++)
+                        {
+                            for (int d = 0; !found && d <= radius; d++)
+                            {
+                                found =
+                                    CheckCandidate(x - d * PixelSize, y - radius) ||
+                                    CheckCandidate(x + d * PixelSize, y + radius) ||
+                                    CheckCandidate(x - radius * PixelSize, y - d) ||
+                                    CheckCandidate(x + radius * PixelSize, y + d);
+                            }
+                        }
+                        if (!found)
+                            throw new UserMessageException("Bad dark frame, unable to patch hot pixel");
+
+                        bool CheckCandidate(int sx, int sy)
+                        {
+                            if (sx >= 0 && sy >= 0 && sx < stride && sy < Height &&
+                                _darkFramePixels[sy * stride + sx] < HotPixelThreshold)
+                            {
+                                lock (hotPixels)
+                                    hotPixels.Add(new HotPixel
+                                    {
+                                        Target = rowStart + x,
+                                        Source = sy * stride + sx,
+                                    });
+                                return true;
+                            }
+                            return false;
+                        }
+                    }
+            });
+            return hotPixels;
         }
     }
 }
