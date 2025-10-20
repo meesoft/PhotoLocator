@@ -5,7 +5,9 @@ using PhotoLocator.Helpers;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Globalization;
 using System.Linq;
+using System.Text;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 
@@ -45,7 +47,7 @@ namespace PhotoLocator.BitmapOperations
             _referenceGrayImage = ConvertToGrayscale(pixels);
             _roi = roi;
             _referenceFeatures = FindFirstFeatures();
-            SaveAnnotated(_referenceGrayImage, _referenceFeatures, [], "0annotated.jpg");
+            SaveAnnotated(_referenceGrayImage, _referenceFeatures, null, "0annotated.jpg");
         }
 
         public RegistrationOperation(BitmapSource image, ROI? roi = null)
@@ -144,6 +146,7 @@ namespace PhotoLocator.BitmapOperations
 
             var trans = Cv2.FindHomography(features.Where((p, i) => status[i] != 0).Select(p => new Point2d(p.X, p.Y)),
                 _referenceFeatures.Where((p, i) => status[i] != 0).Select(p => new Point2d(p.X, p.Y)), HomographyMethods.Ransac);
+            PrintMatrix(trans);
 
             if (_reference == Reference.Previous && _previousTrans is not null)
             {
@@ -161,7 +164,6 @@ namespace PhotoLocator.BitmapOperations
                 _referenceGrayImage.Dispose();
                 _referenceGrayImage = grayImage.Clone();
                 _previousTrans?.Dispose();
-                _previousTrans = trans;
                 if (matchesCount < PreferredMinimumStartFeatures)
                     _referenceFeatures = FindFirstFeatures();
                 else
@@ -171,14 +173,9 @@ namespace PhotoLocator.BitmapOperations
 
         private void WarpImage(Mat source, byte[] target, Mat trans)
         {
-            using var warped = source.WarpPerspective(trans, source.Size(), InterpolationFlags.Cubic,
-                _borderHandling == Borders.Mirror ? BorderTypes.Reflect101 : BorderTypes.Constant, new Scalar(0));
-            int size = _width * _height * _pixelSize;
-            unsafe
-            {
-                fixed (byte* dst = target)
-                    Buffer.MemoryCopy(warped.Ptr(0).ToPointer(), dst, size, size);
-            }
+            using var warped = Mat.FromPixelData(_height, _width, source.Type(), target);
+            Cv2.WarpPerspective(source, warped, trans, source.Size(), InterpolationFlags.Cubic,
+                _borderHandling == Borders.Mirror ? BorderTypes.Reflect101 : BorderTypes.Constant);
             SaveAnnotated(warped, [], null, $"{_frameCount}warped.jpg");
         }
 
@@ -222,6 +219,20 @@ namespace PhotoLocator.BitmapOperations
             features = new Point2f[_referenceFeatures.Length];
             Cv2.CalcOpticalFlowPyrLK(_referenceGrayImage, grayImage, _referenceFeatures, ref features, out status, out _,
                 maxLevel: 10, minEigThreshold: 1e-4);
+        }
+
+        [Conditional("DEBUG")]
+        private static void PrintMatrix(Mat trans)
+        {
+            Log.Write("Transformation matrix:");
+            var lines = new StringBuilder();
+            for (int r = 0; r < trans.Rows; r++)
+            {
+                for (int c = 0; c < trans.Cols; c++)
+                    lines.Append(CultureInfo.InvariantCulture, $"{trans.At<double>(r, c):F4}\t");
+                lines.AppendLine();
+            }
+            Log.Write(lines.ToString());
         }
 
         [Conditional("SaveAnnotated")]
