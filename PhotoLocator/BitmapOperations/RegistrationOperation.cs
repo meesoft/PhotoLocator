@@ -123,6 +123,7 @@ namespace PhotoLocator.BitmapOperations
             var sw = Stopwatch.StartNew();
             using var image = CreateMatFromPixels(pixels);
             using var grayImage = _pixelSize == 1 ? image.Clone() : image.CvtColor(ColorConversionCodes.BGR2GRAY); // Channel order is not important since it is only an internal image used for feature matching
+            _frameCount++;
 
             TrackFeatures(grayImage, out var features, out var status);
             var matchesCount = status.Count(s => s != 0);
@@ -144,6 +145,8 @@ namespace PhotoLocator.BitmapOperations
 
             var trans = Cv2.FindHomography(features.Where((p, i) => status[i] != 0).Select(p => new Point2d(p.X, p.Y)),
                 _referenceFeatures.Where((p, i) => status[i] != 0).Select(p => new Point2d(p.X, p.Y)), HomographyMethods.Ransac);
+            if (trans.Empty())
+                throw new UserMessageException("Registration homography computation failed");
             PrintMatrix(trans, "Homography");
 
             if (_reference == Reference.Previous && _previousTrans is not null)
@@ -187,6 +190,7 @@ namespace PhotoLocator.BitmapOperations
             var pixels = new byte[_width * _height * _pixelSize];
             image.CopyPixels(pixels, _width * _pixelSize, 0);
             using var grayImage = ConvertToGrayscale(pixels);
+            _frameCount++;
 
             TrackFeatures(grayImage, out var features, out var status);
 
@@ -216,7 +220,7 @@ namespace PhotoLocator.BitmapOperations
             features = new Point2f[_referenceFeatures.Length];
             Cv2.CalcOpticalFlowPyrLK(_referenceGrayImage, grayImage, _referenceFeatures, ref features, out status, out _,
                 maxLevel: 10, minEigThreshold: 1e-4);
-            SaveAnnotated(grayImage, features, status, @$"{++_frameCount}tracked.jpg");
+            SaveAnnotated(grayImage, features, status, @$"{_frameCount}tracked.jpg");
         }
 
         [Conditional("DEBUG")]
@@ -227,7 +231,7 @@ namespace PhotoLocator.BitmapOperations
             {
                 lines.AppendLine();
                 for (int c = 0; c < trans.Cols; c++)
-                    lines.Append(CultureInfo.InvariantCulture, $"{trans.At<double>(r, c):F4}\t");
+                    lines.Append(CultureInfo.InvariantCulture, $"  {trans.At<double>(r, c):F4}");
             }
             Log.Write(lines.ToString());
         }
