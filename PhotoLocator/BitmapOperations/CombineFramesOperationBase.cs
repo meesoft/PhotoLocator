@@ -217,6 +217,7 @@ namespace PhotoLocator.BitmapOperations
                         }
                     }
             });
+            Log.Write($"Found {hotPixels.Count} hot pixels in dark frame");
             return hotPixels;
         }
     }
