@@ -18,7 +18,7 @@ public class MaxFramesOperationTest
                 darkFrame.Elements[y, x] = 0.5f;
         darkFrame.SaveToFile("DarkFrame.png");
 
-        var op = new MaxFramesOperation("DarkFrame.png", null, CancellationToken.None);
+        var op = new MaxFramesOperation("DarkFrame.png", null, default);
         var sw = Stopwatch.StartNew();
         op.ProcessImage(frame);
         var time1 = sw.ElapsedMilliseconds;

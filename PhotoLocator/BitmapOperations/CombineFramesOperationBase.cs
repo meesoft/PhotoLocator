@@ -187,16 +187,12 @@ namespace PhotoLocator.BitmapOperations
                     {
                         bool found = false;
                         for (int radius = 1; !found && radius < 100; radius++)
-                        {
                             for (int d = 0; !found && d <= radius; d++)
-                            {
                                 found =
                                     CheckCandidate(x - d * PixelSize, y - radius) ||
                                     CheckCandidate(x + d * PixelSize, y + radius) ||
                                     CheckCandidate(x - radius * PixelSize, y - d) ||
                                     CheckCandidate(x + radius * PixelSize, y + d);
-                            }
-                        }
                         if (!found)
                             throw new UserMessageException("Bad dark frame, unable to patch hot pixel");
 
@@ -218,6 +214,8 @@ namespace PhotoLocator.BitmapOperations
                     }
             });
             Log.Write($"Found {hotPixels.Count} hot pixels in dark frame");
+            if (hotPixels.Count > Width * Height * PixelSize / 2)
+                throw new UserMessageException("Bad dark frame, too many hot pixels");
             return hotPixels;
         }
     }
