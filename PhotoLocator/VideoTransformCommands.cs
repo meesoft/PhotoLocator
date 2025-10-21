@@ -234,7 +234,7 @@ namespace PhotoLocator
         }
         string _scaleTo = "w:h";
 
-        public ObservableCollection<ComboBoxItem> Effects { get; } = [
+        public ObservableCollection<ComboBoxItem> Effects { get; } = [ // Note that default save file name uses first word of effect name
             new ComboBoxItem { Content = "None" },
             new ComboBoxItem { Content = "Rotate 90° clockwise", Tag = "transpose=1" },
             new ComboBoxItem { Content = "Rotate 90° counterclockwise", Tag = "transpose=2" },
@@ -245,7 +245,7 @@ namespace PhotoLocator
             new ComboBoxItem { Content = "Normalize", Tag = ( "normalize=smoothing={0}:independence=0", "50" ) },
             new ComboBoxItem { Content = "Midtones", Tag = ( "colorbalance=rm={0}:gm={0}:bm={0}", "0.05" ) },
             new ComboBoxItem { Content = "Saturation", Tag = ( "eq=saturation={0}", "1.3" ) },
-            new ComboBoxItem { Content = "Contrast", Tag = ( "eq=brightness=0.05:contrast={0}", "1.3" ) },
+            new ComboBoxItem { Content = "Contrast and brightness", Tag = ( "eq=brightness=0.05:contrast={0}", "1.3" ) },
             new ComboBoxItem { Content = "Denoise (atadenoise)", Tag = ( "atadenoise=s={0}", "9" ) },
             new ComboBoxItem { Content = "Denoise (hqdn3d)", Tag = ( "hqdn3d=luma_spatial={0}", "4" ) },
             new ComboBoxItem { Content = "Denoise (nlmeans)", Tag = ( "nlmeans=s={0}", "1.0" ) },

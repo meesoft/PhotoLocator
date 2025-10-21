@@ -1,9 +1,13 @@
-﻿using OpenCvSharp;
+﻿//#define SaveAnnotated
+
+using OpenCvSharp;
 using PhotoLocator.Helpers;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Globalization;
 using System.Linq;
+using System.Text;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 
@@ -15,8 +19,12 @@ namespace PhotoLocator.BitmapOperations
 
         public enum Reference { First, Previous }
 
-        const int MinimumFeatureCount = 10;
         const int MinimumMatches = 10;
+        const int MinimumFeatureCount = 10;
+        const int PreferredMinimumStartFeatures = 50;
+        const int MaxStartFeatures = 1000;
+        const int MinFeatureDistance = 30;
+        const int BlockSize = 7;
 
         readonly int _width;
         readonly int _height;
@@ -27,6 +35,7 @@ namespace PhotoLocator.BitmapOperations
         Mat _referenceGrayImage;
         Point2f[] _referenceFeatures;
         Mat? _previousTrans;
+        int _frameCount;
 
         public RegistrationOperation(byte[] pixels, int width, int height, int pixelSize, Reference reference, Borders borderHandling, ROI? roi = null)
         {
@@ -63,9 +72,16 @@ namespace PhotoLocator.BitmapOperations
         private Point2f[] FindFirstFeatures()
         {
             var sw = Stopwatch.StartNew();
-            using var mask = CreateRegionOfInterestMask();
-            var firstFeatures = _referenceGrayImage.GoodFeaturesToTrack(1000, 0.01, 30, mask!, 7, false, 0);
-            Log.Write($"{firstFeatures.Length} features found in {sw.ElapsedMilliseconds} ms");
+            using var mask = CreateRegionOfInterestMask()!;
+            var qualityLevel = 0.01;
+            var firstFeatures = _referenceGrayImage.GoodFeaturesToTrack(MaxStartFeatures, qualityLevel, MinFeatureDistance, mask, BlockSize, false, 0);
+            for (var i = 0; i < 2 && firstFeatures.Length < PreferredMinimumStartFeatures; i++)
+            {
+                qualityLevel *= 0.1;
+                firstFeatures = _referenceGrayImage.GoodFeaturesToTrack(MaxStartFeatures, qualityLevel, MinFeatureDistance, mask, BlockSize, false, 0);
+            }
+            Log.Write($"{firstFeatures.Length} features at quality level {qualityLevel} found in {sw.ElapsedMilliseconds} ms");
+            SaveAnnotated(_referenceGrayImage, firstFeatures, null, $"{_frameCount}newFeatures.jpg");
             if (firstFeatures.Length < MinimumFeatureCount)
                 throw new UserMessageException("Not enough features found in reference image");
             return firstFeatures;
@@ -106,19 +122,20 @@ namespace PhotoLocator.BitmapOperations
         {
             var sw = Stopwatch.StartNew();
             using var image = CreateMatFromPixels(pixels);
-            using var grayImage = _pixelSize == 1 ? image : image.CvtColor(ColorConversionCodes.BGR2GRAY); // Channel order is not important since it is only an internal image used for feature matching
+            using var grayImage = _pixelSize == 1 ? image.Clone() : image.CvtColor(ColorConversionCodes.BGR2GRAY); // Channel order is not important since it is only an internal image used for feature matching
+            _frameCount++;
 
             TrackFeatures(grayImage, out var features, out var status);
             var matchesCount = status.Count(s => s != 0);
-            Log.Write($"{matchesCount}/{features.Length} features matched in {sw.ElapsedMilliseconds} ms");
+            Log.Write($"{matchesCount}/{features.Length} features tracked in {sw.ElapsedMilliseconds} ms");
 
             if (matchesCount < MinimumMatches)
             {
-                Log.Write("Not enough features matched");
+                Log.Write("Not enough features tracked");
                 if (_reference == Reference.Previous)
                 {
                     if (_previousTrans is not null)
-                        WarpImage(pixels, image, _previousTrans);
+                        WarpImage(image, _previousTrans);
                     _referenceGrayImage.Dispose();
                     _referenceGrayImage = grayImage.Clone();
                     _referenceFeatures = FindFirstFeatures();
@@ -128,15 +145,19 @@ namespace PhotoLocator.BitmapOperations
 
             var trans = Cv2.FindHomography(features.Where((p, i) => status[i] != 0).Select(p => new Point2d(p.X, p.Y)),
                 _referenceFeatures.Where((p, i) => status[i] != 0).Select(p => new Point2d(p.X, p.Y)), HomographyMethods.Ransac);
+            if (trans.Empty())
+                throw new UserMessageException("Registration homography computation failed");
+            PrintMatrix(trans, "Homography");
 
             if (_reference == Reference.Previous && _previousTrans is not null)
             {
                 var toFirst = _previousTrans * trans;
                 trans.Dispose();
                 trans = toFirst;
+                PrintMatrix(trans, "ToFirst");
             }
 
-            WarpImage(pixels, image, trans);
+            WarpImage(image, trans);
 
             if (_reference == Reference.First)
                 trans.Dispose();
@@ -146,23 +167,19 @@ namespace PhotoLocator.BitmapOperations
                 _referenceGrayImage = grayImage.Clone();
                 _previousTrans?.Dispose();
                 _previousTrans = trans;
-                if (matchesCount < MinimumFeatureCount)
+                if (matchesCount < PreferredMinimumStartFeatures)
                     _referenceFeatures = FindFirstFeatures();
                 else
                     _referenceFeatures = features.Where((p, i) => status[i] != 0).ToArray();
             }
         }
 
-        private void WarpImage(byte[] pixels, Mat image, Mat trans)
+        private void WarpImage(Mat image, Mat trans)
         {
             using var warped = image.WarpPerspective(trans, image.Size(), InterpolationFlags.Cubic,
                 _borderHandling == Borders.Mirror ? BorderTypes.Reflect101 : BorderTypes.Constant, new Scalar(0));
-            int size = _width * _height * _pixelSize;
-            unsafe
-            {
-                fixed (byte* dst = pixels)
-                    Buffer.MemoryCopy(warped.Ptr(0).ToPointer(), dst, size, size);
-            }
+            warped.CopyTo(image);
+            SaveAnnotated(warped, [], null, $"{_frameCount}warped.jpg");
         }
 
         public Point2f GetTranslation(BitmapSource image)
@@ -173,11 +190,9 @@ namespace PhotoLocator.BitmapOperations
             var pixels = new byte[_width * _height * _pixelSize];
             image.CopyPixels(pixels, _width * _pixelSize, 0);
             using var grayImage = ConvertToGrayscale(pixels);
+            _frameCount++;
 
             TrackFeatures(grayImage, out var features, out var status);
-
-            //SaveAnnotated(_firstGrayImage, _firstFeatures.Where((p, i) => status[i] != 0).Select(p => new Point((int)p.X, (int)p.Y)), @"c:\temp\1.jpg");
-            //SaveAnnotated(grayImage, features.Where((p, i) => status[i] != 0).Select(p => new Point((int)p.X, (int)p.Y)), @"c:\temp\2.jpg");
 
             var xValues = new List<float>();
             var yValues = new List<float>();
@@ -189,13 +204,13 @@ namespace PhotoLocator.BitmapOperations
                 }
 
             if (xValues.Count < features.Length * 0.8)
-                throw new UserMessageException($"Not enough features matched ({xValues.Count}/{features.Length}={(double)xValues.Count / features.Length:F2})");
+                throw new UserMessageException($"Not enough features tracked ({xValues.Count}/{features.Length}={(double)xValues.Count / features.Length:F2})");
 
             xValues.Sort();
             yValues.Sort();
             var medianPoint = new Point2f(xValues[xValues.Count / 2], yValues[yValues.Count / 2]);
 
-            Log.Write($"{xValues.Count}/{features.Length} ({(double)xValues.Count / features.Length:F2}) features matched in {sw.ElapsedMilliseconds} ms, median translation: ({IntMath.Round(medianPoint.X)},{IntMath.Round(medianPoint.Y)})");
+            Log.Write($"{xValues.Count}/{features.Length} ({(double)xValues.Count / features.Length:F2}) features tracked in {sw.ElapsedMilliseconds} ms, median translation: ({IntMath.Round(medianPoint.X)},{IntMath.Round(medianPoint.Y)})");
 
             return medianPoint;
         }
@@ -204,18 +219,33 @@ namespace PhotoLocator.BitmapOperations
         {
             features = new Point2f[_referenceFeatures.Length];
             Cv2.CalcOpticalFlowPyrLK(_referenceGrayImage, grayImage, _referenceFeatures, ref features, out status, out _,
-                maxLevel: 10, minEigThreshold: 0.001);
+                maxLevel: 10, minEigThreshold: 1e-4);
+            SaveAnnotated(grayImage, features, status, @$"{_frameCount}tracked.jpg");
         }
 
-        private static void SaveAnnotated(Mat image, IEnumerable<Point> points, string fileName)
+        [Conditional("DEBUG")]
+        private static void PrintMatrix(Mat trans, string title)
         {
-            int i = 0;
-            foreach (var point in points)
+            var lines = new StringBuilder(title);
+            for (int r = 0; r < trans.Rows; r++)
             {
-                Cv2.Circle(image, point, 5, new Scalar((i * 70) & 255), 1);
-                i++;
+                lines.AppendLine();
+                for (int c = 0; c < trans.Cols; c++)
+                    lines.Append(CultureInfo.InvariantCulture, $"  {trans.At<double>(r, c):F4}");
             }
-            image.SaveImage(fileName);
+            Log.Write(lines.ToString());
+        }
+
+        [Conditional("SaveAnnotated")]
+        private static void SaveAnnotated(Mat image, Point2f[] points, byte[]? status, string fileName)
+        {
+#if DEBUG
+            using var annotated = image.Clone();
+            for (int i = 0; i < points.Length; i++)
+                if (status is null || status[i] != 0)
+                    Cv2.Circle(annotated, new Point(points[i].X, points[i].Y), 5, new Scalar((i * 70) & 255), 1);
+            annotated.SaveImage(@"c:\temp\" + fileName);
+#endif
         }
 
         public void Dispose()
