@@ -134,7 +134,7 @@ namespace PhotoLocator.BitmapOperations
                 if (_reference == Reference.Previous)
                 {
                     if (_previousTrans is not null)
-                        WarpImage(image, pixels, _previousTrans);
+                        WarpImage(image, _previousTrans);
                     _referenceGrayImage.Dispose();
                     _referenceGrayImage = grayImage.Clone();
                     _referenceFeatures = FindFirstFeatures();
@@ -154,7 +154,7 @@ namespace PhotoLocator.BitmapOperations
                 PrintMatrix(trans, "ToFirst");
             }
 
-            WarpImage(image, pixels, trans);
+            WarpImage(image, trans);
 
             if (_reference == Reference.First)
                 trans.Dispose();
@@ -171,16 +171,11 @@ namespace PhotoLocator.BitmapOperations
             }
         }
 
-        private void WarpImage(Mat source, byte[] target, Mat trans)
+        private void WarpImage(Mat image, Mat trans)
         {
-            using var warped = source.WarpPerspective(trans, source.Size(), InterpolationFlags.Cubic,
+            using var warped = image.WarpPerspective(trans, image.Size(), InterpolationFlags.Cubic,
                 _borderHandling == Borders.Mirror ? BorderTypes.Reflect101 : BorderTypes.Constant, new Scalar(0));
-            int size = _width * _height * _pixelSize;
-            unsafe
-            {
-                fixed (byte* dst = target)
-                    Buffer.MemoryCopy(warped.Ptr(0).ToPointer(), dst, size, size);
-            }
+            warped.CopyTo(image);
             SaveAnnotated(warped, [], null, $"{_frameCount}warped.jpg");
         }
 
