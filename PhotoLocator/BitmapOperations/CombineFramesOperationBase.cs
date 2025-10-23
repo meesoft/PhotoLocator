@@ -183,7 +183,7 @@ namespace PhotoLocator.BitmapOperations
             {
                 var rowStart = y * stride;
                 for (var x = 0; x < stride; x++)
-                    if (_darkFramePixels[rowStart + x] >= HotPixelThreshold)
+                    if (_darkFramePixels[rowStart + x] > HotPixelThreshold)
                     {
                         bool found = false;
                         for (int radius = 1; !found && radius < 100; radius++)
@@ -198,18 +198,15 @@ namespace PhotoLocator.BitmapOperations
 
                         bool CheckCandidate(int sx, int sy)
                         {
-                            if (sx >= 0 && sy >= 0 && sx < stride && sy < Height &&
-                                _darkFramePixels[sy * stride + sx] < HotPixelThreshold)
-                            {
-                                lock (hotPixels)
-                                    hotPixels.Add(new HotPixel
-                                    {
-                                        Target = rowStart + x,
-                                        Source = sy * stride + sx,
-                                    });
-                                return true;
-                            }
-                            return false;
+                            if (sx < 0 || sy < 0 || sx >= stride || sy >= Height || _darkFramePixels[sy * stride + sx] > HotPixelThreshold)
+                                return false;
+                            lock (hotPixels)
+                                hotPixels.Add(new HotPixel
+                                {
+                                    Target = rowStart + x,
+                                    Source = sy * stride + sx,
+                                });
+                            return true;
                         }
                     }
             });
