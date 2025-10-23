@@ -153,9 +153,10 @@ namespace PhotoLocator.BitmapOperations
             return pixels;
         }
 
-        struct HotPixel
+        readonly struct HotPixel
         {
-            public int Target, Source;
+            public int Target { get; init; }
+            public int Source { get; init; }
         }
 
         List<HotPixel>? _hotPixels;
@@ -178,11 +179,11 @@ namespace PhotoLocator.BitmapOperations
             if (_darkFramePixels is null)
                 throw new InvalidOperationException("Dark frame not set");
             var hotPixels = new List<HotPixel>();
-            var stride = Width * PixelSize;
-            Parallel.For(0, Height, y =>
+            int stride = Width * PixelSize;
+            Parallel.For(0, Height, new ParallelOptions { CancellationToken = _ct }, y =>
             {
                 var rowStart = y * stride;
-                for (var x = 0; x < stride; x++)
+                for (int x = 0; x < stride; x++)
                     if (_darkFramePixels[rowStart + x] > HotPixelThreshold)
                     {
                         bool found = false;

@@ -8,8 +8,9 @@ public class MaxFramesOperationTest
 {
     [TestMethod]
     public void ProcessImage_ShouldUseDarkFrame()
-    {   
-        var darkFrameDecoder = BitmapDecoder.Create(File.OpenRead(@"TestData\2022-06-17_19.03.02.jpg"), BitmapCreateOptions.PreservePixelFormat | BitmapCreateOptions.IgnoreColorProfile, BitmapCacheOption.OnLoad);
+    {
+        using var bitmapStream = File.OpenRead(@"TestData\2022-06-17_19.03.02.jpg");
+        var darkFrameDecoder = BitmapDecoder.Create(bitmapStream, BitmapCreateOptions.PreservePixelFormat | BitmapCreateOptions.IgnoreColorProfile, BitmapCacheOption.OnLoad);
         var frame = darkFrameDecoder.Frames[0];
 
         var darkFrame = new FloatBitmap(frame.PixelWidth, frame.PixelHeight, 3);
