@@ -1,5 +1,6 @@
 ﻿using PhotoLocator.Helpers;
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
@@ -152,11 +153,77 @@ namespace PhotoLocator.BitmapOperations
             return pixels;
         }
 
+        readonly struct HotPixel
+        {
+            public int Target { get; init; }
+            public int Source { get; init; }
+        }
+
+        List<HotPixel>? _hotPixels;
+
         private void SubtractDarkFrame(byte[] pixels)
         {
-            //TODO: This should be replaced by some proper hole closing where the dark frame has hot pixels
-            if (_darkFramePixels is not null)
-                Parallel.For(0, pixels.Length, i => pixels[i] = (byte)Math.Max(0, pixels[i] - _darkFramePixels[i]));
+            if (_darkFramePixels is null)
+                return;
+            //Parallel.For(0, pixels.Length, i => pixels[i] = (byte)Math.Max(0, pixels[i] - _darkFramePixels[i]));
+
+            _hotPixels ??= FindHotPixels();
+            foreach (var hotpixel in _hotPixels)
+                pixels[hotpixel.Target] = pixels[hotpixel.Source];
+        }
+
+        private List<HotPixel> FindHotPixels()
+        {
+            const int HotPixelThreshold = 32;
+
+            if (_darkFramePixels is null)
+                throw new InvalidOperationException("Dark frame not set");
+            var hotPixels = new List<HotPixel>();
+            int stride = Width * PixelSize;
+            Parallel.For(0, Height, new ParallelOptions { CancellationToken = _ct }, y =>
+            {
+                var rowStart = y * stride;
+                for (int x = 0; x < stride; x++)
+                    if (_darkFramePixels[rowStart + x] > HotPixelThreshold)
+                    {
+                        bool found = false;
+                        for (int radius = 1; !found && radius < 100; radius++)
+                            for (int d = 0; !found && d < radius; d++)
+                                // ^ <1 5>
+                                // 7     ^
+                                // 3  *  4
+                                // ·     8
+                                // <6 2> ·
+                                found =
+                                    CheckCandidate(x - d * PixelSize, y - radius) ||       // 1
+                                    CheckCandidate(x + d * PixelSize, y + radius) ||       // 2
+                                    CheckCandidate(x - radius * PixelSize, y + d) ||       // 3
+                                    CheckCandidate(x + radius * PixelSize, y - d) ||       // 4
+                                    CheckCandidate(x + (d + 1) * PixelSize, y - radius) || // 5
+                                    CheckCandidate(x - (d + 1) * PixelSize, y + radius) || // 6
+                                    CheckCandidate(x - radius * PixelSize, y - (d + 1)) || // 7
+                                    CheckCandidate(x + radius * PixelSize, y + d + 1);     // 8
+                        if (!found)
+                            throw new UserMessageException("Bad dark frame, unable to patch hot pixel");
+
+                        bool CheckCandidate(int sx, int sy)
+                        {
+                            if (sx < 0 || sy < 0 || sx >= stride || sy >= Height || _darkFramePixels[sy * stride + sx] > HotPixelThreshold)
+                                return false;
+                            lock (hotPixels)
+                                hotPixels.Add(new HotPixel
+                                {
+                                    Target = rowStart + x,
+                                    Source = sy * stride + sx,
+                                });
+                            return true;
+                        }
+                    }
+            });
+            Log.Write($"Found {hotPixels.Count} hot pixels in dark frame");
+            if (hotPixels.Count > Width * Height * PixelSize / 2)
+                throw new UserMessageException("Bad dark frame, too many hot pixels");
+            return hotPixels;
         }
     }
 }

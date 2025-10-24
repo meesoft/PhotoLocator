@@ -13,7 +13,7 @@ namespace PhotoLocator.Gps
 
             var trace = GpxDecoder.DecodeStream(stream).Single();
 
-            Assert.AreEqual(244, trace.Locations.Count);
+            Assert.HasCount(244, trace.Locations);
             Assert.AreEqual(DateTimeKind.Utc, trace.TimeStamps[0].Kind);
             Assert.AreEqual(new DateTime(2022, 7, 2, 14, 19, 27, 0, DateTimeKind.Utc), trace.TimeStamps[0]);
         }
@@ -26,7 +26,7 @@ namespace PhotoLocator.Gps
 
             var trace = GpxDecoder.DecodeStream(stream).Single();
 
-            Assert.AreEqual(2, trace.Locations.Count);
+            Assert.HasCount(2, trace.Locations);
             Assert.AreEqual(DateTimeKind.Utc, trace.TimeStamps[0].Kind);
             Assert.AreEqual(new DateTime(2025, 5, 3, 19, 38, 20, 388, DateTimeKind.Utc), trace.TimeStamps[0]);
         }
@@ -39,7 +39,7 @@ namespace PhotoLocator.Gps
 
             var trace = KmlDecoder.DecodeStream(stream, TimeSpan.FromMinutes(15)).Single();
 
-            Assert.AreEqual(540, trace.Locations.Count);
+            Assert.HasCount(540, trace.Locations);
             Assert.AreEqual(DateTimeKind.Utc, trace.TimeStamps[0].Kind);
             Assert.AreEqual(new DateTime(2016, 5, 17, 0, 13, 49, 841, DateTimeKind.Utc), trace.TimeStamps[0]);
         }
@@ -52,7 +52,7 @@ namespace PhotoLocator.Gps
 
             var trace = KmlDecoder.DecodeStream(stream, TimeSpan.FromMinutes(15)).Single();
 
-            Assert.AreEqual(259, trace.Locations.Count);
+            Assert.HasCount(259, trace.Locations);
             Assert.AreEqual(DateTimeKind.Utc, trace.TimeStamps[0].Kind);
             Assert.AreEqual(new DateTime(2022, 7, 8, 18, 14, 28, 899, DateTimeKind.Utc), trace.TimeStamps[0]);
         }
@@ -65,7 +65,7 @@ namespace PhotoLocator.Gps
 
             var trace = KmlDecoder.DecodeStream(stream, TimeSpan.FromMinutes(15)).Single();
 
-            Assert.AreEqual(2, trace.Locations.Count);
+            Assert.HasCount(2, trace.Locations);
             Assert.AreEqual(DateTimeKind.Utc, trace.TimeStamps[0].Kind);
         }
 
@@ -80,7 +80,7 @@ namespace PhotoLocator.Gps
             using var stream = File.OpenRead(TimelineJsonPath);
             var trace = TimelineDecoder.DecodeStream(stream).ToArray();
 
-            Assert.AreEqual(2, trace[0].Locations.Count);
+            Assert.HasCount(2, trace[0].Locations);
             Assert.AreEqual(DateTimeKind.Utc, trace[0].TimeStamps[0].Kind);
         }
 
@@ -90,10 +90,10 @@ namespace PhotoLocator.Gps
             using var stream = File.OpenRead(@"TestData\20250505.geojson");
             var traces = GeoJsonDecoder.DecodeStream(stream).ToArray();
 
-            Assert.AreEqual(1, traces.Length);
+            Assert.HasCount(1, traces);
             var trace = traces[0];
 
-            Assert.AreEqual(29, trace.Locations.Count);
+            Assert.HasCount(29, trace.Locations);
             Assert.AreEqual(23.1313316, trace.Locations[0].Latitude, 1e-6);
             Assert.AreEqual(43.8938363, trace.Locations[0].Longitude, 1e-6);
             Assert.AreEqual(DateTimeKind.Utc, trace.TimeStamps[0].Kind);

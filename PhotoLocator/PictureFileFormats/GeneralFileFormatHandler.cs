@@ -24,6 +24,7 @@ namespace PhotoLocator.PictureFileFormats
                 bitmap.CreateOptions = BitmapCreateOptions.PreservePixelFormat;
             bitmap.CacheOption = BitmapCacheOption.OnLoad;
             bitmap.Rotation = rotation;
+            ct.ThrowIfCancellationRequested();
             bitmap.EndInit();
             ct.ThrowIfCancellationRequested();
             bitmap.Freeze();

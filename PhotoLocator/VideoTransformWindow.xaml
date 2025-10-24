@@ -18,8 +18,8 @@
         <Style TargetType="TextBlock">
             <Setter Property="Foreground" Value="#FFEEEEEE" />
         </Style>
-    </Window.Resources>    
-    
+    </Window.Resources>
+
     <StackPanel Margin="10">
         <DockPanel Visibility="{Binding HasSingleInput, Converter={StaticResource BooleanToVisibility}}" >
             <TextBlock Text="Skip to:" Width="140"/>
@@ -57,7 +57,7 @@
         </DockPanel>
 
         <CheckBox Content="Stabilize" IsChecked="{Binding IsStabilizeChecked}" Margin="0,8,0,0"/>
-        
+
         <StackPanel Orientation="Horizontal" Margin="10,4,0,0">
             <TextBlock Text="Smooth frames:" IsEnabled="{Binding IsStabilizeChecked}" Width="130"/>
             <TextBox Text="{Binding SmoothFrames}" IsEnabled="{Binding IsStabilizeChecked}" Width="140"
@@ -112,7 +112,7 @@
                     <Binding Source="{x:Static local:OutputMode.TimeSliceImage}" />
                 </MultiBinding>
             </DockPanel.IsEnabled>
-            
+
             <RadioButton Content="Time slice"
                 IsChecked="{Binding Path=CombineFramesMode, Converter={StaticResource ComparisonConverter}, ConverterParameter={x:Static local:CombineFramesMode.TimeSlice}}"/>
             <RadioButton Content="Interpolated time slice" Margin="10,0,0,0"
@@ -146,13 +146,13 @@
             <CheckBox Content="Remove audio" IsChecked="{Binding IsRemoveAudioChecked}" Width="140"/>
 
             <TextBlock Text="Video bit rate (mbps):" Margin="20,0,0,0"/>
-            <TextBox Text="{Binding VideoBitRate}" Width="140" HorizontalAlignment="Right" />    
+            <TextBox Text="{Binding VideoBitRate}" Width="140" HorizontalAlignment="Right" />
         </DockPanel>
         <RadioButton Content="Image sequence" Margin="10,0,0,0"
                      IsChecked="{Binding Path=OutputMode, Converter={StaticResource ComparisonConverter}, ConverterParameter={x:Static local:OutputMode.ImageSequence}}"/>
         <DockPanel Margin="10,6,0,0" >
             <RadioButton Content="Frame average" Width="130"
-                            IsChecked="{Binding Path=OutputMode, Converter={StaticResource ComparisonConverter}, ConverterParameter={x:Static local:OutputMode.Average}}"/>
+                         IsChecked="{Binding Path=OutputMode, Converter={StaticResource ComparisonConverter}, ConverterParameter={x:Static local:OutputMode.Average}}"/>
 
             <TextBlock Text="Registration:" />
             <RadioButton Content="Off" Margin="8,0" IsEnabled="{Binding IsCombineFramesOperation}" GroupName="RegistrationMode"
@@ -167,12 +167,20 @@
             <TextBox Text="{Binding RegistrationRegion}" Width="140" HorizontalAlignment="Right" IsEnabled="{Binding IsRegistrationEnabled}"
                      ToolTip="Optional registration region of interest, width:height:left:top"/>
         </DockPanel>
-        <DockPanel Margin="10,4,0,0" >
+        <Grid Margin="10,4,0,0" >
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="20"/>
+            </Grid.ColumnDefinitions>
             <RadioButton Content="Frame max" Width="130"
                          IsChecked="{Binding Path=OutputMode, Converter={StaticResource ComparisonConverter}, ConverterParameter={x:Static local:OutputMode.Max}}"/>
-            <TextBlock Text="Dark frame path:"  Margin="0,0,10,0"/>
-            <TextBox Text="{Binding DarkFramePath}" IsEnabled="{Binding IsCombineFramesOperation}"/>
-        </DockPanel>
+            <TextBlock Text="Dark frame path:" Margin="0,0,10,0" Grid.Column="1" />
+            <TextBox Text="{Binding DarkFramePath}" IsEnabled="{Binding IsCombineFramesOperation}" Grid.Column="2"/>
+            <Button Content="&#xED25;" FontFamily="Segoe MDL2 Assets" Command="{Binding BrowseDarkFrameCommand}"
+                    IsEnabled="{Binding IsCombineFramesOperation}" Grid.Column="3" />
+        </Grid>
         <RadioButton Content="Time slice image" Margin="10,2,0,0"
                      IsChecked="{Binding Path=OutputMode, Converter={StaticResource ComparisonConverter}, ConverterParameter={x:Static local:OutputMode.TimeSliceImage}}"/>
         <TextBlock Text="Process arguments:" Margin="0,4,0,0"/>

@@ -48,6 +48,7 @@ namespace PhotoLocator
 
     public class VideoTransformCommands : INotifyPropertyChanged
     {
+        const string OpenImageFileFilter = "Image files|*.png;*.tif;*.bmp;*.jpg";
         const string InputListFileName = "input.txt";
         const string TransformsFileName = "transforms.trf";
         const string SaveVideoFilter = "MP4|*.mp4";
@@ -469,7 +470,7 @@ namespace PhotoLocator
                     return;
                 if (value.Tag is null or FloatBitmap)
                 {
-                    var dialog = new OpenFileDialog { Filter = "Image files|*.png;*.tif;*.bmp;*.jpg" };
+                    var dialog = new OpenFileDialog { Filter = OpenImageFileFilter };
                     if (dialog.ShowDialog() is not true)
                         return;
                     using var cursor = new MouseCursorOverride();
@@ -622,6 +623,15 @@ namespace PhotoLocator
             set => SetProperty(ref _darkFramePath, value.TrimPath());
         }
         string _darkFramePath = string.Empty;
+
+        public ICommand BrowseDarkFrameCommand => new RelayCommand(o =>
+        {
+            var dlg = new OpenFileDialog { Filter = OpenImageFileFilter };
+            if (File.Exists(DarkFramePath))
+                dlg.FileName = DarkFramePath;
+            if (dlg.ShowDialog() is true)
+                DarkFramePath = dlg.FileName;
+        });
 
         public string InputArguments
         {
