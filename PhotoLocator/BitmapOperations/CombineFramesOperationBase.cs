@@ -188,12 +188,21 @@ namespace PhotoLocator.BitmapOperations
                     {
                         bool found = false;
                         for (int radius = 1; !found && radius < 100; radius++)
-                            for (int d = 0; !found && d <= radius; d++)
+                            for (int d = 0; !found && d < radius; d++)
+                                // ^ <1 5>
+                                // 7     ^
+                                // 3  *  4
+                                // ·     8
+                                // <6 2> ·
                                 found =
-                                    CheckCandidate(x - d * PixelSize, y - radius) ||
-                                    CheckCandidate(x + d * PixelSize, y + radius) ||
-                                    CheckCandidate(x - radius * PixelSize, y - d) ||
-                                    CheckCandidate(x + radius * PixelSize, y + d);
+                                    CheckCandidate(x - d * PixelSize, y - radius) ||       // 1
+                                    CheckCandidate(x + d * PixelSize, y + radius) ||       // 2
+                                    CheckCandidate(x - radius * PixelSize, y + d) ||       // 3
+                                    CheckCandidate(x + radius * PixelSize, y - d) ||       // 4
+                                    CheckCandidate(x + (d + 1) * PixelSize, y - radius) || // 5
+                                    CheckCandidate(x - (d + 1) * PixelSize, y + radius) || // 6
+                                    CheckCandidate(x - radius * PixelSize, y - (d + 1)) || // 7
+                                    CheckCandidate(x + radius * PixelSize, y + d + 1);     // 8
                         if (!found)
                             throw new UserMessageException("Bad dark frame, unable to patch hot pixel");
 
