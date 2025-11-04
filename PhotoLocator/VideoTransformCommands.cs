@@ -254,7 +254,7 @@ namespace PhotoLocator
             new ComboBoxItem { Content = "Denoise (nlmeans)", Tag = ( "nlmeans=s={0}", "1.0" ) },
             new ComboBoxItem { Content = "Noise", Tag = ( "noise=c0s={0}:c0f=t+u", "60" ) },
             new ComboBoxItem { Content = "Sharpen", Tag = ( "unsharp=7:7:{0}", "2.5" ) },
-            new ComboBoxItem { Content = "Reverse", Tag = ( "reverse" ) },
+            new ComboBoxItem { Content = "Reverse", Tag = "reverse" },
         ];
 
         public ComboBoxItem SelectedEffect
