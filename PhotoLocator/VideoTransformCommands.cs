@@ -235,14 +235,16 @@ namespace PhotoLocator
         }
         string _scaleTo = "w:h";
 
-        public ObservableCollection<ComboBoxItem> Effects { get; } = [ // Note that default save file name uses first word of effect name
+        public static readonly object ZoomEffect = "Zoom";
+
+        public static ObservableCollection<ComboBoxItem> Effects { get; } = [ // Note that default save file name uses first word of effect name
             new ComboBoxItem { Content = "None" },
             new ComboBoxItem { Content = "Rotate 90° clockwise", Tag = "transpose=1" },
             new ComboBoxItem { Content = "Rotate 90° counterclockwise", Tag = "transpose=2" },
             new ComboBoxItem { Content = "Rotate 180°", Tag = "transpose=2,transpose=2" },
             new ComboBoxItem { Content = "Mirror left half to right", Tag = "crop=iw/2:ih:0:0,split[left][tmp];[tmp]hflip[right];[left][right] hstack" },
             new ComboBoxItem { Content = "Mirror top half to bottom", Tag = "crop=iw:ih/2:0:0,split[top][tmp];[tmp]vflip[bottom];[top][bottom] vstack" },
-            new ComboBoxItem { Content = "Zoom", Tag = ( "scale=4*iw:4*ih, zoompan=z='if(lte(it,0),1,min(pzoom+{0},10))':d=1:x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':s=1920x1080:fps=30", "0.001" ) },
+            new ComboBoxItem { Content = ZoomEffect, Tag = ( "scale=4*iw:4*ih, zoompan=z='if(lte(it,0),1,min(pzoom+{0},10))':d=1:x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':s={1}:fps={2}", "0.001" ) },
             new ComboBoxItem { Content = "Normalize", Tag = ( "normalize=smoothing={0}:independence=0", "50" ) },
             new ComboBoxItem { Content = "Midtones", Tag = ( "colorbalance=rm={0}:gm={0}:bm={0}", "0.05" ) },
             new ComboBoxItem { Content = "Saturation", Tag = ( "eq=saturation={0}", "1.3" ) },
@@ -252,6 +254,7 @@ namespace PhotoLocator
             new ComboBoxItem { Content = "Denoise (nlmeans)", Tag = ( "nlmeans=s={0}", "1.0" ) },
             new ComboBoxItem { Content = "Noise", Tag = ( "noise=c0s={0}:c0f=t+u", "60" ) },
             new ComboBoxItem { Content = "Sharpen", Tag = ( "unsharp=7:7:{0}", "2.5" ) },
+            new ComboBoxItem { Content = "Reverse", Tag = "reverse" },
         ];
 
         public ComboBoxItem SelectedEffect
@@ -263,7 +266,7 @@ namespace PhotoLocator
                     return;
                 if (SetProperty(ref _selectedEffect, value))
                 {
-                    if (_selectedEffect.Tag is ValueTuple<string, string> effectTuple)
+                    if (value.Tag is ValueTuple<string, string> effectTuple)
                     {
                         IsParameterizedEffect = true;
                         _effectStrength = effectTuple.Item2;
@@ -706,7 +709,7 @@ namespace PhotoLocator
                 filters.Add($"rotate={RotationAngle}*PI/180");
             if (IsCropChecked)
                 filters.Add($"crop={CropWindow}");
-            if (IsScaleChecked)
+            if (IsScaleChecked && SelectedEffect.Content != ZoomEffect)
                 filters.Add($"scale={ScaleTo}");
             if (IsStabilizeChecked)
                 filters.Add($"vidstabtransform=smoothing={SmoothFrames}"
@@ -714,8 +717,11 @@ namespace PhotoLocator
                     + (IsBicubicStabilizeChecked ? ":interpol=bicubic" : null));
             if (SelectedEffect.Tag is string effect)
                 filters.Add(effect);
-            else if (_selectedEffect.Tag is ValueTuple<string, string> effectTuple)
-                filters.Add(string.Format(CultureInfo.InvariantCulture, effectTuple.Item1, EffectStrength));
+            else if (SelectedEffect.Tag is ValueTuple<string, string> effectTuple)
+                filters.Add(string.Format(CultureInfo.InvariantCulture, effectTuple.Item1, 
+                    EffectStrength, 
+                    IsScaleChecked ? ScaleTo.Replace(':', 'x') : "1920x1080",
+                    string.IsNullOrEmpty(FrameRate) ? "30" : FrameRate));
             if (IsSpeedupChecked)
                 filters.Add($"setpts=PTS/({SpeedupBy})");
             if (!string.IsNullOrEmpty(FrameRate))
