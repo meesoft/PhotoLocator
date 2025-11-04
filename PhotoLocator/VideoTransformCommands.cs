@@ -720,7 +720,7 @@ namespace PhotoLocator
             else if (SelectedEffect.Tag is ValueTuple<string, string> effectTuple)
                 filters.Add(string.Format(CultureInfo.InvariantCulture, effectTuple.Item1, 
                     EffectStrength, 
-                    IsScaleChecked ? ScaleTo : "1920x1080", 
+                    IsScaleChecked ? ScaleTo.Replace(':', 'x') : "1920x1080",
                     string.IsNullOrEmpty(FrameRate) ? "30" : FrameRate));
             if (IsSpeedupChecked)
                 filters.Add($"setpts=PTS/({SpeedupBy})");
