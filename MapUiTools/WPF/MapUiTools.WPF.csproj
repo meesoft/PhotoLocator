@@ -1,6 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
     <PropertyGroup>
-        <TargetFrameworks>net8.0-windows</TargetFrameworks>
+        <TargetFrameworks>net10.0-windows</TargetFrameworks>
         <UseWPF>true</UseWPF>
         <RootNamespace>MapControl.UiTools</RootNamespace>
         <AssemblyTitle>XAML Map Control UI Tools Library for WPF</AssemblyTitle>

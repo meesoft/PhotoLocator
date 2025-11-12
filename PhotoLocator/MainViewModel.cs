@@ -454,7 +454,7 @@ namespace PhotoLocator
             }
             else if (Clipboard.ContainsImage() && !string.IsNullOrWhiteSpace(PhotoFolderPath))
             {
-                var image = Clipboard.GetImage();
+                var image = Clipboard.GetImage() ?? throw new UserMessageException("Unable to paste image");
                 for (int i = 0; i < 10000; i++)
                 {
                     var fileName = Path.Combine(PhotoFolderPath, "ClipboardImage" + i + ".png");
