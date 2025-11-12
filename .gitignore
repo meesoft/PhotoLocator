@@ -12,3 +12,4 @@ PhotoLocatorSetup/*.cache
 PhotoLocatorSetup/*.pfx
 PhotoLocatorSetup/AppPackages/
 PhotoLocatorSetup/BundleArtifacts/
+TestResults/
