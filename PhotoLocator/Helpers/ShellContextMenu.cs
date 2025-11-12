@@ -510,8 +510,8 @@ namespace Peter
                     CMF.NORMAL |
                     ((Control.ModifierKeys & Keys.Shift) != 0 ? CMF.EXTENDEDVERBS : 0));
 
-                Marshal.QueryInterface(iContextMenuPtr, ref IID_IContextMenu2, out iContextMenuPtr2);
-                Marshal.QueryInterface(iContextMenuPtr, ref IID_IContextMenu3, out iContextMenuPtr3);
+                Marshal.QueryInterface(iContextMenuPtr, in IID_IContextMenu2, out iContextMenuPtr2);
+                Marshal.QueryInterface(iContextMenuPtr, in IID_IContextMenu3, out iContextMenuPtr3);
 
                 _oContextMenu2 = (IContextMenu2)Marshal.GetTypedObjectForIUnknown(iContextMenuPtr2, typeof(IContextMenu2));
                 _oContextMenu3 = (IContextMenu3)Marshal.GetTypedObjectForIUnknown(iContextMenuPtr3, typeof(IContextMenu3));
@@ -577,8 +577,8 @@ namespace Peter
         private const int S_OK = 0;
         private const int S_FALSE = 1;
 
-        private static readonly int cbMenuItemInfo = Marshal.SizeOf(typeof(MENUITEMINFO));
-        private static readonly int cbInvokeCommand = Marshal.SizeOf(typeof(CMINVOKECOMMANDINFOEX));
+        private static readonly int cbMenuItemInfo = Marshal.SizeOf<MENUITEMINFO>();
+        private static readonly int cbInvokeCommand = Marshal.SizeOf<CMINVOKECOMMANDINFOEX>();
 
         #endregion
 

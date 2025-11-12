@@ -104,23 +104,17 @@ namespace PhotoLocator
             }
         }
 
-        public bool IsProgressBarVisible { get => _isProgressBarVisible; set => SetProperty(ref _isProgressBarVisible, value); }
-        private bool _isProgressBarVisible = _isInDesignMode;
+        public bool IsProgressBarVisible { get; set => SetProperty(ref field, value); } = _isInDesignMode;
 
-        public TaskbarItemProgressState TaskbarProgressState { get => _taskbarProgressState; set => SetProperty(ref _taskbarProgressState, value); }
-        TaskbarItemProgressState _taskbarProgressState = TaskbarItemProgressState.None;
+        public TaskbarItemProgressState TaskbarProgressState { get; set => SetProperty(ref field, value); } = TaskbarItemProgressState.None;
 
-        public double ProgressBarValue { get => _progressBarValue; set => SetProperty(ref _progressBarValue, value); }
-        private double _progressBarValue;
+        public double ProgressBarValue { get; set => SetProperty(ref field, value); }
 
-        public bool ProgressBarIsIndeterminate { get => _progressBarIsIndeterminate; set => SetProperty(ref _progressBarIsIndeterminate, value); }
-        private bool _progressBarIsIndeterminate;
+        public bool ProgressBarIsIndeterminate { get; set => SetProperty(ref field, value); }
 
-        public string? ProgressBarText { get => _progressBarText; set => SetProperty(ref _progressBarText, value); }
-        private string? _progressBarText;
+        public string? ProgressBarText { get; set => SetProperty(ref field, value); }
 
-        public bool IsWindowEnabled { get => _isWindowEnabled; set => SetProperty(ref _isWindowEnabled, value); }
-        private bool _isWindowEnabled = true;
+        public bool IsWindowEnabled { get; set => SetProperty(ref field, value); } = true;
 
         public IEnumerable<string> PhotoFileExtensions { get; set; } = [];
 
@@ -149,28 +143,26 @@ namespace PhotoLocator
 
         public Location? MapCenter
         {
-            get => _mapCenter;
-            set => SetProperty(ref _mapCenter, value);
+            get;
+            set => SetProperty(ref field, value);
         }
-        private Location? _mapCenter;
 
         public Location? SavedLocation
         {
-            get => _savedLocation;
+            get;
             set
             {
-                if (SetProperty(ref _savedLocation, value))
+                if (SetProperty(ref field, value))
                     UpdatePushpins();
             }
         }
-        private Location? _savedLocation;
 
         public ComboBoxItem? SelectedViewModeItem
         {
-            get => _selectedViewModeItem;
+            get;
             set
             {
-                if (SetProperty(ref _selectedViewModeItem, value))
+                if (SetProperty(ref field, value))
                 {
                     NotifyPropertyChanged(nameof(IsMapVisible));
                     NotifyPropertyChanged(nameof(IsPreviewVisible));
@@ -186,7 +178,6 @@ namespace PhotoLocator
                 }
             }
         }
-        private ComboBoxItem? _selectedViewModeItem;
 
         public ICommand? ViewModeCommand { get; internal set; }
 
@@ -212,37 +203,35 @@ namespace PhotoLocator
 
         public BitmapSource? PreviewPictureSource
         {
-            get => _previewPictureSource;
+            get;
             set
             {
-                if (SetProperty(ref _previewPictureSource, value))
+                if (SetProperty(ref field, value))
                     IsCropControlVisible = false;
             }
         }
-        private BitmapSource? _previewPictureSource;
 
         public string? PreviewPictureTitle { get => _previewPictureTitle; set => SetProperty(ref _previewPictureTitle, value); }
         private string? _previewPictureTitle;
 
         public int PreviewZoom
         {
-            get => _previewZoom;
+            get;
             set
             {
-                if (SetProperty(ref _previewZoom, value) && value > 0)
+                if (SetProperty(ref field, value) && value > 0)
                     IsCropControlVisible = false;
             }
         }
-        private int _previewZoom;
 
         public OrderedCollection Items { get; } = [];
 
         public PictureItemViewModel? SelectedItem
         {
-            get => _selectedItem;
+            get;
             set
             {
-                if (!SetProperty(ref _selectedItem, value))
+                if (!SetProperty(ref field, value))
                     return;
                 if (value?.GeoTag != null)
                     MapCenter = value.GeoTag;
@@ -251,7 +240,6 @@ namespace PhotoLocator
                 UpdatePreviewPictureAsync().WithExceptionLogging();
             }
         }
-        private PictureItemViewModel? _selectedItem;
 
         public IEnumerable<PictureItemViewModel> GetSelectedItems(bool filesOnly)
         {
@@ -628,26 +616,24 @@ namespace PhotoLocator
 
         public bool IsSunAndMoonVisible
         {
-            get => _isSunAndMoonVisible;
+            get;
             set
             {
-                if (SetProperty(ref _isSunAndMoonVisible, value))
+                if (SetProperty(ref field, value))
                     UpdateSunAndMoonPosition();
             }
         }
-        bool _isSunAndMoonVisible;
 
         public DateTime SunAndMoonDate
         {
-            get => _sunAndMoonDate;
+            get;
             set
             {
-                if (SetProperty(ref _sunAndMoonDate, value) && IsSunAndMoonVisible)
+                if (SetProperty(ref field, value) && IsSunAndMoonVisible)
                     UpdateSunAndMoonPosition();
 
             }
-        }
-        DateTime _sunAndMoonDate = DateTime.Now;
+        } = DateTime.Now;
 
         private void UpdateSunAndMoonPosition()
         {
@@ -1015,8 +1001,7 @@ namespace PhotoLocator
 
         public ICropControl? CropControl { get; internal set; }
 
-        public bool IsCropControlVisible { get => _isCropControlVisible; set => SetProperty(ref _isCropControlVisible, value); }
-        private bool _isCropControlVisible;
+        public bool IsCropControlVisible { get; set => SetProperty(ref field, value); }
 
         public ICommand CropCommand => new RelayCommand(async o =>
         {
@@ -1043,18 +1028,15 @@ namespace PhotoLocator
             }
         }, o => SelectedItem is not null && SelectedItem.IsFile);
 
-        public double LogViewHeight { get => _logViewHeight; set => SetProperty(ref _logViewHeight, value); }
-        private double _logViewHeight = 4;
+        public double LogViewHeight { get; set => SetProperty(ref field, value); } = 4;
 
         public ICommand ToggleLogCommand => new RelayCommand(o => LogViewHeight = LogViewHeight > 4 ? 4 : 100);
 
-        public JpegTransformCommands JpegTransformCommands => _jpegTransformCommands ??= new(this);
-        JpegTransformCommands? _jpegTransformCommands;
+        public JpegTransformCommands JpegTransformCommands => field ??= new(this);
 
         public VideoTransformCommands VideoTransformCommands => new(this);
 
-        public VideoTransformCommands VideoTransformCommandsShared => _videoTransformCommandsShared ??= new(this);
-        VideoTransformCommands? _videoTransformCommandsShared;
+        public VideoTransformCommands VideoTransformCommandsShared => field ??= new(this);
 
         private async Task LoadFolderContentsAsync(bool keepSelection, string? selectItemFullPath = null)
         {
@@ -1115,12 +1097,10 @@ namespace PhotoLocator
         /// <summary> Note that events during pause will be lost </summary>
         public IAsyncDisposable PauseFileSystemWatcher()
         {
-            if (_fileSystemWatcher is not null)
-                _fileSystemWatcher.EnableRaisingEvents = false;
+            _fileSystemWatcher?.EnableRaisingEvents = false;
             return new ActionDisposable(async () =>
             {
-                if (_fileSystemWatcher is not null)
-                    _fileSystemWatcher.EnableRaisingEvents = true;
+                _fileSystemWatcher?.EnableRaisingEvents = true;
                 if (!string.IsNullOrEmpty(PhotoFolderPath))
                 {
                     await AppendFilesAsync(Directory.EnumerateFiles(PhotoFolderPath));

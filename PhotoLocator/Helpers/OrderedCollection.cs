@@ -37,19 +37,18 @@ namespace PhotoLocator.Helpers
 
         public string? FilterText 
         { 
-            get => _filterText;
+            get;
             set
             {
                 if (string.IsNullOrEmpty(value))
                     value = null;
-                if (value != _filterText)
+                if (value != field)
                 {
-                    _filterText = value;
+                    field = value;
                     Sort();
                 }
             }
         }
-        private string? _filterText;
 
         /// <summary> Return new item or existing item if one with the same name and path already exists </summary>
         public PictureItemViewModel InsertOrdered(PictureItemViewModel item)

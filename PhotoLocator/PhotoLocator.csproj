@@ -12,10 +12,11 @@
     <ApplicationIcon>Resources\PhotoLocator.ico</ApplicationIcon>
     <EnableNETAnalyzers>true</EnableNETAnalyzers>
     <AnalysisMode>All</AnalysisMode>
-    <NoWarn>CA1014,CA1309,CA1814,CA1819,IDE0017</NoWarn>
+    <NoWarn>CA1014,CA1309,CA1515,CA1814,CA1819,IDE0017</NoWarn>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <Platforms>x64</Platforms>
     <LangVersion>14.0</LangVersion>
+    <IsPackable>false</IsPackable>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)' == 'Release'">

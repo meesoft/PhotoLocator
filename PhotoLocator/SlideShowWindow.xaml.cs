@@ -66,10 +66,9 @@ namespace PhotoLocator
 
         public Location? MapCenter
         {
-            get => _mapCenter;
-            set => SetProperty(ref _mapCenter, value);
+            get;
+            set => SetProperty(ref field, value);
         }
-        private Location? _mapCenter;
 
         public ObservableCollection<PointItem> Points { get; } = [];
 
@@ -77,30 +76,25 @@ namespace PhotoLocator
 
         public ObservableCollection<GpsTrace> Polylines { get; } = [];
 
-        public bool IsMapVisible { get => _isMapVisible; set => SetProperty(ref _isMapVisible, value); }
-        private bool _isMapVisible;
+        public bool IsMapVisible { get; set => SetProperty(ref field, value); }
 
-        public ImageSource? PictureSource { get => _pictureSource; set => SetProperty(ref _pictureSource, value); }
-        private ImageSource? _pictureSource;
+        public ImageSource? PictureSource { get; set => SetProperty(ref field, value); }
 
-        public ImageSource? ResampledPictureSource { get => _resampledPictureSource; set => SetProperty(ref _resampledPictureSource, value); }
-        private ImageSource? _resampledPictureSource;
+        public ImageSource? ResampledPictureSource { get; set => SetProperty(ref field, value); }
 
-        public string? PictureTitle { get => _pictureTitle; set => SetProperty(ref _pictureTitle, value); }
-        private string? _pictureTitle;
+        public string? PictureTitle { get; set => SetProperty(ref field, value); }
 
         public PictureItemViewModel SelectedPicture { get; private set; }
 
         public int PictureIndex 
         { 
-            get => _pictureIndex;
+            get;
             set
             {
-                if (SetProperty(ref _pictureIndex, Math.Max(0, Math.Min(_pictures.Count - 1, value))))
+                if (SetProperty(ref field, Math.Max(0, Math.Min(_pictures.Count - 1, value))))
                     UpdatePicture();
             }
-        }
-        int _pictureIndex = -1;
+        } = -1;
 
         private void UpdatePicture()
         {

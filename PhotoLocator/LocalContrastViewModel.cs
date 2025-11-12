@@ -54,7 +54,7 @@ namespace PhotoLocator
 
         public BitmapSource? SourceBitmap
         {
-            get => _sourceBitmap;
+            get;
             set
             {
                 _previewPictureSource = value;
@@ -67,10 +67,9 @@ namespace PhotoLocator
                     _laplacianFilterOperation.SrcBitmap.Assign(value, FloatBitmap.DefaultMonitorGamma);
                     _updateTimer.Start();
                 }
-                _sourceBitmap = value;
+                field = value;
             }
         }
-        private BitmapSource? _sourceBitmap;
 
         public BitmapSource? PreviewPictureSource
         {
@@ -81,10 +80,9 @@ namespace PhotoLocator
 
         public int PreviewZoom
         {
-            get => _previewZoom;
-            set => SetProperty(ref _previewZoom, value);
+            get;
+            set => SetProperty(ref field, value);
         }
-        private int _previewZoom;
 
         public ICommand ToggleZoomCommand => new RelayCommand(o => PreviewZoom = PreviewZoom > 0 ? 0 : 1);
         public ICommand ZoomToFitCommand => new RelayCommand(o => PreviewZoom = 0);
@@ -96,14 +94,13 @@ namespace PhotoLocator
 
         public double HighlightStrength
         {
-            get => _highlightStrength;
+            get;
             set
             {
-                if (SetProperty(ref _highlightStrength, RealMath.Clamp(value, 0, 100)))
+                if (SetProperty(ref field, RealMath.Clamp(value, 0, 100)))
                     StartUpdateTimer(false, true);
             }
-        }
-        private double _highlightStrength = DefaultHighlightStrength;
+        } = DefaultHighlightStrength;
 
         public const double DefaultHighlightStrength = 10;
 
@@ -111,14 +108,13 @@ namespace PhotoLocator
 
         public double ShadowStrength
         {
-            get => _shadowStrength;
+            get;
             set
             {
-                if (SetProperty(ref _shadowStrength, RealMath.Clamp(value, 0, 100)))
+                if (SetProperty(ref field, RealMath.Clamp(value, 0, 100)))
                     StartUpdateTimer(false, true);
             }
-        }
-        private double _shadowStrength = DefaultShadowStrength;
+        } = DefaultShadowStrength;
 
         public const double DefaultShadowStrength = 10;
 
@@ -126,14 +122,13 @@ namespace PhotoLocator
 
         public double MaxStretch
         {
-            get => _maxStretch;
+            get;
             set
             {
-                if (SetProperty(ref _maxStretch, RealMath.Clamp(value, 0, 100)))
+                if (SetProperty(ref field, RealMath.Clamp(value, 0, 100)))
                     StartUpdateTimer(false, true);
             }
-        }
-        private double _maxStretch = DefaultMaxStretch;
+        } = DefaultMaxStretch;
 
         public const double DefaultMaxStretch = 50;
 
@@ -141,14 +136,13 @@ namespace PhotoLocator
 
         public double OutlierReductionStrength
         {
-            get => _outlierReductionStrength;
+            get;
             set
             {
-                if (SetProperty(ref _outlierReductionStrength, value))
+                if (SetProperty(ref field, value))
                     StartUpdateTimer(false, true);
             }
-        }
-        private double _outlierReductionStrength = DefaultOutlierReductionStrength;
+        } = DefaultOutlierReductionStrength;
 
         public const double DefaultOutlierReductionStrength = 10;
 
@@ -156,14 +150,13 @@ namespace PhotoLocator
 
         public double Contrast
         {
-            get => _contrast;
+            get;
             set
             {
-                if (SetProperty(ref _contrast, value))
+                if (SetProperty(ref field, value))
                     StartUpdateTimer(false, true);
             }
-        }
-        private double _contrast = DefaultContrast;
+        } = DefaultContrast;
 
         public const double DefaultContrast = 1;
 
@@ -171,14 +164,13 @@ namespace PhotoLocator
 
         public double ToneMapping
         {
-            get => _toneMapping;
+            get;
             set
             {
-                if (SetProperty(ref _toneMapping, value))
+                if (SetProperty(ref field, value))
                     StartUpdateTimer(true, true);
             }
-        }
-        private double _toneMapping = DefaultToneMapping;
+        } = DefaultToneMapping;
 
         public const double DefaultToneMapping = 1;
 
@@ -186,14 +178,13 @@ namespace PhotoLocator
 
         public double DetailHandling
         {
-            get => _detailHandling;
+            get;
             set
             {
-                if (SetProperty(ref _detailHandling, value))
+                if (SetProperty(ref field, value))
                     StartUpdateTimer(true, true);
             }
-        }
-        private double _detailHandling = DefaultDetailHandling;
+        } = DefaultDetailHandling;
 
         public const double DefaultDetailHandling = 1;
 
@@ -228,10 +219,10 @@ namespace PhotoLocator
 
         public int ActiveToneIndex
         {
-            get => _activeToneIndex;
+            get;
             set
             {
-                if (SetProperty(ref _activeToneIndex, value) && value >= 0)
+                if (SetProperty(ref field, value) && value >= 0)
                 {
                     if (value == ColorToneAdjustOperation.NumberOfTones)
                     {
@@ -249,8 +240,7 @@ namespace PhotoLocator
                     PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(HueUniformity)));
                 }
             }
-        }
-        private int _activeToneIndex = ColorToneAdjustOperation.NumberOfTones;
+        } = ColorToneAdjustOperation.NumberOfTones;
 
         public float HueAdjust
         {
@@ -326,17 +316,16 @@ namespace PhotoLocator
 
         public double ToneRotation
         {
-            get => _toneRotation;
+            get;
             set
             {
-                if (SetProperty(ref _toneRotation, RealMath.Clamp(value, -0.5, 0.5)))
+                if (SetProperty(ref field, RealMath.Clamp(value, -0.5, 0.5)))
                 {
                     UpdateColorTones();
                     StartUpdateTimer(false, false);
                 }
             }
         }
-        double _toneRotation;
 
         public ICommand ResetToneRotationCommand => new RelayCommand(o => ToneRotation = 0);
 

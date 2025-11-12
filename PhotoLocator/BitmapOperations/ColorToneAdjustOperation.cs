@@ -24,15 +24,14 @@ namespace PhotoLocator.BitmapOperations
 
         public float Rotation
         {
-            get => _rotation;
+            get;
             set
             {
                 if (value <= -1 || value >= 1)
                     throw new ArgumentOutOfRangeException(nameof(value));
-                _rotation = value;
+                field = value;
             }
         }
-        private float _rotation;
 
         public ColorToneAdjustOperation()
         {

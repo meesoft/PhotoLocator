@@ -16,18 +16,17 @@ namespace PhotoLocator.BitmapOperations
         /// </summary>
         public float OutlierReductionFilterSize
         {
-            get { return _outlierReductionFilterSize; }
+            get;
             set
             {
-                if (value != _outlierReductionFilterSize)
+                if (value != field)
                 {
-                    _outlierReductionFilterSize = value;
+                    field = value;
                     _updateSourceMinMax = true;
                     _updateMinMax = true;
                 }
             }
         }
-        private float _outlierReductionFilterSize;
 
         public float LocalMinMaxFilterSize
         {
@@ -73,17 +72,16 @@ namespace PhotoLocator.BitmapOperations
 
         public float MaxContrast
         {
-            get { return _maxContrast; }
+            get;
             set
             {
-                if (value != _maxContrast)
+                if (value != field)
                 {
-                    _maxContrast = value;
+                    field = value;
                     _updateMinMax = true;
                 }
             }
-        }
-        private float _maxContrast = 1f;
+        } = 1f;
 
         public override void SourceChanged()
         {
