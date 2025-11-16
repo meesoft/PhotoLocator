@@ -21,87 +21,75 @@ namespace PhotoLocator.Settings
 
         public string PhotoFileExtensions
         {
-            get => _photoFileExtensions;
-            set => SetProperty(ref _photoFileExtensions, value ?? RegistrySettings.DefaultPhotoFileExtensions);
-        }
-        string _photoFileExtensions = RegistrySettings.DefaultPhotoFileExtensions;
+            get;
+            set => SetProperty(ref field, value ?? RegistrySettings.DefaultPhotoFileExtensions);
+        } = RegistrySettings.DefaultPhotoFileExtensions;
 
         public bool ShowFolders
         {
-            get => _showFolders;
-            set => SetProperty(ref _showFolders, value);
+            get;
+            set => SetProperty(ref field, value);
         }
-        bool _showFolders;
 
         public int ThumbnailSize
         {
-            get => _thumbnailSize;
-            set => SetProperty(ref _thumbnailSize, Math.Clamp(value, 32, 1024));
+            get;
+            set => SetProperty(ref field, Math.Clamp(value, 32, 1024));
         }
-        int _thumbnailSize;
 
         public bool IncludeSidecarFiles
         {
-            get => _includeSidecarFiles;
-            set => SetProperty(ref _includeSidecarFiles, value);
+            get;
+            set => SetProperty(ref field, value);
         }
-        bool _includeSidecarFiles;
 
         public string SavedFilePostfix
         {
-            get => _savedFilePostfix;
-            set => SetProperty(ref _savedFilePostfix, value);
-        }
-        string _savedFilePostfix = string.Empty;
+            get;
+            set => SetProperty(ref field, value);
+        } = string.Empty;
 
         public int JpegQuality
         {
-            get => _jpegQuality;
-            set => SetProperty(ref _jpegQuality, Math.Clamp(value, 1, 100));
+            get;
+            set => SetProperty(ref field, Math.Clamp(value, 1, 100));
         }
-        int _jpegQuality;
 
         public string? ExifToolPath
         {
-            get => _exifToolPath;
-            set => SetProperty(ref _exifToolPath, value?.TrimPath());
+            get;
+            set => SetProperty(ref field, value?.TrimPath());
         }
-        string? _exifToolPath;
 
         public string? FFmpegPath
         {
-            get => _ffmpegPath;
-            set => SetProperty(ref _ffmpegPath, value?.TrimPath());
+            get;
+            set => SetProperty(ref field, value?.TrimPath());
         }
-        string? _ffmpegPath;
 
         public bool ForceUseExifTool
         {
-            get => _forceUseExifTool;
-            set => SetProperty(ref _forceUseExifTool, value);
+            get;
+            set => SetProperty(ref field, value);
         }
-        bool _forceUseExifTool;
 
         public int SlideShowInterval
         {
-            get => _slideShowInterval;
-            set => SetProperty(ref _slideShowInterval, Math.Max(1, value));
+            get;
+            set => SetProperty(ref field, Math.Max(1, value));
         }
-        int _slideShowInterval;
 
         public bool ShowMetadataInSlideShow
         {
-            get => _showMetadataInSlideShow;
-            set => SetProperty(ref _showMetadataInSlideShow, value);
+            get;
+            set => SetProperty(ref field, value);
         }
-        bool _showMetadataInSlideShow;
 
         public BitmapScalingMode BitmapScalingMode
         {
-            get => _bitmapScalingMode;
-            set => SetProperty(ref _bitmapScalingMode, value);
+            get;
+            set => SetProperty(ref field, value);
         }
-        BitmapScalingMode _bitmapScalingMode;
 
         public ResamplingOptions ResamplingOptions
         {
@@ -128,24 +116,21 @@ namespace PhotoLocator.Settings
 
         public bool TrackZoom
         {
-            get => _trackZoom;
-            set => SetProperty(ref _trackZoom, value);
+            get;
+            set => SetProperty(ref field, value);
         }
-        bool _trackZoom;
 
         public int CropRatioNominator
         {
-            get => _cropRatioNominator;
-            set => SetProperty(ref _cropRatioNominator, Math.Max(0, value));
+            get;
+            set => SetProperty(ref field, Math.Max(0, value));
         }
-        int _cropRatioNominator;
 
         public int CropRatioDenominator
         {
-            get => _cropRatioDenominator;
-            set => SetProperty(ref _cropRatioDenominator, Math.Max(0, value));
+            get;
+            set => SetProperty(ref field, Math.Max(0, value));
         }
-        int _cropRatioDenominator;
 
         public double CropWidthHeightRatio => CropRatioDenominator > 0 ? (double)CropRatioNominator / CropRatioDenominator : 0;
     }

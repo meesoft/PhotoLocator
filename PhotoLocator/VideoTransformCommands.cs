@@ -86,44 +86,40 @@ namespace PhotoLocator
 
         public bool HasSingleInput
         {
-            get => _hasSingleInput;
-            set => SetProperty(ref _hasSingleInput, value);
+            get;
+            set => SetProperty(ref field, value);
         }
-        bool _hasSingleInput;
 
         public bool HasOnlyImageInput
         {
-            get => _hasOnlyImageInput;
+            get;
             set
             {
-                if (SetProperty(ref _hasOnlyImageInput, value))
+                if (SetProperty(ref field, value))
                     UpdateProcessArgs();
             }
         }
-        bool _hasOnlyImageInput;
 
         public string SkipTo
         {
-            get => _skipTo;
+            get;
             set
             {
-                if (!SetProperty(ref _skipTo, value.Trim()))
+                if (!SetProperty(ref field, value.Trim()))
                     return;
                 UpdateInputArgs();
                 UpdateOutputArgs();
-                if (_localContrastSetup is not null)
-                    _localContrastSetup.SourceBitmap = null;
+                _localContrastSetup?.SourceBitmap = null;
                 _mainViewModel.UpdatePreviewPictureAsync(SkipTo).WithExceptionLogging();
             }
-        }
-        string _skipTo = string.Empty;
+        } = string.Empty;
 
         public string Duration
         {
-            get => _duration;
+            get;
             set
             {
-                if (!SetProperty(ref _duration, value.Trim()))
+                if (!SetProperty(ref field, value.Trim()))
                     return;
                 UpdateInputArgs();
                 UpdateOutputArgs();
@@ -132,66 +128,60 @@ namespace PhotoLocator
                 else if (double.TryParse(SkipTo, CultureInfo.InvariantCulture, out var skipToSeconds) && double.TryParse(Duration, CultureInfo.InvariantCulture, out var durationSeconds))
                     _mainViewModel.UpdatePreviewPictureAsync((skipToSeconds + durationSeconds).ToString(CultureInfo.InvariantCulture)).WithExceptionLogging();
             }
-        }
-        string _duration = string.Empty;
+        } = string.Empty;
 
         public bool IsRotateChecked
         {
-            get => _isRotateChecked;
+            get;
             set
             {
-                if (SetProperty(ref _isRotateChecked, value))
+                if (SetProperty(ref field, value))
                     UpdateProcessArgs();
             }
         }
-        bool _isRotateChecked;
 
         public string RotationAngle
         {
-            get => _rotationAngle;
+            get;
             set
             {
-                if (SetProperty(ref _rotationAngle, value.Trim()))
+                if (SetProperty(ref field, value.Trim()))
                     UpdateProcessArgs();
             }
-        }
-        string _rotationAngle = string.Empty;
+        } = string.Empty;
 
         public bool IsSpeedupChecked
         {
-            get => _isSpeedupChecked;
+            get;
             set
             {
-                if (SetProperty(ref _isSpeedupChecked, value))
+                if (SetProperty(ref field, value))
                     UpdateProcessArgs();
             }
         }
-        bool _isSpeedupChecked;
 
         public string SpeedupBy
         {
-            get => _speedupBy;
+            get;
             set
             {
-                if (SetProperty(ref _speedupBy, value.Trim()))
+                if (SetProperty(ref field, value.Trim()))
                     UpdateProcessArgs();
             }
-        }
-        string _speedupBy = string.Empty;
+        } = string.Empty;
 
         public bool IsCropChecked
         {
-            get => _isCropChecked;
+            get;
             set
             {
-                if (SetProperty(ref _isCropChecked, value))
+                if (SetProperty(ref field, value))
                 {
                     UpdateStabilizeArgs();
                     UpdateProcessArgs();
                 }
             }
         }
-        bool _isCropChecked;
 
         public string CropWindow
         {
@@ -209,31 +199,29 @@ namespace PhotoLocator
 
         public bool IsScaleChecked
         {
-            get => _isScaleChecked;
+            get;
             set
             {
-                if (SetProperty(ref _isScaleChecked, value))
+                if (SetProperty(ref field, value))
                 {
                     UpdateStabilizeArgs();
                     UpdateProcessArgs();
                 }
             }
         }
-        bool _isScaleChecked;
 
         public string ScaleTo
         {
-            get => _scaleTo;
+            get;
             set
             {
-                if (SetProperty(ref _scaleTo, value.Trim()))
+                if (SetProperty(ref field, value.Trim()))
                 {
                     UpdateStabilizeArgs();
                     UpdateProcessArgs();
                 }
             }
-        }
-        string _scaleTo = "w:h";
+        } = "w:h";
 
         public static readonly object ZoomEffect = "Zoom";
 
@@ -299,60 +287,55 @@ namespace PhotoLocator
 
         public bool IsStabilizeChecked
         {
-            get => _isStabilizeChecked;
+            get;
             set
             {
-                if (SetProperty(ref _isStabilizeChecked, value))
+                if (SetProperty(ref field, value))
                 {
                     UpdateStabilizeArgs();
                     UpdateProcessArgs();
                 }
             }
         }
-        bool _isStabilizeChecked;
 
         public bool IsTripodChecked
         {
-            get => _isTripodChecked;
+            get;
             set
             {
-                if (SetProperty(ref _isTripodChecked, value))
+                if (SetProperty(ref field, value))
                 {
                     UpdateStabilizeArgs();
                     UpdateProcessArgs();
                 }
             }
         }
-        bool _isTripodChecked;
 
         public bool IsBicubicStabilizeChecked
         {
-            get => _isBicubicStabilizeChecked;
+            get;
             set
             {
-                if (SetProperty(ref _isBicubicStabilizeChecked, value))
+                if (SetProperty(ref field, value))
                     UpdateProcessArgs();
             }
-        }
-        bool _isBicubicStabilizeChecked = true;
+        } = true;
 
         public int SmoothFrames
         {
-            get => _smoothFrames;
+            get;
             set
             {
-                if (SetProperty(ref _smoothFrames, value))
+                if (SetProperty(ref field, value))
                     UpdateProcessArgs();
             }
-        }
-        int _smoothFrames = 20;
+        } = 20;
 
         public string StabilizeArguments
         {
-            get => _stabilizeArguments;
-            set => SetProperty(ref _stabilizeArguments, value.Trim());
-        }
-        string _stabilizeArguments = string.Empty;
+            get;
+            set => SetProperty(ref field, value.Trim());
+        } = string.Empty;
 
         public bool IsLocalContrastChecked
         {
@@ -400,30 +383,28 @@ namespace PhotoLocator
 
         public CombineFramesMode CombineFramesMode
         {
-            get => _combineFramesMode;
+            get;
             set
             {
-                var wasTimeSlice = _combineFramesMode is CombineFramesMode.TimeSlice or CombineFramesMode.TimeSliceInterpolated;
-                if (SetProperty(ref _combineFramesMode, value))
+                var wasTimeSlice = field is CombineFramesMode.TimeSlice or CombineFramesMode.TimeSliceInterpolated;
+                if (SetProperty(ref field, value))
                 {
                     PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(IsCombineFramesOperation)));
                     PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(IsRegistrationEnabled)));
                     PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(NumberOfFramesHint)));
-                    var isTimeSlice = _combineFramesMode is CombineFramesMode.TimeSlice or CombineFramesMode.TimeSliceInterpolated;
+                    var isTimeSlice = field is CombineFramesMode.TimeSlice or CombineFramesMode.TimeSliceInterpolated;
                     if (wasTimeSlice != isTimeSlice)
                         CombineFramesCount = isTimeSlice ? 1 : DefaultAverageFramesCount;
                     UpdateOutputArgs();
                 }
             }
         }
-        CombineFramesMode _combineFramesMode;
 
         public int CombineFramesCount
         {
-            get => _combineFramesCount;
-            set => SetProperty(ref _combineFramesCount, Math.Max(1, value));
-        }
-        int _combineFramesCount = DefaultAverageFramesCount;
+            get;
+            set => SetProperty(ref field, Math.Max(1, value));
+        } = DefaultAverageFramesCount;
 
         public string NumberOfFramesHint => CombineFramesMode < CombineFramesMode.TimeSlice ? "Number of frames to combine" : "Time slice video loops";
 
@@ -431,7 +412,7 @@ namespace PhotoLocator
         {
             get
             {
-                if (_timeSliceDirections is null)
+                if (field is null)
                 {
                     var maps = new SelectionMapFunction[] {
                         TimeSliceSelectionMaps.LeftToRight,
@@ -443,26 +424,25 @@ namespace PhotoLocator
                         TimeSliceSelectionMaps.Ellipse,
                         TimeSliceSelectionMaps.Clock,
                     };
-                    _timeSliceDirections = [];
+                    field = [];
                     foreach (var mapFunction in maps)
                     {
                         var map = TimeSliceSelectionMaps.GenerateSelectionMap(30, 20, mapFunction);
                         //map.ProcessElementWise(p => (float)Math.Round(p, 1));
-                        _timeSliceDirections.Add(new ComboBoxItem
+                        field.Add(new ComboBoxItem
                         {
                             Content = new Image { Source = map.ToBitmapSource(96, 96, 1) },
                             Tag = mapFunction
                         });
                     }
-                    _timeSliceDirections.Add(new ComboBoxItem
+                    field.Add(new ComboBoxItem
                     {
                         Content = "Load from file"
                     });
                 }
-                return _timeSliceDirections;
+                return field;
             }
         }
-        static ObservableCollection<ComboBoxItem>? _timeSliceDirections;
 
         public ComboBoxItem SelectedTimeSliceDirection
         {
@@ -489,10 +469,10 @@ namespace PhotoLocator
 
         public OutputMode OutputMode
         {
-            get => _outputMode;
+            get;
             set
             {
-                if (SetProperty(ref _outputMode, value))
+                if (SetProperty(ref field, value))
                 {
                     if (value is OutputMode.TimeSliceImage && !(CombineFramesMode is CombineFramesMode.TimeSlice or CombineFramesMode.TimeSliceInterpolated))
                         CombineFramesMode = CombineFramesMode.TimeSlice;
@@ -504,7 +484,6 @@ namespace PhotoLocator
                 }
             }
         }
-        OutputMode _outputMode;
 
         public ComboBoxItem SelectedVideoFormat
         {
@@ -541,40 +520,37 @@ namespace PhotoLocator
 
         public string FrameRate
         {
-            get => _frameRate;
+            get;
             set
             {
-                if (SetProperty(ref _frameRate, value.Trim()))
+                if (SetProperty(ref field, value.Trim()))
                 {
                     UpdateInputArgs();
                     UpdateProcessArgs();
                     UpdateOutputArgs();
                 }
             }
-        }
-        string _frameRate = string.Empty;
+        } = string.Empty;
 
         public string VideoBitRate
         {
-            get => _videoBitRate;
+            get;
             set
             {
-                if (SetProperty(ref _videoBitRate, value.Trim()))
+                if (SetProperty(ref field, value.Trim()))
                     UpdateOutputArgs();
             }
-        }
-        string _videoBitRate = string.Empty;
+        } = string.Empty;
 
         public bool IsRemoveAudioChecked
         {
-            get => _isRemoveAudioChecked;
+            get;
             set
             {
-                if (SetProperty(ref _isRemoveAudioChecked, value))
+                if (SetProperty(ref field, value))
                     UpdateOutputArgs();
             }
         }
-        bool _isRemoveAudioChecked;
 
         public bool IsCombineFramesOperation => CombineFramesMode > CombineFramesMode.None || OutputMode is OutputMode.Average or OutputMode.Max or OutputMode.TimeSliceImage;
 
@@ -582,21 +558,19 @@ namespace PhotoLocator
 
         public RegistrationMode RegistrationMode
         {
-            get => _registrationMode;
+            get;
             set
             {
-                if (SetProperty(ref _registrationMode, value))
+                if (SetProperty(ref field, value))
                     PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(IsRegistrationEnabled)));
             }
         }
-        RegistrationMode _registrationMode;
 
         public string RegistrationRegion
         {
-            get => _registrationRegion;
-            set => SetProperty(ref _registrationRegion, value.Replace(" ", "", StringComparison.Ordinal));
-        }
-        string _registrationRegion = "w:h:x:y";
+            get;
+            set => SetProperty(ref field, value.Replace(" ", "", StringComparison.Ordinal));
+        } = "w:h:x:y";
 
         CombineFramesRegistration? ParseRegistrationSettings()
         {
@@ -622,10 +596,9 @@ namespace PhotoLocator
 
         public string DarkFramePath
         {
-            get => _darkFramePath;
-            set => SetProperty(ref _darkFramePath, value.TrimPath());
-        }
-        string _darkFramePath = string.Empty;
+            get;
+            set => SetProperty(ref field, value.TrimPath());
+        } = string.Empty;
 
         public ICommand BrowseDarkFrameCommand => new RelayCommand(o =>
         {
@@ -638,24 +611,21 @@ namespace PhotoLocator
 
         public string InputArguments
         {
-            get => _inputArguments;
-            set => SetProperty(ref _inputArguments, value.Trim());
-        }
-        string _inputArguments = string.Empty;
+            get;
+            set => SetProperty(ref field, value.Trim());
+        } = string.Empty;
 
         public string ProcessArguments
         {
-            get => _processArguments;
-            set => SetProperty(ref _processArguments, value.Trim());
-        }
-        string _processArguments = string.Empty;
+            get;
+            set => SetProperty(ref field, value.Trim());
+        } = string.Empty;
 
         public string OutputArguments
         {
-            get => _outputArguments;
-            set => SetProperty(ref _outputArguments, value.Trim());
-        }
-        string _outputArguments = string.Empty;
+            get;
+            set => SetProperty(ref field, value.Trim());
+        } = string.Empty;
 
         private PictureItemViewModel[] UpdateInputArgs()
         {

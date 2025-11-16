@@ -32,23 +32,22 @@ namespace PhotoLocator.BitmapOperations
             Assign(source, gamma);
         }
 
-        public float[,] Elements => _elements;
-        float[,] _elements = null!;
+        public float[,] Elements { get; private set; } = null!;
 
         public float this[int x, int y]
         {
-            get { return _elements[y, x]; }
-            set { _elements[y, x] = value; }
+            get { return Elements[y, x]; }
+            set { Elements[y, x] = value; }
         }
 
         /// <summary> Gray, RGB or CMYK </summary>
         public int PlaneCount { get; private set; }
 
-        public int Stride => _elements.GetLength(1);
+        public int Stride => Elements.GetLength(1);
 
         public int Width { get; private set; }
 
-        public int Height => _elements.GetLength(0);
+        public int Height => Elements.GetLength(0);
 
         public int Size => Stride * Height;
 
@@ -60,8 +59,8 @@ namespace PhotoLocator.BitmapOperations
         public void New(int width, int height, int planes)
         {
             var stride = width * planes;
-            if (_elements == null || stride != Stride || height != Height)
-                _elements = new float[height, stride];
+            if (Elements == null || stride != Stride || height != Height)
+                Elements = new float[height, stride];
             Width = width;
             PlaneCount = planes;
         }
@@ -69,7 +68,7 @@ namespace PhotoLocator.BitmapOperations
         public void Assign(FloatBitmap source)
         {
             New(source.Width, source.Height, source.PlaneCount);
-            Array.Copy(source._elements, _elements, Stride * Height);
+            Array.Copy(source.Elements, Elements, Stride * Height);
         }
 
         public void Assign(BitmapSource source, double gamma)
@@ -85,7 +84,7 @@ namespace PhotoLocator.BitmapOperations
                     Parallel.For(0, Height, y =>
                     {
                         fixed (float* gamma = gammaLut)
-                        fixed (float* elements = &_elements[y, 0])
+                        fixed (float* elements = &Elements[y, 0])
                         fixed (ushort* sourceRow = &sourcePixels[y * Stride])
                         {
                             var stride = Stride;
@@ -107,7 +106,7 @@ namespace PhotoLocator.BitmapOperations
                     Parallel.For(0, Height, y =>
                     {
                         fixed (float* gamma = gammaLut)
-                        fixed (float* elements = &_elements[y, 0])
+                        fixed (float* elements = &Elements[y, 0])
                         fixed (byte* sourceRow = &sourcePixels[y * Stride])
                         {
                             for (var x = 0; x < Width; x++)
@@ -134,7 +133,7 @@ namespace PhotoLocator.BitmapOperations
                     Parallel.For(0, Height, y =>
                     {
                         fixed (float* gamma = gammaLut)
-                        fixed (float* elements = &_elements[y, 0])
+                        fixed (float* elements = &Elements[y, 0])
                         fixed (byte* sourceRow = &sourcePixels[y * Width * 4])
                         {
                             for (var x = 0; x < Width; x++)
@@ -169,7 +168,7 @@ namespace PhotoLocator.BitmapOperations
                     Parallel.For(0, Height, y =>
                     {
                         fixed (float* gamma = gammaLut)
-                        fixed (float* elements = &_elements[y, 0])
+                        fixed (float* elements = &Elements[y, 0])
                         fixed (byte* sourceRow = &sourcePixels[y * Stride])
                         {
                             var stride = Stride;
@@ -218,7 +217,7 @@ namespace PhotoLocator.BitmapOperations
                 Parallel.For(0, Height, y =>
                 {
                     fixed (byte* gamma = gammaLut)
-                    fixed (float* elements = &_elements[y, 0])
+                    fixed (float* elements = &Elements[y, 0])
                     fixed (byte* destRow = &pixels[y * Stride])
                     {
                         var stride = Stride;
@@ -273,7 +272,7 @@ namespace PhotoLocator.BitmapOperations
                 y = 0;
             if (y >= Height)
                 y = Height - 1;
-            return _elements[y, x];
+            return Elements[y, x];
         }
 
         /// <summary>
@@ -313,7 +312,7 @@ namespace PhotoLocator.BitmapOperations
 
             unsafe
             {
-                fixed (float* elements = _elements)
+                fixed (float* elements = Elements)
                 {
                     var element = &elements[iy * width + ix];
                     return (element[0] * (1 - x) + element[1] * x) * (1 - y) +
@@ -330,7 +329,7 @@ namespace PhotoLocator.BitmapOperations
             float min = float.PositiveInfinity;
             unsafe
             {
-                fixed (float* elements = _elements)
+                fixed (float* elements = Elements)
                 {
                     var size = Size;
                     for (var i = 0; i < size; i++)
@@ -346,7 +345,7 @@ namespace PhotoLocator.BitmapOperations
             float max = float.NegativeInfinity;
             unsafe
             {
-                fixed (float* elements = _elements)
+                fixed (float* elements = Elements)
                 {
                     var size = Size;
                     for (var i = 0; i < size; i++)
@@ -369,7 +368,7 @@ namespace PhotoLocator.BitmapOperations
             {
                 Parallel.For(0, Height, y =>
                 {
-                    fixed (float* elements = &_elements[y, 0])
+                    fixed (float* elements = &Elements[y, 0])
                     {
                         var stride = Stride;
                         for (var x = 0; x < stride; x++)
@@ -388,7 +387,7 @@ namespace PhotoLocator.BitmapOperations
             {
                 Parallel.For(0, Height, y =>
                 {
-                    fixed (float* elements = &_elements[y, 0])
+                    fixed (float* elements = &Elements[y, 0])
                     {
                         var stride = Stride;
                         for (var x = 0; x < stride; x++)
@@ -409,8 +408,8 @@ namespace PhotoLocator.BitmapOperations
                 {
                     Parallel.For(0, Height, y =>
                     {
-                        fixed (float* elements = &_elements[y, 0])
-                        fixed (float* otherElements = &other._elements[y, 0])
+                        fixed (float* elements = &Elements[y, 0])
+                        fixed (float* otherElements = &other.Elements[y, 0])
                         {
                             var stride = Stride;
                             for (var x = 0; x < stride; x++)
@@ -422,8 +421,8 @@ namespace PhotoLocator.BitmapOperations
                 {
                     Parallel.For(0, Height, y =>
                     {
-                        fixed (float* elements = &_elements[y, 0])
-                        fixed (float* otherElements = &other._elements[y, 0])
+                        fixed (float* elements = &Elements[y, 0])
+                        fixed (float* otherElements = &other.Elements[y, 0])
                         {
                             int xx = 0;
                             for (var x = 0; x < Width; x++)
@@ -447,7 +446,7 @@ namespace PhotoLocator.BitmapOperations
             {
                 Parallel.For(0, Height, y =>
                 {
-                    fixed (float* elements = &_elements[y, 0])
+                    fixed (float* elements = &Elements[y, 0])
                     {
                         var stride = Stride;
                         for (var x = 0; x < stride; x++)
@@ -465,8 +464,8 @@ namespace PhotoLocator.BitmapOperations
             {
                 Parallel.For(0, Height, y =>
                 {
-                    fixed (float* elements = &_elements[y, 0])
-                    fixed (float* otherElements = &other._elements[y, 0])
+                    fixed (float* elements = &Elements[y, 0])
+                    fixed (float* otherElements = &other.Elements[y, 0])
                     {
                         var stride = Stride;
                         for (var x = 0; x < stride; x++)
@@ -507,8 +506,8 @@ namespace PhotoLocator.BitmapOperations
                 }
                 else
                 {
-                    fixed (float* srcElements = value._elements)
-                    fixed (float* dstElements = _elements)
+                    fixed (float* srcElements = value.Elements)
+                    fixed (float* dstElements = Elements)
                     {
                         var src = srcElements;
                         var dst = dstElements;

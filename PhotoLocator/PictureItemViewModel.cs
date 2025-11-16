@@ -86,17 +86,15 @@ namespace PhotoLocator
 
         public bool IsSelected
         {
-            get => _isSelected;
-            set => SetProperty(ref _isSelected, value);
+            get;
+            set => SetProperty(ref field, value);
         }
-        bool _isSelected;
 
         public bool IsChecked
         {
-            get => _isChecked;
-            set => SetProperty(ref _isChecked, value);
+            get;
+            set => SetProperty(ref field, value);
         }
-        bool _isChecked;
 
         public bool IsVideo
         {
@@ -154,10 +152,9 @@ namespace PhotoLocator
 
         public ImageSource? ThumbnailImage
         {
-            get => _thumbnailImage;
-            set => SetProperty(ref _thumbnailImage, value);
+            get;
+            set => SetProperty(ref field, value);
         }
-        ImageSource? _thumbnailImage;
 
         public int ThumbnailSize => _settings?.ThumbnailSize ?? 256;
 
@@ -175,10 +172,9 @@ namespace PhotoLocator
 
         public string? ErrorMessage
         {
-            get => _errorMessage;
-            set => SetProperty(ref _errorMessage, value);
+            get;
+            set => SetProperty(ref field, value);
         }
-        string? _errorMessage;
 
         public bool CanSaveGeoTag
         {

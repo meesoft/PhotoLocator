@@ -25,53 +25,50 @@ namespace PhotoLocator.BitmapOperations
 
         public OperationType Operation
         {
-            get { return _remapLaplacian; }
+            get;
             set
             {
-                if (_remapLaplacian != value)
+                if (field != value)
                 {
-                    _remapLaplacian = value;
+                    field = value;
                     _toneMappedPlane = null;
                 }
             }
         }
-        OperationType _remapLaplacian;
 
         /// <summary>
         /// Process in log domain
         /// </summary>
         public bool LogDomain
         {
-            get { return _logDomain; }
+            get;
             set
             {
-                if (_logDomain != value)
+                if (field != value)
                 {
-                    _logDomain = value;
+                    field = value;
                     _remapLUTValid = false;
                     _toneMappedPlane = null;
                 }
             }
-        }
-        bool _logDomain = true;
+        } = true;
 
         /// <summary>
         /// Edge or detail selection threshold (sigma_r)
         /// </summary>
         public float Threshold
         {
-            get { return _threshold; }
+            get;
             set
             {
-                if (_threshold != value)
+                if (field != value)
                 {
-                    _threshold = value;
+                    field = value;
                     _remapLUTValid = false;
                     _toneMappedPlane = null;
                 }
             }
         }
-        float _threshold;
 
         /// <summary>
         /// Detail parameter.
@@ -80,18 +77,17 @@ namespace PhotoLocator.BitmapOperations
         /// </summary>
         public float Alpha
         {
-            get { return _alpha; }
+            get;
             set
             {
-                if (_alpha != value)
+                if (field != value)
                 {
-                    _alpha = value;
+                    field = value;
                     _toneMappedPlane = null;
                     _remapLUTValid = false;
                 }
             }
-        }
-        float _alpha = 1;
+        } = 1;
 
         /// <summary>
         /// Tone mapping parameter.
@@ -100,70 +96,66 @@ namespace PhotoLocator.BitmapOperations
         /// </summary>
         public float Beta
         {
-            get { return _beta; }
+            get;
             set
             {
-                if (_beta != value)
+                if (field != value)
                 {
-                    _beta = value;
+                    field = value;
                     _remapLUTValid = false;
                     _toneMappedPlane = null;
                 }
             }
-        }
-        float _beta = 0.5f;
+        } = 0.5f;
 
         /// <summary>
         /// Noise level for detail enhancement (Alpha below 1)
         /// </summary>
         public float NoiseLevel
         {
-            get { return _noiseLevel; }
+            get;
             set
             {
-                if (_noiseLevel != value)
+                if (field != value)
                 {
-                    _noiseLevel = value;
+                    field = value;
                     _remapLUTValid = false;
                     _toneMappedPlane = null;
                 }
             }
-        }
-        float _noiseLevel = 0.01f;
+        } = 0.01f;
 
         /// <summary>
         /// The interval [MinLevel;MaxLevel] determines which levels of the Laplacian pyramid are processed
         /// </summary>
         public int MinLevel
         {
-            get { return _minLevel; }
+            get;
             set
             {
-                if (_minLevel != value)
+                if (field != value)
                 {
-                    _minLevel = value;
+                    field = value;
                     _toneMappedPlane = null;
                 }
             }
         }
-        int _minLevel;
 
         /// <summary>
         /// The interval [MinLevel;MaxLevel] determines which levels of the Laplacian pyramid are processed
         /// </summary>
         public int MaxLevel
         {
-            get { return _maxLevel; }
+            get;
             set
             {
-                if (_maxLevel != value)
+                if (field != value)
                 {
-                    _maxLevel = value;
+                    field = value;
                     _toneMappedPlane = null;
                 }
             }
-        }
-        int _maxLevel = int.MaxValue;
+        } = int.MaxValue;
 
         /// <summary>
         /// Outlier clipping filter (NaN to disable final histogram stretch)

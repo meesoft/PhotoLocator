@@ -112,24 +112,22 @@ namespace PhotoLocator
 
         public string? ExampleName
         {
-            get => _exampleName;
-            set => SetProperty(ref _exampleName, value);
+            get;
+            set => SetProperty(ref field, value);
         }
-        private string? _exampleName;
 
         public string? ErrorMessage
         {
-            get => _errorMessage;
+            get;
             set
             {
-                if (SetProperty(ref _errorMessage, value))
+                if (SetProperty(ref field, value))
                 {
                     NotifyPropertyChanged(nameof(IsErrorVisible));
                     NotifyPropertyChanged(nameof(IsMaskValid));
                 }
             }
         }
-        private string? _errorMessage;
 
         public bool IsMaskValid => ErrorMessage is null;
 
@@ -137,24 +135,21 @@ namespace PhotoLocator
 
         public bool IsExtensionWarningVisible
         {
-            get => _isExtensionWarningVisible;
-            set => SetProperty(ref _isExtensionWarningVisible, value);
+            get;
+            set => SetProperty(ref field, value);
         }
-        private bool _isExtensionWarningVisible;
 
         public bool IsProgressBarVisible
         {
-            get => _isProgressBarVisible;
-            set => SetProperty(ref _isProgressBarVisible, value);
+            get;
+            set => SetProperty(ref field, value);
         }
-        private bool _isProgressBarVisible;
 
         public double ProgressBarValue
         {
-            get => _progressBarValue;
-            set => SetProperty(ref _progressBarValue, value);
+            get;
+            set => SetProperty(ref field, value);
         }
-        private double _progressBarValue;
 
         private void MaskMenuButtonClick(object sender, RoutedEventArgs e)
         {

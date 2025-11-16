@@ -36,14 +36,11 @@ namespace PhotoLocator
             return true;
         }
 
-        public string? Label { get => _label; set => SetProperty(ref _label, value); }
-        private string? _label;
+        public string? Label { get; set => SetProperty(ref field, value); }
 
-        public string? Text { get => _text; set => SetProperty(ref _text, value); }
-        private string? _text;
+        public string? Text { get; set => SetProperty(ref field, value); }
 
-        public bool IsOkButtonEnabled { get => _isOkButtonEnabled; set => SetProperty(ref _isOkButtonEnabled, value); }
-        private bool _isOkButtonEnabled = true;
+        public bool IsOkButtonEnabled { get; set => SetProperty(ref field, value); } = true;
 
         public ICommand OkCommand => new RelayCommand(o => DialogResult = true);
 

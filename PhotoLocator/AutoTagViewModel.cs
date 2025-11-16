@@ -56,8 +56,7 @@ namespace PhotoLocator
         }
         private TimeSpan _timestampOffset;
 
-        public bool IsWindowEnabled { get => _isWindowEnabled; set => SetProperty(ref _isWindowEnabled, value); }
-        private bool _isWindowEnabled = true;
+        public bool IsWindowEnabled { get; set => SetProperty(ref field, value); } = true;
 
         protected bool SetProperty<T>(ref T field, T newValue, [CallerMemberName] string? propertyName = null)
         {
