@@ -9,7 +9,7 @@
         d:DataContext="{d:DesignInstance Type=local:LocalContrastViewModel, IsDesignTimeCreatable=True}"
         Background="Black"
         WindowStartupLocation="CenterOwner" ShowInTaskbar="False" 
-        Title="Local contrast, brightness and colors" Height="760" Width="800" WindowState="Maximized">
+        Title="Local contrast, brightness and colors" Height="960" Width="800" WindowState="Maximized">
 
     <Window.Resources>
         <Style TargetType="TextBlock">
@@ -181,12 +181,18 @@
                     <Button Content="Reset" Width="90" HorizontalAlignment="Right"
                             Command="{Binding ResetCommand}" Margin="10,0,0,0" />
                 </Grid>
-                <Grid Margin="0,10,0,0">
+                <Grid Margin="0,10">
                     <Button Content="OK" Width="90" IsDefault="True" HorizontalAlignment="Left"
                             Name="OkButton" Click="HandleOkButtonClick" />
                     <Button Content="Cancel" Width="90" HorizontalAlignment="Right"
                             IsCancel="True" Name="CancelButton" Margin="10,0,0,0" />
                 </Grid>
+
+                <Grid Height="100" >
+                    <Rectangle Stroke="#FF202020" />
+                    <Polygon Points="{Binding HistogramAll}" Stretch="Fill" Fill="LightGray" />
+                </Grid>
+
             </StackPanel>
         </ScrollViewer>
 

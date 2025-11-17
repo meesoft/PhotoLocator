@@ -76,6 +76,7 @@ namespace PhotoLocator
         private void HandleOriginalButtonMouseDown(object sender, MouseButtonEventArgs e)
         {
             _viewModel.PreviewPictureSource = _viewModel.SourceBitmap;
+            _viewModel.ShowSourceHistogram();
         }
 
         private async void HandleOriginalButtonMouseUp(object sender, MouseButtonEventArgs e)

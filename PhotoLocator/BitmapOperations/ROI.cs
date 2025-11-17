@@ -36,7 +36,7 @@ namespace PhotoLocator.BitmapOperations
 
         public override readonly string ToString()
         {
-            return string.Format(CultureInfo.InvariantCulture, "x:[{0} ; {1}] y:[{2} ; {3}]", [Left, Right, Top, Bottom]);
+            return string.Format(CultureInfo.InvariantCulture, "x:[{0} ; {1}] y:[{2} ; {3}]", Left, Right, Top, Bottom);
         }
 
         /// <summary>
