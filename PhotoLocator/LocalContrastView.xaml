@@ -190,7 +190,7 @@
 
                 <Grid Height="100" >
                     <Rectangle Stroke="#FF202020" />
-                    <Polygon Points="{Binding HistogramAll}" Stretch="Fill" Fill="LightGray" />
+                    <Polygon Points="{Binding HistogramPoints}" Stretch="Fill" Fill="#FFDDDDDD" />
                 </Grid>
 
             </StackPanel>

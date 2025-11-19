@@ -504,7 +504,7 @@ namespace PhotoLocator
                 histogramPoints.Add(new Point(i, -histogram[i]));
             histogramPoints.Add(new Point(histogram.Length - 1, 0));
             histogramPoints.Freeze();
-            HistogramAll = histogramPoints;
+            HistogramPoints = histogramPoints;
         }
 
         public bool IsNoOperation => DetailHandling == 1 && ToneMapping == 1 && HighlightStrength == 0 && ShadowStrength == 0 && Contrast == DefaultContrast 
@@ -536,7 +536,7 @@ namespace PhotoLocator
             await _previewTask;
         }
 
-        public PointCollection? HistogramAll
+        public PointCollection? HistogramPoints
         {
             get;
             private set => SetProperty(ref field, value);            
