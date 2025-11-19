@@ -480,7 +480,7 @@ namespace PhotoLocator
                 if (srcBitmap is null)
                     return;
                 (PreviewPictureSource, var histogramTask) = _localContrastOperation.DstBitmap.ToBitmapSourceWithHistogram(srcBitmap.DpiX, srcBitmap.DpiY, FloatBitmap.DefaultMonitorGamma);
-                await histogramTask.ContinueWith(SetHistogram, TaskScheduler.Current);
+                await histogramTask.ContinueWith(task => SetHistogram(task.Result), TaskScheduler.Current);
             }));
             Mouse.OverrideCursor = null;
         }
@@ -492,13 +492,12 @@ namespace PhotoLocator
                 if (SourceBitmap is null)
                     return;
                 (_, var histogramTask) = _laplacianFilterOperation.SrcBitmap.ToBitmapSourceWithHistogram(SourceBitmap.DpiX, SourceBitmap.DpiY, FloatBitmap.DefaultMonitorGamma);
-                histogramTask.ContinueWith(SetHistogram, TaskScheduler.Current);
+                histogramTask.ContinueWith(task => SetHistogram(task.Result), TaskScheduler.Current);
             });
         }
 
-        private void SetHistogram(Task<int[]> task)
+        private void SetHistogram(int[] histogram)
         {
-            var histogram = task.Result;
             var histogramPoints = new PointCollection([new Point(0, 0)]);
             for (int i = 0; i < histogram.Length; i++)
                 histogramPoints.Add(new Point(i, -histogram[i]));
