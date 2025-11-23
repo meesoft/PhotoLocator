@@ -201,14 +201,29 @@ namespace PhotoLocator.BitmapOperations
 
         public BitmapSource ToBitmapSource(double dpiX, double dpiY, double gamma, PixelFormat? format = null)
         {
-            if (!format.HasValue)
-                format = PlaneCount switch
-                {
-                    1 => PixelFormats.Gray8,
-                    3 => PixelFormats.Rgb24,
-                    4 => PixelFormats.Cmyk32,
-                    _ => throw new UserMessageException("Unsupported number of planes: " + PlaneCount)
-                };
+            var pixels = ToPixels8(gamma);
+            var bitmap = CreateBitmapSource(dpiX, dpiY, format, pixels);
+            ArrayPool<byte>.Shared.Return(pixels);
+            return bitmap;
+        }
+
+        public (BitmapSource Bitmap, Task<int[]> Histogram) ToBitmapSourceWithHistogram(double dpiX, double dpiY, double gamma, PixelFormat? format = null)
+        {
+            var pixels = ToPixels8(gamma);
+            var bitmap = CreateBitmapSource(dpiX, dpiY, format, pixels);
+            return (bitmap, Task.Run(() =>
+            {
+                var histogram = new int[256];
+                var length = Height * Stride;
+                for (int i = 0; i < length; i++)
+                    histogram[pixels[i]]++;
+                ArrayPool<byte>.Shared.Return(pixels);
+                return histogram;
+            }));
+        }
+
+        private byte[] ToPixels8(double gamma)
+        {
             var pixels = ArrayPool<byte>.Shared.Rent(Height * Stride);
             var gammaLut = CreateGammaLookupFloatToByte(gamma);
             unsafe
@@ -228,9 +243,21 @@ namespace PhotoLocator.BitmapOperations
                 });
             }
             ArrayPool<byte>.Shared.Return(gammaLut);
+            return pixels;
+        }
+
+        private BitmapSource CreateBitmapSource(double dpiX, double dpiY, PixelFormat? format, byte[] pixels)
+        {
+            if (!format.HasValue)
+                format = PlaneCount switch
+                {
+                    1 => PixelFormats.Gray8,
+                    3 => PixelFormats.Rgb24,
+                    4 => PixelFormats.Cmyk32,
+                    _ => throw new UserMessageException("Unsupported number of planes: " + PlaneCount)
+                };
             var result = BitmapSource.Create(Width, Height, dpiX, dpiY, format.Value, null, pixels, Stride);
             result.Freeze();
-            ArrayPool<byte>.Shared.Return(pixels);
             return result;
         }
 

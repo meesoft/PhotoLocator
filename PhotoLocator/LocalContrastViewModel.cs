@@ -456,7 +456,7 @@ namespace PhotoLocator
                 await _previewTask;
                 return;
             }
-            await (_previewTask = Task.Run(() =>
+            await (_previewTask = Task.Run(async () =>
             {
                 if (_laplacianPyramidParamsChanged || _localContrastParamsChanged)
                 {
@@ -479,9 +479,31 @@ namespace PhotoLocator
                 var srcBitmap = SourceBitmap;
                 if (srcBitmap is null)
                     return;
-                PreviewPictureSource = _localContrastOperation.DstBitmap.ToBitmapSource(srcBitmap.DpiX, srcBitmap.DpiY, FloatBitmap.DefaultMonitorGamma);
+                (PreviewPictureSource, var histogramTask) = _localContrastOperation.DstBitmap.ToBitmapSourceWithHistogram(srcBitmap.DpiX, srcBitmap.DpiY, FloatBitmap.DefaultMonitorGamma);
+                await histogramTask.ContinueWith(task => SetHistogram(task.Result), TaskScheduler.Current);
             }));
             Mouse.OverrideCursor = null;
+        }
+
+        public void ShowSourceHistogram()
+        {
+            Task.Run(() =>
+            {
+                if (SourceBitmap is null)
+                    return;
+                (_, var histogramTask) = _laplacianFilterOperation.SrcBitmap.ToBitmapSourceWithHistogram(SourceBitmap.DpiX, SourceBitmap.DpiY, FloatBitmap.DefaultMonitorGamma);
+                histogramTask.ContinueWith(task => SetHistogram(task.Result), TaskScheduler.Current);
+            });
+        }
+
+        private void SetHistogram(int[] histogram)
+        {
+            var histogramPoints = new PointCollection([new Point(0, 0)]);
+            for (int i = 0; i < histogram.Length; i++)
+                histogramPoints.Add(new Point(i, -histogram[i]));
+            histogramPoints.Add(new Point(histogram.Length - 1, 0));
+            histogramPoints.Freeze();
+            HistogramPoints = histogramPoints;
         }
 
         public bool IsNoOperation => DetailHandling == 1 && ToneMapping == 1 && HighlightStrength == 0 && ShadowStrength == 0 && Contrast == DefaultContrast 
@@ -511,6 +533,12 @@ namespace PhotoLocator
             }
             await _previewTask; // We might have multiple instance of UpdatePreviewAsync running at the same time
             await _previewTask;
+        }
+
+        public PointCollection? HistogramPoints
+        {
+            get;
+            private set => SetProperty(ref field, value);            
         }
     }
 }
