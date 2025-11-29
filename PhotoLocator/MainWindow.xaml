@@ -162,7 +162,10 @@
             </ListBox.InputBindings>
             <ListBox.ContextMenu>
                 <ContextMenu>
-                    <MenuItem Header="Select" >
+                    <MenuItem Header="Select">
+                        <MenuItem.Icon>
+                            <TextBlock FontFamily="Segoe MDL2 Assets" Text="&#xE762;" FontSize="14" />
+                        </MenuItem.Icon>
                         <MenuItem Header="All (Ctrl+A)" Command="{Binding SelectAllCommand}" />
                         <MenuItem Header="Non-geotagged (Num+)" Command="{Binding SelectCandidatesCommand}" />
                         <MenuItem Header="None (Num-)" Command="{Binding DeselectAllCommand}" />
@@ -170,27 +173,67 @@
                         <MenuItem Header="Filter (Ctrl+F6)" Command="{Binding SetFilterCommand}" />
                     </MenuItem>
                     <MenuItem Header="Metadata / EXIF" >
-                        <MenuItem Header="Adjust timestamps" Command="{Binding AdjustTimestampsCommand}"/>
+                        <MenuItem Header="Adjust timestamps" Command="{Binding AdjustTimestampsCommand}">
+                            <MenuItem.Icon>
+                                <TextBlock FontFamily="Segoe MDL2 Assets" Text="&#xECC5;" FontSize="14" />
+                            </MenuItem.Icon>
+                        </MenuItem>
                         <MenuItem Header="Auto geotag (Ctrl+T)" Command="{Binding AutoGeotagCommand}"/>
-                        <MenuItem Header="Save changed geotags to files (Ctrl+S)" Command="{Binding SaveGeotagsCommand}"/>
-                        <MenuItem Header="Paste metadata from copied file" Command="{Binding PasteMetadataCommand}"/>
+                        <MenuItem Header="Save changed geotags to files (Ctrl+S)" Command="{Binding SaveGeotagsCommand}">
+                            <MenuItem.Icon>
+                                <TextBlock FontFamily="Segoe MDL2 Assets" Text="&#xE74E;" FontSize="14" />
+                            </MenuItem.Icon>
+                        </MenuItem>
+                        <MenuItem Header="Paste metadata from copied file" Command="{Binding PasteMetadataCommand}">
+                            <MenuItem.Icon>
+                                <TextBlock FontFamily="Segoe MDL2 Assets" Text="&#xE77F;" FontSize="14" />
+                            </MenuItem.Icon>
+                        </MenuItem>
                         <MenuItem Header="Show metadata" Command="{Binding ShowMetadataCommand}" />
                     </MenuItem>
                     <Separator />
                     <MenuItem Header="Open file (Enter)" Command="{Binding ExecuteSelectedCommand}" />
-                    <MenuItem Header="Open in Google maps" Command="{Binding OpenInMapsCommand}" />
+                    <MenuItem Header="Open in Google maps" Command="{Binding OpenInMapsCommand}">
+                        <MenuItem.Icon>
+                            <TextBlock FontFamily="Segoe MDL2 Assets" Text="&#xE909;" FontSize="14" />
+                        </MenuItem.Icon>
+                    </MenuItem>
                     <MenuItem Header="Open Explorer (Ctrl+E)" Command="{Binding ExploreCommand}" />
                     <MenuItem Header="Shell context menu (Shift+right click)" Command="{Binding ShellContextMenuCommand}" />
                     <Separator />
-                    <MenuItem Header="Local contrast, brightness and colors (Ctrl+L)" Command="{Binding JpegTransformCommands.LocalContrastCommand}" />
+                    <MenuItem Header="Local contrast, brightness and colors (Ctrl+L)" Command="{Binding JpegTransformCommands.LocalContrastCommand}">
+                        <MenuItem.Icon>
+                            <TextBlock FontFamily="Segoe MDL2 Assets" Text="&#xE790;" FontSize="14" />
+                        </MenuItem.Icon>
+                    </MenuItem>
                     <MenuItem Header="Transform jpeg" >
-                        <MenuItem Header="Rotate left" Command="{Binding JpegTransformCommands.RotateLeftCommand}" />
-                        <MenuItem Header="Rotate right" Command="{Binding JpegTransformCommands.RotateRightCommand}" />
+                        <MenuItem Header="Rotate left" Command="{Binding JpegTransformCommands.RotateLeftCommand}">
+                            <MenuItem.Icon>
+                                <TextBlock FontFamily="Segoe MDL2 Assets" Text="&#xE7AD;" FontSize="14" >
+                                    <TextBlock.RenderTransform>
+                                        <ScaleTransform ScaleX="-1" CenterX="7" />
+                                    </TextBlock.RenderTransform>
+                                </TextBlock>
+                            </MenuItem.Icon>
+                        </MenuItem>
+                        <MenuItem Header="Rotate right" Command="{Binding JpegTransformCommands.RotateRightCommand}">
+                            <MenuItem.Icon>
+                                <TextBlock FontFamily="Segoe MDL2 Assets" Text="&#xE7AD;" FontSize="14" />
+                            </MenuItem.Icon>
+                        </MenuItem>
                         <MenuItem Header="Rotate 180°" Command="{Binding JpegTransformCommands.Rotate180Command}" />
-                        <MenuItem Header="Crop (Alt-C)" Command="{Binding CropCommand}" IsChecked="{Binding IsCropControlVisible}" />
+                        <MenuItem Header="Crop (Alt-C)" Command="{Binding CropCommand}" IsChecked="{Binding IsCropControlVisible}">
+                            <MenuItem.Icon>
+                                <TextBlock FontFamily="Segoe MDL2 Assets" Text="&#xE7A8;" FontSize="14" />
+                            </MenuItem.Icon>
+                        </MenuItem>
                     </MenuItem>
                     <MenuItem Header="Transform video" >
-                        <MenuItem Header="Process selected (Ctrl+P)" Command="{Binding VideoTransformCommandsShared.ProcessSelected}" />
+                        <MenuItem Header="Process selected (Ctrl+P)" Command="{Binding VideoTransformCommandsShared.ProcessSelected}">
+                            <MenuItem.Icon>
+                                <TextBlock FontFamily="Segoe MDL2 Assets" Text="&#xE714;" FontSize="14" />
+                            </MenuItem.Icon>
+                        </MenuItem>
                         <Separator />
                         <MenuItem Header="Stabilize video" Command="{Binding VideoTransformCommands.StabilizeVideo}" />
                         <MenuItem Header="Combine images or videos" Command="{Binding VideoTransformCommands.Combine}" />
@@ -202,12 +245,24 @@
                         <MenuItem Header="Generate time slice video" Command="{Binding VideoTransformCommands.GenerateTimeSliceVideo}" />
                     </MenuItem>
                     <Separator />
-                    <MenuItem Header="Rename (F2)" Command="{Binding RenameCommand}" />
+                    <MenuItem Header="Rename (F2)" Command="{Binding RenameCommand}">
+                        <MenuItem.Icon>
+                            <TextBlock FontFamily="Segoe MDL2 Assets" Text="&#xE8AC;" FontSize="14" />
+                        </MenuItem.Icon>
+                    </MenuItem>
                     <MenuItem Header="Copy files (F5)" Command="{Binding CopySelectedCommand}" />
-                    <MenuItem Header="Copy files to clipboard (Ctrl+Ins)" Command="{Binding CopyFilesToClipboardCommand}" />
+                    <MenuItem Header="Copy files to clipboard (Ctrl+Ins)" Command="{Binding CopyFilesToClipboardCommand}">
+                        <MenuItem.Icon>
+                            <TextBlock FontFamily="Segoe MDL2 Assets" Text="&#xE8C8;" FontSize="14" />
+                        </MenuItem.Icon>
+                    </MenuItem>
                     <MenuItem Header="Copy path to clipboard" Command="{Binding CopyPathCommand}" />
                     <MenuItem Header="Move files (F6)" Command="{Binding MoveSelectedCommand}" />
-                    <MenuItem Header="Delete files (Del)" Command="{Binding DeleteSelectedCommand}" />
+                    <MenuItem Header="Delete files (Del)" Command="{Binding DeleteSelectedCommand}">
+                        <MenuItem.Icon>
+                            <TextBlock FontFamily="Segoe MDL2 Assets" Text="&#xE74D;" FontSize="14" />
+                        </MenuItem.Icon>
+                    </MenuItem>
                     <MenuItem Header="Properties (Alt+Enter)" Command="{Binding FilePropertiesCommand}" />
                 </ContextMenu>
             </ListBox.ContextMenu>
@@ -273,10 +328,26 @@
                         <MenuItem Header="400% (Ctrl+4)" IsCheckable="True" Name="Zoom400Item" Command="{Binding Zoom400Command}"  />
                         <Separator />
                         <MenuItem Header="Transform jpeg" >
-                            <MenuItem Header="Rotate left" Command="{Binding JpegTransformCommands.RotateLeftCommand}" />
-                            <MenuItem Header="Rotate right" Command="{Binding JpegTransformCommands.RotateRightCommand}" />
+                            <MenuItem Header="Rotate left" Command="{Binding JpegTransformCommands.RotateLeftCommand}">
+                                <MenuItem.Icon>
+                                    <TextBlock FontFamily="Segoe MDL2 Assets" Text="&#xE7AD;" FontSize="14" >
+                                        <TextBlock.RenderTransform>
+                                            <ScaleTransform ScaleX="-1" CenterX="7" />
+                                        </TextBlock.RenderTransform>
+                                    </TextBlock>
+                                </MenuItem.Icon>
+                            </MenuItem>
+                            <MenuItem Header="Rotate right" Command="{Binding JpegTransformCommands.RotateRightCommand}">
+                                <MenuItem.Icon>
+                                    <TextBlock FontFamily="Segoe MDL2 Assets" Text="&#xE7AD;" FontSize="14" />
+                                </MenuItem.Icon>
+                            </MenuItem>
                             <MenuItem Header="Rotate 180°" Command="{Binding JpegTransformCommands.Rotate180Command}" />
-                            <MenuItem Header="Crop (Alt-C)" Command="{Binding CropCommand}" IsChecked="{Binding IsCropControlVisible}" />
+                            <MenuItem Header="Crop (Alt-C)" Command="{Binding CropCommand}" IsChecked="{Binding IsCropControlVisible}" >
+                                <MenuItem.Icon>
+                                    <TextBlock FontFamily="Segoe MDL2 Assets" Text="&#xE7A8;" FontSize="14" />
+                                </MenuItem.Icon>
+                            </MenuItem>
                         </MenuItem>
                     </ContextMenu>
                 </Grid.ContextMenu>
