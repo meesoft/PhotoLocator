@@ -28,8 +28,16 @@
     </Window.InputBindings>
     <Window.ContextMenu>
         <ContextMenu>
-            <MenuItem Header="Copy adjustments (Ctrl+Shift+C)" Command="{Binding CopyAdjustmentsCommand}" />
-            <MenuItem Header="Paste adjustments (Ctrl+Shift+V)" Command="{Binding PasteAdjustmentsCommand}" />
+            <MenuItem Header="Copy adjustments (Ctrl+Shift+C)" Command="{Binding CopyAdjustmentsCommand}">
+                <MenuItem.Icon>
+                    <TextBlock FontFamily="Segoe MDL2 Assets" Text="&#xE8C8;" FontSize="14" Foreground="Black" />
+                </MenuItem.Icon>
+            </MenuItem>
+            <MenuItem Header="Paste adjustments (Ctrl+Shift+V)" Command="{Binding PasteAdjustmentsCommand}">
+                <MenuItem.Icon>
+                    <TextBlock FontFamily="Segoe MDL2 Assets" Text="&#xE77F;" FontSize="14" Foreground="Black" />
+                </MenuItem.Icon>
+            </MenuItem>
             <MenuItem Header="Restore last used values" Command="{Binding RestoreLastUsedValuesCommand}" />
         </ContextMenu>
     </Window.ContextMenu>
@@ -212,12 +220,12 @@
                     <Separator />
                     <MenuItem Header="Copy adjustments (Ctrl+Shift+C)" Command="{Binding CopyAdjustmentsCommand}">
                         <MenuItem.Icon>
-                            <TextBlock FontFamily="Segoe MDL2 Assets" Text="&#xE7A8;" FontSize="14" />
+                            <TextBlock FontFamily="Segoe MDL2 Assets" Text="&#xE8C8;" FontSize="14" Foreground="Black" />
                         </MenuItem.Icon>
                     </MenuItem>
                     <MenuItem Header="Paste adjustments (Ctrl+Shift+V)" Command="{Binding PasteAdjustmentsCommand}">
                         <MenuItem.Icon>
-                            <TextBlock FontFamily="Segoe MDL2 Assets" Text="&#xE77F;" FontSize="14" />
+                            <TextBlock FontFamily="Segoe MDL2 Assets" Text="&#xE77F;" FontSize="14" Foreground="Black" />
                         </MenuItem.Icon>
                     </MenuItem>
                     <MenuItem Header="Restore last used values" Command="{Binding RestoreLastUsedValuesCommand}" />
