@@ -949,22 +949,47 @@ namespace PhotoLocator
             var selectedItems = GetSelectedItems(true).ToArray();
             if (selectedItems.Length == 0)
                 return;
-            var offset = TextInputWindow.Show("Timestamp offset (format: +/-hh:mm:ss):", 
+            var offset = TextInputWindow.Show("Timestamp offset (format: +/-hh:mm:ss):",
                 text => !string.IsNullOrWhiteSpace(text) && text[0] is '+' or '-', "Adjust timestamps", "+00:00:00");
             if (string.IsNullOrEmpty(offset))
                 return;
             await RunProcessWithProgressBarAsync(async (progressCallback, ct) =>
             {
                 int i = 0;
-                await Parallel.ForEachAsync(selectedItems, new ParallelOptions { MaxDegreeOfParallelism = MaxParallelExifToolOperations, CancellationToken = ct }, 
+                await Parallel.ForEachAsync(selectedItems, new ParallelOptions { MaxDegreeOfParallelism = MaxParallelExifToolOperations, CancellationToken = ct },
                     async (item, ct) =>
                     {
-                        await ExifTool.AdjustTimeStampAsync(item.FullPath, item.GetProcessedFileName(), offset, 
+                        await ExifTool.AdjustTimeStampAsync(item.FullPath, item.GetProcessedFileName(), offset,
                             Settings.ExifToolPath ?? throw new UserMessageException(ExifToolNotConfigured), ct);
                         progressCallback((double)Interlocked.Increment(ref i) / selectedItems.Length);
                     });
                 await Task.Delay(10, ct);
             }, "Adjust timestamps...");
+        });
+
+        public ICommand SetTimestampCommand => new RelayCommand(async o =>
+        {
+            var selectedItems = GetSelectedItems(true).ToArray();
+            if (selectedItems.Length == 0)
+                return;
+            var fileWithTime = selectedItems.FirstOrDefault(item => item.TimeStamp.HasValue);
+            var offset = TextInputWindow.Show("Timestamp (format: yyyy:mm:dd hh:mm:ss):", 
+                text => !string.IsNullOrWhiteSpace(text), "Adjust timestamps", 
+                fileWithTime?.TimeStamp!.Value.ToString("yyyy:MM:dd HH:mm:ss", CultureInfo.InvariantCulture));
+            if (string.IsNullOrEmpty(offset))
+                return;
+            await RunProcessWithProgressBarAsync(async (progressCallback, ct) =>
+            {
+                int i = 0;
+                await Parallel.ForEachAsync(selectedItems, new ParallelOptions { MaxDegreeOfParallelism = MaxParallelExifToolOperations, CancellationToken = ct },
+                    async (item, ct) =>
+                    {
+                        await ExifTool.SetTimeStampAsync(item.FullPath, item.GetProcessedFileName(), offset,
+                            Settings.ExifToolPath ?? throw new UserMessageException(ExifToolNotConfigured), ct);
+                        progressCallback((double)Interlocked.Increment(ref i) / selectedItems.Length);
+                    });
+                await Task.Delay(10, ct);
+            }, "Set timestamps");
         });
 
         public ICommand ShowMetadataCommand => new RelayCommand(o =>

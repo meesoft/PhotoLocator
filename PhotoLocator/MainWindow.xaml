@@ -178,6 +178,7 @@
                                 <TextBlock FontFamily="Segoe MDL2 Assets" Text="&#xECC5;" FontSize="14" />
                             </MenuItem.Icon>
                         </MenuItem>
+                        <MenuItem Header="Set timestamp" Command="{Binding SetTimestampCommand}"/>
                         <MenuItem Header="Auto geotag (Ctrl+T)" Command="{Binding AutoGeotagCommand}"/>
                         <MenuItem Header="Save changed geotags to files (Ctrl+S)" Command="{Binding SaveGeotagsCommand}">
                             <MenuItem.Icon>

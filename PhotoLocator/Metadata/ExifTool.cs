@@ -25,6 +25,12 @@ static class ExifTool
         await RunExifToolAsync(sourceFileName, targetFileName, startInfo, ct);
     }
 
+    public static async Task SetTimeStampAsync(string sourceFileName, string targetFileName, string timestamp, string exifToolPath, CancellationToken ct)
+    {
+        var startInfo = new ProcessStartInfo(exifToolPath, $"\"-AllDates={timestamp}\" \"{sourceFileName}\" ");
+        await RunExifToolAsync(sourceFileName, targetFileName, startInfo, ct);
+    }
+
     public static async Task TransferMetadataAsync(string metadataFileName, string sourceFileName, string targetFileName, string exifToolPath, CancellationToken ct)
     {
         var startInfo = new ProcessStartInfo(exifToolPath, $"-tagsfromfile \"{metadataFileName}\" \"{sourceFileName}\" "); // -exif 
