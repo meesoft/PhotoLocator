@@ -28,8 +28,16 @@
     </Window.InputBindings>
     <Window.ContextMenu>
         <ContextMenu>
-            <MenuItem Header="Copy adjustments (Ctrl+Shift+C)" Command="{Binding CopyAdjustmentsCommand}" />
-            <MenuItem Header="Paste adjustments (Ctrl+Shift+V)" Command="{Binding PasteAdjustmentsCommand}" />
+            <MenuItem Header="Copy adjustments (Ctrl+Shift+C)" Command="{Binding CopyAdjustmentsCommand}">
+                <MenuItem.Icon>
+                    <TextBlock FontFamily="Segoe MDL2 Assets" Text="&#xE8C8;" FontSize="14" Foreground="Black" />
+                </MenuItem.Icon>
+            </MenuItem>
+            <MenuItem Header="Paste adjustments (Ctrl+Shift+V)" Command="{Binding PasteAdjustmentsCommand}">
+                <MenuItem.Icon>
+                    <TextBlock FontFamily="Segoe MDL2 Assets" Text="&#xE77F;" FontSize="14" Foreground="Black" />
+                </MenuItem.Icon>
+            </MenuItem>
             <MenuItem Header="Restore last used values" Command="{Binding RestoreLastUsedValuesCommand}" />
         </ContextMenu>
     </Window.ContextMenu>
@@ -210,8 +218,16 @@
                     <MenuItem Header="200% (Ctrl+3)" IsCheckable="True" Name="Zoom200Item" Command="{Binding Zoom200Command}" />
                     <MenuItem Header="400% (Ctrl+4)" IsCheckable="True" Name="Zoom400Item" Command="{Binding Zoom400Command}"  />
                     <Separator />
-                    <MenuItem Header="Copy adjustments (Ctrl+Shift+C)" Command="{Binding CopyAdjustmentsCommand}" />
-                    <MenuItem Header="Paste adjustments (Ctrl+Shift+V)" Command="{Binding PasteAdjustmentsCommand}" />
+                    <MenuItem Header="Copy adjustments (Ctrl+Shift+C)" Command="{Binding CopyAdjustmentsCommand}">
+                        <MenuItem.Icon>
+                            <TextBlock FontFamily="Segoe MDL2 Assets" Text="&#xE8C8;" FontSize="14" Foreground="Black" />
+                        </MenuItem.Icon>
+                    </MenuItem>
+                    <MenuItem Header="Paste adjustments (Ctrl+Shift+V)" Command="{Binding PasteAdjustmentsCommand}">
+                        <MenuItem.Icon>
+                            <TextBlock FontFamily="Segoe MDL2 Assets" Text="&#xE77F;" FontSize="14" Foreground="Black" />
+                        </MenuItem.Icon>
+                    </MenuItem>
                     <MenuItem Header="Restore last used values" Command="{Binding RestoreLastUsedValuesCommand}" />
                 </ContextMenu>
             </Grid.ContextMenu>
