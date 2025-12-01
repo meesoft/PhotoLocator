@@ -268,11 +268,11 @@ namespace PhotoLocator
             FocusListBoxItem?.Invoke(select);
         }
 
-        public async Task SelectFileAsync(string fileName)
+        public async Task SelectFileAsync(string fullPath)
         {
             for (var i = 0; i < 15; i++) // We need to wait longer than the delay in the file system watcher
             {
-                var item = Items.FirstOrDefault(x => string.Equals(x.FullPath, fileName, StringComparison.CurrentCultureIgnoreCase));
+                var item = Items.FirstOrDefault(item => string.Equals(item.FullPath, fullPath, StringComparison.CurrentCultureIgnoreCase));
                 if (item is null)
                 {
                     await Task.Delay(100);
@@ -485,7 +485,7 @@ namespace PhotoLocator
                 TaskbarProgressState = completed ? TaskbarItemProgressState.None : TaskbarItemProgressState.Error;
                 if (focusItem is not null)
                     SelectIfNotNull(focusItem);
-                else if (SelectedItem != null)
+                else
                     SelectIfNotNull(SelectedItem);
                 await _processCancellation.CancelAsync();
                 _processCancellation.Dispose();
@@ -963,7 +963,7 @@ namespace PhotoLocator
                             Settings.ExifToolPath ?? throw new UserMessageException(ExifToolNotConfigured), ct);
                         progressCallback((double)Interlocked.Increment(ref i) / selectedItems.Length);
                     });
-                await Task.Delay(10, ct);
+                await SelectFileAsync(selectedItems[0].FullPath);
             }, "Adjust timestamps...");
         });
 
@@ -988,7 +988,7 @@ namespace PhotoLocator
                             Settings.ExifToolPath ?? throw new UserMessageException(ExifToolNotConfigured), ct);
                         progressCallback((double)Interlocked.Increment(ref i) / selectedItems.Length);
                     });
-                await Task.Delay(10, ct);
+                await SelectFileAsync(selectedItems[0].FullPath);
             }, "Set timestamps");
         });
 
