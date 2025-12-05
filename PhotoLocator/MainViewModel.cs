@@ -813,10 +813,12 @@ namespace PhotoLocator
                 text => !string.IsNullOrWhiteSpace(text) && text != PhotoFolderPath && text != ".", "Copy files", PhotoFolderPath);
             if (target is null)
                 return;
+            Directory.SetCurrentDirectory(Path.GetDirectoryName(allSelected[0].FullPath)!);
+            var targetIsDirectory = Directory.Exists(target) || allSelected.Length > 1 || string.IsNullOrEmpty(Path.GetExtension(target)) || target.EndsWith('\\');
+            if (targetIsDirectory && !ConfirmCreateMissingDirectory(target, "Copy files"))
+                return;
             await RunProcessWithProgressBarAsync((progressCallback, ct) => Task.Run(() =>
             {
-                var targetIsDirectory = Directory.Exists(target) || allSelected.Length > 1 || string.IsNullOrEmpty(Path.GetExtension(target)) || target.EndsWith('\\');
-                Directory.SetCurrentDirectory(Path.GetDirectoryName(allSelected[0].FullPath)!);
                 int i = 0;
                 foreach (var item in allSelected)
                 {
@@ -849,10 +851,12 @@ namespace PhotoLocator
                 text => !string.IsNullOrWhiteSpace(text) && text != PhotoFolderPath && text != ".", "Move files", PhotoFolderPath);
             if (target is null)
                 return;
+            Directory.SetCurrentDirectory(Path.GetDirectoryName(allSelected[0].FullPath)!);
+            if (!ConfirmCreateMissingDirectory(target, "Move files"))
+                return;
             SelectedItem = null;
             await RunProcessWithProgressBarAsync((progressCallback, ct) => Task.Run(() =>
             {
-                Directory.SetCurrentDirectory(Path.GetDirectoryName(allSelected[0].FullPath)!);
                 int i = 0;
                 foreach (var item in allSelected)
                 {
@@ -874,6 +878,16 @@ namespace PhotoLocator
                 }
             }, ct), "Moving...", focusedItem);
         });
+
+        private static bool ConfirmCreateMissingDirectory(string target, string caption)
+        {
+            if (Directory.Exists(target))
+                return true;
+            if (MessageBox.Show($"Target directory '{target}' does not exist. Create it?", caption, MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes)
+                return false;
+            Directory.CreateDirectory(target);
+            return true;
+        }
 
         public ICommand CreateFolderCommand => new RelayCommand(async o =>
         {
