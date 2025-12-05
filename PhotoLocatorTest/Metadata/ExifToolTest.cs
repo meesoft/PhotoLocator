@@ -15,7 +15,7 @@ public class ExifToolTest
 
         const string TargetFileName = @"TestData\2022-06-17_18.03.02.jpg";
 
-        await ExifTool.AdjustTimeStampAsync(@"TestData\2022-06-17_19.03.02.jpg", TargetFileName, "-01:00:00", ExifToolPath, default);
+        await ExifTool.AdjustTimestampAsync(@"TestData\2022-06-17_19.03.02.jpg", TargetFileName, "-01:00:00", ExifToolPath, default);
 
         using var targetFile = File.OpenRead(TargetFileName);
         var metadata = ExifHandler.LoadMetadata(targetFile);

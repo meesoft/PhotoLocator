@@ -14,7 +14,7 @@ namespace PhotoLocator
 
         IEnumerable<PictureItemViewModel> GetSelectedItems(bool filesOnly);
 
-        Task SelectFileAsync(string fileName);
+        Task SelectFileAsync(string fullPath);
 
         Task AddOrUpdateItemAsync(string fullPath, bool isDirectory, bool selectItem);
         

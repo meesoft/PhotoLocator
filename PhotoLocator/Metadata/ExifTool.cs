@@ -15,13 +15,19 @@ static class ExifTool
 {
     private const string ExifToolStartError = "Failed to start ExifTool";
 
-    public static async Task AdjustTimeStampAsync(string sourceFileName, string targetFileName, string offset, string exifToolPath, CancellationToken ct)
+    public static async Task AdjustTimestampAsync(string sourceFileName, string targetFileName, string offset, string exifToolPath, CancellationToken ct)
     {
         if (offset is null || offset.Length < 2)
             throw new UserMessageException("Offset must have a sign followed by a value");
         var sign = offset[0];
         offset = offset[1..];
         var startInfo = new ProcessStartInfo(exifToolPath, $"\"-AllDates{sign}={offset}\" \"{sourceFileName}\" ");
+        await RunExifToolAsync(sourceFileName, targetFileName, startInfo, ct);
+    }
+
+    public static async Task SetTimestampAsync(string sourceFileName, string targetFileName, string timestamp, string exifToolPath, CancellationToken ct)
+    {
+        var startInfo = new ProcessStartInfo(exifToolPath, $"\"-AllDates={timestamp}\" \"{sourceFileName}\" ");
         await RunExifToolAsync(sourceFileName, targetFileName, startInfo, ct);
     }
 

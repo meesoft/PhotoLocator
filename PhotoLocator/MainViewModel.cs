@@ -268,11 +268,11 @@ namespace PhotoLocator
             FocusListBoxItem?.Invoke(select);
         }
 
-        public async Task SelectFileAsync(string fileName)
+        public async Task SelectFileAsync(string fullPath)
         {
             for (var i = 0; i < 15; i++) // We need to wait longer than the delay in the file system watcher
             {
-                var item = Items.FirstOrDefault(x => string.Equals(x.FullPath, fileName, StringComparison.CurrentCultureIgnoreCase));
+                var item = Items.FirstOrDefault(item => string.Equals(item.FullPath, fullPath, StringComparison.CurrentCultureIgnoreCase));
                 if (item is null)
                 {
                     await Task.Delay(100);
@@ -485,7 +485,7 @@ namespace PhotoLocator
                 TaskbarProgressState = completed ? TaskbarItemProgressState.None : TaskbarItemProgressState.Error;
                 if (focusItem is not null)
                     SelectIfNotNull(focusItem);
-                else if (SelectedItem != null)
+                else
                     SelectIfNotNull(SelectedItem);
                 await _processCancellation.CancelAsync();
                 _processCancellation.Dispose();
@@ -949,22 +949,47 @@ namespace PhotoLocator
             var selectedItems = GetSelectedItems(true).ToArray();
             if (selectedItems.Length == 0)
                 return;
-            var offset = TextInputWindow.Show("Timestamp offset (format: +/-hh:mm:ss):", 
+            var offset = TextInputWindow.Show("Timestamp offset (format: +/-hh:mm:ss):",
                 text => !string.IsNullOrWhiteSpace(text) && text[0] is '+' or '-', "Adjust timestamps", "+00:00:00");
             if (string.IsNullOrEmpty(offset))
                 return;
             await RunProcessWithProgressBarAsync(async (progressCallback, ct) =>
             {
                 int i = 0;
-                await Parallel.ForEachAsync(selectedItems, new ParallelOptions { MaxDegreeOfParallelism = MaxParallelExifToolOperations, CancellationToken = ct }, 
+                await Parallel.ForEachAsync(selectedItems, new ParallelOptions { MaxDegreeOfParallelism = MaxParallelExifToolOperations, CancellationToken = ct },
                     async (item, ct) =>
                     {
-                        await ExifTool.AdjustTimeStampAsync(item.FullPath, item.GetProcessedFileName(), offset, 
+                        await ExifTool.AdjustTimestampAsync(item.FullPath, item.GetProcessedFileName(), offset,
                             Settings.ExifToolPath ?? throw new UserMessageException(ExifToolNotConfigured), ct);
                         progressCallback((double)Interlocked.Increment(ref i) / selectedItems.Length);
                     });
-                await Task.Delay(10, ct);
+                await SelectFileAsync(selectedItems[0].FullPath);
             }, "Adjust timestamps...");
+        });
+
+        public ICommand SetTimestampCommand => new RelayCommand(async o =>
+        {
+            var selectedItems = GetSelectedItems(true).ToArray();
+            if (selectedItems.Length == 0)
+                return;
+            var fileWithTime = selectedItems.FirstOrDefault(item => item.TimeStamp.HasValue);
+            var timestamp = TextInputWindow.Show("Timestamp (format: yyyy:mm:dd hh:mm:ss):", 
+                text => !string.IsNullOrWhiteSpace(text), "Set timestamp", 
+                fileWithTime?.TimeStamp!.Value.ToString("yyyy:MM:dd HH:mm:ss", CultureInfo.InvariantCulture));
+            if (string.IsNullOrEmpty(timestamp))
+                return;
+            await RunProcessWithProgressBarAsync(async (progressCallback, ct) =>
+            {
+                int i = 0;
+                await Parallel.ForEachAsync(selectedItems, new ParallelOptions { MaxDegreeOfParallelism = MaxParallelExifToolOperations, CancellationToken = ct },
+                    async (item, ct) =>
+                    {
+                        await ExifTool.SetTimestampAsync(item.FullPath, item.GetProcessedFileName(), timestamp,
+                            Settings.ExifToolPath ?? throw new UserMessageException(ExifToolNotConfigured), ct);
+                        progressCallback((double)Interlocked.Increment(ref i) / selectedItems.Length);
+                    });
+                await SelectFileAsync(selectedItems[0].FullPath);
+            }, "Set timestamps");
         });
 
         public ICommand ShowMetadataCommand => new RelayCommand(o =>
