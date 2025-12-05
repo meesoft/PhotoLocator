@@ -959,7 +959,7 @@ namespace PhotoLocator
                 await Parallel.ForEachAsync(selectedItems, new ParallelOptions { MaxDegreeOfParallelism = MaxParallelExifToolOperations, CancellationToken = ct },
                     async (item, ct) =>
                     {
-                        await ExifTool.AdjustTimeStampAsync(item.FullPath, item.GetProcessedFileName(), offset,
+                        await ExifTool.AdjustTimestampAsync(item.FullPath, item.GetProcessedFileName(), offset,
                             Settings.ExifToolPath ?? throw new UserMessageException(ExifToolNotConfigured), ct);
                         progressCallback((double)Interlocked.Increment(ref i) / selectedItems.Length);
                     });
@@ -973,10 +973,10 @@ namespace PhotoLocator
             if (selectedItems.Length == 0)
                 return;
             var fileWithTime = selectedItems.FirstOrDefault(item => item.TimeStamp.HasValue);
-            var offset = TextInputWindow.Show("Timestamp (format: yyyy:mm:dd hh:mm:ss):", 
+            var timestamp = TextInputWindow.Show("Timestamp (format: yyyy:mm:dd hh:mm:ss):", 
                 text => !string.IsNullOrWhiteSpace(text), "Set timestamp", 
                 fileWithTime?.TimeStamp!.Value.ToString("yyyy:MM:dd HH:mm:ss", CultureInfo.InvariantCulture));
-            if (string.IsNullOrEmpty(offset))
+            if (string.IsNullOrEmpty(timestamp))
                 return;
             await RunProcessWithProgressBarAsync(async (progressCallback, ct) =>
             {
@@ -984,7 +984,7 @@ namespace PhotoLocator
                 await Parallel.ForEachAsync(selectedItems, new ParallelOptions { MaxDegreeOfParallelism = MaxParallelExifToolOperations, CancellationToken = ct },
                     async (item, ct) =>
                     {
-                        await ExifTool.SetTimeStampAsync(item.FullPath, item.GetProcessedFileName(), offset,
+                        await ExifTool.SetTimestampAsync(item.FullPath, item.GetProcessedFileName(), timestamp,
                             Settings.ExifToolPath ?? throw new UserMessageException(ExifToolNotConfigured), ct);
                         progressCallback((double)Interlocked.Increment(ref i) / selectedItems.Length);
                     });
