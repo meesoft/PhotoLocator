@@ -168,7 +168,11 @@ namespace PhotoLocator
             set
             {
                 if (SetProperty(ref field, value))
+                {
+                    if (value > 1)
+                        MaxStretch = 100;
                     StartUpdateTimer(true, true);
+                }
             }
         } = DefaultToneMapping;
 
