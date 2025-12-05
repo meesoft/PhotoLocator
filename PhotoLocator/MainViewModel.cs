@@ -974,7 +974,7 @@ namespace PhotoLocator
                 return;
             var fileWithTime = selectedItems.FirstOrDefault(item => item.TimeStamp.HasValue);
             var offset = TextInputWindow.Show("Timestamp (format: yyyy:mm:dd hh:mm:ss):", 
-                text => !string.IsNullOrWhiteSpace(text), "Adjust timestamps", 
+                text => !string.IsNullOrWhiteSpace(text), "Set timestamp", 
                 fileWithTime?.TimeStamp!.Value.ToString("yyyy:MM:dd HH:mm:ss", CultureInfo.InvariantCulture));
             if (string.IsNullOrEmpty(offset))
                 return;
