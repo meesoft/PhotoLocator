@@ -189,7 +189,7 @@ static class ExifTool
         if (metadata.TryGetValue("GPSPosition", out var locationStr) ||
             metadata.TryGetValue("GPSCoordinates", out locationStr))
         {
-            var parts = locationStr.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+            var parts = locationStr.Split([' ', ','], StringSplitOptions.RemoveEmptyEntries);
             if (parts.Length >= 4 &&
                 double.TryParse(parts[0], CultureInfo.InvariantCulture, out var latitude) &&
                 double.TryParse(parts[2], CultureInfo.InvariantCulture, out var longitude))
