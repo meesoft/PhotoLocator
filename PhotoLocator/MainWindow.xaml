@@ -156,6 +156,7 @@
                 <KeyBinding Key="OemPlus" Command="{Binding SelectCandidatesCommand}" />
                 <KeyBinding Key="Subtract" Command="{Binding DeselectAllCommand}" />
                 <KeyBinding Key="OemMinus" Command="{Binding DeselectAllCommand}" />
+                <KeyBinding Key="Multiply" Command="{Binding InvertSelectionCommand}" />
                 <KeyBinding Key="Divide" Command="{Binding QuickSearchCommand}" />
                 <KeyBinding Key="Insert" Modifiers="Ctrl" Command="{Binding CopyFilesToClipboardCommand}" />
                 <KeyBinding Key="Insert" Modifiers="Shift" Command="{Binding PasteLocationCommand}" />
@@ -169,8 +170,17 @@
                         <MenuItem Header="All (Ctrl+A)" Command="{Binding SelectAllCommand}" />
                         <MenuItem Header="Non-geotagged (Num+)" Command="{Binding SelectCandidatesCommand}" />
                         <MenuItem Header="None (Num-)" Command="{Binding DeselectAllCommand}" />
-                        <MenuItem Header="Search (Ctrl+F)" Command="{Binding QuickSearchCommand}" />
-                        <MenuItem Header="Filter (Ctrl+F6)" Command="{Binding SetFilterCommand}" />
+                        <MenuItem Header="Invert (Num*)" Command="{Binding InvertSelectionCommand}" />
+                        <MenuItem Header="Search (Ctrl+F)" Command="{Binding QuickSearchCommand}">
+                            <MenuItem.Icon>
+                                <TextBlock FontFamily="Segoe MDL2 Assets" Text="&#xE721;" FontSize="14" />
+                            </MenuItem.Icon>
+                        </MenuItem>
+                        <MenuItem Header="Filter (Ctrl+F6)" Command="{Binding SetFilterCommand}">
+                            <MenuItem.Icon>
+                                <TextBlock FontFamily="Segoe MDL2 Assets" Text="&#xE71C;" FontSize="14" />
+                            </MenuItem.Icon>
+                        </MenuItem>
                     </MenuItem>
                     <MenuItem Header="Metadata / EXIF" >
                         <MenuItem Header="Adjust timestamps" Command="{Binding AdjustTimestampsCommand}">

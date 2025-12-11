@@ -761,6 +761,13 @@ namespace PhotoLocator
             UpdatePoints();
         });
 
+        public ICommand InvertSelectionCommand => new RelayCommand(o =>
+        {
+            foreach (var item in Items)
+                item.IsChecked = !item.IsChecked;
+            UpdatePoints();
+        });
+
         private PictureItemViewModel? GetNearestUnchecked(PictureItemViewModel? focusedItem, PictureItemViewModel[] allSelected)
         {
             if (allSelected.Contains(focusedItem))
