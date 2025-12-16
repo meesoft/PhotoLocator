@@ -6,7 +6,7 @@
     <Nullable>enable</Nullable>
     <UseWPF>true</UseWPF>
     <ApplicationManifest>app.manifest</ApplicationManifest>
-    <Version>2025.9.19.0</Version>
+    <Version>2025.12.15.0</Version>
     <Copyright>(c) 2022-2025 Michael Vinther</Copyright>
     <Company>MeeSoft</Company>
     <ApplicationIcon>Resources\PhotoLocator.ico</ApplicationIcon>
