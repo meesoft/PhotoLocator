@@ -52,12 +52,12 @@ Note that it is possible to use Chrome's full screen cast feature to display the
 
 * Stabilize shaky video.
 
-* Rotate, adjust brightness, saturation and contrast and denoise video files
+* Rotate, adjust brightness, saturation and contrast, reverse and denoise video files
 
 * Generate average and max frames for video for e.g. timelapse or long exposure simulation.
 
 ## Troubleshooting
-* If PhotoLocator cannot start, you need to install the [.NET 8 Desktop Runtime](https://dotnet.microsoft.com/download/dotnet/8.0/runtime).
+* If PhotoLocator cannot start, you need to install the [.NET 10 Desktop Runtime](https://dotnet.microsoft.com/download/dotnet/10.0/runtime).
 
 * You can make ExifTool ignore minor errors by renaming it to exiftool(-m).exe and updating the path under Settings accordingly.
 
