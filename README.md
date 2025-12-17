@@ -69,7 +69,7 @@ for me. Since I was unable to find a suitable replacement I decided to make a ne
 https://github.com/meesoft/PhotoLocator/releases
 
 ## Source code
-PhotoLocator is written in C# targeting .net8.0 for Windows.
+PhotoLocator is written in C# targeting .net10.0 for Windows.
 
 The source code is available at https://github.com/meesoft/PhotoLocator
 
