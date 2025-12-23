@@ -43,12 +43,13 @@ namespace PhotoLocator
         }
 #endif
 
-        public PictureItemViewModel(string fileName, bool isDirectory, PropertyChangedEventHandler handleFilePropertyChanged, ISettings? settings)
+        public PictureItemViewModel(string fileName, bool isDirectory, PropertyChangedEventHandler? handleFilePropertyChanged, ISettings? settings)
         {
             _name = Path.GetFileName(fileName);
             _fullPath = fileName;
             IsDirectory = isDirectory;
-            PropertyChanged += handleFilePropertyChanged;
+            if (handleFilePropertyChanged is not null)
+                PropertyChanged += handleFilePropertyChanged;
             _settings = settings;
         }
 
@@ -206,7 +207,7 @@ namespace PhotoLocator
                 {
                     if (_screenDpi.DpiScaleX == 0)
                         App.Current.Dispatcher.Invoke(
-                            () => _screenDpi = VisualTreeHelper.GetDpi(App.Current.MainWindow));
+                            () => _screenDpi = _screenDpi = VisualTreeHelper.GetDpi(App.Current.MainWindow));
                     var thumbnailPixelSize = ThumbnailSize * _screenDpi.DpiScaleX;
                     int thumbnailIntPixelSize = IntMath.Round(thumbnailPixelSize);
                     thumbnail = LoadPreviewInternal(thumbnailIntPixelSize, false, null, ct);

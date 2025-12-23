@@ -243,7 +243,7 @@ namespace PhotoLocator
 
         public IEnumerable<PictureItemViewModel> GetSelectedItems(bool filesOnly)
         {
-            var firstChecked = SelectedItem != null && SelectedItem.IsChecked 
+            var firstChecked = SelectedItem is not null && SelectedItem.IsChecked 
                 && (SelectedItem.IsFile || !filesOnly) 
                 ? SelectedItem : null;
             foreach (var item in Items)
@@ -566,15 +566,20 @@ namespace PhotoLocator
 
         public ICommand SlideShowCommand => new RelayCommand(o =>
         {
-            var pictures = Items.Where(item => item.IsFile).ToList();
-            if (pictures.Count == 0)
-                return;
-            var slideShowWin = new SlideShowWindow(pictures, SelectedItem?.IsFile is true ? SelectedItem : Items.First(),
+            var slideShowItems = Items.Where(item => item.IsFile || item.IsChecked).ToList();
+            if (slideShowItems.Count == 0)
+            {
+                if (SelectedItem is null)
+                    return;
+                slideShowItems.Add(SelectedItem);
+            }
+            var slideShowWin = new SlideShowWindow(slideShowItems, SelectedItem?.IsFile is true ? SelectedItem : null,
                 GetSelectedMapLayerName?.Invoke(), Settings);
             slideShowWin.Owner = App.Current.MainWindow;
             slideShowWin.ShowDialog();
             slideShowWin.Dispose();
-            SelectIfNotNull(slideShowWin.SelectedPicture);
+            if (Items.Contains(slideShowWin.SelectedPicture))
+                SelectIfNotNull(slideShowWin.SelectedPicture);
         });
 
         public ICommand SettingsCommand => new RelayCommand(o =>

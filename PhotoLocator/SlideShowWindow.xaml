@@ -20,7 +20,7 @@
         <BooleanToVisibilityConverter x:Key="BooleanToVisibility" />
     </Window.Resources>
 
-    <Grid TouchDown="HandleTouchDown" TouchMove="HandleTouchMove" Name="ScreenGrid" SizeChanged="HandleSizeChanged">
+    <Grid TouchDown="HandleTouchDown" TouchMove="HandleTouchMove" Name="ScreenGrid" SizeChanged="HandleSizeChanged" PreviewMouseDown="HandlePreviewMouseDown">
         <Image Source="{Binding PictureSource}" RenderOptions.BitmapScalingMode="{Binding Settings.BitmapScalingMode}" />
         <Image Source="{Binding ResampledPictureSource}" 
                Stretch="None" RenderOptions.BitmapScalingMode="NearestNeighbor" SnapsToDevicePixels="True" UseLayoutRounding="True" />
