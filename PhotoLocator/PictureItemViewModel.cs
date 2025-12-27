@@ -43,12 +43,13 @@ namespace PhotoLocator
         }
 #endif
 
-        public PictureItemViewModel(string fileName, bool isDirectory, PropertyChangedEventHandler handleFilePropertyChanged, ISettings? settings)
+        public PictureItemViewModel(string fileName, bool isDirectory, PropertyChangedEventHandler? handleFilePropertyChanged, ISettings? settings)
         {
             _name = Path.GetFileName(fileName);
             _fullPath = fileName;
             IsDirectory = isDirectory;
-            PropertyChanged += handleFilePropertyChanged;
+            if (handleFilePropertyChanged is not null)
+                PropertyChanged += handleFilePropertyChanged;
             _settings = settings;
         }
 

@@ -8,6 +8,7 @@ using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
+using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
 using System.Runtime.CompilerServices;
@@ -27,18 +28,20 @@ namespace PhotoLocator
     /// </summary>
     public sealed partial class SlideShowWindow : Window, INotifyPropertyChanged, IDisposable
     {
-        readonly IList<PictureItemViewModel> _pictures;
+        readonly IList<PictureItemViewModel> _slideShowItems;
         readonly DispatcherTimer _timer;
-        private TouchPoint? _touchStart;
-        private BitmapSource? _sourceImage;
-        private CancellationTokenSource? _resamplerCancellation;
+        List<PictureItemViewModel> _pictures;
+        TouchPoint? _touchStart;
+        BitmapSource? _sourceImage;
+        CancellationTokenSource? _resamplerCancellation;
 
-        public SlideShowWindow(IList<PictureItemViewModel> pictures, PictureItemViewModel selectedPicture, 
+        public SlideShowWindow(IList<PictureItemViewModel> slideShowItems, PictureItemViewModel? selectedPicture, 
             string? selectedMapLayerName, ISettings settings)
         {
-            _pictures = pictures;
-            SelectedPicture = selectedPicture;
+            _slideShowItems = slideShowItems;
             Settings = settings;
+            UpdateFolders();
+            SelectedPicture = selectedPicture ?? _pictures.FirstOrDefault() ?? throw new UserMessageException("The folder does not have any pictures to show");
             _timer = new DispatcherTimer(TimeSpan.FromSeconds(settings.SlideShowInterval), DispatcherPriority.Normal, HandleTimerEvent, Dispatcher);
             InitializeComponent();
             DataContext = this;
@@ -46,7 +49,20 @@ namespace PhotoLocator
             Map.mapLayersMenuButton.ContextMenu.Items.OfType<MenuItem>().FirstOrDefault(item => Equals(item.Header, selectedMapLayerName))?.
                 RaiseEvent(new RoutedEventArgs(MenuItem.ClickEvent));
             Map.DataContext = this;
-            PictureIndex = Math.Max(0, pictures.IndexOf(selectedPicture));
+            PictureIndex = Math.Max(0, _pictures.IndexOf(SelectedPicture));
+        }
+
+        [MemberNotNull(nameof(_pictures))]
+        private void UpdateFolders()
+        {
+            _pictures = _slideShowItems.Where(item => item.IsFile).ToList();
+            HashSet<string>? extensions = null;
+            foreach (var folder in _slideShowItems.Where(item => item.IsDirectory))
+            {
+                extensions ??= Settings.CleanPhotoFileExtensions().ToHashSet();
+                foreach (var folderPicture in Directory.EnumerateFiles(folder.FullPath).Where(fn => extensions.Contains(Path.GetExtension(fn).ToLowerInvariant())))
+                    _pictures.Add(new PictureItemViewModel(folderPicture, false, null, Settings));
+            }
         }
 
         public event PropertyChangedEventHandler? PropertyChanged;
@@ -92,15 +108,19 @@ namespace PhotoLocator
             set
             {
                 if (SetProperty(ref field, Math.Max(0, Math.Min(_pictures.Count - 1, value))))
-                    UpdatePicture();
+                    UpdatePictureAsync().WithExceptionLogging();
             }
         } = -1;
 
-        private void UpdatePicture()
+        async Task UpdatePictureAsync()
         {
+            if (_pictures.Count == 0)
+                return;
             _timer.Stop();
-            _resamplerCancellation?.Cancel();
+            await (_resamplerCancellation?.CancelAsync() ?? Task.CompletedTask);
             SelectedPicture = _pictures[PictureIndex];
+            if (SelectedPicture.ThumbnailImage is null)
+                await SelectedPicture.LoadThumbnailAndMetadataAsync(default);
 
             if (SelectedPicture.IsVideo)
             {
@@ -196,13 +216,18 @@ namespace PhotoLocator
                 _timer.Stop();
                 return;
             }
-            PictureIndex = (PictureIndex + 1) % _pictures.Count;
-            UpdatePicture();
+            if (PictureIndex + 1 >= _pictures.Count)
+            {
+                UpdateFolders();
+                PictureIndex = 0;
+            }
+            else
+                PictureIndex++;
         }
 
         private void HandlePreviewKeyUp(object sender, KeyEventArgs e)
         {
-            if (e.Key == Key.Escape)
+            if (e.Key is Key.Escape or Key.Q)
                 Close();
             else if (e.Key is Key.Left or Key.Up or Key.PageUp)
                 PictureIndex--;
@@ -212,6 +237,15 @@ namespace PhotoLocator
                 PictureIndex = 0;
             else if (e.Key == Key.End)
                 PictureIndex = _pictures.Count - 1;
+        }
+
+        private void HandlePreviewMouseDown(object sender, MouseButtonEventArgs e)
+        {
+            if (e.ChangedButton == MouseButton.Left && e.ClickCount >= 2)
+            {
+                Close();
+                e.Handled = true;
+            }
         }
 
         private void HandleTouchDown(object sender, TouchEventArgs e)
