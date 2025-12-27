@@ -203,8 +203,7 @@ namespace PhotoLocator
                             _allPictures.Remove(overwritingFile);
                         }
                     }
-                    await item.RenameAsync(newName, Path.Combine(Path.GetDirectoryName(item.FullPath)!, newName), 
-                        Settings.IncludeSidecarFiles && !IsExtensionWarningVisible);
+                    await item.RenameAsync(newName, Settings.IncludeSidecarFiles && !IsExtensionWarningVisible);
                     _allPictures.Remove(item);
                     item.IsChecked = false;
                     _allPictures.InsertOrdered(item);
