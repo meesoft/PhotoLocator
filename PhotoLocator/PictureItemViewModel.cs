@@ -370,15 +370,19 @@ namespace PhotoLocator
             return Path.Combine(Path.GetDirectoryName(FullPath)!, baseName) + postfix + Path.GetExtension(Name);
         }
 
-        public async Task RenameAsync(string newName, string newFullPath, bool renameSidecar)
+        public async Task RenameAsync(string newName, bool renameSidecar)
         {
+            var folderName = Path.GetDirectoryName(FullPath)!;
+            var newFullPath = Path.Combine(folderName, newName);
             await Task.Run(() =>
             {
                 if (IsDirectory)
                     Directory.Move(FullPath, newFullPath);
                 else
                 {
+                    var folderLength = folderName.Length;
                     File.Move(FullPath, newFullPath);
+                    Log.Write(FullPath[folderLength..] + " renamed to " + newFullPath[folderLength..]);
                     if (renameSidecar)
                     {
                         try
@@ -386,10 +390,11 @@ namespace PhotoLocator
                             foreach (var sidecar in GetSidecarFiles())
                             {
                                 var sidecarName = Path.GetFileName(sidecar);
-                                if (Path.GetFileNameWithoutExtension(sidecarName).Equals(Path.GetFileNameWithoutExtension(Name), StringComparison.OrdinalIgnoreCase))
-                                    File.Move(sidecar, Path.Combine(Path.GetDirectoryName(sidecar)!, Path.ChangeExtension(newName, Path.GetExtension(sidecarName))));
-                                else //  Sidecar name is full name with additional extension
-                                    File.Move(sidecar, Path.Combine(Path.GetDirectoryName(sidecar)!, newName + sidecarName[Name.Length..]));
+                                var newSidecar = Path.GetFileNameWithoutExtension(sidecarName).Equals(Path.GetFileNameWithoutExtension(Name), StringComparison.OrdinalIgnoreCase) ?
+                                    Path.Combine(Path.GetDirectoryName(sidecar)!, Path.ChangeExtension(newName, Path.GetExtension(sidecarName))) :
+                                    Path.Combine(Path.GetDirectoryName(sidecar)!, newName + sidecarName[Name.Length..]); //  Sidecar name is full name with additional extension
+                                File.Move(sidecar, newSidecar);
+                                Log.Write(sidecar[folderLength..] + " sidecar renamed to " + newSidecar[folderLength..]);
                             }
                         }
                         catch (Exception ex)
@@ -407,8 +412,9 @@ namespace PhotoLocator
 
         private IEnumerable<string> GetSidecarFiles()
         {
-            return Directory.GetFiles(Path.GetDirectoryName(FullPath)!, Path.ChangeExtension(Name, "xmp")).Concat(
-                Directory.GetFiles(Path.GetDirectoryName(FullPath)!, Name + ".*", System.IO.SearchOption.AllDirectories));
+            var folder = Path.GetDirectoryName(FullPath)!;
+            return Directory.GetFiles(folder, Path.ChangeExtension(Name, "xmp")).Concat(
+                Directory.GetFiles(folder, Name + ".*", System.IO.SearchOption.AllDirectories));
         }
 
         internal void Renamed(string newFullPath)
@@ -439,10 +445,14 @@ namespace PhotoLocator
             else
             {
                 FileSystem.DeleteFile(FullPath, UIOption.OnlyErrorDialogs, RecycleOption.SendToRecycleBin);
+                Log.Write(FullPath + " deleted");
                 if (recycleSidecar)
                 {
                     foreach (var sidecar in GetSidecarFiles())
+                    {
                         FileSystem.DeleteFile(sidecar, UIOption.OnlyErrorDialogs, RecycleOption.SendToRecycleBin);
+                        Log.Write(sidecar + " sidecar deleted");
+                    }
                 }
             }
         }
