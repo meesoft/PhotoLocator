@@ -216,14 +216,18 @@ namespace PhotoLocator
                 _timer.Stop();
                 return;
             }
-            PictureIndex = (PictureIndex + 1) % _pictures.Count;
-            if (PictureIndex == 0)
+            if (PictureIndex + 1 >= _pictures.Count)
+            {
                 UpdateFolders();
+                PictureIndex = 0;
+            }
+            else
+                PictureIndex++;
         }
 
         private void HandlePreviewKeyUp(object sender, KeyEventArgs e)
         {
-            if (e.Key == Key.Escape || e.Key == Key.Q)
+            if (e.Key is Key.Escape or Key.Q)
                 Close();
             else if (e.Key is Key.Left or Key.Up or Key.PageUp)
                 PictureIndex--;

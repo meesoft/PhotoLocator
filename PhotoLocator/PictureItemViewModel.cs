@@ -207,7 +207,7 @@ namespace PhotoLocator
                 {
                     if (_screenDpi.DpiScaleX == 0)
                         App.Current.Dispatcher.Invoke(
-                            () => _screenDpi = _screenDpi = VisualTreeHelper.GetDpi(App.Current.MainWindow));
+                            () => _screenDpi = VisualTreeHelper.GetDpi(App.Current.MainWindow));
                     var thumbnailPixelSize = ThumbnailSize * _screenDpi.DpiScaleX;
                     int thumbnailIntPixelSize = IntMath.Round(thumbnailPixelSize);
                     thumbnail = LoadPreviewInternal(thumbnailIntPixelSize, false, null, ct);
