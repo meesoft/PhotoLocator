@@ -47,9 +47,9 @@
         <TextBlock Grid.Row="4" Text="Tags:" VerticalAlignment="Bottom" Margin="0,4" Foreground="#FFEEEEEE"/>
 
         <StackPanel Grid.Row="5" Orientation="Horizontal" >
-            <TextBlock Text="|ext| File extension including dot." MouseUp="HandleEscapeCodeTextBlockMouseUp" Foreground="#FFEEEEEE" Margin="0,0,5,0" Cursor="Hand"/>
-            <TextBlock Text="|*| Source name without extension." MouseUp="HandleEscapeCodeTextBlockMouseUp" Foreground="#FFEEEEEE" Margin="0,0,5,0" Cursor="Hand"/>
-            <TextBlock Text="|*:4| Skip first 4." MouseUp="HandleEscapeCodeTextBlockMouseUp" Foreground="#FFEEEEEE" Margin="0,0,5,0" Cursor="Hand"/>
+            <TextBlock Text="|ext| Extension including dot." MouseUp="HandleEscapeCodeTextBlockMouseUp" Foreground="#FFEEEEEE" Margin="0,0,5,0" Cursor="Hand"/>
+            <TextBlock Text="|*| Name without extension." MouseUp="HandleEscapeCodeTextBlockMouseUp" Foreground="#FFEEEEEE" Margin="0,0,5,0" Cursor="Hand"/>
+            <TextBlock Text="|*:4:4| Skip 4 and take 4." MouseUp="HandleEscapeCodeTextBlockMouseUp" Foreground="#FFEEEEEE" Margin="0,0,5,0" Cursor="Hand"/>
         </StackPanel>
         <StackPanel Grid.Row="6" Orientation="Horizontal" >
             <TextBlock Text="|_????| 4 characters following a _ in the source file name." MouseUp="HandleEscapeCodeTextBlockMouseUp" Foreground="#FFEEEEEE" Margin="0,0,5,0" Cursor="Hand"/>
@@ -64,7 +64,7 @@
         <StackPanel Grid.Row="8" Orientation="Horizontal" >
             <TextBlock Text="|a| Aperture." MouseUp="HandleEscapeCodeTextBlockMouseUp" Foreground="#FFEEEEEE" Margin="0,0,5,0" Cursor="Hand"/>
             <TextBlock Text="|t| Exposure time." MouseUp="HandleEscapeCodeTextBlockMouseUp" Foreground="#FFEEEEEE" Margin="0,0,5,0" Cursor="Hand"/>
-            <TextBlock Text="|f| Focan length." MouseUp="HandleEscapeCodeTextBlockMouseUp" Foreground="#FFEEEEEE" Margin="0,0,5,0" Cursor="Hand"/>
+            <TextBlock Text="|f| Focal length." MouseUp="HandleEscapeCodeTextBlockMouseUp" Foreground="#FFEEEEEE" Margin="0,0,5,0" Cursor="Hand"/>
             <TextBlock Text="|iso| ISO." MouseUp="HandleEscapeCodeTextBlockMouseUp" Foreground="#FFEEEEEE" Margin="0,0,5,0" Cursor="Hand"/>
             <TextBlock Text="|alt:0| Altitude as integer." MouseUp="HandleEscapeCodeTextBlockMouseUp" Foreground="#FFEEEEEE" Margin="0,0,5,0" Cursor="Hand"/>
         </StackPanel>

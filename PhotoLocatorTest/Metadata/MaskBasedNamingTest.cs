@@ -31,14 +31,21 @@ namespace PhotoLocator.Metadata
         }
 
         [TestMethod]
-        public void GetFileNameWithMaskSourceSkip2()
+        public void GetFileNameWithMaskShouldSkip2()
         {
             Assert.AreEqual("22-06-17_19.03.02.jpg",
                 _renamer.GetFileName("|*:2||ext|"));
         }
 
         [TestMethod]
-        public void GetFileNameWithMaskSourceSkipBefore()
+        public void GetFileNameWithMaskShouldSkip2AndTake5()
+        {
+            Assert.AreEqual("22-06.jpg",
+                _renamer.GetFileName("|*:2:5||ext|"));
+        }
+
+        [TestMethod]
+        public void GetFileNameWithMaskShouldSkipBefore()
         {
             Assert.AreEqual("19.jpg",
                 _renamer.GetFileName("|_??||ext|"));

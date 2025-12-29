@@ -138,10 +138,20 @@ namespace PhotoLocator.Metadata
                     {
                         result.Append(Path.GetFileNameWithoutExtension(OriginalFileName));
                     }
-                    else if (TagIs(tag, "*", out var iColon))
+                    else if (TagIs(tag, "*", out var iColon)) // *:skip[:take]
                     {
-                        var startIndex = int.Parse(tag[(iColon + 1)..], CultureInfo.InvariantCulture);
-                        result.Append(Path.GetFileNameWithoutExtension(OriginalFileName[startIndex..]));
+                        int iColon2;
+                        if (iColon > 0 && (iColon2 = tag.IndexOf(':', iColon + 2)) >= 0)
+                        {
+                            var startIndex = int.Parse(tag[(iColon + 1)..iColon2], CultureInfo.InvariantCulture);
+                            var length = int.Parse(tag[(iColon2 + 1)..], CultureInfo.InvariantCulture);
+                            result.Append(Path.GetFileNameWithoutExtension(OriginalFileName).AsSpan(startIndex, length));
+                        }
+                        else
+                        {
+                            var startIndex = int.Parse(tag[(iColon + 1)..], CultureInfo.InvariantCulture);
+                            result.Append(Path.GetFileNameWithoutExtension(OriginalFileName)[startIndex..]);
+                        }
                     }
                     else if (TagWithOffsetIs(tag, "DT", out var offset))
                     {
