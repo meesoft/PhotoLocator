@@ -145,12 +145,12 @@ namespace PhotoLocator.Metadata
                         {
                             var startIndex = int.Parse(tag[(iColon + 1)..iColon2], CultureInfo.InvariantCulture);
                             var length = int.Parse(tag[(iColon2 + 1)..], CultureInfo.InvariantCulture);
-                            result.Append(Path.GetFileNameWithoutExtension(OriginalFileName.Substring(startIndex, length)));
+                            result.Append(Path.GetFileNameWithoutExtension(OriginalFileName).AsSpan(startIndex, length));
                         }
                         else
                         {
                             var startIndex = int.Parse(tag[(iColon + 1)..], CultureInfo.InvariantCulture);
-                            result.Append(Path.GetFileNameWithoutExtension(OriginalFileName[startIndex..]));
+                            result.Append(Path.GetFileNameWithoutExtension(OriginalFileName)[startIndex..]);
                         }
                     }
                     else if (TagWithOffsetIs(tag, "DT", out var offset))
