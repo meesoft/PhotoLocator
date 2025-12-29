@@ -395,6 +395,7 @@ namespace PhotoLocator
                     var isTimeSlice = field is CombineFramesMode.TimeSlice or CombineFramesMode.TimeSliceInterpolated;
                     if (wasTimeSlice != isTimeSlice)
                         CombineFramesCount = isTimeSlice ? 1 : DefaultAverageFramesCount;
+                    UpdateProcessArgs();
                     UpdateOutputArgs();
                 }
             }
@@ -403,7 +404,11 @@ namespace PhotoLocator
         public int CombineFramesCount
         {
             get;
-            set => SetProperty(ref field, Math.Max(1, value));
+            set
+            {
+                if (SetProperty(ref field, Math.Max(1, value)))
+                    UpdateProcessArgs();
+            }
         } = DefaultAverageFramesCount;
 
         public string NumberOfFramesHint => CombineFramesMode < CombineFramesMode.TimeSlice ? "Number of frames to combine" : "Time slice video loops";
@@ -692,7 +697,7 @@ namespace PhotoLocator
                     EffectStrength, 
                     IsScaleChecked ? ScaleTo.Replace(':', 'x') : "1920x1080",
                     string.IsNullOrEmpty(FrameRate) ? "30" : FrameRate));
-            if (IsSpeedupChecked)
+            if (IsSpeedupChecked && (CombineFramesMode != CombineFramesMode.RollingAverage || !SpeedupByEqualsCombineFramesCount))
                 filters.Add($"setpts=PTS/({SpeedupBy})");
             if (!string.IsNullOrEmpty(FrameRate))
                 filters.Add($"fps={FrameRate}");
@@ -1080,7 +1085,9 @@ namespace PhotoLocator
             }
             using CombineFramesOperationBase? runningAverage = CombineFramesMode switch
             {
-                CombineFramesMode.RollingAverage => new RollingAverageOperation(CombineFramesCount, DarkFramePath, ParseRegistrationSettings(), ct),
+                CombineFramesMode.RollingAverage => IsSpeedupChecked && SpeedupByEqualsCombineFramesCount ?
+                    new TimeCompressionAverageOperation(CombineFramesCount, DarkFramePath, ParseRegistrationSettings(), ct) :
+                    new RollingAverageOperation(CombineFramesCount, DarkFramePath, ParseRegistrationSettings(), ct),
                 CombineFramesMode.FadingAverage => new FadingAverageOperation(CombineFramesCount, DarkFramePath, ParseRegistrationSettings(), ct),
                 CombineFramesMode.FadingMax => new FadingMaxOperation(CombineFramesCount, DarkFramePath, ParseRegistrationSettings(), ct),
                 _ => null,
@@ -1093,6 +1100,8 @@ namespace PhotoLocator
                     if (runningAverage is not null)
                     {
                         runningAverage.ProcessImage(source);
+                        if (!runningAverage.IsResultReady)
+                            return;
                         if (_localContrastSetup is null || _localContrastSetup.IsNoOperation)
                         {
                             frameEnumerator.AddItem(runningAverage.GetResult8());
@@ -1111,6 +1120,8 @@ namespace PhotoLocator
             frameEnumerator.Break();
             await writeTask.ConfigureAwait(false);
         }
+
+        bool SpeedupByEqualsCombineFramesCount => int.TryParse(SpeedupBy, CultureInfo.InvariantCulture, out var speedupBy) && speedupBy == CombineFramesCount;
 
         SaveFileDialog SetupSaveFileDialog(PictureItemViewModel[] allSelected, string inPath)
         {

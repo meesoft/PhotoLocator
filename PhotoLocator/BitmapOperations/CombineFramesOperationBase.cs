@@ -59,6 +59,8 @@ namespace PhotoLocator.BitmapOperations
             return _pixelFormat == PixelFormats.Rgb24 || _pixelFormat == PixelFormats.Bgr24 || _pixelFormat == PixelFormats.Gray8;
         }
 
+        public virtual bool IsResultReady => true;
+
         public BitmapSource GetResult8()
         {
             if (_accumulatorPixels is null)
