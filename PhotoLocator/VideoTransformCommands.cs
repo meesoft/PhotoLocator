@@ -1139,7 +1139,9 @@ namespace PhotoLocator
                         postfix = "fadeavg" + CombineFramesCount;
                     else if (CombineFramesMode == CombineFramesMode.FadingMax && CombineFramesCount > 1)
                         postfix = "fademax" + CombineFramesCount;
-                    else if (IsStabilizeChecked || RegistrationMode > RegistrationMode.Off && CombineFramesMode > CombineFramesMode.None)
+                    else if (IsStabilizeChecked)
+                        postfix = "stabilized" + SmoothFrames;
+                    else if (RegistrationMode > RegistrationMode.Off && CombineFramesMode > CombineFramesMode.None)
                         postfix = "stabilized";
                     else if (allSelected.Length > 1)
                         postfix = "combined";
