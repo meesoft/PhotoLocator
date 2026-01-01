@@ -700,7 +700,7 @@ namespace PhotoLocator
                     string.IsNullOrEmpty(FrameRate) ? "30" : FrameRate));
             if (IsSpeedupChecked && (CombineFramesMode != CombineFramesMode.RollingAverage || !SpeedupByEqualsCombineFramesCount))
                 filters.Add($"setpts=PTS/({SpeedupBy})");
-            if (!string.IsNullOrEmpty(FrameRate))
+            if (!string.IsNullOrEmpty(FrameRate) && SelectedEffect.Content != ZoomEffect)
                 filters.Add($"fps={FrameRate}");
             if (HasOnlyImageInput)
                 filters.Add("colorspace=all=bt709:iall=bt601-6-625:fast=1");
