@@ -266,6 +266,7 @@ namespace PhotoLocator
                     }
                     PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(EffectStrength)));
                     PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(IsParameterizedEffect)));
+                    UpdateStabilizeArgs();
                     UpdateProcessArgs();
                 }
             }
@@ -666,7 +667,7 @@ namespace PhotoLocator
                 var filters = new List<string>();
                 if (IsCropChecked)
                     filters.Add($"crop={CropWindow}");
-                if (IsScaleChecked)
+                if (IsScaleChecked && SelectedEffect.Content != ZoomEffect)
                     filters.Add($"scale={ScaleTo}");
                 filters.Add($"vidstabdetect=shakiness=7{(IsTripodChecked ? ":tripod=1" : "")}:result={VideoTransformCommands.TransformsFileName}");
                 StabilizeArguments = $"-vf \"{string.Join(", ", filters)}\" -f null -";
