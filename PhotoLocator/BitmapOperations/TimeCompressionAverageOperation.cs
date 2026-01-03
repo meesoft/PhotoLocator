@@ -18,7 +18,7 @@ namespace PhotoLocator.BitmapOperations
 
         public override void ProcessImage(System.Windows.Media.Imaging.BitmapSource image)
         {
-            if (_collectedFrames >= _numberOfFramesToAverage)
+            if (_collectedFrames == _numberOfFramesToAverage)
             {
                 _collectedFrames = 0;
                 Array.Clear(_accumulatorPixels!);
