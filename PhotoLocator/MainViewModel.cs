@@ -1220,7 +1220,7 @@ namespace PhotoLocator
                     if (changed.ThumbnailImage != null)
                     {
                         Log.Write("Reloading thumbnail for changed file " + changed.Name);
-                        changed.ThumbnailImage = null;
+                        changed.ResetThumbnailAndMetadata();
                         await LoadPicturesAsync();
                     }
                 }
@@ -1230,7 +1230,7 @@ namespace PhotoLocator
         public async Task AddOrUpdateItemAsync(string fullPath, bool isDirectory, bool selectItem) 
         {
             var item = Items.InsertOrdered(new PictureItemViewModel(fullPath, isDirectory, HandleFilePropertyChanged, Settings));
-            item.ThumbnailImage = null;
+            item.ResetThumbnailAndMetadata();
             _pictureCache.RemoveAll(cache => cache.Path == item.FullPath);
             if (item == SelectedItem)
                 UpdatePreviewPictureAsync().WithExceptionLogging();
