@@ -266,6 +266,7 @@ namespace PhotoLocator
                     }
                     PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(EffectStrength)));
                     PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(IsParameterizedEffect)));
+                    UpdateStabilizeArgs();
                     UpdateProcessArgs();
                 }
             }
@@ -395,6 +396,7 @@ namespace PhotoLocator
                     var isTimeSlice = field is CombineFramesMode.TimeSlice or CombineFramesMode.TimeSliceInterpolated;
                     if (wasTimeSlice != isTimeSlice)
                         CombineFramesCount = isTimeSlice ? 1 : DefaultAverageFramesCount;
+                    UpdateProcessArgs();
                     UpdateOutputArgs();
                 }
             }
@@ -403,7 +405,11 @@ namespace PhotoLocator
         public int CombineFramesCount
         {
             get;
-            set => SetProperty(ref field, Math.Max(1, value));
+            set
+            {
+                if (SetProperty(ref field, Math.Max(1, value)))
+                    UpdateProcessArgs();
+            }
         } = DefaultAverageFramesCount;
 
         public string NumberOfFramesHint => CombineFramesMode < CombineFramesMode.TimeSlice ? "Number of frames to combine" : "Time slice video loops";
@@ -661,7 +667,7 @@ namespace PhotoLocator
                 var filters = new List<string>();
                 if (IsCropChecked)
                     filters.Add($"crop={CropWindow}");
-                if (IsScaleChecked)
+                if (IsScaleChecked && SelectedEffect.Content != ZoomEffect)
                     filters.Add($"scale={ScaleTo}");
                 filters.Add($"vidstabdetect=shakiness=7{(IsTripodChecked ? ":tripod=1" : "")}:result={VideoTransformCommands.TransformsFileName}");
                 StabilizeArguments = $"-vf \"{string.Join(", ", filters)}\" -f null -";
@@ -692,9 +698,9 @@ namespace PhotoLocator
                     EffectStrength, 
                     IsScaleChecked ? ScaleTo.Replace(':', 'x') : "1920x1080",
                     string.IsNullOrEmpty(FrameRate) ? "30" : FrameRate));
-            if (IsSpeedupChecked)
+            if (IsSpeedupChecked && (CombineFramesMode != CombineFramesMode.RollingAverage || !SpeedupByEqualsCombineFramesCount))
                 filters.Add($"setpts=PTS/({SpeedupBy})");
-            if (!string.IsNullOrEmpty(FrameRate))
+            if (!string.IsNullOrEmpty(FrameRate) && SelectedEffect.Content != ZoomEffect)
                 filters.Add($"fps={FrameRate}");
             if (HasOnlyImageInput)
                 filters.Add("colorspace=all=bt709:iall=bt601-6-625:fast=1");
@@ -1080,7 +1086,9 @@ namespace PhotoLocator
             }
             using CombineFramesOperationBase? runningAverage = CombineFramesMode switch
             {
-                CombineFramesMode.RollingAverage => new RollingAverageOperation(CombineFramesCount, DarkFramePath, ParseRegistrationSettings(), ct),
+                CombineFramesMode.RollingAverage => IsSpeedupChecked && SpeedupByEqualsCombineFramesCount ?
+                    new TimeCompressionAverageOperation(CombineFramesCount, DarkFramePath, ParseRegistrationSettings(), ct) :
+                    new RollingAverageOperation(CombineFramesCount, DarkFramePath, ParseRegistrationSettings(), ct),
                 CombineFramesMode.FadingAverage => new FadingAverageOperation(CombineFramesCount, DarkFramePath, ParseRegistrationSettings(), ct),
                 CombineFramesMode.FadingMax => new FadingMaxOperation(CombineFramesCount, DarkFramePath, ParseRegistrationSettings(), ct),
                 _ => null,
@@ -1093,6 +1101,8 @@ namespace PhotoLocator
                     if (runningAverage is not null)
                     {
                         runningAverage.ProcessImage(source);
+                        if (!runningAverage.IsResultReady)
+                            return;
                         if (_localContrastSetup is null || _localContrastSetup.IsNoOperation)
                         {
                             frameEnumerator.AddItem(runningAverage.GetResult8());
@@ -1112,6 +1122,8 @@ namespace PhotoLocator
             await writeTask.ConfigureAwait(false);
         }
 
+        bool SpeedupByEqualsCombineFramesCount => int.TryParse(SpeedupBy, CultureInfo.InvariantCulture, out var speedupBy) && speedupBy == CombineFramesCount;
+
         SaveFileDialog SetupSaveFileDialog(PictureItemViewModel[] allSelected, string inPath)
         {
             string postfix, ext;
@@ -1127,7 +1139,9 @@ namespace PhotoLocator
                         postfix = "fadeavg" + CombineFramesCount;
                     else if (CombineFramesMode == CombineFramesMode.FadingMax && CombineFramesCount > 1)
                         postfix = "fademax" + CombineFramesCount;
-                    else if (IsStabilizeChecked || RegistrationMode > RegistrationMode.Off && CombineFramesMode > CombineFramesMode.None)
+                    else if (IsStabilizeChecked)
+                        postfix = "stabilized" + SmoothFrames;
+                    else if (RegistrationMode > RegistrationMode.Off && CombineFramesMode > CombineFramesMode.None)
                         postfix = "stabilized";
                     else if (allSelected.Length > 1)
                         postfix = "combined";
