@@ -260,5 +260,66 @@ namespace PhotoLocator.Metadata
             }
             Console.WriteLine(sw.ElapsedMilliseconds);
         }
+
+        [TestMethod]
+        public void ResetOrientation_ShouldBeApplied_WhenSavingProcessedImage()
+        {
+            const string TestFileName = "orientation_reset_test.jpg";
+
+            using var sourceStream = GetType().Assembly.GetManifestResourceStream(@"PhotoLocator.TestData.2022-06-17_19.03.02.jpg")
+                ?? throw new FileNotFoundException("Resource not found");
+            var metadata = ExifHandler.LoadMetadata(sourceStream) ?? throw new Exception("Unable to load metadata");
+
+            // Set orientation to simulate rotated image
+            metadata = metadata.Clone();
+            metadata.SetQuery(ExifHandler.OrientationQuery1, (ushort)6);
+
+            // Create a test bitmap
+            var bitmap = BitmapSource.Create(10, 10, 96, 96, PixelFormats.Bgr24, null, new byte[10 * 10 * 3], 10 * 3);
+
+            // Apply ResetOrientation and save
+            var resetMetadata = ExifHandler.ResetOrientation(metadata);
+            GeneralFileFormatHandler.SaveToFile(bitmap, TestFileName, resetMetadata, 90);
+
+            // Verify orientation was reset
+            using var targetStream = File.OpenRead(TestFileName);
+            var savedMetadata = ExifHandler.LoadMetadata(targetStream)!;
+            var orientationValue = savedMetadata.GetQuery(ExifHandler.OrientationQuery1) as ushort?;
+
+            Assert.AreEqual((ushort)1, orientationValue);
+        }
+
+        [TestMethod]
+        public void ResetOrientation_ShouldPreserveOtherMetadata()
+        {
+            const string TestFileName = "metadata_preservation_test.jpg";
+
+            using var sourceStream = GetType().Assembly.GetManifestResourceStream(@"PhotoLocator.TestData.2022-06-17_19.03.02.jpg")
+                ?? throw new FileNotFoundException("Resource not found");
+            var metadata = ExifHandler.LoadMetadata(sourceStream) ?? throw new Exception("Unable to load metadata");
+
+            var originalCameraModel = metadata.CameraModel;
+            var originalGeotag = ExifHandler.GetGeotag(metadata);
+            Assert.IsNotNull(originalGeotag);
+
+            // Set orientation and reset it
+            metadata = metadata.Clone();
+            metadata.SetQuery(ExifHandler.OrientationQuery1, (ushort)3);
+            var resetMetadata = ExifHandler.ResetOrientation(metadata);
+
+            // Create and save bitmap
+            var bitmap = BitmapSource.Create(10, 10, 96, 96, PixelFormats.Bgr24, null, new byte[10 * 10 * 3], 10 * 3);
+            GeneralFileFormatHandler.SaveToFile(bitmap, TestFileName, resetMetadata, 90);
+
+            // Verify other metadata is preserved
+            using var targetStream = File.OpenRead(TestFileName);
+            var savedMetadata = ExifHandler.LoadMetadata(targetStream)!;
+
+            Assert.AreEqual(originalCameraModel, savedMetadata.CameraModel);
+            var savedGeotag = ExifHandler.GetGeotag(savedMetadata);
+            Assert.IsNotNull(savedGeotag);
+            Assert.AreEqual(originalGeotag.Latitude, savedGeotag.Latitude, 0.001);
+            Assert.AreEqual(originalGeotag.Longitude, savedGeotag.Longitude, 0.001);
+        }
     }
 }

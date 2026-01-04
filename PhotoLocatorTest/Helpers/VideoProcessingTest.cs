@@ -8,7 +8,7 @@ namespace PhotoLocator.Helpers
     public class VideoProcessingTest
     {
         public const string FFmpegPath = @"ffmpeg\ffmpeg.exe";
-        const string SourceVideoPath = @"TestData\Test.mp4";
+        public const string SourceVideoPath = @"TestData\Test.mp4";
 
         [TestMethod]
         public async Task RunFFmpegWithStreamOutputImagesAsync_ShouldProcessImages()

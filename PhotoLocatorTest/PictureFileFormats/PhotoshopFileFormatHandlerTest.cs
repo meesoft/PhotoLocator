@@ -13,7 +13,7 @@ namespace PhotoLocator.PictureFileFormats
         {
             using var stream = File.OpenRead(@"TestData\G8.psd");
             var image = PhotoshopFileFormatHandler.LoadFromStream(stream, Rotation.Rotate0, 100, false, default);
-            new FloatBitmap(image, 1);
+            _ = new FloatBitmap(image, 1);
         }
 
         [TestMethod]
@@ -21,7 +21,7 @@ namespace PhotoLocator.PictureFileFormats
         {
             using var stream = File.OpenRead(@"TestData\G16.psd");
             var image = PhotoshopFileFormatHandler.LoadFromStream(stream, Rotation.Rotate0, 100, false, default);
-            new FloatBitmap(image, 1);
+            _ = new FloatBitmap(image, 1);
         }
 
         [TestMethod]
@@ -29,7 +29,7 @@ namespace PhotoLocator.PictureFileFormats
         {
             using var stream = File.OpenRead(@"TestData\RGB8.psd");
             var image = PhotoshopFileFormatHandler.LoadFromStream(stream, Rotation.Rotate0, 100, false, default);
-            new FloatBitmap(image, 1);
+            _ = new FloatBitmap(image, 1);
         }
 
         [TestMethod]
@@ -37,7 +37,7 @@ namespace PhotoLocator.PictureFileFormats
         {
             using var stream = File.OpenRead(@"TestData\RGB16.psd");
             var image = PhotoshopFileFormatHandler.LoadFromStream(stream, Rotation.Rotate0, 100, false, default);
-            new FloatBitmap(image, 1);
+            _ = new FloatBitmap(image, 1);
         }
     }
 }
