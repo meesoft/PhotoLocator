@@ -29,7 +29,12 @@ namespace PhotoLocator
 
         public ICommand Rotate180Command => new RelayCommand(async o => await RotateSelectedAsync(180), HasFileSelected);
 
-        public ICommand Rotate0Command => new RelayCommand(async o => await RotateSelectedAsync(0), HasFileSelected);
+        public ICommand Rotate0Command => new RelayCommand(async o =>
+        { 
+            if (MessageBox.Show("This will reset any rotation EXIF data from the selected images. Continue?", "Reset rotation tag", MessageBoxButton.OKCancel, MessageBoxImage.Question) != MessageBoxResult.OK)
+                return;
+            await RotateSelectedAsync(0); 
+        }, HasFileSelected);
 
         private async Task RotateSelectedAsync(int angle)
         {
@@ -43,7 +48,6 @@ namespace PhotoLocator
                 foreach (var item in allSelected)
                 {
                     JpegTransformations.Rotate(item.FullPath, item.GetProcessedFileName(), angle); //TODO: Make async
-                    item.ResetThumbnailAndMetadata();
                     item.IsChecked = false;
                     progressCallback((double)(++i) / allSelected.Length);
                 }

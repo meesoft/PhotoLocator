@@ -235,6 +235,7 @@ namespace PhotoLocator
         {
             try
             {
+                Log.Write($"Loading metadata for {Name}");
                 if (_settings is not null && _settings.ForceUseExifTool && !string.IsNullOrEmpty(_settings.ExifToolPath))
                     (GeoTag, _timeStamp, _metadataString, Orientation) = await Task.Run(() => ExifTool.DecodeMetadata(FullPath, _settings.ExifToolPath), ct);
                 else
