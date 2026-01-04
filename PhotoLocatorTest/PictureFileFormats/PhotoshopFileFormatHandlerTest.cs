@@ -1,6 +1,4 @@
-﻿using MapControl;
-using PhotoLocator.BitmapOperations;
-using PhotoLocator.Metadata;
+﻿using PhotoLocator.BitmapOperations;
 using System.Windows.Media.Imaging;
 
 namespace PhotoLocator.PictureFileFormats
