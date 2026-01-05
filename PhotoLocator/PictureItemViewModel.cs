@@ -153,9 +153,10 @@ namespace PhotoLocator
 
         public ImageSource? ThumbnailImage
         {
-            get;
-            private set => SetProperty(ref field, value);
+            get => _thumbnailImage;
+            private set => SetProperty(ref _thumbnailImage, value);
         }
+        ImageSource? _thumbnailImage;
 
         public int ThumbnailSize => _settings?.ThumbnailSize ?? 256;
 
@@ -346,7 +347,7 @@ namespace PhotoLocator
 
         internal void ResetThumbnailAndMetadata()
         {
-            ThumbnailImage = null;
+            _thumbnailImage = null;
             _metadataString = null;
             Orientation = Rotation.Rotate0;
         }
