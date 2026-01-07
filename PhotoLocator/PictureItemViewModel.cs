@@ -147,15 +147,16 @@ namespace PhotoLocator
         public DateTimeOffset? TimeStamp
         {
             get => _timeStamp;
-            set => SetProperty(ref _timeStamp, value);
+            private set => SetProperty(ref _timeStamp, value);
         }
         DateTimeOffset? _timeStamp;
 
         public ImageSource? ThumbnailImage
         {
-            get;
-            set => SetProperty(ref field, value);
+            get => _thumbnailImage;
+            private set => SetProperty(ref _thumbnailImage, value);
         }
+        ImageSource? _thumbnailImage;
 
         public int ThumbnailSize => _settings?.ThumbnailSize ?? 256;
 
@@ -167,7 +168,7 @@ namespace PhotoLocator
                     Task.Run(() => LoadMetadataAsync(default)).GetAwaiter().GetResult();
                 return _metadataString;
             }
-            set => SetProperty(ref _metadataString, value);
+            private set => SetProperty(ref _metadataString, value);
         }
         string? _metadataString;
 
@@ -190,7 +191,7 @@ namespace PhotoLocator
             }
         }
 
-        public Rotation Orientation { get; set; }
+        public Rotation Orientation { get; private set; }
 
         public async ValueTask LoadThumbnailAndMetadataAsync(CancellationToken ct)
         {
@@ -235,6 +236,7 @@ namespace PhotoLocator
         {
             try
             {
+                Log.Write($"Loading metadata for {Name}");
                 if (_settings is not null && _settings.ForceUseExifTool && !string.IsNullOrEmpty(_settings.ExifToolPath))
                     (GeoTag, _timeStamp, _metadataString, Orientation) = await Task.Run(() => ExifTool.DecodeMetadata(FullPath, _settings.ExifToolPath), ct);
                 else
@@ -341,6 +343,13 @@ namespace PhotoLocator
                 Log.Write($"Failed to loads thumbnail for {Name}: {ex}");
                 return null;
             }
+        }
+
+        internal void ResetThumbnailAndMetadata()
+        {
+            _thumbnailImage = null;
+            _metadataString = null;
+            Orientation = Rotation.Rotate0;
         }
 
         internal async Task SaveGeoTagAsync(CancellationToken ct)

@@ -29,6 +29,13 @@ namespace PhotoLocator
 
         public ICommand Rotate180Command => new RelayCommand(async o => await RotateSelectedAsync(180), HasFileSelected);
 
+        public ICommand Rotate0Command => new RelayCommand(async o =>
+        { 
+            if (MessageBox.Show("This will reset any rotation EXIF data from the selected images. Continue?", "Reset rotation tag", MessageBoxButton.OKCancel, MessageBoxImage.Question) != MessageBoxResult.OK)
+                return;
+            await RotateSelectedAsync(0); 
+        }, HasFileSelected);
+
         private async Task RotateSelectedAsync(int angle)
         {
             var allSelected = _mainViewModel.GetSelectedItems(true).Where(item => JpegTransformations.IsFileTypeSupported(item.Name)).ToArray();
@@ -41,7 +48,6 @@ namespace PhotoLocator
                 foreach (var item in allSelected)
                 {
                     JpegTransformations.Rotate(item.FullPath, item.GetProcessedFileName(), angle); //TODO: Make async
-                    item.Orientation = Rotation.Rotate0;
                     item.IsChecked = false;
                     progressCallback((double)(++i) / allSelected.Length);
                 }
@@ -58,7 +64,6 @@ namespace PhotoLocator
             {
                 sourceFileName = selectedItem.FullPath;
                 targetFileName = selectedItem.GetProcessedFileName();
-                selectedItem.Orientation = Rotation.Rotate0;
             }
             else
             {
@@ -149,7 +154,7 @@ namespace PhotoLocator
             return (image, metadata);
         }
 
-        private async Task SaveProcessedImageAsync(LocalContrastViewModel localContrastViewModel, BitmapMetadata metadata, PictureItemViewModel selectedItem)
+        private async Task SaveProcessedImageAsync(LocalContrastViewModel localContrastViewModel, BitmapMetadata? metadata, PictureItemViewModel selectedItem)
         {
             var dlg = new SaveFileDialog();
             dlg.InitialDirectory = Path.GetDirectoryName(selectedItem.FullPath);
@@ -162,13 +167,14 @@ namespace PhotoLocator
             {
                 await using var pause = _mainViewModel.PauseFileSystemWatcher();
                 var sameDir = Path.GetDirectoryName(selectedItem.FullPath) == Path.GetDirectoryName(dlg.FileName);
-                await Task.Run(() => GeneralFileFormatHandler.SaveToFile(localContrastViewModel.PreviewPictureSource!, dlg.FileName, metadata, _mainViewModel.Settings.JpegQuality));
+                await Task.Run(() => GeneralFileFormatHandler.SaveToFile(localContrastViewModel.PreviewPictureSource!, dlg.FileName,
+                    ExifHandler.ResetOrientation(metadata), _mainViewModel.Settings.JpegQuality));
                 if (sameDir)
                     await _mainViewModel.AddOrUpdateItemAsync(dlg.FileName, false, false);
             }
-        }
+        }    
 
-        private async Task BatchProcessLocalContrastAsync(LocalContrastViewModel localContrastViewModel, BitmapMetadata metadata, PictureItemViewModel[] allSelected, PictureItemViewModel selectedItem)
+        private async Task BatchProcessLocalContrastAsync(LocalContrastViewModel localContrastViewModel, BitmapMetadata? metadata, PictureItemViewModel[] allSelected, PictureItemViewModel selectedItem)
         {
             await _mainViewModel.RunProcessWithProgressBarAsync((progressCallback, ct) => Task.Run(() =>
             {
@@ -177,12 +183,16 @@ namespace PhotoLocator
                 {
                     var targetFileName = Path.ChangeExtension(item.GetProcessedFileName(), "jpg");
                     if (item == selectedItem)
-                        GeneralFileFormatHandler.SaveToFile(localContrastViewModel.PreviewPictureSource!, targetFileName, metadata, _mainViewModel.Settings.JpegQuality);
+                    {
+                        GeneralFileFormatHandler.SaveToFile(localContrastViewModel.PreviewPictureSource!, targetFileName,
+                            ExifHandler.ResetOrientation(metadata), _mainViewModel.Settings.JpegQuality);
+                    }
                     else
                     {
                         var (image, itemMetadata) = LoadImageWithMetadata(item);
                         image = localContrastViewModel.ApplyOperations(image);
-                        GeneralFileFormatHandler.SaveToFile(image, targetFileName, itemMetadata, _mainViewModel.Settings.JpegQuality);
+                        GeneralFileFormatHandler.SaveToFile(image, targetFileName,
+                            ExifHandler.ResetOrientation(itemMetadata), _mainViewModel.Settings.JpegQuality);
                     }
                     progressCallback((double)(++i) / allSelected.Length);
                 }

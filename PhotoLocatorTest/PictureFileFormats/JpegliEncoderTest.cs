@@ -8,6 +8,8 @@ namespace PhotoLocator.PictureFileFormats
     {
         const string EncoderPath = @"cjpegli.exe";
 
+        public TestContext TestContext { get; set; }
+
         [TestMethod]
         public void SaveToFile_ShouldIncludeMetadata()
         {
@@ -21,7 +23,7 @@ namespace PhotoLocator.PictureFileFormats
             Console.WriteLine($"Source size: {new FileInfo(SourcePath).Length / 1024} kb");
 
             using var sourceFile = File.OpenRead(SourcePath);
-            var source = GeneralFileFormatHandler.LoadFromStream(sourceFile, Rotation.Rotate0, int.MaxValue, true, default);
+            var source = GeneralFileFormatHandler.LoadFromStream(sourceFile, Rotation.Rotate0, int.MaxValue, true, TestContext.CancellationToken);
             sourceFile.Position = 0;
             var metadata = ExifHandler.LoadMetadata(sourceFile);
 

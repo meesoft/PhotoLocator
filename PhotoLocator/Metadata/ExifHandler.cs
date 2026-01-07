@@ -5,6 +5,7 @@ using PhotoLocator.Helpers;
 using PhotoLocator.PictureFileFormats;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.IO;
 using System.Linq;
@@ -262,6 +263,29 @@ namespace PhotoLocator.Metadata
                 metadata.DateTaken = dateTaken.LocalDateTime.ToString(CultureInfo.InvariantCulture);
             }
             catch { }
+        }
+
+        [return: NotNullIfNotNull(nameof(metadata))]
+        public static BitmapMetadata? ResetOrientation(BitmapMetadata? metadata)
+        {
+            if (metadata is null)
+                return null;
+
+            void ResetOrientationValue(string orientationQuery)
+            {
+                var orientationValue = metadata.GetQuery(orientationQuery) as ushort? ?? 0;
+                if (orientationValue > 1)
+                {
+                    if (metadata.IsFrozen)
+                        metadata = metadata.Clone();
+                    metadata.SetQuery(orientationQuery, (ushort)1);
+                }
+            }
+
+            ResetOrientationValue(OrientationQuery1);
+            ResetOrientationValue(OrientationQuery2);
+            return metadata;
+
         }
 
         public static MemoryStream SetJpegMetadata(Stream source, BitmapMetadata metadata)
@@ -616,8 +640,8 @@ namespace PhotoLocator.Metadata
                 var metadata = LoadMetadata(file);
                 if (metadata is null)
                     return (null, null, string.Empty, Rotation.Rotate0);
-                var orientationStr = metadata.GetQuery(OrientationQuery1) as ushort? ?? metadata.GetQuery(OrientationQuery2) as ushort? ?? 0;
-                var orientation = orientationStr switch
+                var orientationValue = metadata.GetQuery(OrientationQuery1) as ushort? ?? metadata.GetQuery(OrientationQuery2) as ushort? ?? 0;
+                var orientation = orientationValue switch
                 {
                     3 => Rotation.Rotate180,
                     6 => Rotation.Rotate90,
