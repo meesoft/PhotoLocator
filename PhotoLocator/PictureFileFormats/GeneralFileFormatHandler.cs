@@ -21,7 +21,7 @@ namespace PhotoLocator.PictureFileFormats
             if (maxPixelWidth < int.MaxValue)
                 bitmap.DecodePixelWidth = maxPixelWidth;
             if (preservePixelFormat)
-                bitmap.CreateOptions = BitmapCreateOptions.PreservePixelFormat;
+                bitmap.CreateOptions = BitmapCreateOptions.PreservePixelFormat | BitmapCreateOptions.IgnoreColorProfile;
             bitmap.CacheOption = BitmapCacheOption.OnLoad;
             bitmap.Rotation = rotation;
             ct.ThrowIfCancellationRequested();

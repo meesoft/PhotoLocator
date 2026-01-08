@@ -696,7 +696,11 @@ namespace PhotoLocator
                 PhotoFolderPath = browser.SelectedPath;
         });
 
-        public ICommand RefreshFolderCommand => new RelayCommand(o => LoadFolderContentsAsync(true).WithExceptionLogging());
+        public ICommand RefreshFolderCommand => new RelayCommand(o =>
+        {
+            _pictureCache.Clear();
+            LoadFolderContentsAsync(true).WithExceptionLogging();
+        });
 
         public Action<object>? FocusListBoxItem { get; internal set; }
 

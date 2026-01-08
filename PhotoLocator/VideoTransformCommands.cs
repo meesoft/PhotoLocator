@@ -361,7 +361,7 @@ namespace PhotoLocator
                     try
                     {
                         var firstSelected = _mainViewModel.GetSelectedItems(true).First();
-                        var preview = firstSelected.LoadPreview(default, skipTo: HasSingleInput && !string.IsNullOrEmpty(SkipTo) ? SkipTo : null)
+                        var preview = firstSelected.LoadPreview(default, preservePixelFormat: true, skipTo: HasSingleInput && !string.IsNullOrEmpty(SkipTo) ? SkipTo : null)
                             ?? throw new FileFormatException("LoadPreview returned null");
                         _localContrastSetup.SourceBitmap = preview;
                     }

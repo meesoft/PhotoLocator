@@ -131,7 +131,7 @@ namespace PhotoLocator
         private static (BitmapSource, BitmapMetadata?) LoadImageWithMetadata(PictureItemViewModel item)
         {
             BitmapMetadata? metadata = null;
-            var image = item.LoadPreview(default, int.MaxValue, true);
+            var image = item.LoadPreview(default, int.MaxValue, preservePixelFormat: true);
             try
             {
                 using var file = File.OpenRead(item.FullPath);
