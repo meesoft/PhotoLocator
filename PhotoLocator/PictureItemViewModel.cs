@@ -251,10 +251,12 @@ namespace PhotoLocator
             }
         }
 
-        public BitmapSource? LoadPreview(CancellationToken ct, int maxWidth = int.MaxValue, bool preservePixelFormat = false, string? skipTo = null)
+        public async Task<BitmapSource?> LoadPreviewAsync(CancellationToken ct, int maxWidth = int.MaxValue, bool preservePixelFormat = false, string? skipTo = null)
         {
             try
             {
+                if (_metadataString is null && IsFile)
+                    await LoadMetadataAsync(ct);
                 Log.Write("Loading preview of " + Name);
                 var sw = Stopwatch.StartNew();
                 var preview = LoadPreviewInternal(maxWidth, preservePixelFormat, skipTo, ct);

@@ -102,7 +102,7 @@ namespace PhotoLocator
             var selectedItem = _mainViewModel.SelectedItem!;
             using (var cursor = new MouseCursorOverride())
             {
-                (var image, metadata) = await Task.Run(() => LoadImageWithMetadata(selectedItem));
+                (var image, metadata) = await Task.Run(() => LoadImageWithMetadataAsync(selectedItem));
                 localContrastViewModel = new LocalContrastViewModel() { SourceBitmap = image };
             }
             var window = new LocalContrastView();
@@ -128,10 +128,10 @@ namespace PhotoLocator
                 await SaveProcessedImageAsync(localContrastViewModel, metadata, selectedItem);
         }, HasFileSelected);
 
-        private static (BitmapSource, BitmapMetadata?) LoadImageWithMetadata(PictureItemViewModel item)
+        private static async Task<(BitmapSource, BitmapMetadata?)> LoadImageWithMetadataAsync(PictureItemViewModel item)
         {
             BitmapMetadata? metadata = null;
-            var image = item.LoadPreview(default, int.MaxValue, preservePixelFormat: true);
+            var image = await item.LoadPreviewAsync(default, int.MaxValue, preservePixelFormat: true);
             try
             {
                 using var file = File.OpenRead(item.FullPath);
@@ -176,7 +176,7 @@ namespace PhotoLocator
 
         private async Task BatchProcessLocalContrastAsync(LocalContrastViewModel localContrastViewModel, BitmapMetadata? metadata, PictureItemViewModel[] allSelected, PictureItemViewModel selectedItem)
         {
-            await _mainViewModel.RunProcessWithProgressBarAsync((progressCallback, ct) => Task.Run(() =>
+            await _mainViewModel.RunProcessWithProgressBarAsync((progressCallback, ct) => Task.Run(async () =>
             {
                 int i = 0;
                 foreach (var item in allSelected)
@@ -189,7 +189,7 @@ namespace PhotoLocator
                     }
                     else
                     {
-                        var (image, itemMetadata) = LoadImageWithMetadata(item);
+                        var (image, itemMetadata) = await LoadImageWithMetadataAsync(item);
                         image = localContrastViewModel.ApplyOperations(image);
                         GeneralFileFormatHandler.SaveToFile(image, targetFileName,
                             ExifHandler.ResetOrientation(itemMetadata), _mainViewModel.Settings.JpegQuality);

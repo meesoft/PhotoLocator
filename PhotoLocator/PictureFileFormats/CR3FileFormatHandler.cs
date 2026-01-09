@@ -28,17 +28,17 @@ namespace PhotoLocator.PictureFileFormats
                 ct.ThrowIfCancellationRequested();
 
                 //TODO: There is a risk that the headers cross buffer block boundaries in which case we currently fail to find them
-                var index = buffer.Slice(0, length).IndexOf(_previewHeader);
+                var index = buffer[..length].IndexOf(_previewHeader);
                 if (index < 0)
                 {
                     length = stream.Read(buffer);
                     continue;
                 }
-                var index2 = buffer.Slice(index, length - index).IndexOf(_jpegHeader);
+                var index2 = buffer[index..length].IndexOf(_jpegHeader);
                 if (index2 < 0)
                 {
                     length = stream.Read(buffer);
-                    index2 = buffer.Slice(0, length).IndexOf(_jpegHeader);
+                    index2 = buffer[..length].IndexOf(_jpegHeader);
                     if (index2 < 0)
                         continue;
                     index = 0;
