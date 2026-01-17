@@ -119,8 +119,6 @@ namespace PhotoLocator
             _timer.Stop();
             await (_resamplerCancellation?.CancelAsync() ?? Task.CompletedTask);
             SelectedPicture = _pictures[PictureIndex];
-            if (SelectedPicture.ThumbnailImage is null)
-                await SelectedPicture.LoadThumbnailAndMetadataAsync(default);
 
             if (SelectedPicture.IsVideo)
             {
@@ -133,7 +131,7 @@ namespace PhotoLocator
             else
             {
                 _timer.Start();
-                _sourceImage = SelectedPicture.LoadPreview(default);
+                _sourceImage = await SelectedPicture.LoadPreviewAsync(default);
                 UpdateResampledImage();
             }
 
@@ -178,7 +176,7 @@ namespace PhotoLocator
                 var MaxHeight = ScreenGrid.ActualHeight * screenDpi.DpiScaleY;
                 var scale = Math.Min(maxWidth / _sourceImage.PixelWidth, MaxHeight / _sourceImage.PixelHeight);
                 var resizeOperation = new LanczosResizeOperation();
-                _resamplerCancellation = new CancellationTokenSource();
+                _resamplerCancellation = new CancellationTokenSource(); // Runs in the main thread, so it is safe to access the token
                 var resampled = await Task.Run(() => resizeOperation.Apply(_sourceImage,
                     (int)(_sourceImage.PixelWidth * scale), (int)(_sourceImage.PixelHeight * scale),
                     screenDpi.PixelsPerInchX, screenDpi.PixelsPerInchY, _resamplerCancellation.Token), _resamplerCancellation.Token);

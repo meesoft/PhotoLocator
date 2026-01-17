@@ -343,7 +343,7 @@ namespace PhotoLocator
                 {
                     while (_pictureCache.Count > 3)
                         _pictureCache.RemoveAt(0);
-                    var loaded = await Task.Run(() => selected.LoadPreview(ct, skipTo: skipTo), ct);
+                    var loaded = await Task.Run(() => selected.LoadPreviewAsync(ct, skipTo: skipTo), ct);
                     if (loaded is not null && skipTo is null)
                         _pictureCache.Add((selected.FullPath, loaded));
                     if (selected != SelectedItem) // If another item was selected while preview was being loaded
@@ -696,7 +696,11 @@ namespace PhotoLocator
                 PhotoFolderPath = browser.SelectedPath;
         });
 
-        public ICommand RefreshFolderCommand => new RelayCommand(o => LoadFolderContentsAsync(true).WithExceptionLogging());
+        public ICommand RefreshFolderCommand => new RelayCommand(o =>
+        {
+            _pictureCache.Clear();
+            LoadFolderContentsAsync(true).WithExceptionLogging();
+        });
 
         public Action<object>? FocusListBoxItem { get; internal set; }
 
