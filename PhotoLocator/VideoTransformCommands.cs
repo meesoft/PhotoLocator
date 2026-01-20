@@ -224,6 +224,7 @@ namespace PhotoLocator
         } = "w:h";
 
         public static readonly object ZoomEffect = "Zoom";
+        public static readonly object Crossfade = "Crossfade";
 
         public static ObservableCollection<ComboBoxItem> Effects { get; } = [ // Note that default save file name uses first word of effect name
             new ComboBoxItem { Content = "None" },
@@ -243,6 +244,8 @@ namespace PhotoLocator
             new ComboBoxItem { Content = "Noise", Tag = ( "noise=c0s={0}:c0f=t+u", "60" ) },
             new ComboBoxItem { Content = "Sharpen", Tag = ( "unsharp=7:7:{0}", "2.5" ) },
             new ComboBoxItem { Content = "Reverse", Tag = "reverse" },
+            //ffmpeg -i IMG_%3d.jpg -vf zoompan=d=(A+B)/B:s=WxH:fps=1/B,framerate=25:interp_start=0:interp_end=255:scene=100 -c:v mpeg4 -maxrate 5M -q:v 2 out.mp4
+            new ComboBoxItem { Content = Crossfade, Tag = ("zoompan=d=(0.1+{0})/{0}:s={1}:fps=1/{0},framerate={2}:interp_start=0:interp_end=255:scene=100" , "0.5") },
         ];
 
         public ComboBoxItem SelectedEffect
@@ -685,7 +688,7 @@ namespace PhotoLocator
                 filters.Add($"rotate={RotationAngle}*PI/180");
             if (IsCropChecked)
                 filters.Add($"crop={CropWindow}");
-            if (IsScaleChecked && SelectedEffect.Content != ZoomEffect)
+            if (IsScaleChecked && SelectedEffect.Content != ZoomEffect && SelectedEffect.Content != Crossfade)
                 filters.Add($"scale={ScaleTo}");
             if (IsStabilizeChecked)
                 filters.Add($"vidstabtransform=smoothing={SmoothFrames}"
