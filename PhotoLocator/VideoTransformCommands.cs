@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.IO;
 using System.Linq;
@@ -341,15 +342,15 @@ namespace PhotoLocator
             set => SetProperty(ref field, value.Trim());
         } = string.Empty;
 
+        [MemberNotNullWhen(true, nameof(_localContrastSetup))]
         public bool IsLocalContrastChecked
         {
-            get => _localContrastSetup is not null;
+            get => field && _localContrastSetup is not null;
             set
             {
+                field = value;
                 if (value)
                     SetupLocalContrastCommand.Execute(null);
-                else
-                    _localContrastSetup = null;
                 PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(IsLocalContrastChecked)));
                 UpdateOutputArgs();
             }
@@ -1053,7 +1054,7 @@ namespace PhotoLocator
                     runningAverage.ProcessImage(frame);
                     frame = runningAverage.GetResult8();
                 }
-                if (_localContrastSetup is not null && !_localContrastSetup.IsNoOperation)
+                if (IsLocalContrastChecked && !_localContrastSetup.IsNoOperation)
                     frame = _localContrastSetup.ApplyOperations(frame);
                 timeSlice.AddFrame(frame);
             }, ProcessStdError, ct).ConfigureAwait(false);
@@ -1106,7 +1107,7 @@ namespace PhotoLocator
                         runningAverage.ProcessImage(source);
                         if (!runningAverage.IsResultReady)
                             return;
-                        if (_localContrastSetup is null || _localContrastSetup.IsNoOperation)
+                        if (!IsLocalContrastChecked || _localContrastSetup.IsNoOperation)
                         {
                             frameEnumerator.AddItem(runningAverage.GetResult8());
                             return;
