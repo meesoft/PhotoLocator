@@ -25,7 +25,7 @@ namespace PhotoLocator.BitmapOperations
             }
             var pixels = PrepareFrame(image);
             for (int i = 0; i < pixels.Length; i++)
-                _accumulatorPixels![i] += pixels[i];
+                _accumulatorPixels[i] += pixels[i];
             _collectedFrames++;
         }
 

@@ -23,9 +23,9 @@ namespace PhotoLocator.BitmapOperations
             if (_previousFrames.Count >= _numberOfFramesToAverage)
             {
                 var oldest = _previousFrames.Dequeue();
-                Parallel.For(0, oldest.Length, i => _accumulatorPixels![i] -= oldest[i]);
+                Parallel.For(0, oldest.Length, i => _accumulatorPixels[i] -= oldest[i]);
             }
-            Parallel.For(0, pixels.Length, i => _accumulatorPixels![i] += pixels[i]);
+            Parallel.For(0, pixels.Length, i => _accumulatorPixels[i] += pixels[i]);
             _previousFrames.Enqueue(pixels);
         }
         

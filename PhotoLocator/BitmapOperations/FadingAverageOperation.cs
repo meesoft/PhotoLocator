@@ -25,7 +25,7 @@ namespace PhotoLocator.BitmapOperations
                 _previousFrames.RemoveAt(0);
             _previousFrames.Add(pixels);
 
-            Array.Clear(_accumulatorPixels!);
+            Array.Clear(_accumulatorPixels);
             int stride = Width * PixelSize;
             for (int f = 0; f < _previousFrames.Count; f++)
             {
