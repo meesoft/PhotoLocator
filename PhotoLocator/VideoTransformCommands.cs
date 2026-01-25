@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.IO;
 using System.Linq;
@@ -224,6 +225,7 @@ namespace PhotoLocator
         } = "w:h";
 
         public static readonly object ZoomEffect = "Zoom";
+        public static readonly object Crossfade = "Crossfade";
 
         public static ObservableCollection<ComboBoxItem> Effects { get; } = [ // Note that default save file name uses first word of effect name
             new ComboBoxItem { Content = "None" },
@@ -243,6 +245,8 @@ namespace PhotoLocator
             new ComboBoxItem { Content = "Noise", Tag = ( "noise=c0s={0}:c0f=t+u", "60" ) },
             new ComboBoxItem { Content = "Sharpen", Tag = ( "unsharp=7:7:{0}", "2.5" ) },
             new ComboBoxItem { Content = "Reverse", Tag = "reverse" },
+            //ffmpeg -i IMG_%3d.jpg -vf zoompan=d=(A+B)/B:s=WxH:fps=1/B,framerate=25:interp_start=0:interp_end=255:scene=100 -c:v mpeg4 -maxrate 5M -q:v 2 out.mp4
+            new ComboBoxItem { Content = Crossfade, Tag = ("zoompan=d=(0.1+{0})/{0}:s={1}:fps=1/{0},framerate={2}:interp_start=0:interp_end=255:scene=100" , "0.5") },
         ];
 
         public ComboBoxItem SelectedEffect
@@ -338,15 +342,15 @@ namespace PhotoLocator
             set => SetProperty(ref field, value.Trim());
         } = string.Empty;
 
+        [MemberNotNullWhen(true, nameof(_localContrastSetup))]
         public bool IsLocalContrastChecked
         {
-            get => _localContrastSetup is not null;
+            get => field && _localContrastSetup is not null;
             set
             {
+                field = value;
                 if (value)
                     SetupLocalContrastCommand.Execute(null);
-                else
-                    _localContrastSetup = null;
                 PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(IsLocalContrastChecked)));
                 UpdateOutputArgs();
             }
@@ -685,7 +689,7 @@ namespace PhotoLocator
                 filters.Add($"rotate={RotationAngle}*PI/180");
             if (IsCropChecked)
                 filters.Add($"crop={CropWindow}");
-            if (IsScaleChecked && SelectedEffect.Content != ZoomEffect)
+            if (IsScaleChecked && SelectedEffect.Content != ZoomEffect && SelectedEffect.Content != Crossfade)
                 filters.Add($"scale={ScaleTo}");
             if (IsStabilizeChecked)
                 filters.Add($"vidstabtransform=smoothing={SmoothFrames}"
@@ -1050,7 +1054,7 @@ namespace PhotoLocator
                     runningAverage.ProcessImage(frame);
                     frame = runningAverage.GetResult8();
                 }
-                if (_localContrastSetup is not null && !_localContrastSetup.IsNoOperation)
+                if (IsLocalContrastChecked && !_localContrastSetup.IsNoOperation)
                     frame = _localContrastSetup.ApplyOperations(frame);
                 timeSlice.AddFrame(frame);
             }, ProcessStdError, ct).ConfigureAwait(false);
@@ -1103,7 +1107,7 @@ namespace PhotoLocator
                         runningAverage.ProcessImage(source);
                         if (!runningAverage.IsResultReady)
                             return;
-                        if (_localContrastSetup is null || _localContrastSetup.IsNoOperation)
+                        if (!IsLocalContrastChecked || _localContrastSetup.IsNoOperation)
                         {
                             frameEnumerator.AddItem(runningAverage.GetResult8());
                             return;

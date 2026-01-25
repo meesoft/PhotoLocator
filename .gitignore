@@ -13,3 +13,4 @@ PhotoLocatorSetup/*.pfx
 PhotoLocatorSetup/AppPackages/
 PhotoLocatorSetup/BundleArtifacts/
 TestResults/
+publish.bat

@@ -1,6 +1,7 @@
 ﻿using PhotoLocator.Helpers;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
@@ -100,6 +101,7 @@ namespace PhotoLocator.BitmapOperations
 
         protected abstract double GetResultScaling();
 
+        [MemberNotNull(nameof(_accumulatorPixels))]
         protected byte[] PrepareFrame(BitmapSource image)
         {
             _ct.ThrowIfCancellationRequested();
