@@ -300,7 +300,7 @@ namespace PhotoLocator
                 if (!updatedPoints.Remove(Points[i].Name!))
                     Points.RemoveAt(i);
             foreach (var item in updatedPoints.Values)
-                Points.Add(new PointItem { Location = item.GeoTag, Name = item.Name });
+                Points.Add(new PointItem { Location = item.GeoTag, Name = item.Name, ThumbnailImage = item.ThumbnailImage });
         }
 
         private void UpdatePushpins()
@@ -313,7 +313,7 @@ namespace PhotoLocator
             if (SavedLocation != null)
                 Pushpins.Add(new PointItem { Location = SavedLocation, Name = "Saved location" });
             if (SelectedItem?.GeoTag != null)
-                Pushpins.Add(new PointItem { Location = SelectedItem.GeoTag, Name = SelectedItem.Name });
+                Pushpins.Add(new PointItem { Location = SelectedItem.GeoTag, Name = SelectedItem.Name, ThumbnailImage = SelectedItem.ThumbnailImage });
         }
 
         public async Task UpdatePreviewPictureAsync(string? skipTo = null)

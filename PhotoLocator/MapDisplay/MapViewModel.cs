@@ -1,5 +1,4 @@
 ﻿using MapControl;
-using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Windows.Media;
 
@@ -10,6 +9,8 @@ namespace PhotoLocator.MapDisplay
         public string? Name { get; set; }
 
         public Location? Location { get; set; }
+
+        public ImageSource? ThumbnailImage { get; set; }
     }
 
     public class PolylineItem
