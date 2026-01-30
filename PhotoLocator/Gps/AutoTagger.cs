@@ -23,7 +23,7 @@ namespace PhotoLocator.Gps
         public (int Tagged, int NotTagged) AutoTag(IEnumerable<PictureItemViewModel> selectedItems)
         {
             int tagged = 0, notTagged = 0;
-            var sourceImages = _allItems.Where(item => item.Location is not null && item.TimeStamp.HasValue && !selectedItems.Contains(item)).ToArray();
+            var sourceImages = _allItems.Where(item => item.GeoTagPresent && item.TimeStamp.HasValue && !selectedItems.Contains(item)).ToArray();
             foreach (var item in selectedItems.Where(item => item.TimeStamp.HasValue && item.CanSaveGeoTag))
             {
                 var bestTag = GetBestGeoFix(sourceImages, item.TimeStamp!.Value);

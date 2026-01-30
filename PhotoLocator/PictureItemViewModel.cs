@@ -10,6 +10,7 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
 using System.Runtime.CompilerServices;
@@ -126,6 +127,7 @@ namespace PhotoLocator
             get => GeoTagPresent && !GeoTagSaved;
         }
 
+        [MemberNotNullWhen(true, nameof(Location))]
         public bool GeoTagPresent
         {
             get => Location is not null;
@@ -242,7 +244,7 @@ namespace PhotoLocator
                     (Location, _timeStamp, _metadataString, Orientation) = await Task.Run(() => ExifTool.DecodeMetadata(FullPath, _settings.ExifToolPath), ct);
                 else
                     (Location, _timeStamp, _metadataString, Orientation) = await Task.Run(() => ExifHandler.DecodeMetadataAsync(FullPath, IsVideo, _settings?.ExifToolPath, ct), ct);
-                GeoTagSaved = Location is not null;
+                GeoTagSaved = GeoTagPresent;
             }
             catch (NotSupportedException) { }
             catch (Exception ex)

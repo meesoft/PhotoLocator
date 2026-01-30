@@ -294,7 +294,7 @@ namespace PhotoLocator
             if (!IsMapVisible)
                 return;
             IsSunAndMoonVisible = false;
-            var updatedPoints = Items.Where(item => item.IsChecked && item.Location is not null && item != SelectedItem)
+            var updatedPoints = Items.Where(item => item.IsChecked && item.GeoTagPresent && item != SelectedItem)
                 .ToDictionary(p => p.Name);
             for (int i = Points.Count - 1; i >= 0; i--)
                 if (!updatedPoints.Remove(Points[i].Name!))
@@ -1311,7 +1311,7 @@ namespace PhotoLocator
                     async (item, ct) =>
                     {
                         await item.LoadThumbnailAndMetadataAsync(ct);
-                        if (item.IsSelected && item.Location is not null)
+                        if (item.IsSelected && item.GeoTagPresent)
                             MapCenter = item.Location;
                         _loadImagesProgress = ++progress / (double)reordered.Length;
                     });
