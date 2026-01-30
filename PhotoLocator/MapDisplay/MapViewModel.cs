@@ -4,7 +4,16 @@ using System.Windows.Media;
 
 namespace PhotoLocator.MapDisplay
 {
-    public class PointItem
+    public interface IPointItem
+    {
+        public string? Name { get; }
+        
+        public Location? Location { get; }
+
+        public ImageSource? ThumbnailImage { get; }
+    }
+
+    public class PointItem : IPointItem
     {
         public string? Name { get; set; }
 

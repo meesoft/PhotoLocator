@@ -136,8 +136,8 @@ namespace PhotoLocator
             await LoadFolderContentsAsync(false, selectItemFullPath);
         }
 
-        public ObservableCollection<PointItem> Points { get; } = [];
-        public ObservableCollection<PointItem> Pushpins { get; } = [];
+        public ObservableCollection<IPointItem> Points { get; } = [];
+        public ObservableCollection<IPointItem> Pushpins { get; } = [];
         public ObservableCollection<GpsTrace> Polylines { get; } = [];
         public static Visibility MapToolsVisibility => Visibility.Visible;
 
@@ -233,8 +233,8 @@ namespace PhotoLocator
             {
                 if (!SetProperty(ref field, value))
                     return;
-                if (value?.GeoTag != null)
-                    MapCenter = value.GeoTag;
+                if (value?.Location is not null)
+                    MapCenter = value.Location;
                 UpdatePushpins();
                 UpdatePoints();
                 UpdatePreviewPictureAsync().WithExceptionLogging();
@@ -294,13 +294,13 @@ namespace PhotoLocator
             if (!IsMapVisible)
                 return;
             IsSunAndMoonVisible = false;
-            var updatedPoints = Items.Where(item => item.IsChecked && item.GeoTag != null && item != SelectedItem)
+            var updatedPoints = Items.Where(item => item.IsChecked && item.Location is not null && item != SelectedItem)
                 .ToDictionary(p => p.Name);
             for (int i = Points.Count - 1; i >= 0; i--)
                 if (!updatedPoints.Remove(Points[i].Name!))
                     Points.RemoveAt(i);
             foreach (var item in updatedPoints.Values)
-                Points.Add(new PointItem { Location = item.GeoTag, Name = item.Name, ThumbnailImage = item.ThumbnailImage });
+                Points.Add(item);
         }
 
         private void UpdatePushpins()
@@ -310,10 +310,10 @@ namespace PhotoLocator
                 return;
             foreach (var trace in Polylines.Where(t => t.Locations.Count == 1 && !string.IsNullOrEmpty(t.Name)))
                 Pushpins.Add(new PointItem { Location = trace.Locations[0], Name = trace.Name });
-            if (SavedLocation != null)
+            if (SavedLocation is not null)
                 Pushpins.Add(new PointItem { Location = SavedLocation, Name = "Saved location" });
-            if (SelectedItem?.GeoTag != null)
-                Pushpins.Add(new PointItem { Location = SelectedItem.GeoTag, Name = SelectedItem.Name, ThumbnailImage = SelectedItem.ThumbnailImage });
+            if (SelectedItem?.Location is not null)
+                Pushpins.Add(SelectedItem);
         }
 
         public async Task UpdatePreviewPictureAsync(string? skipTo = null)
@@ -387,8 +387,8 @@ namespace PhotoLocator
             {
                 UpdatePushpins();
                 UpdatePoints();
-                if (SelectedItem?.GeoTag != null)
-                    MapCenter = SelectedItem.GeoTag;
+                if (SelectedItem?.Location is not null)
+                    MapCenter = SelectedItem.Location;
                 else if (Points.Count > 0)
                     MapCenter = Points[0].Location;
             }
@@ -425,9 +425,9 @@ namespace PhotoLocator
                 {
                     throw new UserMessageException("Clipboard does not contain a valid location:\n" + ex.Message, ex);
                 }
-                foreach (var item in GetSelectedItems(true).Where(i => i.CanSaveGeoTag && !Equals(i.GeoTag, SavedLocation)))
+                foreach (var item in GetSelectedItems(true).Where(i => i.CanSaveGeoTag && !Equals(i.Location, SavedLocation)))
                 {
-                    item.GeoTag = SavedLocation;
+                    item.Location = SavedLocation;
                     item.GeoTagSaved = false;
                 }
                 UpdatePushpins();
@@ -758,7 +758,7 @@ namespace PhotoLocator
         {
             await WaitForPicturesLoadedAsync();
             foreach (var item in Items)
-                item.IsChecked = item.GeoTag is null && item.TimeStamp.HasValue && item.CanSaveGeoTag;
+                item.IsChecked = item.Location is null && item.TimeStamp.HasValue && item.CanSaveGeoTag;
             _ = GetSelectedItems(true).FirstOrDefault();
             UpdatePoints();
         });
@@ -1042,15 +1042,15 @@ namespace PhotoLocator
 
         public ICommand OpenInMapsCommand => new RelayCommand(o =>
         {
-            if (SelectedItem?.GeoTag is null)
+            if (SelectedItem?.Location is null)
             {
                 MessageBox.Show("Selected file has no map coordinates.", "Information", MessageBoxButton.OK, MessageBoxImage.Information);
                 return;
             }
             using var cursor = new MouseCursorOverride();
             var url = "http://maps.google.com/maps?q=" +
-                SelectedItem.GeoTag.Latitude.ToString(CultureInfo.InvariantCulture) + "," +
-                SelectedItem.GeoTag.Longitude.ToString(CultureInfo.InvariantCulture) + "&t=h";
+                SelectedItem.Location.Latitude.ToString(CultureInfo.InvariantCulture) + "," +
+                SelectedItem.Location.Longitude.ToString(CultureInfo.InvariantCulture) + "&t=h";
             Process.Start(new ProcessStartInfo(url) { UseShellExecute = true });
         });
 
@@ -1311,8 +1311,8 @@ namespace PhotoLocator
                     async (item, ct) =>
                     {
                         await item.LoadThumbnailAndMetadataAsync(ct);
-                        if (item.IsSelected && item.GeoTag != null)
-                            MapCenter = item.GeoTag;
+                        if (item.IsSelected && item.Location is not null)
+                            MapCenter = item.Location;
                         _loadImagesProgress = ++progress / (double)reordered.Length;
                     });
                 await _loadPicturesTask;

@@ -23,15 +23,15 @@ namespace PhotoLocator.Gps
         public (int Tagged, int NotTagged) AutoTag(IEnumerable<PictureItemViewModel> selectedItems)
         {
             int tagged = 0, notTagged = 0;
-            var sourceImages = _allItems.Where(item => item.GeoTag != null && item.TimeStamp.HasValue && !selectedItems.Contains(item)).ToArray();
+            var sourceImages = _allItems.Where(item => item.Location is not null && item.TimeStamp.HasValue && !selectedItems.Contains(item)).ToArray();
             foreach (var item in selectedItems.Where(item => item.TimeStamp.HasValue && item.CanSaveGeoTag))
             {
                 var bestTag = GetBestGeoFix(sourceImages, item.TimeStamp!.Value);
                 if (bestTag != null)
                 {
-                    if (!Equals(item.GeoTag, bestTag))
+                    if (!Equals(item.Location, bestTag))
                     {
-                        item.GeoTag = bestTag;
+                        item.Location = bestTag;
                         item.GeoTagSaved = false;
                         item.IsChecked = false;
                     }
@@ -54,7 +54,7 @@ namespace PhotoLocator.Gps
                 if (distance < minDistance)
                 {
                     minDistance = distance;
-                    bestFix = geoFix.GeoTag;
+                    bestFix = geoFix.Location;
                 }
             }
             // Search in GPS traces

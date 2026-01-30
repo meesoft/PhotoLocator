@@ -146,13 +146,13 @@ namespace PhotoLocator
             }
             PictureTitle = name;
 
-            if (SelectedPicture.GeoTag is null)
+            if (SelectedPicture.Location is null)
                 IsMapVisible = false;
             else
             {
-                MapCenter = SelectedPicture.GeoTag;
+                MapCenter = SelectedPicture.Location;
                 Points.Clear();
-                Points.Add(new PointItem { Location = SelectedPicture.GeoTag });
+                Points.Add(new PointItem { Location = SelectedPicture.Location });
                 IsMapVisible = true;
             }
 

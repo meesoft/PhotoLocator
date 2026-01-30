@@ -18,8 +18,8 @@ namespace PhotoLocator.Gps
             var autoTagger = new AutoTagger([], [trace], default, 1);
             autoTagger.AutoTag([file]);
 
-            Assert.AreEqual(location.Latitude, file.GeoTag!.Latitude);
-            Assert.AreEqual(location.Longitude, file.GeoTag.Longitude);
+            Assert.AreEqual(location.Latitude, file.Location!.Latitude);
+            Assert.AreEqual(location.Longitude, file.Location.Longitude);
         }
     }
 }

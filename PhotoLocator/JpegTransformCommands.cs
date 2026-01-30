@@ -144,11 +144,11 @@ namespace PhotoLocator
                 if (image is null)
                     throw new UserMessageException(item.ErrorMessage ?? ex.Message, ex);
             }
-            if (metadata is null && item.GeoTag is not null)
+            if (metadata is null && item.Location is not null)
             {
                 metadata = new BitmapMetadata("jpg");
                 ExifHandler.SetDateTaken(metadata, item.TimeStamp ?? File.GetLastWriteTime(item.FullPath));
-                ExifHandler.SetGeotag(metadata, item.GeoTag);
+                ExifHandler.SetGeotag(metadata, item.Location);
                 metadata.Freeze();
             }
             return (image, metadata);
