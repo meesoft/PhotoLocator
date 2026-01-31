@@ -116,9 +116,9 @@ namespace PhotoLocator.MapDisplay
         {
             if (e.AddedItems.Count > 0)
             {
-                if (e.AddedItems[0] is PointItem point)
+                if (e.AddedItems[0] is IPointItem point)
                     MapItemSelected?.Invoke(this, new MapItemEventArgs(point));
-                else if (e.AddedItems[0] is MapItem item && item.Content is PointItem innerPoint)
+                else if (e.AddedItems[0] is MapItem item && item.Content is IPointItem innerPoint)
                     MapItemSelected?.Invoke(this, new MapItemEventArgs(innerPoint));
             }
         }

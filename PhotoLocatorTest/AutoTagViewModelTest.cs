@@ -23,8 +23,8 @@ namespace PhotoLocator
             vm.MaxTimestampDifference = 1;
             vm.AutoTag([trace]);
 
-            Assert.AreEqual(location.Latitude, file.GeoTag!.Latitude);
-            Assert.AreEqual(location.Longitude, file.GeoTag.Longitude);
+            Assert.AreEqual(location.Latitude, file.Location!.Latitude);
+            Assert.AreEqual(location.Longitude, file.Location.Longitude);
         }
 
         [TestMethod]
@@ -43,8 +43,8 @@ namespace PhotoLocator
             vm.TimestampOffset = "1:00";
             vm.AutoTag([trace]);
 
-            Assert.AreEqual(location.Latitude, file.GeoTag!.Latitude);
-            Assert.AreEqual(location.Longitude, file.GeoTag.Longitude);
+            Assert.AreEqual(location.Latitude, file.Location!.Latitude);
+            Assert.AreEqual(location.Longitude, file.Location.Longitude);
         }
 
         [TestMethod]
@@ -63,8 +63,8 @@ namespace PhotoLocator
             vm.TimestampOffset = "-0:01";
             vm.AutoTag([trace]);
 
-            Assert.AreEqual(location.Latitude, file.GeoTag!.Latitude);
-            Assert.AreEqual(location.Longitude, file.GeoTag.Longitude);
+            Assert.AreEqual(location.Latitude, file.Location!.Latitude);
+            Assert.AreEqual(location.Longitude, file.Location.Longitude);
         }
     }
 }

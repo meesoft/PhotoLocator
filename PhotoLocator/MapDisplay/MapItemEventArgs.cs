@@ -2,13 +2,8 @@
 
 namespace PhotoLocator.MapDisplay
 {
-    public class MapItemEventArgs : EventArgs
+    public class MapItemEventArgs(IPointItem item) : EventArgs
     {
-        public MapItemEventArgs(PointItem item)
-        {
-            Item = item;
-        }
-
-        public PointItem Item { get; }
+        public IPointItem Item { get; } = item;
     }
 }

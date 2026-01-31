@@ -1191,7 +1191,7 @@ namespace PhotoLocator
             var firstSelected = _mainViewModel.GetSelectedItems(true).First();
             return ExifHandler.EncodePngMetadata(
                 _hasDuration && _inputDuration.TotalSeconds >= 0.99 ? new Rational(IntMath.Round(_inputDuration.TotalSeconds), 1) : null,
-                firstSelected.GeoTag,
+                firstSelected.Location,
                 firstSelected.TimeStamp ?? File.GetLastWriteTime(firstSelected.FullPath));
         }
 

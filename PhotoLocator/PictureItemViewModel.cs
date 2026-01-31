@@ -2,6 +2,7 @@
 using Microsoft.VisualBasic.FileIO;
 using Microsoft.WindowsAPICodePack.Shell;
 using PhotoLocator.Helpers;
+using PhotoLocator.MapDisplay;
 using PhotoLocator.Metadata;
 using PhotoLocator.PictureFileFormats;
 using PhotoLocator.Settings;
@@ -9,6 +10,7 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
 using System.Runtime.CompilerServices;
@@ -21,7 +23,7 @@ using System.Windows.Media.Imaging;
 namespace PhotoLocator
 {
     [DebuggerDisplay("Name={Name}")]
-    public class PictureItemViewModel : IFileInformation, INotifyPropertyChanged
+    public class PictureItemViewModel : IPointItem, IFileInformation, INotifyPropertyChanged
     {
 #if DEBUG
         static readonly bool _isInDesignMode = DesignerProperties.GetIsInDesignMode(new DependencyObject());
@@ -122,15 +124,16 @@ namespace PhotoLocator
 
         public bool GeoTagUpdated
         {
-            get => GeoTag != null && !GeoTagSaved;
+            get => GeoTagPresent && !GeoTagSaved;
         }
 
+        [MemberNotNullWhen(true, nameof(Location))]
         public bool GeoTagPresent
         {
-            get => GeoTag != null;
+            get => Location is not null;
         }
 
-        public Location? GeoTag
+        public Location? Location
         {
             get => _geoTag;
             set
@@ -238,10 +241,10 @@ namespace PhotoLocator
             {
                 Log.Write($"Loading metadata for {Name}");
                 if (_settings is not null && _settings.ForceUseExifTool && !string.IsNullOrEmpty(_settings.ExifToolPath))
-                    (GeoTag, _timeStamp, _metadataString, Orientation) = await Task.Run(() => ExifTool.DecodeMetadata(FullPath, _settings.ExifToolPath), ct);
+                    (Location, _timeStamp, _metadataString, Orientation) = await Task.Run(() => ExifTool.DecodeMetadata(FullPath, _settings.ExifToolPath), ct);
                 else
-                    (GeoTag, _timeStamp, _metadataString, Orientation) = await Task.Run(() => ExifHandler.DecodeMetadataAsync(FullPath, IsVideo, _settings?.ExifToolPath, ct), ct);
-                GeoTagSaved = GeoTag != null;
+                    (Location, _timeStamp, _metadataString, Orientation) = await Task.Run(() => ExifHandler.DecodeMetadataAsync(FullPath, IsVideo, _settings?.ExifToolPath, ct), ct);
+                GeoTagSaved = GeoTagPresent;
             }
             catch (NotSupportedException) { }
             catch (Exception ex)
@@ -285,9 +288,9 @@ namespace PhotoLocator
                     var (result, timestamp, location, metadata) = VideoFileFormatHandler.LoadFromFile(FullPath, maxPixelWidth, skipTo, _settings, ct);
                     if (metadata is not null && string.IsNullOrEmpty(MetadataString))
                         MetadataString = metadata;
-                    if (location is not null && GeoTag is null)
+                    if (location is not null && Location is null)
                     {
-                        GeoTag = location;
+                        Location = location;
                         GeoTagSaved = true;
                     }
                     if (timestamp.HasValue && !TimeStamp.HasValue)
@@ -359,7 +362,7 @@ namespace PhotoLocator
             try
             {
                 await ExifTool.SetGeotagAsync(FullPath, GetProcessedFileName(),
-                    GeoTag ?? throw new InvalidOperationException(nameof(GeoTag) + " not set"),
+                    Location ?? throw new InvalidOperationException(nameof(Location) + " not set"),
                     _settings?.ExifToolPath, ct);
                 GeoTagSaved = true;
             }
