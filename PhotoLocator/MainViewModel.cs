@@ -285,7 +285,7 @@ namespace PhotoLocator
 
         internal void HandleMapItemSelected(object sender, MapItemEventArgs eventArgs)
         {
-            var fileItem = Items.FirstOrDefault(p => p.Name == eventArgs.Item.Name);
+            var fileItem = eventArgs.Item as PictureItemViewModel ?? Items.FirstOrDefault(p => p.Name == eventArgs.Item.Name);
             SelectIfNotNull(fileItem);
         }
 
