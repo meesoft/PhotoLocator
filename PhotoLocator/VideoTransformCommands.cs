@@ -234,19 +234,19 @@ namespace PhotoLocator
             new ComboBoxItem { Content = "Rotate 180°", Tag = "transpose=2,transpose=2" },
             new ComboBoxItem { Content = "Mirror left half to right", Tag = "crop=iw/2:ih:0:0,split[left][tmp];[tmp]hflip[right];[left][right] hstack" },
             new ComboBoxItem { Content = "Mirror top half to bottom", Tag = "crop=iw:ih/2:0:0,split[top][tmp];[tmp]vflip[bottom];[top][bottom] vstack" },
-            new ComboBoxItem { Content = ZoomEffect, Tag = ( "scale=4*iw:4*ih, zoompan=z='if(lte(it,0),1,min(pzoom+{0},10))':d=1:x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':s={1}:fps={2}", "0.001" ) },
-            new ComboBoxItem { Content = "Normalize", Tag = ( "normalize=smoothing={0}:independence=0", "50" ) },
-            new ComboBoxItem { Content = "Midtones", Tag = ( "colorbalance=rm={0}:gm={0}:bm={0}", "0.05" ) },
-            new ComboBoxItem { Content = "Saturation", Tag = ( "eq=saturation={0}", "1.3" ) },
-            new ComboBoxItem { Content = "Contrast and brightness", Tag = ( "eq=brightness=0.05:contrast={0}", "1.3" ) },
-            new ComboBoxItem { Content = "Denoise (atadenoise)", Tag = ( "atadenoise=s={0}", "9" ) },
-            new ComboBoxItem { Content = "Denoise (hqdn3d)", Tag = ( "hqdn3d=luma_spatial={0}", "4" ) },
-            new ComboBoxItem { Content = "Denoise (nlmeans)", Tag = ( "nlmeans=s={0}", "1.0" ) },
-            new ComboBoxItem { Content = "Noise", Tag = ( "noise=c0s={0}:c0f=t+u", "60" ) },
-            new ComboBoxItem { Content = "Sharpen", Tag = ( "unsharp=7:7:{0}", "2.5" ) },
+            new ComboBoxItem { Content = ZoomEffect, Tag = ( "scale=4*iw:4*ih, zoompan=z='if(lte(it,0),1,min(pzoom+{0},10))':d=1:x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':s={1}:fps={2}", "Zoom speed", "0.001" ) },
+            new ComboBoxItem { Content = "Normalize", Tag = ( "normalize=smoothing={0}:independence=0", "Smooth frames", "50" ) },
+            new ComboBoxItem { Content = "Midtones", Tag = ( "colorbalance=rm={0}:gm={0}:bm={0}", "Strength", "0.05" ) },
+            new ComboBoxItem { Content = "Saturation", Tag = ( "eq=saturation={0}", "Strength","1.3" ) },
+            new ComboBoxItem { Content = "Contrast and brightness", Tag = ( "eq=brightness=0.05:contrast={0}", "Strength", "1.3" ) },
+            new ComboBoxItem { Content = "Denoise (atadenoise)", Tag = ( "atadenoise=s={0}", "Strength", "9" ) },
+            new ComboBoxItem { Content = "Denoise (hqdn3d)", Tag = ( "hqdn3d=luma_spatial={0}", "Strength", "4" ) },
+            new ComboBoxItem { Content = "Denoise (nlmeans)", Tag = ( "nlmeans=s={0}", "Strength", "1.0" ) },
+            new ComboBoxItem { Content = "Noise", Tag = ( "noise=c0s={0}:c0f=t+u", "Strength", "60" ) },
+            new ComboBoxItem { Content = "Sharpen", Tag = ( "unsharp=7:7:{0}", "Strength", "2.5" ) },
             new ComboBoxItem { Content = "Reverse", Tag = "reverse" },
             //ffmpeg -i IMG_%3d.jpg -vf zoompan=d=(A+B)/B:s=WxH:fps=1/B,framerate=25:interp_start=0:interp_end=255:scene=100 -c:v mpeg4 -maxrate 5M -q:v 2 out.mp4
-            new ComboBoxItem { Content = Crossfade, Tag = ("zoompan=d=(0.1+{0})/{0}:s={1}:fps=1/{0},framerate={2}:interp_start=0:interp_end=255:scene=100" , "0.5") },
+            new ComboBoxItem { Content = Crossfade, Tag = ("zoompan=d=(0.1+{0})/{0}:s={1}:fps=1/{0},framerate={2}:interp_start=0:interp_end=255:scene=100" , "Fade duration", "0.5") },
         ];
 
         public ComboBoxItem SelectedEffect
@@ -258,17 +258,19 @@ namespace PhotoLocator
                     return;
                 if (SetProperty(ref _selectedEffect, value))
                 {
-                    if (value.Tag is ValueTuple<string, string> effectTuple)
+                    if (value.Tag is ValueTuple<string, string, string> effectTuple)
                     {
                         IsParameterizedEffect = true;
-                        _effectStrength = effectTuple.Item2;
+                        EffectParameterText = effectTuple.Item2 + ':';
+                        _effectParameter = effectTuple.Item3;
                     }
                     else
                     {
                         IsParameterizedEffect = false;
-                        _effectStrength = null;
+                        EffectParameterText = null;
+                        _effectParameter = null;
                     }
-                    PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(EffectStrength)));
+                    PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(EffectParameter)));
                     PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(IsParameterizedEffect)));
                     UpdateStabilizeArgs();
                     UpdateProcessArgs();
@@ -279,16 +281,21 @@ namespace PhotoLocator
 
         public bool IsParameterizedEffect { get; private set; }
 
-        public string? EffectStrength
+        public string? EffectParameter
         {
-            get => _effectStrength;
+            get => _effectParameter;
             set
             {
-                if (SetProperty(ref _effectStrength, value?.Trim().Replace(',', '.')))
+                if (SetProperty(ref _effectParameter, value?.Trim().Replace(',', '.')))
                     UpdateProcessArgs();
             }
         }
-        string? _effectStrength;
+        string? _effectParameter;
+
+        public string? EffectParameterText
+        {
+            get; set => SetProperty(ref field, value);
+        }
 
         public bool IsStabilizeChecked
         {
@@ -697,9 +704,9 @@ namespace PhotoLocator
                     + (IsBicubicStabilizeChecked ? ":interpol=bicubic" : null));
             if (SelectedEffect.Tag is string effect)
                 filters.Add(effect);
-            else if (SelectedEffect.Tag is ValueTuple<string, string> effectTuple)
-                filters.Add(string.Format(CultureInfo.InvariantCulture, effectTuple.Item1, 
-                    EffectStrength, 
+            else if (SelectedEffect.Tag is ValueTuple<string, string, string> effectTuple)
+                filters.Add(string.Format(CultureInfo.InvariantCulture, effectTuple.Item1,
+                    EffectParameter, 
                     IsScaleChecked ? ScaleTo.Replace(':', 'x') : "1920x1080",
                     string.IsNullOrEmpty(FrameRate) ? "30" : FrameRate));
             if (IsSpeedupChecked && (CombineFramesMode != CombineFramesMode.RollingAverage || !SpeedupByEqualsCombineFramesCount))
