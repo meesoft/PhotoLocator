@@ -920,11 +920,8 @@ namespace PhotoLocator
             ProcessSelected.Execute(null);
         }
 
-        public ICommand ProcessSelected => new RelayCommand(async o =>
+        private string? ShowSetupUserInterface(PictureItemViewModel[] allSelected)
         {
-            var allSelected = UpdateInputArgs();
-            if (!IsRemoveAudioChecked && IncludeAudioStream)
-                UpdateOutputArgs();
             if (HasSingleInput && !string.IsNullOrEmpty(SkipTo))
                 _mainViewModel.UpdatePreviewPictureAsync(SkipTo).WithExceptionLogging();
             if (_localContrastSetup is not null && _localContrastSetup.SourceBitmap is not null)
@@ -933,7 +930,7 @@ namespace PhotoLocator
             try
             {
                 if (window.ShowDialog() is not true)
-                    return;
+                    return null;
             }
             finally
             {
@@ -943,23 +940,31 @@ namespace PhotoLocator
             }
 
             var inPath = Path.GetDirectoryName(allSelected[0].FullPath)!;
-            string outFileName;
             if (OutputMode == OutputMode.ImageSequence)
             {
-                var outputPath = TextInputWindow.Show($"Output path:", text => !string.IsNullOrWhiteSpace(text), "Extract frames", 
+                var outputPath = TextInputWindow.Show($"Output path:", text => !string.IsNullOrWhiteSpace(text), "Extract frames",
                     Path.Combine(inPath, Path.GetFileNameWithoutExtension(allSelected[0].Name), "%06d.jpg"));
-                if (string.IsNullOrEmpty(outputPath))
-                    return;
-                outFileName = outputPath;
+                return outputPath;
             }
-            else if (OutputMode == OutputMode.Video && SelectedVideoFormat == VideoFormats[CopyVideoFormatIndex] && IsAnyProcessingSelected())
+            if (OutputMode == OutputMode.Video && SelectedVideoFormat == VideoFormats[CopyVideoFormatIndex] && IsAnyProcessingSelected())
                 throw new UserMessageException("Copy video format is not supported with any processing selected, please select another format or disable processing options");
-            else
+            var dlg = SetupSaveFileDialog(allSelected, inPath);
+            if (dlg.ShowDialog() is not true)
+                return null;
+            return dlg.FileName;
+        }
+
+        public ICommand ProcessSelected => new RelayCommand(async parameter =>
+        {
+            var allSelected = UpdateInputArgs();
+            if (!IsRemoveAudioChecked && IncludeAudioStream)
+                UpdateOutputArgs();
+            if (parameter is not string outFileName)
             {
-                var dlg = SetupSaveFileDialog(allSelected, inPath); 
-                if (dlg.ShowDialog() is not true)
+                var outFileNameFromUi = ShowSetupUserInterface(allSelected);
+                if (outFileNameFromUi is null)
                     return;
-                outFileName = dlg.FileName;
+                outFileName = outFileNameFromUi;
             }
 
             await using var pause = _mainViewModel.PauseFileSystemWatcher();
@@ -977,7 +982,7 @@ namespace PhotoLocator
                 else
                     PrepareProgressDisplay(allSelected.Length == 1 ? progressCallback : null);
 
-                Directory.SetCurrentDirectory(inPath);
+                Directory.SetCurrentDirectory(Path.GetDirectoryName(allSelected[0].FullPath)!);
                 if (allSelected.Length > 1)
                     await File.WriteAllLinesAsync(InputListFileName, allSelected.Select(f => $"file '{f.Name}'"), ct).ConfigureAwait(false);
 
@@ -1005,9 +1010,9 @@ namespace PhotoLocator
                 outFileName = Path.GetDirectoryName(outFileName)!;
             if (string.Equals(Path.GetDirectoryName(outFileName), Path.GetDirectoryName(_mainViewModel.SelectedItem?.FullPath), StringComparison.CurrentCultureIgnoreCase))
                 await _mainViewModel.AddOrUpdateItemAsync(outFileName, OutputMode == OutputMode.ImageSequence, true);
-            if (!string.IsNullOrEmpty(message))
+            if (!string.IsNullOrEmpty(message) && parameter is null)
                 MessageBox.Show(App.Current.MainWindow, message);
-        });               
+        });      
 
         async Task RunStabilizePreProcessingAsync(CancellationToken ct)
         {
