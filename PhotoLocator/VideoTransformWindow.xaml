@@ -52,8 +52,8 @@
         <DockPanel Margin="10,4,0,0" >
             <TextBlock Text="Effect:" Width="130"/>
             <ComboBox ItemsSource="{Binding Effects}" SelectedItem="{Binding SelectedEffect}" Width="140" />
-            <TextBlock Text="Strength:" Margin="20,0,0,0" Visibility="{Binding IsParameterizedEffect, Converter={StaticResource BooleanToVisibility}}"/>
-            <TextBox Text="{Binding EffectStrength}" Visibility="{Binding IsParameterizedEffect, Converter={StaticResource BooleanToVisibility}}" Width="140" HorizontalAlignment="Right"/>
+            <TextBlock Text="{Binding EffectParameterText}" Margin="20,0,0,0" Visibility="{Binding IsParameterizedEffect, Converter={StaticResource BooleanToVisibility}}"/>
+            <TextBox Text="{Binding EffectParameter}" Visibility="{Binding IsParameterizedEffect, Converter={StaticResource BooleanToVisibility}}" Width="140" HorizontalAlignment="Right"/>
         </DockPanel>
 
         <CheckBox Content="Stabilize" IsChecked="{Binding IsStabilizeChecked}" Margin="0,8,0,0"/>
