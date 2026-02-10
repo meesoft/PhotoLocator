@@ -678,8 +678,6 @@ namespace PhotoLocator
                 var filters = new List<string>();
                 if (IsCropChecked)
                     filters.Add($"crop={CropWindow}");
-                if (IsScaleChecked && SelectedEffect.Content != ZoomEffect)
-                    filters.Add($"scale={ScaleTo}");
                 filters.Add($"vidstabdetect=shakiness=7{(IsTripodChecked ? ":tripod=1" : "")}:result={VideoTransformCommands.TransformsFileName}");
                 StabilizeArguments = $"-vf \"{string.Join(", ", filters)}\" -f null -";
             }
@@ -696,12 +694,12 @@ namespace PhotoLocator
                 filters.Add($"rotate={RotationAngle}*PI/180");
             if (IsCropChecked)
                 filters.Add($"crop={CropWindow}");
-            if (IsScaleChecked && SelectedEffect.Content != ZoomEffect && SelectedEffect.Content != Crossfade)
-                filters.Add($"scale={ScaleTo}");
             if (IsStabilizeChecked)
                 filters.Add($"vidstabtransform=smoothing={SmoothFrames}"
                     + (IsTripodChecked ? ":tripod=1" : null)
                     + (IsBicubicStabilizeChecked ? ":interpol=bicubic" : null));
+            if (IsScaleChecked && SelectedEffect.Content != ZoomEffect && SelectedEffect.Content != Crossfade)
+                filters.Add($"scale={ScaleTo}");
             if (SelectedEffect.Tag is string effect)
                 filters.Add(effect);
             else if (SelectedEffect.Tag is ValueTuple<string, string, string> effectTuple)
