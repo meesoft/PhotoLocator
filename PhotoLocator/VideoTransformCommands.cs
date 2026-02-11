@@ -224,32 +224,40 @@ public class VideoTransformCommands : INotifyPropertyChanged
         }
     } = "w:h";
 
-    public static readonly object ZoomEffect = "Zoom";
-    public static readonly object Crossfade = "Crossfade";
+    public static readonly string ZoomEffect = "Zoom";
+    public static readonly string Crossfade = "Crossfade";
 
-    public static ObservableCollection<ComboBoxItem> Effects { get; } = [ // Note that default save file name uses first word of effect name
-        new ComboBoxItem { Content = "None" },
-        new ComboBoxItem { Content = "Rotate 90° clockwise", Tag = "transpose=1" },
-        new ComboBoxItem { Content = "Rotate 90° counterclockwise", Tag = "transpose=2" },
-        new ComboBoxItem { Content = "Rotate 180°", Tag = "transpose=2,transpose=2" },
-        new ComboBoxItem { Content = "Mirror left half to right", Tag = "crop=iw/2:ih:0:0,split[left][tmp];[tmp]hflip[right];[left][right] hstack" },
-        new ComboBoxItem { Content = "Mirror top half to bottom", Tag = "crop=iw:ih/2:0:0,split[top][tmp];[tmp]vflip[bottom];[top][bottom] vstack" },
-        new ComboBoxItem { Content = ZoomEffect, Tag = ( "scale=4*iw:4*ih, zoompan=z='if(lte(it,0),1,min(pzoom+{0},10))':d=1:x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':s={1}:fps={2}", "Zoom speed", "0.001" ) },
-        new ComboBoxItem { Content = "Normalize", Tag = ( "normalize=smoothing={0}:independence=0", "Smooth frames", "50" ) },
-        new ComboBoxItem { Content = "Midtones", Tag = ( "colorbalance=rm={0}:gm={0}:bm={0}", "Strength", "0.05" ) },
-        new ComboBoxItem { Content = "Saturation", Tag = ( "eq=saturation={0}", "Strength","1.3" ) },
-        new ComboBoxItem { Content = "Contrast and brightness", Tag = ( "eq=brightness=0.05:contrast={0}", "Strength", "1.3" ) },
-        new ComboBoxItem { Content = "Denoise (atadenoise)", Tag = ( "atadenoise=s={0}", "Strength", "9" ) },
-        new ComboBoxItem { Content = "Denoise (hqdn3d)", Tag = ( "hqdn3d=luma_spatial={0}", "Strength", "4" ) },
-        new ComboBoxItem { Content = "Denoise (nlmeans)", Tag = ( "nlmeans=s={0}", "Strength", "1.0" ) },
-        new ComboBoxItem { Content = "Noise", Tag = ( "noise=c0s={0}:c0f=t+u", "Strength", "60" ) },
-        new ComboBoxItem { Content = "Sharpen", Tag = ( "unsharp=7:7:{0}", "Strength", "2.5" ) },
-        new ComboBoxItem { Content = "Reverse", Tag = "reverse" },
+    public class EffectItem
+    {
+        public string? Content { get; set; }
+        public object? Tag { get; set; }
+
+        public override string? ToString() => Content ?? base.ToString();
+    }
+
+    public static ObservableCollection<EffectItem> Effects { get; } = [ // Note that default save file name uses first word of effect name
+        new EffectItem { Content = "None" },
+        new EffectItem { Content = "Rotate 90° clockwise", Tag = "transpose=1" },
+        new EffectItem { Content = "Rotate 90° counterclockwise", Tag = "transpose=2" },
+        new EffectItem { Content = "Rotate 180°", Tag = "transpose=2,transpose=2" },
+        new EffectItem { Content = "Mirror left half to right", Tag = "crop=iw/2:ih:0:0,split[left][tmp];[tmp]hflip[right];[left][right] hstack" },
+        new EffectItem { Content = "Mirror top half to bottom", Tag = "crop=iw:ih/2:0:0,split[top][tmp];[tmp]vflip[bottom];[top][bottom] vstack" },
+        new EffectItem { Content = ZoomEffect, Tag = ( "scale=4*iw:4*ih, zoompan=z='if(lte(it,0),1,min(pzoom+{0},10))':d=1:x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':s={1}:fps={2}", "Zoom speed", "0.001" ) },
+        new EffectItem { Content = "Normalize", Tag = ( "normalize=smoothing={0}:independence=0", "Smooth frames", "50" ) },
+        new EffectItem { Content = "Midtones", Tag = ( "colorbalance=rm={0}:gm={0}:bm={0}", "Strength", "0.05" ) },
+        new EffectItem { Content = "Saturation", Tag = ( "eq=saturation={0}", "Strength","1.3" ) },
+        new EffectItem { Content = "Contrast and brightness", Tag = ( "eq=brightness=0.05:contrast={0}", "Strength", "1.3" ) },
+        new EffectItem { Content = "Denoise (atadenoise)", Tag = ( "atadenoise=s={0}", "Strength", "9" ) },
+        new EffectItem { Content = "Denoise (hqdn3d)", Tag = ( "hqdn3d=luma_spatial={0}", "Strength", "4" ) },
+        new EffectItem { Content = "Denoise (nlmeans)", Tag = ( "nlmeans=s={0}", "Strength", "1.0" ) },
+        new EffectItem { Content = "Noise", Tag = ( "noise=c0s={0}:c0f=t+u", "Strength", "60" ) },
+        new EffectItem { Content = "Sharpen", Tag = ( "unsharp=7:7:{0}", "Strength", "2.5" ) },
+        new EffectItem { Content = "Reverse", Tag = "reverse" },
         //ffmpeg -i IMG_%3d.jpg -vf zoompan=d=(A+B)/B:s=WxH:fps=1/B,framerate=25:interp_start=0:interp_end=255:scene=100 -c:v mpeg4 -maxrate 5M -q:v 2 out.mp4
-        new ComboBoxItem { Content = Crossfade, Tag = ("zoompan=d=(0.1+{0})/{0}:s={1}:fps=1/{0},framerate={2}:interp_start=0:interp_end=255:scene=100" , "Fade duration", "0.5") },
+        new EffectItem { Content = Crossfade, Tag = ("zoompan=d=(0.1+{0})/{0}:s={1}:fps=1/{0},framerate={2}:interp_start=0:interp_end=255:scene=100" , "Fade duration", "0.5") },
     ];
 
-    public ComboBoxItem SelectedEffect
+    public EffectItem SelectedEffect
     {
         get => _selectedEffect;
         set
@@ -277,7 +285,7 @@ public class VideoTransformCommands : INotifyPropertyChanged
             }
         }
     }
-    ComboBoxItem _selectedEffect;
+    EffectItem _selectedEffect;
 
     public bool IsParameterizedEffect { get; private set; }
 
