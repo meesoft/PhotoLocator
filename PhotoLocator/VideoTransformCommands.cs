@@ -17,42 +17,17 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
-using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media.Imaging;
 
 namespace PhotoLocator;
 
-public enum OutputMode
-{
-    Video,
-    ImageSequence,
-    Average,
-    Max,
-    TimeSliceImage,
-}
-
-public enum CombineFramesMode
-{
-    None,
-    RollingAverage,
-    FadingAverage,
-    FadingMax,
-    TimeSlice,
-    TimeSliceInterpolated,
-}
-
-public enum RegistrationMode
-{
-    Off, ToFirst, ToPrevious
-}
-
 public class VideoTransformCommands : INotifyPropertyChanged
 {
     const string OpenImageFileFilter = "Image files|*.png;*.tif;*.bmp;*.jpg";
     const string InputListFileName = "input.txt";
-    const string TransformsFileName = "transforms.trf";
     const string SaveVideoFilter = "MP4|*.mp4";
+    internal const string TransformsFileName = "transforms.trf";
     const int DefaultAverageFramesCount = 20;
     readonly IMainViewModel _mainViewModel;
     readonly VideoProcessing _videoTransforms;
@@ -227,37 +202,29 @@ public class VideoTransformCommands : INotifyPropertyChanged
     public static readonly string ZoomEffect = "Zoom";
     public static readonly string Crossfade = "Crossfade";
 
-    public class EffectItem
-    {
-        public string? Content { get; set; }
-        public object? Tag { get; set; }
-
-        public override string? ToString() => Content ?? base.ToString();
-    }
-
-    public static ObservableCollection<EffectItem> Effects { get; } = [ // Note that default save file name uses first word of effect name
-        new EffectItem { Content = "None" },
-        new EffectItem { Content = "Rotate 90° clockwise", Tag = "transpose=1" },
-        new EffectItem { Content = "Rotate 90° counterclockwise", Tag = "transpose=2" },
-        new EffectItem { Content = "Rotate 180°", Tag = "transpose=2,transpose=2" },
-        new EffectItem { Content = "Mirror left half to right", Tag = "crop=iw/2:ih:0:0,split[left][tmp];[tmp]hflip[right];[left][right] hstack" },
-        new EffectItem { Content = "Mirror top half to bottom", Tag = "crop=iw:ih/2:0:0,split[top][tmp];[tmp]vflip[bottom];[top][bottom] vstack" },
-        new EffectItem { Content = ZoomEffect, Tag = ( "scale=4*iw:4*ih, zoompan=z='if(lte(it,0),1,min(pzoom+{0},10))':d=1:x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':s={1}:fps={2}", "Zoom speed", "0.001" ) },
-        new EffectItem { Content = "Normalize", Tag = ( "normalize=smoothing={0}:independence=0", "Smooth frames", "50" ) },
-        new EffectItem { Content = "Midtones", Tag = ( "colorbalance=rm={0}:gm={0}:bm={0}", "Strength", "0.05" ) },
-        new EffectItem { Content = "Saturation", Tag = ( "eq=saturation={0}", "Strength","1.3" ) },
-        new EffectItem { Content = "Contrast and brightness", Tag = ( "eq=brightness=0.05:contrast={0}", "Strength", "1.3" ) },
-        new EffectItem { Content = "Denoise (atadenoise)", Tag = ( "atadenoise=s={0}", "Strength", "9" ) },
-        new EffectItem { Content = "Denoise (hqdn3d)", Tag = ( "hqdn3d=luma_spatial={0}", "Strength", "4" ) },
-        new EffectItem { Content = "Denoise (nlmeans)", Tag = ( "nlmeans=s={0}", "Strength", "1.0" ) },
-        new EffectItem { Content = "Noise", Tag = ( "noise=c0s={0}:c0f=t+u", "Strength", "60" ) },
-        new EffectItem { Content = "Sharpen", Tag = ( "unsharp=7:7:{0}", "Strength", "2.5" ) },
-        new EffectItem { Content = "Reverse", Tag = "reverse" },
+    public static ObservableCollection<TextComboBoxItem> Effects { get; } = [ // Note that default save file name uses first word of effect name
+        new TextComboBoxItem { Text = "None" },
+        new TextComboBoxItem { Text = "Rotate 90° clockwise", Tag = "transpose=1" },
+        new TextComboBoxItem { Text = "Rotate 90° counterclockwise", Tag = "transpose=2" },
+        new TextComboBoxItem { Text = "Rotate 180°", Tag = "transpose=2,transpose=2" },
+        new TextComboBoxItem { Text = "Mirror left half to right", Tag = "crop=iw/2:ih:0:0,split[left][tmp];[tmp]hflip[right];[left][right] hstack" },
+        new TextComboBoxItem { Text = "Mirror top half to bottom", Tag = "crop=iw:ih/2:0:0,split[top][tmp];[tmp]vflip[bottom];[top][bottom] vstack" },
+        new TextComboBoxItem { Text = ZoomEffect, Tag = ( "scale=4*iw:4*ih, zoompan=z='if(lte(it,0),1,min(pzoom+{0},10))':d=1:x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':s={1}:fps={2}", "Zoom speed", "0.001" ) },
+        new TextComboBoxItem { Text = "Normalize", Tag = ( "normalize=smoothing={0}:independence=0", "Smooth frames", "50" ) },
+        new TextComboBoxItem { Text = "Midtones", Tag = ( "colorbalance=rm={0}:gm={0}:bm={0}", "Strength", "0.05" ) },
+        new TextComboBoxItem { Text = "Saturation", Tag = ( "eq=saturation={0}", "Strength","1.3" ) },
+        new TextComboBoxItem { Text = "Contrast and brightness", Tag = ( "eq=brightness=0.05:contrast={0}", "Strength", "1.3" ) },
+        new TextComboBoxItem { Text = "Denoise (atadenoise)", Tag = ( "atadenoise=s={0}", "Strength", "9" ) },
+        new TextComboBoxItem { Text = "Denoise (hqdn3d)", Tag = ( "hqdn3d=luma_spatial={0}", "Strength", "4" ) },
+        new TextComboBoxItem { Text = "Denoise (nlmeans)", Tag = ( "nlmeans=s={0}", "Strength", "1.0" ) },
+        new TextComboBoxItem { Text = "Noise", Tag = ( "noise=c0s={0}:c0f=t+u", "Strength", "60" ) },
+        new TextComboBoxItem { Text = "Sharpen", Tag = ( "unsharp=7:7:{0}", "Strength", "2.5" ) },
+        new TextComboBoxItem { Text = "Reverse", Tag = "reverse" },
         //ffmpeg -i IMG_%3d.jpg -vf zoompan=d=(A+B)/B:s=WxH:fps=1/B,framerate=25:interp_start=0:interp_end=255:scene=100 -c:v mpeg4 -maxrate 5M -q:v 2 out.mp4
-        new EffectItem { Content = Crossfade, Tag = ("zoompan=d=(0.1+{0})/{0}:s={1}:fps=1/{0},framerate={2}:interp_start=0:interp_end=255:scene=100" , "Fade duration", "0.5") },
+        new TextComboBoxItem { Text = Crossfade, Tag = ("zoompan=d=(0.1+{0})/{0}:s={1}:fps=1/{0},framerate={2}:interp_start=0:interp_end=255:scene=100" , "Fade duration", "0.5") },
     ];
 
-    public EffectItem SelectedEffect
+    public TextComboBoxItem SelectedEffect
     {
         get => _selectedEffect;
         set
@@ -285,7 +252,7 @@ public class VideoTransformCommands : INotifyPropertyChanged
             }
         }
     }
-    EffectItem _selectedEffect;
+    TextComboBoxItem _selectedEffect;
 
     public bool IsParameterizedEffect { get; private set; }
 
@@ -433,7 +400,7 @@ public class VideoTransformCommands : INotifyPropertyChanged
 
     public string NumberOfFramesHint => CombineFramesMode < CombineFramesMode.TimeSlice ? "Number of frames to combine" : "Time slice video loops";
 
-    public static ObservableCollection<ComboBoxItem> TimeSliceDirections
+    public static ObservableCollection<ImageComboBoxItem> TimeSliceDirections
     {
         get
         {
@@ -454,22 +421,19 @@ public class VideoTransformCommands : INotifyPropertyChanged
                 {
                     var map = TimeSliceSelectionMaps.GenerateSelectionMap(30, 20, mapFunction);
                     //map.ProcessElementWise(p => (float)Math.Round(p, 1));
-                    field.Add(new ComboBoxItem
+                    field.Add(new ImageComboBoxItem
                     {
-                        Content = new Image { Source = map.ToBitmapSource(96, 96, 1) },
+                        Image = map.ToBitmapSource(96, 96, 1),
                         Tag = mapFunction
                     });
                 }
-                field.Add(new ComboBoxItem
-                {
-                    Content = "Load from file"
-                });
+                field.Add(new ImageComboBoxItem { Text = "Load from file" });
             }
             return field;
         }
     }
 
-    public ComboBoxItem SelectedTimeSliceDirection
+    public ImageComboBoxItem SelectedTimeSliceDirection
     {
         get => _selectedTimeSliceDirection;
         set
@@ -490,7 +454,7 @@ public class VideoTransformCommands : INotifyPropertyChanged
             SetProperty(ref _selectedTimeSliceDirection, value);
         }
     }
-    ComboBoxItem _selectedTimeSliceDirection;
+    ImageComboBoxItem _selectedTimeSliceDirection;
 
     public OutputMode OutputMode
     {
@@ -510,7 +474,7 @@ public class VideoTransformCommands : INotifyPropertyChanged
         }
     }
 
-    public ComboBoxItem SelectedVideoFormat
+    public TextComboBoxItem SelectedVideoFormat
     {
         get => _selectedVideoFormat;
         set
@@ -529,15 +493,15 @@ public class VideoTransformCommands : INotifyPropertyChanged
             }
         }
     }
-    ComboBoxItem _selectedVideoFormat;
+    TextComboBoxItem _selectedVideoFormat;
 
-    public ObservableCollection<ComboBoxItem> VideoFormats { get; } = [
-        new ComboBoxItem { Content = "Default" },
-        new ComboBoxItem { Content = "Copy", Tag = "-c copy" },
-        new ComboBoxItem { Content = "libx264", Tag = "-c:v libx264 -pix_fmt yuv420p" },
-        new ComboBoxItem { Content = "libx265", Tag = "-c:v libx265 -pix_fmt yuv420p" },
-        new ComboBoxItem { Content = "libvpx-vp9", Tag = "-c:v libvpx-vp9 -pix_fmt yuv420p" },
-        new ComboBoxItem { Content = "libsvtav1", Tag = "-c:v libsvtav1 -pix_fmt yuv420p" },
+    public ObservableCollection<TextComboBoxItem> VideoFormats { get; } = [
+        new TextComboBoxItem { Text = "Default" },
+        new TextComboBoxItem { Text = "Copy", Tag = "-c copy" },
+        new TextComboBoxItem { Text = "libx264", Tag = "-c:v libx264 -pix_fmt yuv420p" },
+        new TextComboBoxItem { Text = "libx265", Tag = "-c:v libx265 -pix_fmt yuv420p" },
+        new TextComboBoxItem { Text = "libvpx-vp9", Tag = "-c:v libvpx-vp9 -pix_fmt yuv420p" },
+        new TextComboBoxItem { Text = "libsvtav1", Tag = "-c:v libsvtav1 -pix_fmt yuv420p" },
     ];
 
     const int DefaultVideoFormatIndex = 3;
@@ -706,7 +670,7 @@ public class VideoTransformCommands : INotifyPropertyChanged
             filters.Add($"vidstabtransform=smoothing={SmoothFrames}"
                 + (IsTripodChecked ? ":tripod=1" : null)
                 + (IsBicubicStabilizeChecked ? ":interpol=bicubic" : null));
-        if (IsScaleChecked && SelectedEffect.Content != ZoomEffect && SelectedEffect.Content != Crossfade)
+        if (IsScaleChecked && SelectedEffect.Text != ZoomEffect && SelectedEffect.Text != Crossfade)
             filters.Add($"scale={ScaleTo}");
         if (SelectedEffect.Tag is string effect)
             filters.Add(effect);
@@ -717,7 +681,7 @@ public class VideoTransformCommands : INotifyPropertyChanged
                 string.IsNullOrEmpty(FrameRate) ? "30" : FrameRate));
         if (IsSpeedupChecked && (CombineFramesMode != CombineFramesMode.RollingAverage || !SpeedupByEqualsCombineFramesCount))
             filters.Add($"setpts=PTS/({SpeedupBy})");
-        if (!string.IsNullOrEmpty(FrameRate) && SelectedEffect.Content != ZoomEffect)
+        if (!string.IsNullOrEmpty(FrameRate) && SelectedEffect.Text != ZoomEffect)
             filters.Add($"fps={FrameRate}");
         if (HasOnlyImageInput)
             filters.Add("colorspace=all=bt709:iall=bt601-6-625:fast=1");
@@ -1001,7 +965,7 @@ public class VideoTransformCommands : INotifyPropertyChanged
             else if (OutputMode is OutputMode.Max)
                 message = await RunMaxProcessingAsync(outFileName, sw, ct).ConfigureAwait(false);
             else if (CombineFramesMode is CombineFramesMode.TimeSlice or CombineFramesMode.TimeSliceInterpolated)
-                message = await RunTimeSliceProcessingAsync(outFileName, selectedTimeSliceDirection, sw, ct).ConfigureAwait(false);
+                message = await RunTimeSliceProcessingAsync(outFileName, selectedTimeSliceDirection!, sw, ct).ConfigureAwait(false);
             else if (IsLocalContrastChecked || CombineFramesMode > CombineFramesMode.None)
                 await RunLocalFrameProcessingAsync(outFileName, ct).ConfigureAwait(false);
             else
@@ -1168,7 +1132,7 @@ public class VideoTransformCommands : INotifyPropertyChanged
                 else if (allSelected.Length > 1)
                     postfix = "combined";
                 else if (SelectedEffect.Tag is not null)
-                    postfix = SelectedEffect.Content.ToString()!.Split(' ')[0].ToLowerInvariant();
+                    postfix = SelectedEffect.Text.Split(' ')[0].ToLowerInvariant();
                 else if (SelectedVideoFormat == VideoFormats[CopyVideoFormatIndex] && (!string.IsNullOrEmpty(SkipTo) || !string.IsNullOrEmpty(Duration)))
                     postfix = "trim";
                 else

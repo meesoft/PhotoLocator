@@ -36,7 +36,7 @@ public class VideoTransformCommandsTest
         return mainViewModelMoq;
     }
 
-    [STATestMethod]
+    [TestMethod]
     public void ProcessSelected_ShouldHandleAllEffects()
     {
         var mainViewModelMoq = SetupMainViewModelMoq([VideoProcessingTest.SourceVideoPath]);
@@ -47,13 +47,21 @@ public class VideoTransformCommandsTest
                 return processTask = body(_ => { }, CancellationToken.None);
             });
 
-        var outputFileName = Path.Combine(_testDir, "effect.mp4");
         foreach (var effectItem in VideoTransformCommands.Effects)
         {
+            var outputFileName = Path.Combine(_testDir, $"effect_{effectItem.Text.Split(' ')[0].ToLowerInvariant()}.mp4");
+
             File.Delete(outputFileName);
-            Debug.WriteLine("Using effect: " + effectItem.Content);
+            Debug.WriteLine("Using effect: " + effectItem.Text);
             var commands = new VideoTransformCommands(mainViewModelMoq.Object);
             commands.SelectedEffect = effectItem;
+            if (effectItem.Text == VideoTransformCommands.ZoomEffect ||
+                effectItem.Text == VideoTransformCommands.Crossfade)
+            {
+                commands.EffectParameter = "0.1";
+                commands.IsScaleChecked = true;
+                commands.ScaleTo = "320:180";
+            }
             commands.ProcessSelected.Execute(outputFileName);
             processTask?.Wait(TestContext.CancellationToken);
 
@@ -61,7 +69,7 @@ public class VideoTransformCommandsTest
         }
     }
 
-    [STATestMethod]
+    [TestMethod]
     public void ProcessSelected_ShouldStabilize()
     {
         var mainViewModelMoq = SetupMainViewModelMoq([VideoProcessingTest.SourceVideoPath]);
@@ -73,11 +81,14 @@ public class VideoTransformCommandsTest
             });
 
         var outputFileName = Path.Combine(_testDir, "stabilized.mp4");
+        var transformFileName = Path.Combine(_testDir, VideoTransformCommands.TransformsFileName);
         File.Delete(outputFileName);
         var commands = new VideoTransformCommands(mainViewModelMoq.Object);
         commands.IsStabilizeChecked = true;
         commands.ProcessSelected.Execute(outputFileName);
         processTask?.Wait(TestContext.CancellationToken);
+
         Assert.IsTrue(File.Exists(outputFileName));
+        Assert.IsFalse(File.Exists(transformFileName));
     }
 }

@@ -57,7 +57,13 @@
 
         <DockPanel Margin="10,4,0,0" >
             <TextBlock Text="Effect:" Width="130"/>
-            <ComboBox ItemsSource="{Binding Effects}" SelectedItem="{Binding SelectedEffect}" Width="140" />
+            <ComboBox ItemsSource="{Binding Effects}" SelectedItem="{Binding SelectedEffect}" Width="140" >
+                <ComboBox.ItemTemplate>
+                    <DataTemplate>
+                        <TextBlock Text="{Binding}"/>
+                    </DataTemplate>
+                </ComboBox.ItemTemplate>
+            </ComboBox>
             <TextBlock Text="{Binding EffectParameterText}" Margin="20,0,0,0" Visibility="{Binding IsParameterizedEffect, Converter={StaticResource BooleanToVisibility}}"/>
             <TextBox Text="{Binding EffectParameter}" Visibility="{Binding IsParameterizedEffect, Converter={StaticResource BooleanToVisibility}}" Width="140" HorizontalAlignment="Right"/>
         </DockPanel>
@@ -125,6 +131,14 @@
                 IsChecked="{Binding Path=CombineFramesMode, Converter={StaticResource ComparisonConverter}, ConverterParameter={x:Static local:CombineFramesMode.TimeSliceInterpolated}}"/>
             <ComboBox ItemsSource="{Binding TimeSliceDirections}" SelectedItem="{Binding SelectedTimeSliceDirection}" Width="140" Height="30"
                       HorizontalAlignment="Right" ToolTip="Time slice direction">
+                <ComboBox.ItemTemplate>
+                    <DataTemplate>
+                        <Grid>
+                            <Image Source="{Binding Image}"/>
+                            <TextBlock Text="{Binding Text}"/>
+                        </Grid>
+                    </DataTemplate>
+                </ComboBox.ItemTemplate>
                 <ComboBox.IsEnabled>
                     <MultiBinding Converter="{StaticResource OrComparisonConverter}">
                         <Binding Path="CombineFramesMode" />
@@ -141,7 +155,13 @@
             <RadioButton Content="Video" Margin="0,4,0,0" Width="130"
                          IsChecked="{Binding Path=OutputMode, Converter={StaticResource ComparisonConverter}, ConverterParameter={x:Static local:OutputMode.Video}}"/>
             <ComboBox ItemsSource="{Binding VideoFormats}" SelectedItem="{Binding SelectedVideoFormat}" Width="140"
-                      IsEnabled="{Binding Path=OutputMode, Converter={StaticResource ComparisonConverter}, ConverterParameter={x:Static local:OutputMode.Video}}"/>
+                      IsEnabled="{Binding Path=OutputMode, Converter={StaticResource ComparisonConverter}, ConverterParameter={x:Static local:OutputMode.Video}}">
+                <ComboBox.ItemTemplate>
+                    <DataTemplate>
+                        <TextBlock Text="{Binding}"/>
+                    </DataTemplate>
+                </ComboBox.ItemTemplate>
+            </ComboBox>
 
             <TextBlock Text="Frame rate (fps):" Margin="20,0,0,0"/>
             <TextBox Text="{Binding FrameRate}" Width="140" HorizontalAlignment="Right" 
