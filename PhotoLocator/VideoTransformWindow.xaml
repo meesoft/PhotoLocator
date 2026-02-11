@@ -45,8 +45,14 @@
             <TextBox Text="{Binding CropWindow}" IsEnabled="{Binding IsCropChecked}" Width="140"
                      ToolTip="Crop region size and position, width:height:left:top"/>
             <CheckBox Content="Scale to:" IsChecked="{Binding IsScaleChecked}" Margin="20,0,0,0"/>
-            <TextBox Text="{Binding ScaleTo}" IsEnabled="{Binding IsScaleChecked}" Width="140" HorizontalAlignment="Right"
-                     ToolTip="Scale to resolution, width:height"/>
+            <ComboBox Text="{Binding ScaleTo}" IsEnabled="{Binding IsScaleChecked}" Width="140" HorizontalAlignment="Right" IsEditable="True"
+                      ToolTip="Scale to resolution, width:height">
+                <ComboBoxItem Content="1280:720"/>
+                <ComboBoxItem Content="1080:1080"/>
+                <ComboBoxItem Content="1920:1080"/>
+                <ComboBoxItem Content="2560:1440"/>
+                <ComboBoxItem Content="3840:2160"/>
+            </ComboBox>
         </DockPanel>
 
         <DockPanel Margin="10,4,0,0" >
@@ -183,7 +189,7 @@
         </Grid>
         <RadioButton Content="Time slice image" Margin="10,2,0,0"
                      IsChecked="{Binding Path=OutputMode, Converter={StaticResource ComparisonConverter}, ConverterParameter={x:Static local:OutputMode.TimeSliceImage}}"/>
-        <TextBlock Text="Process arguments:" Margin="0,4,0,0"/>
+        <TextBlock Text="ffmpeg process arguments:" Margin="0,4,0,0"/>
         <TextBox Text="{Binding InputArguments}" Margin="10,0,0,0"/>
         <TextBox Text="{Binding ProcessArguments}" Margin="10,0,0,0"/>
         <TextBox Text="{Binding OutputArguments}" Margin="10,0,0,0"/>
