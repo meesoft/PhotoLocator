@@ -247,7 +247,6 @@ public class VideoTransformCommands : INotifyPropertyChanged
                 }
                 PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(EffectParameter)));
                 PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(IsParameterizedEffect)));
-                UpdateStabilizeArgs();
                 UpdateProcessArgs();
             }
         }
