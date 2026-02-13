@@ -14,7 +14,7 @@
                  IsEnabled="{Binding IsEnabled, RelativeSource={RelativeSource AncestorType=UserControl}}"
                  VerticalContentAlignment="Center" />
 
-        <ToggleButton x:Name="DropToggle" Grid.Column="1" Width="20" Margin="2,0,0,0" Content="?"
+        <ToggleButton x:Name="DropToggle" Grid.Column="1" Width="20" Margin="2,0,0,0" FontFamily="Segoe UI Symbol" FontSize="12" Content="&#x23F7;"
                       IsEnabled="{Binding IsEnabled, RelativeSource={RelativeSource AncestorType=UserControl}}"/>
 
         <Popup IsOpen="{Binding IsChecked, ElementName=DropToggle}" PlacementTarget="{Binding ElementName=DropToggle}"

@@ -25,21 +25,21 @@
         <DockPanel Visibility="{Binding HasSingleInput, Converter={StaticResource BooleanToVisibility}}" >
             <TextBlock Text="Skip to:" Width="140"/>
             <controls:DropDownSlider Text="{Binding SkipTo, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Width="140" 
-                                     ToolTip="Starting position in seconds" Minimum="0" Maximum="3600" TickFrequency="0.1" />
+                                     ToolTip="Starting position in seconds" Maximum="600" />
             <TextBlock Text="Duration:" Margin="20,0,0,0"/>
             <controls:DropDownSlider Text="{Binding Duration, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Width="140" HorizontalAlignment="Right"
-                                     ToolTip="Clip duration in seconds" Minimum="0" Maximum="3600" TickFrequency="0.1" />
+                                     ToolTip="Clip duration in seconds" Maximum="600" />
         </DockPanel>
 
         <TextBlock Text="Video filters:" Margin="0,4,0,0"/>
         <DockPanel Margin="10,4,0,0">
             <CheckBox Content="Rotate in frame:" IsChecked="{Binding IsRotateChecked}" Width="130" />
             <controls:DropDownSlider Text="{Binding RotationAngle, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" IsEnabled="{Binding IsRotateChecked}" Width="140"
-                                 ToolTip="Clockwise rotation angle in degrees" Minimum="-180" Maximum="180" />
+                                     ToolTip="Clockwise rotation angle in degrees" Minimum="-180" Maximum="180" TickFrequency="0.1" Decimals="2" />
             <TextBlock Text="°" IsEnabled="{Binding IsRotateChecked}" Margin="4,0,0,0" Width="16"/>
             <CheckBox Content="Speedup by:" IsChecked="{Binding IsSpeedupChecked}" />
             <controls:DropDownSlider Text="{Binding SpeedupBy, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" IsEnabled="{Binding IsSpeedupChecked}" Width="140" HorizontalAlignment="Right"
-                                 ToolTip="Speedup factor (below 1 means slowdown)" Minimum="0.1" Maximum="10" />
+                                     ToolTip="Speedup factor (below 1 means slowdown)" Minimum="0.1" Maximum="10" TickFrequency="0.1" Decimals="2" />
         </DockPanel>
         <DockPanel Margin="10,4,0,0">
             <CheckBox Content="Crop:" IsChecked="{Binding IsCropChecked}" Width="130"/>
