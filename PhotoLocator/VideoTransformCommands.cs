@@ -19,6 +19,7 @@ using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
 using System.Windows.Media.Imaging;
+using System.Windows.Threading;
 
 namespace PhotoLocator;
 
@@ -32,6 +33,8 @@ public class VideoTransformCommands : INotifyPropertyChanged
     readonly IMainViewModel _mainViewModel;
     readonly VideoProcessing _videoTransforms;
     Action<double>? _progressCallback;
+    DispatcherTimer? _previewUpdateDelay;
+    string? _previewSkipTo;
     double _progressOffset, _progressScale;
     TimeSpan _inputDuration;
     double _fps;
@@ -81,12 +84,12 @@ public class VideoTransformCommands : INotifyPropertyChanged
         get;
         set
         {
-            if (!SetProperty(ref field, value.Trim()))
+            if (!SetProperty(ref field, value.TrimInvariantValue()))
                 return;
             UpdateInputArgs();
             UpdateOutputArgs();
             _localContrastSetup?.SourceBitmap = null;
-            _mainViewModel.UpdatePreviewPictureAsync(SkipTo).WithExceptionLogging();
+            BeginPreviewUpdate(SkipTo);
         }
     } = string.Empty;
 
@@ -95,16 +98,32 @@ public class VideoTransformCommands : INotifyPropertyChanged
         get;
         set
         {
-            if (!SetProperty(ref field, value.Trim()))
+            if (!SetProperty(ref field, value.TrimInvariantValue()))
                 return;
             UpdateInputArgs();
             UpdateOutputArgs();
             if (string.IsNullOrEmpty(SkipTo))
-                _mainViewModel.UpdatePreviewPictureAsync(Duration).WithExceptionLogging();
+                BeginPreviewUpdate(Duration);
             else if (double.TryParse(SkipTo, CultureInfo.InvariantCulture, out var skipToSeconds) && double.TryParse(Duration, CultureInfo.InvariantCulture, out var durationSeconds))
-                _mainViewModel.UpdatePreviewPictureAsync((skipToSeconds + durationSeconds).ToString(CultureInfo.InvariantCulture)).WithExceptionLogging();
+                BeginPreviewUpdate((skipToSeconds + durationSeconds).ToString(CultureInfo.InvariantCulture));
         }
     } = string.Empty;
+
+    private void BeginPreviewUpdate(string skipTo)
+    {
+        if (_previewUpdateDelay is null)
+        {
+            _previewUpdateDelay = new DispatcherTimer { Interval = TimeSpan.FromSeconds(0.5) };
+            _previewUpdateDelay.Tick += (s, e) =>
+            {
+                _previewUpdateDelay.Stop();
+                _mainViewModel.UpdatePreviewPictureAsync(_previewSkipTo).WithExceptionLogging();
+            };
+        }
+        _previewSkipTo = skipTo;
+        _previewUpdateDelay.Stop();
+        _previewUpdateDelay.Start();
+    }
 
     public bool IsRotateChecked
     {
@@ -121,7 +140,7 @@ public class VideoTransformCommands : INotifyPropertyChanged
         get;
         set
         {
-            if (SetProperty(ref field, value.Trim()))
+            if (SetProperty(ref field, value.TrimInvariantValue()))
                 UpdateProcessArgs();
         }
     } = string.Empty;
@@ -141,7 +160,7 @@ public class VideoTransformCommands : INotifyPropertyChanged
         get;
         set
         {
-            if (SetProperty(ref field, value.Trim()))
+            if (SetProperty(ref field, value.TrimInvariantValue()))
                 UpdateProcessArgs();
         }
     } = string.Empty;
@@ -188,7 +207,7 @@ public class VideoTransformCommands : INotifyPropertyChanged
         get;
         set
         {
-            if (SetProperty(ref field, value.Trim()))
+            if (SetProperty(ref field, value.TrimInvariantValue()))
                 UpdateProcessArgs();
         }
     } = "w:h";
@@ -254,7 +273,7 @@ public class VideoTransformCommands : INotifyPropertyChanged
         get => _effectParameter;
         set
         {
-            if (SetProperty(ref _effectParameter, value?.Trim().Replace(',', '.')))
+            if (SetProperty(ref _effectParameter, value?.TrimInvariantValue()))
                 UpdateProcessArgs();
         }
     }
@@ -519,7 +538,7 @@ public class VideoTransformCommands : INotifyPropertyChanged
         get;
         set
         {
-            if (SetProperty(ref field, value.Trim()))
+            if (SetProperty(ref field, value.TrimInvariantValue()))
                 UpdateOutputArgs();
         }
     } = string.Empty;
@@ -896,6 +915,7 @@ public class VideoTransformCommands : INotifyPropertyChanged
         }
         finally
         {
+            _previewUpdateDelay?.Stop();
             if (_localContrastSetup is not null && _localContrastSetup.SourceBitmap is not null)
                 _localContrastSetup.SourceBitmap = null;
             window.DataContext = null;

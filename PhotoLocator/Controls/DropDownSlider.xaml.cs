@@ -48,7 +48,7 @@ public partial class DropDownSlider : UserControl
     public double NumericValue { get => (double)GetValue(NumericValueProperty); set => SetValue(NumericValueProperty, value); }
 
     public static readonly DependencyProperty DecimalsProperty = DependencyProperty.Register(
-        nameof(Decimals), typeof(int), typeof(DropDownSlider), new PropertyMetadata(2, OnDecimalsChanged));
+        nameof(Decimals), typeof(int), typeof(DropDownSlider), new PropertyMetadata(1, OnDecimalsChanged));
     public int Decimals { get => (int)GetValue(DecimalsProperty); set => SetValue(DecimalsProperty, value); }
 
     static void OnDecimalsChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
@@ -58,7 +58,7 @@ public partial class DropDownSlider : UserControl
     }
 
     public static readonly DependencyProperty TickFrequencyProperty = DependencyProperty.Register(
-        nameof(TickFrequency), typeof(double), typeof(DropDownSlider), new PropertyMetadata(0.01));
+        nameof(TickFrequency), typeof(double), typeof(DropDownSlider), new PropertyMetadata(0.1));
     public double TickFrequency { get => (double)GetValue(TickFrequencyProperty); set => SetValue(TickFrequencyProperty, value); }
 
     public static readonly DependencyProperty FormattedNumericValueProperty = DependencyProperty.Register(
