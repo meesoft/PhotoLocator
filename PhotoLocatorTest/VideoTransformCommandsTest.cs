@@ -28,7 +28,11 @@ public class VideoTransformCommandsTest
 
     private Mock<IMainViewModel> SetupMainViewModelMoq(string[] sourceFiles)
     {
-        var settings = new ObservableSettings() { FFmpegPath = _ffmpegPath };
+        var settings = new ObservableSettings() 
+        { 
+            FFmpegPath = _ffmpegPath, 
+            ExifToolPath = Path.Combine(_testDir, @"exiftool\exiftool(-m).exe"),
+        };
         var mainViewModelMoq = new Mock<IMainViewModel>();
         mainViewModelMoq.Setup(m => m.Settings).Returns(settings);
         mainViewModelMoq.Setup(m => m.GetSelectedItems(It.IsAny<bool>())).Returns(
@@ -37,14 +41,14 @@ public class VideoTransformCommandsTest
     }
 
     [TestMethod]
-    public void ProcessSelected_ShouldHandleAllEffects()
+    public async Task ProcessSelected_ShouldHandleAllEffects()
     {
         var mainViewModelMoq = SetupMainViewModelMoq([VideoProcessingTest.SourceVideoPath]);
         Task? processTask = null;
         mainViewModelMoq.Setup(m => m.RunProcessWithProgressBarAsync(It.IsAny<Func<Action<double>, CancellationToken, Task>>(), It.IsAny<string>(), It.IsAny<PictureItemViewModel>()))
             .Returns((Func<Action<double>, CancellationToken, Task> body, string text, PictureItemViewModel focusItem) =>
             {
-                return processTask = body(_ => { }, CancellationToken.None);
+                return processTask = body(_ => { }, TestContext.CancellationToken);
             });
 
         foreach (var effectItem in VideoTransformCommands.Effects)
@@ -63,21 +67,21 @@ public class VideoTransformCommandsTest
                 commands.ScaleTo = "320:180";
             }
             commands.ProcessSelected.Execute(outputFileName);
-            processTask?.Wait(TestContext.CancellationToken);
+            await (processTask ?? throw new Exception("Process task not set"));
 
             Assert.IsTrue(File.Exists(outputFileName));
         }
     }
 
     [TestMethod]
-    public void ProcessSelected_ShouldStabilize()
+    public async Task ProcessSelected_ShouldStabilize()
     {
         var mainViewModelMoq = SetupMainViewModelMoq([VideoProcessingTest.SourceVideoPath]);
         Task? processTask = null;
         mainViewModelMoq.Setup(m => m.RunProcessWithProgressBarAsync(It.IsAny<Func<Action<double>, CancellationToken, Task>>(), It.IsAny<string>(), It.IsAny<PictureItemViewModel>()))
             .Returns((Func<Action<double>, CancellationToken, Task> body, string text, PictureItemViewModel focusItem) =>
             {
-                return processTask = body(_ => { }, CancellationToken.None);
+                return processTask = body(_ => { }, TestContext.CancellationToken);
             });
 
         var outputFileName = Path.Combine(_testDir, "stabilized.mp4");
@@ -86,9 +90,30 @@ public class VideoTransformCommandsTest
         var commands = new VideoTransformCommands(mainViewModelMoq.Object);
         commands.IsStabilizeChecked = true;
         commands.ProcessSelected.Execute(outputFileName);
-        processTask?.Wait(TestContext.CancellationToken);
+        await(processTask ?? throw new Exception("Process task not set"));
 
         Assert.IsTrue(File.Exists(outputFileName));
         Assert.IsFalse(File.Exists(transformFileName));
+    }
+
+    [TestMethod]
+    public async Task CombineFade_ShouldCombineVideos()
+    {
+        var mainViewModelMoq = SetupMainViewModelMoq([VideoProcessingTest.SourceVideoPath, VideoProcessingTest.SourceVideoPath, VideoProcessingTest.SourceVideoPath]);
+        Task? processTask = null;
+        mainViewModelMoq.Setup(m => m.RunProcessWithProgressBarAsync(It.IsAny<Func<Action<double>, CancellationToken, Task>>(), It.IsAny<string>(), It.IsAny<PictureItemViewModel>()))
+            .Returns((Func<Action<double>, CancellationToken, Task> body, string text, PictureItemViewModel focusItem) =>
+            {
+                return processTask = body(_ => { }, TestContext.CancellationToken);
+            });
+
+        var outputFileName = Path.Combine(_testDir, "combined.mp4");
+       
+        File.Delete(outputFileName);
+        var commands = new VideoTransformCommands(mainViewModelMoq.Object);
+        commands.CombineFade.Execute(outputFileName);
+        await(processTask ?? throw new Exception("Process task not set"));
+
+        Assert.IsTrue(File.Exists(outputFileName));
     }
 }
