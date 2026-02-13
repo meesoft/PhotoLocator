@@ -179,10 +179,7 @@ public class VideoTransformCommands : INotifyPropertyChanged
         set
         {
             if (SetProperty(ref field, value))
-            {
-                UpdateStabilizeArgs();
                 UpdateProcessArgs();
-            }
         }
     }
 
@@ -192,10 +189,7 @@ public class VideoTransformCommands : INotifyPropertyChanged
         set
         {
             if (SetProperty(ref field, value.Trim()))
-            {
-                UpdateStabilizeArgs();
                 UpdateProcessArgs();
-            }
         }
     } = "w:h";
 
