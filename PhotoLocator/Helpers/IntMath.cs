@@ -17,6 +17,9 @@ namespace PhotoLocator.Helpers
             return (int)Math.Round(a);
         }
 
+        /// <summary>
+        /// Clamp without min/max check, for better performance when the caller can guarantee the value is within range.
+        /// </summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static int Clamp(int value, int min, int max)
         {

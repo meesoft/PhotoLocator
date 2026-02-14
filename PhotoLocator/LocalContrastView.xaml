@@ -4,7 +4,7 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:sys="clr-namespace:System;assembly=mscorlib" 
-        xmlns:local="clr-namespace:PhotoLocator" xmlns:helpers="clr-namespace:PhotoLocator.Helpers"
+        xmlns:local="clr-namespace:PhotoLocator" xmlns:controls="clr-namespace:PhotoLocator.Controls"
         mc:Ignorable="d"
         d:DataContext="{d:DesignInstance Type=local:LocalContrastViewModel, IsDesignTimeCreatable=True}"
         Background="Black"
@@ -181,7 +181,7 @@
                 </DockPanel>
                 <Slider Value="{Binding ToneRotation}" Minimum="-0.2" Maximum="0.2" SmallChange="0.01" LargeChange="0.05"/>
 
-                <helpers:ColorToneControl x:Name="ColorToneControl" Margin="0,8,0,0"/>
+                <controls:ColorToneControl x:Name="ColorToneControl" Margin="0,8,0,0"/>
 
                 <Grid Margin="0,20,0,0">
                     <Button Content="Original" Width="90" HorizontalAlignment="Left" 

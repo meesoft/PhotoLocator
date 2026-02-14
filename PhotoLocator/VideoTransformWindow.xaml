@@ -25,10 +25,10 @@
         <DockPanel Visibility="{Binding HasSingleInput, Converter={StaticResource BooleanToVisibility}}" >
             <TextBlock Text="Skip to:" Width="140"/>
             <controls:DropDownSlider Text="{Binding SkipTo, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Width="140" 
-                                     ToolTip="Starting position in seconds" Maximum="600" />
+                                     ToolTip="Starting position in seconds" Maximum="{Binding DurationSliderRange}" />
             <TextBlock Text="Duration:" Margin="20,0,0,0"/>
             <controls:DropDownSlider Text="{Binding Duration, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Width="140" HorizontalAlignment="Right"
-                                     ToolTip="Clip duration in seconds" Maximum="600" />
+                                     ToolTip="Clip duration in seconds" Maximum="{Binding DurationSliderRange}" />
         </DockPanel>
 
         <TextBlock Text="Video filters:" Margin="0,4,0,0"/>

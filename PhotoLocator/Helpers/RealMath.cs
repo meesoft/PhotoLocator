@@ -5,6 +5,9 @@ namespace PhotoLocator.Helpers
 {
     public static class RealMath
     {
+        /// <summary>
+        /// Clamp without min/max check, for better performance when the caller can guarantee the value is within range.
+        /// </summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static float Clamp(float value, float min, float max)
         {
@@ -15,6 +18,9 @@ namespace PhotoLocator.Helpers
             return value;
         }
 
+        /// <summary>
+        /// Clamp without min/max check, for better performance when the caller can guarantee the value is within range.
+        /// </summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static double Clamp(double value, double min, double max)
         {
