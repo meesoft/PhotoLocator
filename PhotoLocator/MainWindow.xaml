@@ -6,7 +6,7 @@
         xmlns:map="clr-namespace:MapControl;assembly=MapControl.WPF"
         xmlns:local="clr-namespace:PhotoLocator" 
         xmlns:mapDisplay="clr-namespace:PhotoLocator.MapDisplay"
-        xmlns:helpers="clr-namespace:PhotoLocator.Helpers"
+        xmlns:controls="clr-namespace:PhotoLocator.Controls"
         mc:Ignorable="d"
         d:DataContext="{d:DesignInstance Type=local:MainViewModel, IsDesignTimeCreatable=True}"
         Loaded="HandleWindowLoaded" Closed="HandleWindowClosed"
@@ -329,7 +329,7 @@
                 <TextBlock VerticalAlignment="Bottom" HorizontalAlignment="Right" Margin="10" FontSize="18" FontWeight="Bold" Foreground="White"
                            TextWrapping="Wrap" Text="{Binding PreviewPictureTitle}"/>
 
-                <helpers:CropControl x:Name="CropGrid" HorizontalAlignment="Center" VerticalAlignment="Center" 
+                <controls:CropControl x:Name="CropGrid" HorizontalAlignment="Center" VerticalAlignment="Center" 
                                      Visibility="{Binding Parent.DataContext.IsCropControlVisible, Converter={StaticResource BooleanToVisibility}}"/>
 
                 <Grid.ContextMenu>

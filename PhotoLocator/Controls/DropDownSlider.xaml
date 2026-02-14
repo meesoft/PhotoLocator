@@ -10,7 +10,7 @@
             <ColumnDefinition Width="22" />
         </Grid.ColumnDefinitions>
 
-        <TextBox Text="{Binding Text, RelativeSource={RelativeSource AncestorType=UserControl}, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+        <TextBox Text="{Binding Text, RelativeSource={RelativeSource AncestorType=UserControl}, Mode=TwoWay, UpdateSourceTrigger=LostFocus}"
                  IsEnabled="{Binding IsEnabled, RelativeSource={RelativeSource AncestorType=UserControl}}"
                  VerticalContentAlignment="Center" />
 
