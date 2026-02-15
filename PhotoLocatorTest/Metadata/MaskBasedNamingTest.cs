@@ -85,5 +85,12 @@ namespace PhotoLocator.Metadata
             Assert.AreEqual("0341-0191-2",
                 _renamer.GetFileName("|width:4|-|height:4|-|w/h:0|"));
         }
+
+        [TestMethod]
+        public void GetFileNameWithMaskDescription()
+        {
+            Assert.AreEqual("DCIM\\100MEDIA\\DJI_0007.JPG",
+                _renamer.GetFileName("|desc|"));
+        }
     }
 }

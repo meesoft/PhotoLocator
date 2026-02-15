@@ -223,7 +223,7 @@ namespace PhotoLocator.Metadata
                     {
                         AppendMetadataInt(result, iColon, tag, ExifHandler.IsoQuery1, ExifHandler.IsoQuery2);
                     }
-                    else if (tag=="desc")
+                    else if (tag == "desc")
                     {
                         AppendMetadata(result, ExifHandler.DescriptionQuery1, ExifHandler.DescriptionQuery2);
                     }
