@@ -119,6 +119,13 @@ namespace PhotoLocator.Metadata
                 result.Append(Convert.ToInt32(value, CultureInfo.InvariantCulture).ToString("D" + tag[(iColon + 1)..], CultureInfo.CurrentCulture));
         }
 
+        private void AppendMetadata(StringBuilder result, string query1, string query2)
+        {
+            var metadata = GetMetadata();
+            var value = metadata?.GetQuery(query1) ?? metadata?.GetQuery(query2);
+            result.Append(value);
+        }
+
         public string GetFileName(string mask)
         {
             var result = new StringBuilder();
@@ -215,6 +222,10 @@ namespace PhotoLocator.Metadata
                     else if (TagIs(tag, "iso", out iColon))
                     {
                         AppendMetadataInt(result, iColon, tag, ExifHandler.IsoQuery1, ExifHandler.IsoQuery2);
+                    }
+                    else if (tag=="desc")
+                    {
+                        AppendMetadata(result, ExifHandler.DescriptionQuery1, ExifHandler.DescriptionQuery2);
                     }
                     else
                         throw new ArgumentException($"Unsupported tag |{tag}|");

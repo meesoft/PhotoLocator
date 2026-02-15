@@ -30,6 +30,7 @@
             <RowDefinition Height="20"/>
             <RowDefinition Height="20"/>
             <RowDefinition Height="20"/>
+            <RowDefinition Height="20"/>
         </Grid.RowDefinitions>
 
         <TextBlock Grid.Row="0" Foreground="#FFEEEEEE" VerticalAlignment="Bottom"
@@ -73,13 +74,15 @@
             <TextBlock Text="|height:4| 4 digit photo dimension." MouseUp="HandleEscapeCodeTextBlockMouseUp" Foreground="#FFEEEEEE" Margin="0,0,5,0" Cursor="Hand"/>
             <TextBlock Text="|w/h:2| width/height with 2 decimals." MouseUp="HandleEscapeCodeTextBlockMouseUp" Foreground="#FFEEEEEE" Cursor="Hand"/>
         </StackPanel>
+        <StackPanel Grid.Row="10" Orientation="Horizontal" >
+            <TextBlock Text="|desc| Description tag." MouseUp="HandleEscapeCodeTextBlockMouseUp" Foreground="#FFEEEEEE" Margin="0,0,5,0" Cursor="Hand"/>
+        </StackPanel>
 
-        <CheckBox Grid.Row="11" Content="Rename sidecar files" IsChecked="{Binding Settings.IncludeSidecarFiles}" />
-        
-        <ProgressBar Grid.Row="11" Width="170" Height="10" HorizontalAlignment="Right" Value="{Binding ProgressBarValue}" Maximum="1"
+        <CheckBox Grid.Row="12" Content="Rename sidecar files" IsChecked="{Binding Settings.IncludeSidecarFiles}" />
+        <ProgressBar Grid.Row="12" Width="170" Height="10" HorizontalAlignment="Right" Value="{Binding ProgressBarValue}" Maximum="1"
                      Visibility="{Binding IsProgressBarVisible, Converter={StaticResource BooleanToVisibility}}"/>
 
-        <StackPanel Grid.Row="12" Orientation="Horizontal" HorizontalAlignment="Right">
+        <StackPanel Grid.Row="13" Orientation="Horizontal" HorizontalAlignment="Right">
             <TextBlock Text="Mask error" Foreground="#FFAE4040" ToolTip="{Binding ErrorMessage}" Margin="10,0"
                        Visibility="{Binding IsErrorVisible, Converter={StaticResource BooleanToVisibility}}"/>
             <TextBlock Text="File extension was changed" Foreground="#FFD4AA28" Margin="10,0"

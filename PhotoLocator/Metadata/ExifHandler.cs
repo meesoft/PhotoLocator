@@ -52,6 +52,9 @@ namespace PhotoLocator.Metadata
         public const string OrientationQuery1 = "/app1/{ushort=0}/{ushort=274}"; // Short
         public const string OrientationQuery2 = "/ifd/{ushort=274}"; // Short
 
+        public const string DescriptionQuery1 = "/app1/{ushort=0}/{ushort=270}";
+        public const string DescriptionQuery2 = "/ifd/{ushort=270}";
+
         // North or South Latitude
         private const string GpsLatitudeRefQuery1 = "/app1/ifd/gps/subifd:{ulong=1}"; // ASCII 2
         private const string GpsLatitudeRefQuery2 = "/ifd/{ushort=34853}/{ushort=1}"; // ASCII 2
