@@ -203,19 +203,19 @@ public class VideoTransformCommands : INotifyPropertyChanged
         new TextComboBoxItem { Text = "Rotate 180°", Tag = "transpose=2,transpose=2" },
         new TextComboBoxItem { Text = "Mirror left half to right", Tag = "crop=iw/2:ih:0:0,split[left][tmp];[tmp]hflip[right];[left][right] hstack" },
         new TextComboBoxItem { Text = "Mirror top half to bottom", Tag = "crop=iw:ih/2:0:0,split[top][tmp];[tmp]vflip[bottom];[top][bottom] vstack" },
-        new TextComboBoxItem { Text = ZoomEffect, Tag = ( "scale=4*iw:4*ih, zoompan=z='if(lte(it,0),1,min(pzoom+{0},10))':d=1:x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':s={1}:fps={2}", "Zoom speed", "0.001" ) },
-        new TextComboBoxItem { Text = "Normalize", Tag = ( "normalize=smoothing={0}:independence=0", "Smooth frames", "50" ) },
-        new TextComboBoxItem { Text = "Midtones", Tag = ( "colorbalance=rm={0}:gm={0}:bm={0}", "Strength", "0.05" ) },
-        new TextComboBoxItem { Text = "Saturation", Tag = ( "eq=saturation={0}", "Strength","1.3" ) },
-        new TextComboBoxItem { Text = "Contrast and brightness", Tag = ( "eq=brightness=0.05:contrast={0}", "Strength", "1.3" ) },
-        new TextComboBoxItem { Text = "Denoise (atadenoise)", Tag = ( "atadenoise=s={0}", "Strength", "9" ) },
-        new TextComboBoxItem { Text = "Denoise (hqdn3d)", Tag = ( "hqdn3d=luma_spatial={0}", "Strength", "4" ) },
-        new TextComboBoxItem { Text = "Denoise (nlmeans)", Tag = ( "nlmeans=s={0}", "Strength", "1.0" ) },
-        new TextComboBoxItem { Text = "Noise", Tag = ( "noise=c0s={0}:c0f=t+u", "Strength", "60" ) },
-        new TextComboBoxItem { Text = "Sharpen", Tag = ( "unsharp=7:7:{0}", "Strength", "2.5" ) },
+        new TextComboBoxItem { Text = ZoomEffect, Tag = new ParameterizedFilter( "scale=4*iw:4*ih, zoompan=z='if(lte(it,0),1,min(pzoom+{0},10))':d=1:x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':s={1}:fps={2}", "Zoom speed", "0.001" ) },
+        new TextComboBoxItem { Text = "Normalize", Tag = new ParameterizedFilter( "normalize=smoothing={0}:independence=0", "Smooth frames", "50" ) },
+        new TextComboBoxItem { Text = "Midtones", Tag = new ParameterizedFilter( "colorbalance=rm={0}:gm={0}:bm={0}", "Strength", "0.05" ) },
+        new TextComboBoxItem { Text = "Saturation", Tag = new ParameterizedFilter( "eq=saturation={0}", "Strength","1.3" ) },
+        new TextComboBoxItem { Text = "Contrast and brightness", Tag = new ParameterizedFilter( "eq=brightness=0.05:contrast={0}", "Contrast", "1.3" ) },
+        new TextComboBoxItem { Text = "Denoise (atadenoise)", Tag = new ParameterizedFilter( "atadenoise=s={0}", "Strength", "9" ) },
+        new TextComboBoxItem { Text = "Denoise (hqdn3d)", Tag = new ParameterizedFilter( "hqdn3d=luma_spatial={0}", "Strength", "4" ) },
+        new TextComboBoxItem { Text = "Denoise (nlmeans)", Tag = new ParameterizedFilter( "nlmeans=s={0}", "Strength", "1.0" ) },
+        new TextComboBoxItem { Text = "Noise", Tag = new ParameterizedFilter( "noise=c0s={0}:c0f=t+u", "Strength", "60" ) },
+        new TextComboBoxItem { Text = "Sharpen", Tag = new ParameterizedFilter( "unsharp=7:7:{0}", "Strength", "2.5" ) },
         new TextComboBoxItem { Text = "Reverse", Tag = "reverse" },
         //ffmpeg -i IMG_%3d.jpg -vf zoompan=d=(A+B)/B:s=WxH:fps=1/B,framerate=25:interp_start=0:interp_end=255:scene=100 -c:v mpeg4 -maxrate 5M -q:v 2 out.mp4
-        new TextComboBoxItem { Text = Crossfade, Tag = ("zoompan=d=(0.1+{0})/{0}:s={1}:fps=1/{0},framerate={2}:interp_start=0:interp_end=255:scene=100" , "Fade duration", "0.5") },
+        new TextComboBoxItem { Text = Crossfade, Tag = new ParameterizedFilter("zoompan=d=(0.1+{0})/{0}:s={1}:fps=1/{0},framerate={2}:interp_start=0:interp_end=255:scene=100" , "Fade duration", "0.5") },
     ];
 
     public TextComboBoxItem SelectedEffect
@@ -227,11 +227,11 @@ public class VideoTransformCommands : INotifyPropertyChanged
                 return;
             if (SetProperty(ref _selectedEffect, value))
             {
-                if (value.Tag is ValueTuple<string, string, string> effectTuple)
+                if (value.Tag is ParameterizedFilter effectFilter)
                 {
                     IsParameterizedEffect = true;
-                    EffectParameterText = effectTuple.Item2 + ':';
-                    _effectParameter = effectTuple.Item3;
+                    EffectParameterText = effectFilter.ParameterText + ':';
+                    _effectParameter = effectFilter.DefaultValue;
                 }
                 else
                 {
@@ -667,8 +667,8 @@ public class VideoTransformCommands : INotifyPropertyChanged
             filters.Add($"scale={ScaleTo}");
         if (SelectedEffect.Tag is string effect)
             filters.Add(effect);
-        else if (SelectedEffect.Tag is ValueTuple<string, string, string> effectTuple)
-            filters.Add(string.Format(CultureInfo.InvariantCulture, effectTuple.Item1,
+        else if (SelectedEffect.Tag is ParameterizedFilter effectFilter)
+            filters.Add(string.Format(CultureInfo.InvariantCulture, effectFilter.Filter,
                 EffectParameter, 
                 IsScaleChecked ? ScaleTo.Replace(':', 'x') : "1920x1080",
                 string.IsNullOrEmpty(FrameRate) ? "30" : FrameRate));

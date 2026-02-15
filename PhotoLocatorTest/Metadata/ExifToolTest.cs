@@ -5,7 +5,7 @@ namespace PhotoLocator.Metadata;
 [TestClass]
 public class ExifToolTest
 {
-    const string ExifToolPath = @"exiftool\exiftool(-m).exe";
+    public const string ExifToolPath = @"exiftool\exiftool(-m).exe";
 
     [TestMethod]
     public async Task AdjustTimestampAsync_ShouldUpdateTimestamp()

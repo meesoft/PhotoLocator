@@ -1,5 +1,6 @@
 using Moq;
 using PhotoLocator.Helpers;
+using PhotoLocator.Metadata;
 using PhotoLocator.Settings;
 using System.Diagnostics;
 
@@ -9,29 +10,29 @@ namespace PhotoLocator;
 public class VideoTransformCommandsTest
 {
     string _testDir;
-    string _ffmpegPath;
 
     public TestContext TestContext { get; set; }
 
     public VideoTransformCommandsTest()
     {
         _testDir = Path.GetDirectoryName(GetType().Assembly.Location)!;
-        _ffmpegPath = Path.Combine(_testDir, VideoProcessingTest.FFmpegPath);
     }
 
     [TestInitialize]
     public void TestInitialize()
     {
-        if (!File.Exists(_ffmpegPath))
-            Assert.Inconclusive("FFmpegPath not found: " + _ffmpegPath);
+        if (!File.Exists(VideoProcessingTest.FFmpegPath))
+            Assert.Inconclusive("FFmpegPath not found: " + VideoProcessingTest.FFmpegPath);
+        if (!File.Exists(ExifToolTest.ExifToolPath))
+            Assert.Inconclusive("ExifToolPath not found: " + ExifToolTest.ExifToolPath);
     }
 
     private Mock<IMainViewModel> SetupMainViewModelMoq(string[] sourceFiles)
     {
         var settings = new ObservableSettings() 
         { 
-            FFmpegPath = _ffmpegPath, 
-            ExifToolPath = Path.Combine(_testDir, @"exiftool\exiftool(-m).exe"),
+            FFmpegPath = VideoProcessingTest.FFmpegPath, 
+            ExifToolPath = ExifToolTest.ExifToolPath,
         };
         var mainViewModelMoq = new Mock<IMainViewModel>();
         mainViewModelMoq.Setup(m => m.Settings).Returns(settings);
@@ -68,6 +69,7 @@ public class VideoTransformCommandsTest
             }
             commands.ProcessSelected.Execute(outputFileName);
             await (processTask ?? throw new Exception("Process task not set"));
+            Directory.SetCurrentDirectory(_testDir);
 
             Assert.IsTrue(File.Exists(outputFileName));
         }
@@ -91,6 +93,7 @@ public class VideoTransformCommandsTest
         commands.IsStabilizeChecked = true;
         commands.ProcessSelected.Execute(outputFileName);
         await(processTask ?? throw new Exception("Process task not set"));
+        Directory.SetCurrentDirectory(_testDir);
 
         Assert.IsTrue(File.Exists(outputFileName));
         Assert.IsFalse(File.Exists(transformFileName));
@@ -113,6 +116,7 @@ public class VideoTransformCommandsTest
         var commands = new VideoTransformCommands(mainViewModelMoq.Object);
         commands.CombineFade.Execute(outputFileName);
         await(processTask ?? throw new Exception("Process task not set"));
+        Directory.SetCurrentDirectory(_testDir);
 
         Assert.IsTrue(File.Exists(outputFileName));
     }
