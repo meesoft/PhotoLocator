@@ -89,7 +89,7 @@ namespace PhotoLocator.Metadata
         [TestMethod]
         public void GetFileNameWithMaskDescription()
         {
-            Assert.AreEqual("DCIM\\100MEDIA\\DJI_0007.JPG",
+            Assert.AreEqual("DCIM_100MEDIA_DJI_0007.JPG",
                 _renamer.GetFileName("|desc|"));
         }
     }
