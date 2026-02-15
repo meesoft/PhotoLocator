@@ -30,6 +30,7 @@
             <RowDefinition Height="20"/>
             <RowDefinition Height="20"/>
             <RowDefinition Height="20"/>
+            <RowDefinition Height="20"/>
         </Grid.RowDefinitions>
 
         <TextBlock Grid.Row="0" Foreground="#FFEEEEEE" VerticalAlignment="Bottom"
@@ -49,37 +50,40 @@
         <StackPanel Grid.Row="5" Orientation="Horizontal" >
             <TextBlock Text="|ext| Extension including dot." MouseUp="HandleEscapeCodeTextBlockMouseUp" Foreground="#FFEEEEEE" Margin="0,0,5,0" Cursor="Hand"/>
             <TextBlock Text="|*| Name without extension." MouseUp="HandleEscapeCodeTextBlockMouseUp" Foreground="#FFEEEEEE" Margin="0,0,5,0" Cursor="Hand"/>
-            <TextBlock Text="|*:4:4| Skip 4 and take 4." MouseUp="HandleEscapeCodeTextBlockMouseUp" Foreground="#FFEEEEEE" Margin="0,0,5,0" Cursor="Hand"/>
+            <TextBlock Text="|desc| Description tag." MouseUp="HandleEscapeCodeTextBlockMouseUp" Foreground="#FFEEEEEE" Margin="0,0,5,0" Cursor="Hand"/>
         </StackPanel>
         <StackPanel Grid.Row="6" Orientation="Horizontal" >
+            <TextBlock Text="|*:4| Skip first 4." MouseUp="HandleEscapeCodeTextBlockMouseUp" Foreground="#FFEEEEEE" Margin="0,0,5,0" Cursor="Hand"/>
+            <TextBlock Text="|*:4:4| Skip 4 and take 4." MouseUp="HandleEscapeCodeTextBlockMouseUp" Foreground="#FFEEEEEE" Margin="0,0,5,0" Cursor="Hand"/>
+        </StackPanel>
+        <StackPanel Grid.Row="7" Orientation="Horizontal" >
             <TextBlock Text="|_????| 4 characters following a _ in the source file name." MouseUp="HandleEscapeCodeTextBlockMouseUp" Foreground="#FFEEEEEE" Margin="0,0,5,0" Cursor="Hand"/>
             <TextBlock Text="|#:4| 4 digit counter." MouseUp="HandleEscapeCodeTextBlockMouseUp" Foreground="#FFEEEEEE" Cursor="Hand"/>
         </StackPanel>
-        <StackPanel Grid.Row="7" Orientation="Horizontal" >
+        <StackPanel Grid.Row="8" Orientation="Horizontal" >
             <TextBlock Text="|D|" MouseUp="HandleEscapeCodeTextBlockMouseUp" Foreground="#FFEEEEEE" Margin="0,0,5,0" Cursor="Hand"/>
             <TextBlock Text="|T|" MouseUp="HandleEscapeCodeTextBlockMouseUp" Foreground="#FFEEEEEE" Margin="0,0,5,0" Cursor="Hand"/>
             <TextBlock Text="|DT| Date and time." MouseUp="HandleEscapeCodeTextBlockMouseUp" Foreground="#FFEEEEEE" Margin="0,0,5,0" Cursor="Hand"/>
             <TextBlock Text="|DT+1| Date and time + 1 hour." MouseUp="HandleEscapeCodeTextBlockMouseUp" Foreground="#FFEEEEEE" Margin="0,0,5,0" Cursor="Hand"/>
         </StackPanel>
-        <StackPanel Grid.Row="8" Orientation="Horizontal" >
+        <StackPanel Grid.Row="9" Orientation="Horizontal" >
             <TextBlock Text="|a| Aperture." MouseUp="HandleEscapeCodeTextBlockMouseUp" Foreground="#FFEEEEEE" Margin="0,0,5,0" Cursor="Hand"/>
             <TextBlock Text="|t| Exposure time." MouseUp="HandleEscapeCodeTextBlockMouseUp" Foreground="#FFEEEEEE" Margin="0,0,5,0" Cursor="Hand"/>
             <TextBlock Text="|f| Focal length." MouseUp="HandleEscapeCodeTextBlockMouseUp" Foreground="#FFEEEEEE" Margin="0,0,5,0" Cursor="Hand"/>
             <TextBlock Text="|iso| ISO." MouseUp="HandleEscapeCodeTextBlockMouseUp" Foreground="#FFEEEEEE" Margin="0,0,5,0" Cursor="Hand"/>
             <TextBlock Text="|alt:0| Altitude as integer." MouseUp="HandleEscapeCodeTextBlockMouseUp" Foreground="#FFEEEEEE" Margin="0,0,5,0" Cursor="Hand"/>
         </StackPanel>
-        <StackPanel Grid.Row="9" Orientation="Horizontal" >
+        <StackPanel Grid.Row="10" Orientation="Horizontal" >
             <TextBlock Text="|width:4|" MouseUp="HandleEscapeCodeTextBlockMouseUp" Foreground="#FFEEEEEE" Margin="0,0,5,0" Cursor="Hand"/>
             <TextBlock Text="|height:4| 4 digit photo dimension." MouseUp="HandleEscapeCodeTextBlockMouseUp" Foreground="#FFEEEEEE" Margin="0,0,5,0" Cursor="Hand"/>
             <TextBlock Text="|w/h:2| width/height with 2 decimals." MouseUp="HandleEscapeCodeTextBlockMouseUp" Foreground="#FFEEEEEE" Cursor="Hand"/>
         </StackPanel>
 
-        <CheckBox Grid.Row="11" Content="Rename sidecar files" IsChecked="{Binding Settings.IncludeSidecarFiles}" />
-        
-        <ProgressBar Grid.Row="11" Width="170" Height="10" HorizontalAlignment="Right" Value="{Binding ProgressBarValue}" Maximum="1"
+        <CheckBox Grid.Row="12" Content="Rename sidecar files" IsChecked="{Binding Settings.IncludeSidecarFiles}" />
+        <ProgressBar Grid.Row="12" Width="170" Height="10" HorizontalAlignment="Right" Value="{Binding ProgressBarValue}" Maximum="1"
                      Visibility="{Binding IsProgressBarVisible, Converter={StaticResource BooleanToVisibility}}"/>
 
-        <StackPanel Grid.Row="12" Orientation="Horizontal" HorizontalAlignment="Right">
+        <StackPanel Grid.Row="13" Orientation="Horizontal" HorizontalAlignment="Right">
             <TextBlock Text="Mask error" Foreground="#FFAE4040" ToolTip="{Binding ErrorMessage}" Margin="10,0"
                        Visibility="{Binding IsErrorVisible, Converter={StaticResource BooleanToVisibility}}"/>
             <TextBlock Text="File extension was changed" Foreground="#FFD4AA28" Margin="10,0"
