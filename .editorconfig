@@ -8,6 +8,9 @@ csharp_style_var_for_built_in_types = true:silent
 # IDE0011: Add braces
 csharp_prefer_braces = when_multiline:silent
 
+# IDE0017: Simplify object initialization
+dotnet_diagnostic.IDE0017.severity = silent
+
 # IDE0040: Add accessibility modifiers
 dotnet_style_require_accessibility_modifiers = omit_if_default
 

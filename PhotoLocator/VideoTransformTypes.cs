@@ -24,7 +24,4 @@ public enum RegistrationMode
     Off, ToFirst, ToPrevious
 }
 
-internal record struct ParameterizedFilter(string Filter, string ParameterText, string DefaultValue)
-{
-
-}
+record struct ParameterizedFilter(string Filter, string ParameterText, string DefaultValue);

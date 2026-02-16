@@ -9,22 +9,25 @@ namespace PhotoLocator;
 [TestClass]
 public class VideoTransformCommandsTest
 {
-    string _testDir;
+    readonly string _testDir, _sourceVideo;
 
     public TestContext TestContext { get; set; }
 
     public VideoTransformCommandsTest()
     {
         _testDir = Path.GetDirectoryName(GetType().Assembly.Location)!;
+        _sourceVideo = Path.Combine(_testDir, "test.mp4");
     }
 
     [TestInitialize]
     public void TestInitialize()
     {
         if (!File.Exists(VideoProcessingTest.FFmpegPath))
-            Assert.Inconclusive("FFmpegPath not found: " + VideoProcessingTest.FFmpegPath);
+            Assert.Inconclusive("ffmpeg not found in " + Path.GetFullPath(VideoProcessingTest.FFmpegPath));
         if (!File.Exists(ExifToolTest.ExifToolPath))
-            Assert.Inconclusive("ExifToolPath not found: " + ExifToolTest.ExifToolPath);
+            Assert.Inconclusive("ExifTool not found in " + Path.GetFullPath(ExifToolTest.ExifToolPath));
+        if (!File.Exists(_sourceVideo))
+            File.Copy(VideoProcessingTest.SourceVideoPath, _sourceVideo, true);
     }
 
     private Mock<IMainViewModel> SetupMainViewModelMoq(string[] sourceFiles)
@@ -44,7 +47,7 @@ public class VideoTransformCommandsTest
     [TestMethod]
     public async Task ProcessSelected_ShouldHandleAllEffects()
     {
-        var mainViewModelMoq = SetupMainViewModelMoq([VideoProcessingTest.SourceVideoPath]);
+        var mainViewModelMoq = SetupMainViewModelMoq([_sourceVideo]);
         Task? processTask = null;
         mainViewModelMoq.Setup(m => m.RunProcessWithProgressBarAsync(It.IsAny<Func<Action<double>, CancellationToken, Task>>(), It.IsAny<string>(), It.IsAny<PictureItemViewModel>()))
             .Returns((Func<Action<double>, CancellationToken, Task> body, string text, PictureItemViewModel focusItem) =>
@@ -69,7 +72,6 @@ public class VideoTransformCommandsTest
             }
             commands.ProcessSelected.Execute(outputFileName);
             await (processTask ?? throw new Exception("Process task not set"));
-            Directory.SetCurrentDirectory(_testDir);
 
             Assert.IsTrue(File.Exists(outputFileName));
         }
@@ -78,7 +80,7 @@ public class VideoTransformCommandsTest
     [TestMethod]
     public async Task ProcessSelected_ShouldStabilize()
     {
-        var mainViewModelMoq = SetupMainViewModelMoq([VideoProcessingTest.SourceVideoPath]);
+        var mainViewModelMoq = SetupMainViewModelMoq([_sourceVideo]);
         Task? processTask = null;
         mainViewModelMoq.Setup(m => m.RunProcessWithProgressBarAsync(It.IsAny<Func<Action<double>, CancellationToken, Task>>(), It.IsAny<string>(), It.IsAny<PictureItemViewModel>()))
             .Returns((Func<Action<double>, CancellationToken, Task> body, string text, PictureItemViewModel focusItem) =>
@@ -93,7 +95,6 @@ public class VideoTransformCommandsTest
         commands.IsStabilizeChecked = true;
         commands.ProcessSelected.Execute(outputFileName);
         await(processTask ?? throw new Exception("Process task not set"));
-        Directory.SetCurrentDirectory(_testDir);
 
         Assert.IsTrue(File.Exists(outputFileName));
         Assert.IsFalse(File.Exists(transformFileName));
@@ -102,7 +103,7 @@ public class VideoTransformCommandsTest
     [TestMethod]
     public async Task CombineFade_ShouldCombineVideos()
     {
-        var mainViewModelMoq = SetupMainViewModelMoq([VideoProcessingTest.SourceVideoPath, VideoProcessingTest.SourceVideoPath, VideoProcessingTest.SourceVideoPath]);
+        var mainViewModelMoq = SetupMainViewModelMoq([_sourceVideo, _sourceVideo, _sourceVideo]);
         Task? processTask = null;
         mainViewModelMoq.Setup(m => m.RunProcessWithProgressBarAsync(It.IsAny<Func<Action<double>, CancellationToken, Task>>(), It.IsAny<string>(), It.IsAny<PictureItemViewModel>()))
             .Returns((Func<Action<double>, CancellationToken, Task> body, string text, PictureItemViewModel focusItem) =>
@@ -116,7 +117,6 @@ public class VideoTransformCommandsTest
         var commands = new VideoTransformCommands(mainViewModelMoq.Object);
         commands.CombineFade.Execute(outputFileName);
         await(processTask ?? throw new Exception("Process task not set"));
-        Directory.SetCurrentDirectory(_testDir);
 
         Assert.IsTrue(File.Exists(outputFileName));
     }

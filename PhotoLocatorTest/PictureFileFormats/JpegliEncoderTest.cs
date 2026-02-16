@@ -6,7 +6,7 @@ namespace PhotoLocator.PictureFileFormats
     [TestClass]
     public class JpegliEncoderTest
     {
-        const string EncoderPath = @"cjpegli.exe";
+        const string EncoderPath = @"jpegli\cjpegli.exe";
 
         public TestContext TestContext { get; set; }
 
