@@ -45,15 +45,27 @@
             <TextBox Text="{Binding CropWindow}" IsEnabled="{Binding IsCropChecked}" Width="140"
                      ToolTip="Crop region size and position, width:height:left:top"/>
             <CheckBox Content="Scale to:" IsChecked="{Binding IsScaleChecked}" Margin="20,0,0,0"/>
-            <TextBox Text="{Binding ScaleTo}" IsEnabled="{Binding IsScaleChecked}" Width="140" HorizontalAlignment="Right"
-                     ToolTip="Scale to resolution, width:height"/>
+            <ComboBox Text="{Binding ScaleTo}" IsEnabled="{Binding IsScaleChecked}" Width="140" HorizontalAlignment="Right" IsEditable="True"
+                      ToolTip="Scale to resolution, width:height">
+                <ComboBoxItem Content="1280:720"/>
+                <ComboBoxItem Content="1080:1080"/>
+                <ComboBoxItem Content="1920:1080"/>
+                <ComboBoxItem Content="2560:1440"/>
+                <ComboBoxItem Content="3840:2160"/>
+            </ComboBox>
         </DockPanel>
 
         <DockPanel Margin="10,4,0,0" >
             <TextBlock Text="Effect:" Width="130"/>
-            <ComboBox ItemsSource="{Binding Effects}" SelectedItem="{Binding SelectedEffect}" Width="140" />
-            <TextBlock Text="Strength:" Margin="20,0,0,0" Visibility="{Binding IsParameterizedEffect, Converter={StaticResource BooleanToVisibility}}"/>
-            <TextBox Text="{Binding EffectStrength}" Visibility="{Binding IsParameterizedEffect, Converter={StaticResource BooleanToVisibility}}" Width="140" HorizontalAlignment="Right"/>
+            <ComboBox ItemsSource="{Binding Effects}" SelectedItem="{Binding SelectedEffect}" Width="140" >
+                <ComboBox.ItemTemplate>
+                    <DataTemplate>
+                        <TextBlock Text="{Binding}"/>
+                    </DataTemplate>
+                </ComboBox.ItemTemplate>
+            </ComboBox>
+            <TextBlock Text="{Binding EffectParameterText}" Margin="20,0,0,0" Visibility="{Binding IsParameterizedEffect, Converter={StaticResource BooleanToVisibility}}"/>
+            <TextBox Text="{Binding EffectParameter}" Visibility="{Binding IsParameterizedEffect, Converter={StaticResource BooleanToVisibility}}" Width="140" HorizontalAlignment="Right"/>
         </DockPanel>
 
         <CheckBox Content="Stabilize" IsChecked="{Binding IsStabilizeChecked}" Margin="0,8,0,0"/>
@@ -119,6 +131,14 @@
                 IsChecked="{Binding Path=CombineFramesMode, Converter={StaticResource ComparisonConverter}, ConverterParameter={x:Static local:CombineFramesMode.TimeSliceInterpolated}}"/>
             <ComboBox ItemsSource="{Binding TimeSliceDirections}" SelectedItem="{Binding SelectedTimeSliceDirection}" Width="140" Height="30"
                       HorizontalAlignment="Right" ToolTip="Time slice direction">
+                <ComboBox.ItemTemplate>
+                    <DataTemplate>
+                        <Grid>
+                            <Image Source="{Binding Image}"/>
+                            <TextBlock Text="{Binding Text}"/>
+                        </Grid>
+                    </DataTemplate>
+                </ComboBox.ItemTemplate>
                 <ComboBox.IsEnabled>
                     <MultiBinding Converter="{StaticResource OrComparisonConverter}">
                         <Binding Path="CombineFramesMode" />
@@ -135,7 +155,13 @@
             <RadioButton Content="Video" Margin="0,4,0,0" Width="130"
                          IsChecked="{Binding Path=OutputMode, Converter={StaticResource ComparisonConverter}, ConverterParameter={x:Static local:OutputMode.Video}}"/>
             <ComboBox ItemsSource="{Binding VideoFormats}" SelectedItem="{Binding SelectedVideoFormat}" Width="140"
-                      IsEnabled="{Binding Path=OutputMode, Converter={StaticResource ComparisonConverter}, ConverterParameter={x:Static local:OutputMode.Video}}"/>
+                      IsEnabled="{Binding Path=OutputMode, Converter={StaticResource ComparisonConverter}, ConverterParameter={x:Static local:OutputMode.Video}}">
+                <ComboBox.ItemTemplate>
+                    <DataTemplate>
+                        <TextBlock Text="{Binding}"/>
+                    </DataTemplate>
+                </ComboBox.ItemTemplate>
+            </ComboBox>
 
             <TextBlock Text="Frame rate (fps):" Margin="20,0,0,0"/>
             <TextBox Text="{Binding FrameRate}" Width="140" HorizontalAlignment="Right" 
@@ -183,7 +209,7 @@
         </Grid>
         <RadioButton Content="Time slice image" Margin="10,2,0,0"
                      IsChecked="{Binding Path=OutputMode, Converter={StaticResource ComparisonConverter}, ConverterParameter={x:Static local:OutputMode.TimeSliceImage}}"/>
-        <TextBlock Text="Process arguments:" Margin="0,4,0,0"/>
+        <TextBlock Text="ffmpeg process arguments:" Margin="0,4,0,0"/>
         <TextBox Text="{Binding InputArguments}" Margin="10,0,0,0"/>
         <TextBox Text="{Binding ProcessArguments}" Margin="10,0,0,0"/>
         <TextBox Text="{Binding OutputArguments}" Margin="10,0,0,0"/>

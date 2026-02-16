@@ -100,7 +100,7 @@ namespace PhotoLocator.Gps
             Assert.AreEqual(new DateTime(2025, 5, 5, 5, 46, 22, 318, DateTimeKind.Utc), trace.TimeStamps[0]);
         }
 
-        [TestMethod, Ignore]
+        [TestMethod, Ignore("Not a test")]
         public void ConvertHtmlTableToGpx()
         {
             const string Path = @"C:\temp\";
