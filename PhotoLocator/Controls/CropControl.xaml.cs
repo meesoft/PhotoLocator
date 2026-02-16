@@ -1,11 +1,12 @@
-﻿using System;
+﻿using PhotoLocator.Helpers;
+using System;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 
-namespace PhotoLocator.Helpers
+namespace PhotoLocator.Controls
 {
     public interface ICropControl
     {

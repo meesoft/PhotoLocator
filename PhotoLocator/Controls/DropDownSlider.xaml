@@ -1,0 +1,35 @@
+<UserControl x:Class="PhotoLocator.Controls.DropDownSlider"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             mc:Ignorable="d" d:DesignHeight="30" d:DesignWidth="200">
+    <Grid Width="Auto">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition />
+            <ColumnDefinition Width="22" />
+        </Grid.ColumnDefinitions>
+
+        <TextBox Text="{Binding Text, RelativeSource={RelativeSource AncestorType=UserControl}, Mode=TwoWay, UpdateSourceTrigger=LostFocus}"
+                 IsEnabled="{Binding IsEnabled, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                 VerticalContentAlignment="Center" />
+
+        <ToggleButton x:Name="DropToggle" Grid.Column="1" Width="20" Margin="2,0,0,0" FontFamily="Segoe UI Symbol" FontSize="12" Content="&#x23F7;"
+                      IsEnabled="{Binding IsEnabled, RelativeSource={RelativeSource AncestorType=UserControl}}"/>
+
+        <Popup IsOpen="{Binding IsChecked, ElementName=DropToggle}" PlacementTarget="{Binding ElementName=DropToggle}"
+               StaysOpen="False" AllowsTransparency="True" PopupAnimation="Fade">
+            <Border Background="#FF222222" BorderBrush="Gray" BorderThickness="1" Padding="8" CornerRadius="4">
+                <StackPanel Width="260">
+                    <Slider Minimum="{Binding Minimum, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                            Maximum="{Binding Maximum, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                            Value="{Binding NumericValue, RelativeSource={RelativeSource AncestorType=UserControl}, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                            TickFrequency="{Binding TickFrequency, RelativeSource={RelativeSource AncestorType=UserControl}}" IsSnapToTickEnabled="False" />
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,6,0,0">
+                        <TextBlock Foreground="#FFEEEEEE" Margin="0,0,6,0" Text="{Binding FormattedNumericValue, RelativeSource={RelativeSource AncestorType=UserControl}}" />
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+        </Popup>
+    </Grid>
+</UserControl>

@@ -19,6 +19,7 @@ using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
 using System.Windows.Media.Imaging;
+using System.Windows.Threading;
 
 namespace PhotoLocator;
 
@@ -32,6 +33,8 @@ public class VideoTransformCommands : INotifyPropertyChanged
     readonly IMainViewModel _mainViewModel;
     readonly VideoProcessing _videoTransforms;
     Action<double>? _progressCallback;
+    DispatcherTimer? _previewUpdateDelay;
+    string? _previewSkipTo;
     double _progressOffset, _progressScale;
     TimeSpan _inputDuration;
     double _fps;
@@ -81,12 +84,12 @@ public class VideoTransformCommands : INotifyPropertyChanged
         get;
         set
         {
-            if (!SetProperty(ref field, value.Trim()))
+            if (!SetProperty(ref field, value.TrimInvariantValue()))
                 return;
             UpdateInputArgs();
             UpdateOutputArgs();
             _localContrastSetup?.SourceBitmap = null;
-            _mainViewModel.UpdatePreviewPictureAsync(SkipTo).WithExceptionLogging();
+            BeginPreviewUpdate(SkipTo);
         }
     } = string.Empty;
 
@@ -95,16 +98,57 @@ public class VideoTransformCommands : INotifyPropertyChanged
         get;
         set
         {
-            if (!SetProperty(ref field, value.Trim()))
+            if (!SetProperty(ref field, value.TrimInvariantValue()))
                 return;
             UpdateInputArgs();
             UpdateOutputArgs();
             if (string.IsNullOrEmpty(SkipTo))
-                _mainViewModel.UpdatePreviewPictureAsync(Duration).WithExceptionLogging();
+                BeginPreviewUpdate(Duration);
             else if (double.TryParse(SkipTo, CultureInfo.InvariantCulture, out var skipToSeconds) && double.TryParse(Duration, CultureInfo.InvariantCulture, out var durationSeconds))
-                _mainViewModel.UpdatePreviewPictureAsync((skipToSeconds + durationSeconds).ToString(CultureInfo.InvariantCulture)).WithExceptionLogging();
+                BeginPreviewUpdate((skipToSeconds + durationSeconds).ToString(CultureInfo.InvariantCulture));
         }
     } = string.Empty;
+
+    public double DurationSliderRange
+    {
+        get
+        {
+            if (_durationSliderRange is null)
+            {
+                var firstSelected = _mainViewModel.GetSelectedItems(true).First();
+                if (firstSelected.IsVideo)
+                    try
+                    {
+                        _durationSliderRange = GetClipDurationSeconds(firstSelected.FullPath);
+                    }
+                    catch (Exception ex)
+                    {
+                        ExceptionHandler.LogException(ex);
+                        _durationSliderRange = 600;
+                    }
+                else
+                    _durationSliderRange = 600;
+            }
+            return _durationSliderRange.Value;
+        }
+    }
+    double? _durationSliderRange;
+
+    private void BeginPreviewUpdate(string skipTo)
+    {
+        if (_previewUpdateDelay is null)
+        {
+            _previewUpdateDelay = new DispatcherTimer { Interval = TimeSpan.FromSeconds(0.5) };
+            _previewUpdateDelay.Tick += (s, e) =>
+            {
+                _previewUpdateDelay.Stop();
+                _mainViewModel.UpdatePreviewPictureAsync(_previewSkipTo).WithExceptionLogging();
+            };
+        }
+        _previewSkipTo = skipTo;
+        _previewUpdateDelay.Stop();
+        _previewUpdateDelay.Start();
+    }
 
     public bool IsRotateChecked
     {
@@ -121,7 +165,7 @@ public class VideoTransformCommands : INotifyPropertyChanged
         get;
         set
         {
-            if (SetProperty(ref field, value.Trim()))
+            if (SetProperty(ref field, value.TrimInvariantValue()))
                 UpdateProcessArgs();
         }
     } = string.Empty;
@@ -141,7 +185,7 @@ public class VideoTransformCommands : INotifyPropertyChanged
         get;
         set
         {
-            if (SetProperty(ref field, value.Trim()))
+            if (SetProperty(ref field, value.TrimInvariantValue()))
                 UpdateProcessArgs();
         }
     } = string.Empty;
@@ -188,7 +232,7 @@ public class VideoTransformCommands : INotifyPropertyChanged
         get;
         set
         {
-            if (SetProperty(ref field, value.Trim()))
+            if (SetProperty(ref field, value.TrimInvariantValue()))
                 UpdateProcessArgs();
         }
     } = "w:h";
@@ -254,7 +298,7 @@ public class VideoTransformCommands : INotifyPropertyChanged
         get => _effectParameter;
         set
         {
-            if (SetProperty(ref _effectParameter, value?.Trim().Replace(',', '.')))
+            if (SetProperty(ref _effectParameter, value?.TrimInvariantValue()))
                 UpdateProcessArgs();
         }
     }
@@ -519,7 +563,7 @@ public class VideoTransformCommands : INotifyPropertyChanged
         get;
         set
         {
-            if (SetProperty(ref field, value.Trim()))
+            if (SetProperty(ref field, value.TrimInvariantValue()))
                 UpdateOutputArgs();
         }
     } = string.Empty;
@@ -727,6 +771,12 @@ public class VideoTransformCommands : INotifyPropertyChanged
         ProcessSelected.Execute(null);
     });
 
+    private bool IsAnyProcessingSelected()
+    {
+        return IsCropChecked || IsScaleChecked || IsRotateChecked || IsStabilizeChecked || IsSpeedupChecked || IsLocalContrastChecked ||
+            IsCombineFramesOperation || SelectedEffect?.Tag is not null;
+    }
+
     public ICommand Combine => new RelayCommand(o =>
     {
         if (_mainViewModel.GetSelectedItems(true).All(item => item.IsVideo))
@@ -743,13 +793,7 @@ public class VideoTransformCommands : INotifyPropertyChanged
                 FrameRate = "30";
         }
         ProcessSelected.Execute(null);
-    });
-
-    private bool IsAnyProcessingSelected()
-    {
-        return IsCropChecked || IsScaleChecked || IsRotateChecked || IsStabilizeChecked || IsSpeedupChecked || IsLocalContrastChecked || 
-            IsCombineFramesOperation || SelectedEffect?.Tag is not null;
-    }
+    });   
 
     public ICommand CombineFade => new RelayCommand(async parameter =>
     {
@@ -758,8 +802,6 @@ public class VideoTransformCommands : INotifyPropertyChanged
         const double FadeDuration = 1;
         const string Transition = "fade"; // See https://ffmpeg.org/ffmpeg-filters.html#xfade
 
-        if (string.IsNullOrEmpty(_mainViewModel.Settings.ExifToolPath))
-            throw new UserMessageException("ExifTool path is not set in settings, please set it before using this command");
         var allSelected = _mainViewModel.GetSelectedItems(true).Where(item => item.IsVideo).ToArray();
         if (allSelected.Length < 2)
             throw new UserMessageException("Select at least 2 videos");
@@ -783,12 +825,7 @@ public class VideoTransformCommands : INotifyPropertyChanged
             progressCallback(-1);
             var clipDurations = new double[allSelected.Length];
             for (int i = 0; i < allSelected.Length; i++)
-            {
-                var metadata = ExifTool.LoadMetadata(allSelected[i].FullPath, _mainViewModel.Settings.ExifToolPath);
-                var spanStr = metadata["Duration"];
-                if (!double.TryParse(spanStr.Trim('s'), CultureInfo.InvariantCulture, out clipDurations[i]))
-                    clipDurations[i] = TimeSpan.Parse(spanStr, CultureInfo.InvariantCulture).TotalSeconds;
-            }
+                clipDurations[i] = GetClipDurationSeconds(allSelected[i].FullPath);
 
             var sb = new StringBuilder();
             for (int i = 0; i < allSelected.Length; i++)
@@ -820,6 +857,15 @@ public class VideoTransformCommands : INotifyPropertyChanged
         }, "Processing...");
         await _mainViewModel.AddOrUpdateItemAsync(outFileName, false, true);
     });
+
+    private double GetClipDurationSeconds(string fileName)
+    {
+        var metadata = ExifTool.LoadMetadata(fileName, _mainViewModel.Settings.ExifToolPath ?? throw new UserMessageException("ExifTool path not set in settings"));
+        var spanStr = metadata["Duration"];
+        if (!double.TryParse(spanStr.Trim('s'), CultureInfo.InvariantCulture, out var result))
+            result = TimeSpan.Parse(spanStr, CultureInfo.InvariantCulture).TotalSeconds;
+        return result;
+    }
 
     public ICommand Compare => new RelayCommand(async o =>
     {
@@ -888,6 +934,7 @@ public class VideoTransformCommands : INotifyPropertyChanged
             _mainViewModel.UpdatePreviewPictureAsync(SkipTo).WithExceptionLogging();
         if (_localContrastSetup is not null && _localContrastSetup.SourceBitmap is not null)
             _localContrastSetup.SourceBitmap = null;
+        _durationSliderRange = null;
         var window = new VideoTransformWindow() { Owner = App.Current.MainWindow, DataContext = this };
         try
         {
@@ -896,6 +943,7 @@ public class VideoTransformCommands : INotifyPropertyChanged
         }
         finally
         {
+            _previewUpdateDelay?.Stop();
             if (_localContrastSetup is not null && _localContrastSetup.SourceBitmap is not null)
                 _localContrastSetup.SourceBitmap = null;
             window.DataContext = null;
