@@ -109,30 +109,26 @@ public class VideoTransformCommands : INotifyPropertyChanged
         }
     } = string.Empty;
 
-    public double DurationSliderRange
+    public double TrimSliderRange
     {
-        get
+        get;
+        set => SetProperty(ref field, value);
+    } = 600;
+
+    private void UpdateTrimSliderRanges()
+    {
+        var firstSelected = _mainViewModel.GetSelectedItems(true).First();
+        if (!firstSelected.IsVideo)
+            return;
+        try
         {
-            if (_durationSliderRange is null)
-            {
-                var firstSelected = _mainViewModel.GetSelectedItems(true).First();
-                if (firstSelected.IsVideo)
-                    try
-                    {
-                        _durationSliderRange = GetClipDurationSeconds(firstSelected.FullPath);
-                    }
-                    catch (Exception ex)
-                    {
-                        ExceptionHandler.LogException(ex);
-                        _durationSliderRange = 600;
-                    }
-                else
-                    _durationSliderRange = 600;
-            }
-            return _durationSliderRange.Value;
+            TrimSliderRange = GetClipDurationSeconds(firstSelected.FullPath);
+        }
+        catch (Exception ex)
+        {
+            ExceptionHandler.LogException(ex);
         }
     }
-    double? _durationSliderRange;
 
     private void BeginPreviewUpdate(string skipTo)
     {
@@ -602,7 +598,7 @@ public class VideoTransformCommands : INotifyPropertyChanged
     {
         if (RegistrationMode == RegistrationMode.Off)
             return null;
-        
+
         ROI? roi = null;
         if (!string.IsNullOrEmpty(RegistrationRegion) && RegistrationRegion[0] != 'w')
         {
@@ -713,7 +709,7 @@ public class VideoTransformCommands : INotifyPropertyChanged
             filters.Add(effect);
         else if (SelectedEffect.Tag is ParameterizedFilter effectFilter)
             filters.Add(string.Format(CultureInfo.InvariantCulture, effectFilter.Filter,
-                EffectParameter, 
+                EffectParameter,
                 IsScaleChecked ? ScaleTo.Replace(':', 'x') : "1920x1080",
                 string.IsNullOrEmpty(FrameRate) ? "30" : FrameRate));
         if (IsSpeedupChecked && (CombineFramesMode != CombineFramesMode.RollingAverage || !SpeedupByEqualsCombineFramesCount))
@@ -793,7 +789,7 @@ public class VideoTransformCommands : INotifyPropertyChanged
                 FrameRate = "30";
         }
         ProcessSelected.Execute(null);
-    });   
+    });
 
     public ICommand CombineFade => new RelayCommand(async parameter =>
     {
@@ -934,8 +930,8 @@ public class VideoTransformCommands : INotifyPropertyChanged
             _mainViewModel.UpdatePreviewPictureAsync(SkipTo).WithExceptionLogging();
         if (_localContrastSetup is not null && _localContrastSetup.SourceBitmap is not null)
             _localContrastSetup.SourceBitmap = null;
-        _durationSliderRange = null;
         var window = new VideoTransformWindow() { Owner = App.Current.MainWindow, DataContext = this };
+        window.Dispatcher.BeginInvoke(UpdateTrimSliderRanges, DispatcherPriority.Background);
         try
         {
             if (window.ShowDialog() is not true)
@@ -1022,7 +1018,7 @@ public class VideoTransformCommands : INotifyPropertyChanged
             await _mainViewModel.AddOrUpdateItemAsync(outFileName, OutputMode == OutputMode.ImageSequence, true);
         if (!string.IsNullOrEmpty(message) && parameter is null)
             MessageBox.Show(App.Current.MainWindow, message);
-    });      
+    });
 
     async Task RunStabilizePreProcessingAsync(CancellationToken ct)
     {
@@ -1227,7 +1223,7 @@ public class VideoTransformCommands : INotifyPropertyChanged
         {
             _inputDuration = TimeSpan.FromSeconds(durationS);
             _hasDuration = true;
-        }                
+        }
         else
             _hasDuration = false;
         _hasFps = false;

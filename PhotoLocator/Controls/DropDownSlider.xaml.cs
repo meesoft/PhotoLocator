@@ -7,6 +7,8 @@ namespace PhotoLocator.Controls;
 
 public partial class DropDownSlider : UserControl
 {
+    static bool _onTextChangedRunning, _onNumericValueChangedRunning;
+
     public DropDownSlider()
     {
         InitializeComponent();
@@ -23,15 +25,13 @@ public partial class DropDownSlider : UserControl
 
     static void OnTextChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
     {
-        if (d is DropDownSlider control)
+        if (_onNumericValueChangedRunning || d is not DropDownSlider control)
+            return;
+        if (double.TryParse(control.Text, NumberStyles.Float, CultureInfo.InvariantCulture, out var v))
         {
-            if (double.TryParse(control.Text, NumberStyles.Float, CultureInfo.InvariantCulture, out var v))
-            {
-                // Clamp to range
-                if (v < control.Minimum) v = control.Minimum;
-                if (v > control.Maximum) v = control.Maximum;
-                control.NumericValue = v;
-            }
+            _onTextChangedRunning = true;
+            control.NumericValue = Math.Clamp(v, control.Minimum, control.Maximum);
+            _onTextChangedRunning = false;
         }
     }
 
@@ -67,12 +67,13 @@ public partial class DropDownSlider : UserControl
 
     static void OnNumericValueChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
     {
-        if (d is DropDownSlider control)
-        {
-            // Format with configured number of decimals
+        if (d is not DropDownSlider control)
+            return;
+        _onNumericValueChangedRunning = true;
+        if (!_onTextChangedRunning)
             control.Text = control.NumericValue.ToString("F" + control.Decimals.ToString(CultureInfo.InvariantCulture), CultureInfo.InvariantCulture);
-            control.UpdateFormattedValue();
-        }
+        control.UpdateFormattedValue();
+        _onNumericValueChangedRunning = false;
     }
 
     void UpdateFormattedValue()
