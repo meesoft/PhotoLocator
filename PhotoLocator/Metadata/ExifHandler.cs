@@ -427,6 +427,7 @@ namespace PhotoLocator.Metadata
                     ?? metadata.GetQuery(FileTimeStampQuery1) ?? metadata.GetQuery(FileTimeStampQuery2)) as string;
 
                 if (!DateTime.TryParseExact(timestampStr, "yyyy:MM:dd HH:mm:ss", CultureInfo.InvariantCulture, DateTimeStyles.AllowWhiteSpaces, out var timeStamp) &&
+                    !DateTime.TryParseExact(timestampStr, "yyyy/MM/dd HH:mm:ss", CultureInfo.InvariantCulture, DateTimeStyles.AllowWhiteSpaces, out timeStamp) &&
                     !DateTime.TryParse(metadata.DateTaken, out timeStamp))
                     return null;
 

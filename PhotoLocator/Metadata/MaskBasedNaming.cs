@@ -126,7 +126,7 @@ namespace PhotoLocator.Metadata
             if (value is null)
                 return;
             foreach (var ch in Path.GetInvalidFileNameChars())
-                value = value.Replace(ch, '_');
+                value = value.Replace(ch, '-');
             result.Append(value);
         }
 
