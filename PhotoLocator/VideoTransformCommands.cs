@@ -90,6 +90,8 @@ public class VideoTransformCommands : INotifyPropertyChanged
             UpdateOutputArgs();
             _localContrastSetup?.SourceBitmap = null;
             BeginPreviewUpdate(SkipTo);
+            if (double.TryParse(SkipTo, CultureInfo.InvariantCulture, out var skipToSeconds) && skipToSeconds <= SkipToSliderMax)
+                DurationSliderMax = SkipToSliderMax - skipToSeconds;
         }
     } = string.Empty;
 
@@ -109,12 +111,18 @@ public class VideoTransformCommands : INotifyPropertyChanged
         }
     } = string.Empty;
 
-    public double TrimSliderRange
+    public double SkipToSliderMax
     {
         get;
         set => SetProperty(ref field, value);
     } = 600;
 
+    public double DurationSliderMax
+    {
+        get;
+        set => SetProperty(ref field, value);
+    } = 600;
+    
     private void UpdateTrimSliderRanges()
     {
         var firstSelected = _mainViewModel.GetSelectedItems(true).First();
@@ -122,7 +130,7 @@ public class VideoTransformCommands : INotifyPropertyChanged
             return;
         try
         {
-            TrimSliderRange = GetClipDurationSeconds(firstSelected.FullPath);
+            SkipToSliderMax = DurationSliderMax = GetClipDurationSeconds(firstSelected.FullPath);
         }
         catch (Exception ex)
         {
