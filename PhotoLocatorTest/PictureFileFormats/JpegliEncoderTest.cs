@@ -1,4 +1,5 @@
 ﻿using PhotoLocator.Metadata;
+using System.Diagnostics;
 using System.Windows.Media.Imaging;
 
 namespace PhotoLocator.PictureFileFormats
@@ -20,7 +21,7 @@ namespace PhotoLocator.PictureFileFormats
             const string TargetPathJpeg = @"jpeg.jpg";
             const string TargetPathJpegli = @"jpegli.jpg";
 
-            Console.WriteLine($"Source size: {new FileInfo(SourcePath).Length / 1024} kb");
+            Debug.WriteLine($"Source size: {new FileInfo(SourcePath).Length / 1024} kb");
 
             using var sourceFile = File.OpenRead(SourcePath);
             var source = GeneralFileFormatHandler.LoadFromStream(sourceFile, Rotation.Rotate0, int.MaxValue, true, TestContext.CancellationToken);
@@ -29,12 +30,12 @@ namespace PhotoLocator.PictureFileFormats
 
             GeneralFileFormatHandler.SaveToFile(source, TargetPathJpeg, metadata, 95);
             var sizeJpeg = new FileInfo(TargetPathJpeg).Length;
-            Console.WriteLine($"Dest size jpeg: {sizeJpeg / 1024} kb");
+            Debug.WriteLine($"Dest size jpeg: {sizeJpeg / 1024} kb");
 
             JpegliEncoder.SaveToFile(source, TargetPathJpegli, metadata, 94, EncoderPath);
             var sizeJpegli = new FileInfo(TargetPathJpegli).Length;
-            Console.WriteLine($"Dest size jpegli: {sizeJpegli / 1024} kb");
-            Console.WriteLine($"{100.0 * sizeJpegli / sizeJpeg:0.0}%");
+            Debug.WriteLine($"Dest size jpegli: {sizeJpegli / 1024} kb");
+            Debug.WriteLine($"{100.0 * sizeJpegli / sizeJpeg:0.0}%");
            
             Assert.AreEqual(metadata!.DateTaken,  ExifHandler.LoadMetadata(File.OpenRead(TargetPathJpegli))?.DateTaken);
         }

@@ -10,6 +10,7 @@
         <Copyright>Copyright © 2023 Clemens Fischer</Copyright>
         <SignAssembly>true</SignAssembly>
         <Platforms>x64</Platforms>
+        <AppendPlatformToOutputPath>false</AppendPlatformToOutputPath>
     </PropertyGroup>
 
     <ItemGroup>

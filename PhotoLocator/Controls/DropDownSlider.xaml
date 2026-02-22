@@ -24,6 +24,7 @@
                     <Slider Minimum="{Binding Minimum, RelativeSource={RelativeSource AncestorType=UserControl}}"
                             Maximum="{Binding Maximum, RelativeSource={RelativeSource AncestorType=UserControl}}"
                             Value="{Binding NumericValue, RelativeSource={RelativeSource AncestorType=UserControl}, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                            TickPlacement="BottomRight"
                             TickFrequency="{Binding TickFrequency, RelativeSource={RelativeSource AncestorType=UserControl}}" IsSnapToTickEnabled="False" />
                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,6,0,0">
                         <TextBlock Foreground="#FFEEEEEE" Margin="0,0,6,0" Text="{Binding FormattedNumericValue, RelativeSource={RelativeSource AncestorType=UserControl}}" />

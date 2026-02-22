@@ -58,7 +58,7 @@ public partial class DropDownSlider : UserControl
     }
 
     public static readonly DependencyProperty TickFrequencyProperty = DependencyProperty.Register(
-        nameof(TickFrequency), typeof(double), typeof(DropDownSlider), new PropertyMetadata(0.1));
+        nameof(TickFrequency), typeof(double), typeof(DropDownSlider), new PropertyMetadata(1.0));
     public double TickFrequency { get => (double)GetValue(TickFrequencyProperty); set => SetValue(TickFrequencyProperty, value); }
 
     public static readonly DependencyProperty FormattedNumericValueProperty = DependencyProperty.Register(
