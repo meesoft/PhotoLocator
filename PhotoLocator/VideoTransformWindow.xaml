@@ -203,7 +203,7 @@
             </Grid.ColumnDefinitions>
             <RadioButton Content="Frame max" Width="130"
                          IsChecked="{Binding Path=OutputMode, Converter={StaticResource ComparisonConverter}, ConverterParameter={x:Static local:OutputMode.Max}}"/>
-            <TextBlock Text="Dark frame path:" Margin="0,0,10,0" Grid.Column="1" />
+            <TextBlock Text="Hot pixel map path:" Margin="0,0,10,0" Grid.Column="1" />
             <TextBox Text="{Binding DarkFramePath}" IsEnabled="{Binding IsCombineFramesOperation}" Grid.Column="2"/>
             <Button Content="&#xED25;" FontFamily="Segoe MDL2 Assets" Command="{Binding BrowseDarkFrameCommand}"
                     IsEnabled="{Binding IsCombineFramesOperation}" Grid.Column="3" />
