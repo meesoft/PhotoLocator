@@ -5,6 +5,9 @@ namespace PhotoLocator.Helpers
 {
     public static class RealMath
     {
+        /// <summary>
+        /// Clamp without min/max sanity check, for better performance when the caller can guarantee that max>min
+        /// </summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static float Clamp(float value, float min, float max)
         {
@@ -15,6 +18,9 @@ namespace PhotoLocator.Helpers
             return value;
         }
 
+        /// <summary>
+        /// Clamp without min/max sanity check, for better performance when the caller can guarantee that max>min
+        /// </summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static double Clamp(double value, double min, double max)
         {
@@ -52,7 +58,6 @@ namespace PhotoLocator.Helpers
         {
             return (3.0f - 2.0f * x) * x * x;
         }
-
 
         /// <summary>
         /// Smooth step edge between min and max

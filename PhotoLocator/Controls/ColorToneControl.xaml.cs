@@ -1,4 +1,5 @@
 ﻿using PhotoLocator.BitmapOperations;
+using PhotoLocator.Helpers;
 using System;
 using System.ComponentModel;
 using System.Threading.Tasks;
@@ -8,7 +9,7 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 
-namespace PhotoLocator.Helpers
+namespace PhotoLocator.Controls
 {
     /// <summary>
     /// Interaction logic for ColorToneControl.xaml

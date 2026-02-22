@@ -245,7 +245,7 @@ namespace PhotoLocator.Metadata
             Assert.AreEqual("FC7303, 100.7m, 1/80s, f/2.8, 4.49mm, ISO100, " + JpegTestDataTimestamp, str);
         }     
 
-        [TestMethod, Ignore]
+        [TestMethod, Ignore("Performance test")]
         public void GetMetadataString_ShouldFormatMetadata_Performance()
         {
             Thread.CurrentThread.CurrentCulture = CultureInfo.InvariantCulture;

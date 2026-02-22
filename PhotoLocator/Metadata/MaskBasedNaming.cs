@@ -125,8 +125,8 @@ namespace PhotoLocator.Metadata
             var value = (metadata?.GetQuery(query1) ?? metadata?.GetQuery(query2))?.ToString();
             if (value is null)
                 return;
-            foreach (var ch in Path.GetInvalidFileNameChars())
-                value = value.Replace(ch, '_');
+            foreach (var ch in _invalidFileNameChars)
+                value = value.Replace(ch, '-');
             result.Append(value);
         }
 

@@ -1,5 +1,6 @@
 ﻿using MapControl;
 using Peter;
+using PhotoLocator.Controls;
 using PhotoLocator.Gps;
 using PhotoLocator.Helpers;
 using PhotoLocator.MapDisplay;
