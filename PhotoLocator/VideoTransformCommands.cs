@@ -1127,6 +1127,8 @@ public class VideoTransformCommands : INotifyPropertyChanged
             _ => null,
         };
 
+        IEnumerator<BitmapSource>? starfield = null;
+
         using var frameEnumerator = new QueueEnumerable<BitmapSource>();
         var readTask = _videoTransforms.RunFFmpegWithStreamOutputImagesAsync($"{InputArguments} {ProcessArguments}",
             source =>
@@ -1143,6 +1145,11 @@ public class VideoTransformCommands : INotifyPropertyChanged
                     }
                     source = runningAverage.GetResult16();
                 }
+
+                starfield ??= new StarfieldRenderer(source.PixelWidth, source.PixelHeight, 10000, speed: 0.001f, growthFactor: 2f, seed: 42).GenerateFrames(10000).GetEnumerator();
+                starfield.MoveNext();
+                source = StarfieldRenderer.AddFrames(source, starfield.Current);
+
                 frameEnumerator.AddItem(_localContrastSetup!.ApplyOperations(source));
             }, ProcessStdError, ct);
         await Task.WhenAny(frameEnumerator.GotFirst, Task.Delay(TimeSpan.FromSeconds(10), ct)).ConfigureAwait(false);
