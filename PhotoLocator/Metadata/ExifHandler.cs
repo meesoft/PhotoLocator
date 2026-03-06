@@ -581,10 +581,10 @@ namespace PhotoLocator.Metadata
 
         public static string GetMetadataString(BitmapMetadata metadata, Stream? imageStream)
         {
-            return GetMetadataString(metadata, DecodeTimeStamp(metadata, imageStream));
+            return GetMetadataString(metadata, 0, 0, DecodeTimeStamp(metadata, imageStream));
         }
 
-        private static string GetMetadataString(BitmapMetadata metadata, DateTimeOffset? timeStamp)
+        private static string GetMetadataString(BitmapMetadata metadata, int width, int height, DateTimeOffset? timeStamp)
         {
             var metadataStrings = new List<string>();
 
@@ -622,6 +622,9 @@ namespace PhotoLocator.Metadata
             if (iso != null)
                 metadataStrings.Add("ISO" + iso.ToString());
 
+            if (width > 0 && height > 0)
+                metadataStrings.Add($"{width}x{height}");
+
             if (timeStamp.HasValue)
                 metadataStrings.Add(FormatTimestampForDisplay(timeStamp.Value));
 
@@ -641,9 +644,9 @@ namespace PhotoLocator.Metadata
             try
             {
                 using var file = await FileHelpers.OpenFileWithRetryAsync(fileName, ct);
-                var metadata = LoadMetadata(file);
-                if (metadata is null)
-                    return (null, null, string.Empty, Rotation.Rotate0);
+                var frame = BitmapDecoder.Create(file, CreateOptions, BitmapCacheOption.OnDemand).Frames[0];
+                if (frame.Metadata is not BitmapMetadata metadata)
+                    return (null, null, $"{frame.PixelWidth}x{frame.PixelHeight}", Rotation.Rotate0);
                 var orientationValue = metadata.GetQuery(OrientationQuery1) as ushort? ?? metadata.GetQuery(OrientationQuery2) as ushort? ?? 0;
                 var orientation = orientationValue switch
                 {
@@ -653,7 +656,7 @@ namespace PhotoLocator.Metadata
                     _ => Rotation.Rotate0
                 };
                 var timeStamp = DecodeTimeStamp(metadata, file);
-                return (GetGeotag(metadata), timeStamp, GetMetadataString(metadata, timeStamp), orientation);
+                return (GetGeotag(metadata), timeStamp, GetMetadataString(metadata, frame.PixelWidth, frame.PixelHeight, timeStamp), orientation);
             }
             catch (NotSupportedException)
             {

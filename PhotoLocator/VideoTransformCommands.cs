@@ -28,6 +28,7 @@ public class VideoTransformCommands : INotifyPropertyChanged
     const string OpenImageFileFilter = "Image files|*.png;*.tif;*.bmp;*.jpg";
     const string InputListFileName = "input.txt";
     const string SaveVideoFilter = "MP4|*.mp4";
+    const int DefaultFrameRate = 30;
     internal const string TransformsFileName = "transforms.trf";
     const int DefaultAverageFramesCount = 20;
     readonly IMainViewModel _mainViewModel;
@@ -670,7 +671,11 @@ public class VideoTransformCommands : INotifyPropertyChanged
             if (!string.IsNullOrEmpty(SkipTo))
                 args += $"-ss {SkipTo} ";
             if (!string.IsNullOrEmpty(Duration))
+            {
+                if (!allSelected[0].IsVideo)
+                    args += "-loop 1 ";
                 args += $"-t {Duration} ";
+            }
             InputArguments = args + $"-i \"{allSelected[0].FullPath}\"";
         }
         else
@@ -719,7 +724,7 @@ public class VideoTransformCommands : INotifyPropertyChanged
             filters.Add(string.Format(CultureInfo.InvariantCulture, effectFilter.Filter,
                 EffectParameter,
                 IsScaleChecked ? ScaleTo.Replace(':', 'x') : "1920x1080",
-                string.IsNullOrEmpty(FrameRate) ? "30" : FrameRate));
+                string.IsNullOrEmpty(FrameRate) ? DefaultFrameRate.ToString(CultureInfo.InvariantCulture) : FrameRate));
         if (IsSpeedupChecked && (CombineFramesMode != CombineFramesMode.RollingAverage || !SpeedupByEqualsCombineFramesCount))
             filters.Add($"setpts=PTS/({SpeedupBy})");
         if (!string.IsNullOrEmpty(FrameRate) && SelectedEffect.Text != ZoomEffect)
@@ -794,7 +799,7 @@ public class VideoTransformCommands : INotifyPropertyChanged
             if (SelectedVideoFormat == VideoFormats[CopyVideoFormatIndex])
                 SelectedVideoFormat = VideoFormats[DefaultVideoFormatIndex];
             if (string.IsNullOrEmpty(FrameRate))
-                FrameRate = "30";
+                FrameRate = DefaultFrameRate.ToString(CultureInfo.InvariantCulture);
         }
         ProcessSelected.Execute(null);
     });
@@ -988,7 +993,7 @@ public class VideoTransformCommands : INotifyPropertyChanged
         {
             var sw = Stopwatch.StartNew();
             progressCallback(-1);
-            if (allSelected.All(item => !item.IsVideo))
+            if (allSelected.Length > 1 && allSelected.All(item => !item.IsVideo))
             {
                 PrepareProgressDisplay(progressCallback);
                 _frameCount = allSelected.Length;
@@ -1094,13 +1099,11 @@ public class VideoTransformCommands : INotifyPropertyChanged
         }
         else
         {
-            if (!_hasFps && OutputMode != OutputMode.ImageSequence)
-                throw new UserMessageException("Unable to determine frame rate, please specify manually");
             _progressOffset = 0.5;
             var frames = CombineFramesMode == CombineFramesMode.TimeSliceInterpolated
                 ? timeSlice.GenerateTimeSliceVideoInterpolated(CombineFramesCount)
                 : timeSlice.GenerateTimeSliceVideo(CombineFramesCount);
-            await _videoTransforms.RunFFmpegWithStreamInputImagesAsync(_hasFps ? _fps : null, $"{OutputArguments} -y \"{outFileName}\"", frames, ProcessStdError, ct).ConfigureAwait(false);
+            await _videoTransforms.RunFFmpegWithStreamInputImagesAsync(_hasFps ? _fps : DefaultFrameRate, $"{OutputArguments} -y \"{outFileName}\"", frames, ProcessStdError, ct).ConfigureAwait(false);
         }
         return $"Processed {timeSlice.UsedFrames} frames and skipped {timeSlice.SkippedFrames} in {sw.Elapsed.TotalSeconds:N1}s.\n" +
             "If frames are skipped it means that the video is too big to load into memory. To reduce the number of frames loaded, " +
@@ -1143,9 +1146,7 @@ public class VideoTransformCommands : INotifyPropertyChanged
                 frameEnumerator.AddItem(_localContrastSetup!.ApplyOperations(source));
             }, ProcessStdError, ct);
         await Task.WhenAny(frameEnumerator.GotFirst, Task.Delay(TimeSpan.FromSeconds(10), ct)).ConfigureAwait(false);
-        if (!_hasFps && OutputMode != OutputMode.ImageSequence)
-            throw new UserMessageException("Unable to determine frame rate, please specify manually");
-        var writeTask = _videoTransforms.RunFFmpegWithStreamInputImagesAsync(_hasFps ? _fps : null, $"{OutputArguments} -y \"{outFileName}\"", frameEnumerator,
+        var writeTask = _videoTransforms.RunFFmpegWithStreamInputImagesAsync(_hasFps ? _fps : DefaultFrameRate, $"{OutputArguments} -y \"{outFileName}\"", frameEnumerator,
             stdError => Log.Write("Writer: " + stdError), ct);
         await await Task.WhenAny(readTask, writeTask).ConfigureAwait(false); // Write task is not expected to finish here, only if it fails
         frameEnumerator.Break();
