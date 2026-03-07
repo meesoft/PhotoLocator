@@ -20,7 +20,7 @@ namespace PhotoLocator
         static readonly List<double> _adjustmentClipboard = [];
         static readonly List<double> _lastUsedValues = [];
         readonly DispatcherTimer _updateTimer;
-        readonly LaplacianFilterOperation _laplacianFilterOperation = new() { SrcBitmap = new() };
+        readonly LaplacianFilterOperation _laplacianFilterOperation = new();
         readonly IncreaseLocalContrastOperation _localContrastOperation = new() { DstBitmap = new() };
         readonly ColorToneAdjustOperation _colorToneOperation = new();
         Task _previewTask = Task.CompletedTask;
@@ -64,12 +64,13 @@ namespace PhotoLocator
                 if (value is not null)
                 {
                     Mouse.OverrideCursor = Cursors.AppStarting;
-                    _laplacianFilterOperation.SrcBitmap.Assign(value, FloatBitmap.DefaultMonitorGamma);
+                    _sourceFloatBitmap.Assign(value, FloatBitmap.DefaultMonitorGamma);
                     _updateTimer.Start();
                 }
                 field = value;
             }
         }
+        readonly FloatBitmap _sourceFloatBitmap = new();
 
         public BitmapSource? PreviewPictureSource
         {
@@ -92,6 +93,37 @@ namespace PhotoLocator
         public ICommand ZoomInCommand => new RelayCommand(o => PreviewZoom = Math.Min(PreviewZoom + 1, 4));
         public ICommand ZoomOutCommand => new RelayCommand(o => PreviewZoom = Math.Max(PreviewZoom - 1, 0));
 
+        public bool IsAstroModeEnabled
+        {
+            get;
+            set => SetProperty(ref field, value);
+        }
+
+        public const double DefaultAstroStretch = 10;
+        public double AstroStretch
+        {
+            get;
+            set
+            {
+                if (SetProperty(ref field, value))
+                    StartUpdateTimer(true, true);
+            }
+        } = DefaultAstroStretch;
+        public ICommand ResetAstroStretchCommand => new RelayCommand(o => AstroStretch = DefaultAstroStretch);
+
+        public const double DefaultBackgroundRemovalSmooth = 8;
+        public double BackgroundRemovalSmooth
+        {
+            get;
+            set
+            {
+                if (SetProperty(ref field, value))
+                    StartUpdateTimer(true, true);
+            }
+        } = DefaultBackgroundRemovalSmooth;
+        public ICommand ResetBackgroundRemovalSmoothCommand => new RelayCommand(o => BackgroundRemovalSmooth = DefaultBackgroundRemovalSmooth);
+
+        public const double DefaultHighlightStrength = 10;
         public double HighlightStrength
         {
             get;
@@ -101,11 +133,9 @@ namespace PhotoLocator
                     StartUpdateTimer(false, true);
             }
         } = DefaultHighlightStrength;
-
-        public const double DefaultHighlightStrength = 10;
-
         public ICommand ResetHighlightCommand => new RelayCommand(o => HighlightStrength = DefaultHighlightStrength);
 
+        public const double DefaultShadowStrength = 10;
         public double ShadowStrength
         {
             get;
@@ -115,11 +145,9 @@ namespace PhotoLocator
                     StartUpdateTimer(false, true);
             }
         } = DefaultShadowStrength;
-
-        public const double DefaultShadowStrength = 10;
-
         public ICommand ResetShadowCommand => new RelayCommand(o => ShadowStrength = DefaultShadowStrength);
 
+        public const double DefaultMaxStretch = 50;
         public double MaxStretch
         {
             get;
@@ -129,11 +157,9 @@ namespace PhotoLocator
                     StartUpdateTimer(false, true);
             }
         } = DefaultMaxStretch;
-
-        public const double DefaultMaxStretch = 50;
-
         public ICommand ResetMaxStretchCommand => new RelayCommand(o => MaxStretch = DefaultMaxStretch);
 
+        public const double DefaultOutlierReductionStrength = 10;
         public double OutlierReductionStrength
         {
             get;
@@ -143,11 +169,9 @@ namespace PhotoLocator
                     StartUpdateTimer(false, true);
             }
         } = DefaultOutlierReductionStrength;
-
-        public const double DefaultOutlierReductionStrength = 10;
-
         public ICommand ResetOutlierReductionCommand => new RelayCommand(o => OutlierReductionStrength = DefaultOutlierReductionStrength);
 
+        public const double DefaultContrast = 1;
         public double Contrast
         {
             get;
@@ -157,11 +181,9 @@ namespace PhotoLocator
                     StartUpdateTimer(false, true);
             }
         } = DefaultContrast;
-
-        public const double DefaultContrast = 1;
-
         public ICommand ResetContrastCommand => new RelayCommand(o => Contrast = DefaultContrast);
 
+        public const double DefaultToneMapping = 1;
         public double ToneMapping
         {
             get;
@@ -175,11 +197,9 @@ namespace PhotoLocator
                 }
             }
         } = DefaultToneMapping;
-
-        public const double DefaultToneMapping = 1;
-
         public ICommand ResetToneMappingCommand => new RelayCommand(o => ToneMapping = DefaultToneMapping);
 
+        public const double DefaultDetailHandling = 1;
         public double DetailHandling
         {
             get;
@@ -189,9 +209,6 @@ namespace PhotoLocator
                     StartUpdateTimer(true, true);
             }
         } = DefaultDetailHandling;
-
-        public const double DefaultDetailHandling = 1;
-
         public ICommand ResetDetailHandlingCommand => new RelayCommand(o => DetailHandling = DefaultDetailHandling);
 
         public ColorToneAdjustOperation.ToneAdjustment[] ToneAdjustments => _colorToneOperation.ToneAdjustments;
@@ -340,6 +357,8 @@ namespace PhotoLocator
 
         public ICommand ResetCommand => new RelayCommand(o =>
         {
+            AstroStretch = DefaultAstroStretch;
+            BackgroundRemovalSmooth = DefaultBackgroundRemovalSmooth;
             HighlightStrength = DefaultHighlightStrength;
             ShadowStrength = DefaultShadowStrength;
             MaxStretch = DefaultMaxStretch;
@@ -368,6 +387,8 @@ namespace PhotoLocator
         private void StoreAdjustmentValues(List<double> valueStore)
         {
             valueStore.Clear();
+            valueStore.Add(AstroStretch);
+            valueStore.Add(BackgroundRemovalSmooth);
             valueStore.Add(HighlightStrength);
             valueStore.Add(ShadowStrength);
             valueStore.Add(MaxStretch);
@@ -388,6 +409,8 @@ namespace PhotoLocator
         private void RestoreAdjustmentValues(List<double> valueStore)
         {
             int a = 0;
+            AstroStretch = valueStore[a++];
+            BackgroundRemovalSmooth = valueStore[a++];
             HighlightStrength = valueStore[a++];
             ShadowStrength = valueStore[a++];
             MaxStretch = valueStore[a++];
@@ -417,6 +440,24 @@ namespace PhotoLocator
             _localContrastParamsChanged |= localContrastParamsChanged;
             _updateTimer.Stop();
             _updateTimer.Start();
+        }
+
+        void ApplyAstroStretchOperation()
+        {
+            if (IsAstroModeEnabled && (AstroStretch > 0 || BackgroundRemovalSmooth > 0))
+            {
+                var astroStretch = new AstroStretchOperation()
+                {
+                    SrcBitmap = _sourceFloatBitmap,
+                    DstBitmap = new(),
+                    Stretch = AstroStretch,
+                    BackgroundSmooth = BackgroundRemovalSmooth,
+                };
+                astroStretch.Apply();
+                _laplacianFilterOperation.SrcBitmap = astroStretch.DstBitmap;
+            }
+            else
+                _laplacianFilterOperation.SrcBitmap = _sourceFloatBitmap;
         }
 
         private void ApplyLaplacianFilterOperation()
@@ -472,6 +513,7 @@ namespace PhotoLocator
                     _localContrastOperation.SourceChanged();
                     _laplacianPyramidParamsChanged = false;
                 }
+                ApplyAstroStretchOperation();
                 ApplyLaplacianFilterOperation();
                 if (SourceBitmap is null || _updateTimer.IsEnabled)
                     return;
@@ -495,7 +537,7 @@ namespace PhotoLocator
             {
                 if (SourceBitmap is null)
                     return;
-                (_, var histogramTask) = _laplacianFilterOperation.SrcBitmap.ToBitmapSourceWithHistogram(SourceBitmap.DpiX, SourceBitmap.DpiY, FloatBitmap.DefaultMonitorGamma);
+                (_, var histogramTask) = _sourceFloatBitmap.ToBitmapSourceWithHistogram(SourceBitmap.DpiX, SourceBitmap.DpiY, FloatBitmap.DefaultMonitorGamma);
                 histogramTask.ContinueWith(task => SetHistogram(task.Result), TaskScheduler.Current);
             });
         }
@@ -517,7 +559,8 @@ namespace PhotoLocator
         {
             if (IsNoOperation) 
                 return source;
-            _laplacianFilterOperation.SrcBitmap.Assign(source, FloatBitmap.DefaultMonitorGamma);
+            _sourceFloatBitmap.Assign(source, FloatBitmap.DefaultMonitorGamma);
+            ApplyAstroStretchOperation();
             _laplacianFilterOperation.SourceChanged();
             ApplyLaplacianFilterOperation();
             _localContrastOperation.SourceChanged();
