@@ -103,7 +103,7 @@ namespace PhotoLocator
             using (var cursor = new MouseCursorOverride())
             {
                 (var image, metadata) = await Task.Run(() => LoadImageWithMetadataAsync(selectedItem));
-                localContrastViewModel = new LocalContrastViewModel() { SourceBitmap = image };
+                localContrastViewModel = new LocalContrastViewModel() { SourceBitmap = image, IsAstroModeEnabled = o as string == "Astro" };
             }
             var window = new LocalContrastView();
             window.Owner = Application.Current.MainWindow;
