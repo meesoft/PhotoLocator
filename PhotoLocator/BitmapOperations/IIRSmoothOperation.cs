@@ -1,4 +1,5 @@
-﻿using System.Threading.Tasks;
+﻿using System.Diagnostics;
+using System.Threading.Tasks;
 
 namespace PhotoLocator.BitmapOperations
 {
@@ -8,6 +9,7 @@ namespace PhotoLocator.BitmapOperations
         {
             if (filterSize == 0)
                 return;
+            Debug.Assert(plane.PlaneCount == 1);
             filterSize /= 4f;
             var scale = 1f / (1f + filterSize);
             unsafe
