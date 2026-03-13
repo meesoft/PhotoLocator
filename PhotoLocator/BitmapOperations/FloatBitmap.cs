@@ -53,7 +53,7 @@ namespace PhotoLocator.BitmapOperations
 
         public override string ToString()
         {
-            return Stride + " x " + Height;
+            return $"{Width}x{Height}x{PlaneCount}";
         }
 
         public void New(int width, int height, int planes)
@@ -463,7 +463,7 @@ namespace PhotoLocator.BitmapOperations
                     });
                 }
                 else
-                    throw new InvalidOperationException("Unsupported number of planes");
+                    throw new InvalidOperationException("Unsupported number of planes " + PlaneCount);
             }
         }
 

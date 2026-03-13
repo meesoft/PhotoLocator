@@ -9,12 +9,13 @@
         d:DataContext="{d:DesignInstance Type=local:LocalContrastViewModel, IsDesignTimeCreatable=True}"
         Background="Black"
         WindowStartupLocation="CenterOwner" ShowInTaskbar="False" 
-        Title="Local contrast, brightness and colors" Height="960" Width="800" WindowState="Maximized">
+        Title="Local contrast, brightness and colors" Height="1000" Width="800" WindowState="Maximized">
 
     <Window.Resources>
         <Style TargetType="TextBlock">
             <Setter Property="Foreground" Value="#FFEEEEEE" />
         </Style>
+        <BooleanToVisibilityConverter x:Key="BooleanToVisibility" />
     </Window.Resources>
 
     <Window.InputBindings>
@@ -44,7 +45,7 @@
 
     <Grid Margin="4">
         <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="200"/>
+            <ColumnDefinition Width="210"/>
             <ColumnDefinition/>
         </Grid.ColumnDefinitions>
 
@@ -55,7 +56,29 @@
             
             <StackPanel Margin="0,0,4,0">
                 <TextBlock Text="Local adjustments" FontWeight="Bold" Margin="0,0,0,4"/>
-                
+
+                <StackPanel Visibility="{Binding IsAstroModeEnabled, Converter={StaticResource BooleanToVisibility}}">
+                    <DockPanel>
+                        <TextBlock Text="Astro stretch">
+                            <TextBlock.InputBindings>
+                                <MouseBinding Command="{Binding ResetAstroStretchCommand}" MouseAction="LeftClick" />
+                            </TextBlock.InputBindings>
+                        </TextBlock>
+                        <TextBox Text="{Binding AstroStretch,StringFormat=N2,UpdateSourceTrigger=PropertyChanged,Delay=500}" Width="80" HorizontalAlignment="Right" />
+                    </DockPanel>
+                    <Slider Value="{Binding AstroStretch}" Minimum="0" Maximum="20" SmallChange="0.01" LargeChange="0.1" />
+
+                    <DockPanel>
+                        <TextBlock Text="Background filter">
+                            <TextBlock.InputBindings>
+                                <MouseBinding Command="{Binding ResetBackgroundRemovalSmoothCommand}" MouseAction="LeftClick" />
+                            </TextBlock.InputBindings>
+                        </TextBlock>
+                        <TextBox Text="{Binding BackgroundRemovalSmooth,StringFormat=N2,UpdateSourceTrigger=PropertyChanged,Delay=500}" Width="80" HorizontalAlignment="Right" />
+                    </DockPanel>
+                    <Slider Value="{Binding BackgroundRemovalSmooth}" Minimum="0" Maximum="16" SmallChange="0.05" LargeChange="0.1" />
+                </StackPanel>
+
                 <DockPanel>
                     <TextBlock Text="Local brightness">
                         <TextBlock.InputBindings>
