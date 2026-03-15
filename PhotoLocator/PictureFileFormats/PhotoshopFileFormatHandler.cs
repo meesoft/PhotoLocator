@@ -24,6 +24,7 @@ namespace PhotoLocator.PictureFileFormats
             var psd = new PsdFile(stream, new LoadContext());
             foreach (var psdLayer in (new[] { psd.BaseLayer }).Concat(psd.Layers))
             {
+                ct.ThrowIfCancellationRequested();
                 if (psdLayer != psd.BaseLayer && (!psdLayer.Visible || psdLayer.Opacity == 0) 
                     || psdLayer.Rect.Width == 0 || psdLayer.Rect.Height == 0)
                     continue;
@@ -67,7 +68,7 @@ namespace PhotoLocator.PictureFileFormats
                 if (psd.BitDepth == 8)
                 {
                     var pixels = new byte[layer.Rect.Width * layer.Rect.Height * 4];
-                    Parallel.For(0, 4, ch => GetChannelPixels8(layer.Channels.GetId(ch), pixels, ch, 4));
+                    Parallel.For(0, 4, ch => GetChannelPixels8Inverted(layer.Channels.GetId(ch), pixels, ch, 4));
                     return BitmapSource.Create(layer.Rect.Width, layer.Rect.Height, 96, 96, PixelFormats.Cmyk32, null,
                         pixels, layer.Rect.Width * 4);
                 }
@@ -81,6 +82,14 @@ namespace PhotoLocator.PictureFileFormats
             var source = channel.ImageData;
             for (int iSrc = 0, iDst = offset; iSrc < size; iSrc++, iDst += dist)
                 dest[iDst] = source[iSrc];
+        }
+
+        private static void GetChannelPixels8Inverted(Channel channel, byte[] dest, int offset, int dist)
+        {
+            var size = channel.Rect.Width * channel.Rect.Height;
+            var source = channel.ImageData;
+            for (int iSrc = 0, iDst = offset; iSrc < size; iSrc++, iDst += dist)
+                dest[iDst] = (byte)(255 - source[iSrc]);
         }
 
         private static void GetChannelPixels16(Channel channel, byte[] dest, int offset, int dist)
