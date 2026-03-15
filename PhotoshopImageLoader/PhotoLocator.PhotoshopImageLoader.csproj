@@ -47,12 +47,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="PsdFile\Compression\" />
-    <Folder Include="PsdFile\ImageResources\" />
-    <Folder Include="PsdFile\Layers\LayerInfo\" />
-  </ItemGroup>
-
-  <ItemGroup>
     <PackageReference Include="System.Drawing.Common" Version="10.0.1" />
   </ItemGroup>
 

@@ -68,6 +68,8 @@ namespace PhotoLocator.PictureFileFormats
                 {
                     var pixels = new byte[layer.Rect.Width * layer.Rect.Height * 4];
                     Parallel.For(0, 4, ch => GetChannelPixels8(layer.Channels.GetId(ch), pixels, ch, 4));
+                    for (int i = 0; i < pixels.Length; i++)
+                        pixels[i] = (byte)(255 - pixels[i]);
                     return BitmapSource.Create(layer.Rect.Width, layer.Rect.Height, 96, 96, PixelFormats.Cmyk32, null,
                         pixels, layer.Rect.Width * 4);
                 }
