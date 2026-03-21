@@ -323,6 +323,32 @@ namespace PhotoLocator
                 && !droppedEntries.Equals(_draggedFiles))
             {
                 Dispatcher.BeginInvoke(() => _viewModel.HandleDroppedFiles(droppedEntries));
+                return;
+            }
+            if (string.IsNullOrEmpty(_viewModel.PhotoFolderPath))
+                return;
+            try
+            {
+                using var cursor = new MouseCursorOverride();
+                var extracted = DragDropFileExtractor.TryExtractFiles(e.Data, _viewModel.PhotoFolderPath, 
+                    existingFile =>
+                    {
+                        switch (MessageBox.Show(this, $"The file '{existingFile}' already exists. Do you wish to overwrite it?", "Copy files", MessageBoxButton.YesNoCancel, MessageBoxImage.Question))
+                        {
+                            case MessageBoxResult.Yes:
+                                return true;
+                            case MessageBoxResult.No:
+                                return false;
+                            default:
+                                throw new OperationCanceledException();
+                        }
+                    });
+                if (extracted is not null && extracted.Count > 0)
+                    Dispatcher.BeginInvoke(() => _viewModel.SelectFileAsync(extracted[0]));
+            }
+            catch (Exception ex) 
+            {
+                ExceptionHandler.LogException(ex);
             }
         }
 
