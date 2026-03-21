@@ -44,7 +44,7 @@ namespace PhotoLocator.Helpers
                     foreach (var sourceFileName in dropped)
                     {
                         var targetPath = Path.Combine(targetDirectory, Path.GetFileName(sourceFileName));
-                        if (File.Exists(targetPath) && !overwriteCheck(targetPath))
+                        if (sourceFileName == targetPath || File.Exists(targetPath) && !overwriteCheck(targetPath))
                             continue;
                         File.Copy(sourceFileName, targetPath, true);
                         saved.Add(targetPath);

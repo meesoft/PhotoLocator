@@ -319,10 +319,10 @@ namespace PhotoLocator
 
         private void HandleDrop(object sender, DragEventArgs e)
         {
-            if (e.Data.GetDataPresent(DataFormats.FileDrop) && e.Data.GetData(DataFormats.FileDrop) is string[] droppedEntries && droppedEntries.Length > 0
-                && !droppedEntries.Equals(_draggedFiles))
+            if (e.Data.GetDataPresent(DataFormats.FileDrop) && e.Data.GetData(DataFormats.FileDrop) is string[] droppedEntries && droppedEntries.Length > 0)
             {
-                Dispatcher.BeginInvoke(() => _viewModel.HandleDroppedFiles(droppedEntries));
+                if (!droppedEntries.Equals(_draggedFiles))
+                    Dispatcher.BeginInvoke(() => _viewModel.HandleDroppedFiles(droppedEntries));
                 return;
             }
             if (string.IsNullOrEmpty(_viewModel.PhotoFolderPath))
@@ -333,15 +333,12 @@ namespace PhotoLocator
                 var extracted = DragDropFileExtractor.TryExtractFiles(e.Data, _viewModel.PhotoFolderPath, 
                     existingFile =>
                     {
-                        switch (MessageBox.Show(this, $"The file '{existingFile}' already exists. Do you wish to overwrite it?", "Copy files", MessageBoxButton.YesNoCancel, MessageBoxImage.Question))
+                        return MessageBox.Show(this, $"The file '{existingFile}' already exists. Do you wish to overwrite it?", "Copy files", MessageBoxButton.YesNoCancel, MessageBoxImage.Question) switch
                         {
-                            case MessageBoxResult.Yes:
-                                return true;
-                            case MessageBoxResult.No:
-                                return false;
-                            default:
-                                throw new OperationCanceledException();
-                        }
+                            MessageBoxResult.Yes => true,
+                            MessageBoxResult.No => false,
+                            _ => throw new OperationCanceledException(),
+                        };
                     });
                 if (extracted is not null && extracted.Count > 0)
                     Dispatcher.BeginInvoke(() => _viewModel.SelectFileAsync(extracted[0]));

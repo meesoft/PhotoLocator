@@ -1,7 +1,6 @@
 #nullable disable
 #pragma warning disable CA1032
 #pragma warning disable CA1069
-#pragma warning disable CA1401
 #pragma warning disable CA1707
 #pragma warning disable CA1711
 #pragma warning disable CA1805
@@ -76,7 +75,7 @@ namespace Peter
                 IntPtr.Zero,
                 (uint)arrPIDLs.Length,
                 arrPIDLs,
-                ref IID_IContextMenu,
+                in IID_IContextMenu,
                 IntPtr.Zero,
                 ref ctxMenuPtr);
 
@@ -106,22 +105,6 @@ namespace Peter
         /// <returns>true if the message has been handled, false otherwise</returns>
         protected override void WndProc(ref Message m)
         {
-            #region IContextMenu
-
-            if (_oContextMenu != null &&
-                m.Msg == (int)WM.MENUSELECT &&
-                ((int)ShellHelper.HiWord(m.WParam) & (int)MFT.SEPARATOR) == 0 &&
-                ((int)ShellHelper.HiWord(m.WParam) & (int)MFT.POPUP) == 0)
-            {
-                string info;
-                if (ShellHelper.LoWord(m.WParam) == (int)CMD_CUSTOM.ExpandCollapse)
-                    info = "Expands or collapses the current selected item";
-                else
-                    info = string.Empty;
-            }
-
-            #endregion
-
             #region IContextMenu2
 
             if (_oContextMenu2 != null &&
@@ -263,22 +246,19 @@ namespace Peter
 
                 IntPtr pStrRet = Marshal.AllocCoTaskMem(MAX_PATH * 2 + 4);
                 Marshal.WriteInt32(pStrRet, 0, 0);
-                nResult = _oDesktopFolder.GetDisplayNameOf(pPIDL, SHGNO.FORPARSING, pStrRet);
+                _oDesktopFolder.GetDisplayNameOf(pPIDL, SHGNO.FORPARSING, pStrRet);
                 var strFolder = new StringBuilder(MAX_PATH);
                 StrRetToBuf(pStrRet, pPIDL, strFolder, MAX_PATH);
                 Marshal.FreeCoTaskMem(pStrRet);
-                pStrRet = IntPtr.Zero;
                 _strParentFolder = strFolder.ToString();
 
                 // Get the IShellFolder for folder
                 IntPtr pUnknownParentFolder = IntPtr.Zero;
-                nResult = oDesktopFolder.BindToObject(pPIDL, IntPtr.Zero, ref IID_IShellFolder, ref pUnknownParentFolder);
+                nResult = oDesktopFolder.BindToObject(pPIDL, IntPtr.Zero, in IID_IShellFolder, ref pUnknownParentFolder);
                 // Free the PIDL first
                 Marshal.FreeCoTaskMem(pPIDL);
                 if (S_OK != nResult)
-                {
                     return null;
-                }
                 _oParentFolder = (IShellFolder)Marshal.GetTypedObjectForIUnknown(pUnknownParentFolder, typeof(IShellFolder));
             }
 
@@ -307,7 +287,7 @@ namespace Peter
 
             IntPtr[] arrPIDLs = new IntPtr[arrFI.Length];
             int n = 0;
-            foreach (FileInfo fi in arrFI)
+            foreach (var fi in arrFI)
             {
                 // Get the file relative to folder
                 uint pchEaten = 0;
@@ -346,7 +326,7 @@ namespace Peter
 
             IntPtr[] arrPIDLs = new IntPtr[arrFI.Length];
             int n = 0;
-            foreach (DirectoryInfo fi in arrFI)
+            foreach (var fi in arrFI)
             {
                 // Get the file relative to folder
                 uint pchEaten = 0;
@@ -612,10 +592,10 @@ namespace Peter
 
         #region Shell GUIDs
 
-        private static Guid IID_IShellFolder = new("{000214E6-0000-0000-C000-000000000046}");
-        private static Guid IID_IContextMenu = new("{000214e4-0000-0000-c000-000000000046}");
-        private static Guid IID_IContextMenu2 = new("{000214f4-0000-0000-c000-000000000046}");
-        private static Guid IID_IContextMenu3 = new("{bcfce0a0-ec17-11d0-8d10-00a0c90f2719}");
+        private static readonly Guid IID_IShellFolder = new("{000214E6-0000-0000-C000-000000000046}");
+        private static readonly Guid IID_IContextMenu = new("{000214e4-0000-0000-c000-000000000046}");
+        private static readonly Guid IID_IContextMenu2 = new("{000214f4-0000-0000-c000-000000000046}");
+        private static readonly Guid IID_IContextMenu3 = new("{bcfce0a0-ec17-11d0-8d10-00a0c90f2719}");
 
         #endregion
 
@@ -1198,7 +1178,7 @@ namespace Peter
             Int32 BindToObject(
                 IntPtr pidl,
                 IntPtr pbc,
-                ref Guid riid,
+                in Guid riid,
                 ref IntPtr ppv);
 
             // Requests a pointer to an object's storage interface. 
@@ -1253,7 +1233,7 @@ namespace Peter
                 uint cidl,
                 [MarshalAs(UnmanagedType.LPArray)]
             IntPtr[] apidl,
-                ref Guid riid,
+                in Guid riid,
                 IntPtr rgfReserved,
                 ref IntPtr ppv);
 
