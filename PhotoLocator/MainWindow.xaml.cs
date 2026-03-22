@@ -317,35 +317,37 @@ namespace PhotoLocator
             }
         }
 
-        private void HandleDrop(object sender, DragEventArgs e)
+        private async void HandleDrop(object sender, DragEventArgs e)
         {
-            if (e.Data.GetDataPresent(DataFormats.FileDrop) && e.Data.GetData(DataFormats.FileDrop) is string[] droppedEntries && droppedEntries.Length > 0)
+            if (e.Data.GetDataPresent(DataFormats.FileDrop) && e.Data.GetData(DataFormats.FileDrop) is string[] dropped && dropped.Length > 0)
             {
-                if (!droppedEntries.Equals(_draggedFiles))
-                    Dispatcher.BeginInvoke(() => _viewModel.HandleDroppedFiles(droppedEntries));
+                if (!dropped.Equals(_draggedFiles))
+                    await Dispatcher.BeginInvoke(() => _viewModel.HandleDroppedFiles(dropped));
                 return;
             }
             if (string.IsNullOrEmpty(_viewModel.PhotoFolderPath))
                 return;
             try
             {
-                using var cursor = new MouseCursorOverride();
-                var extracted = DragDropFileExtractor.TryExtractFiles(e.Data, _viewModel.PhotoFolderPath, 
-                    existingFile =>
-                    {
-                        return MessageBox.Show(this, $"The file '{existingFile}' already exists. Do you wish to overwrite it?", "Copy files", MessageBoxButton.YesNoCancel, MessageBoxImage.Question) switch
+                await _viewModel.RunProcessWithProgressBarAsync((progressCallback, ct) => Task.Run(() =>
+                {
+                    var extracted = DragDropFileExtractor.TryExtractFiles(e.Data, _viewModel.PhotoFolderPath,
+                        existingFile =>
                         {
-                            MessageBoxResult.Yes => true,
-                            MessageBoxResult.No => false,
-                            _ => throw new OperationCanceledException(),
-                        };
-                    });
-                if (extracted is not null && extracted.Count > 0)
-                    Dispatcher.BeginInvoke(() => _viewModel.SelectFileAsync(extracted[0]));
+                            return MessageBox.Show(this, $"The file '{existingFile}' already exists. Do you wish to overwrite it?", "Copy files", MessageBoxButton.YesNoCancel, MessageBoxImage.Question) switch
+                            {
+                                MessageBoxResult.Yes => true,
+                                MessageBoxResult.No => false,
+                                _ => throw new OperationCanceledException(),
+                            };
+                        }, progressCallback);
+                    if (extracted is not null && extracted.Count > 0)
+                        Dispatcher.BeginInvoke(() => _viewModel.SelectFileAsync(extracted[0]));
+                }, ct), "Copying...");
             }
             catch (Exception ex) 
             {
-                ExceptionHandler.LogException(ex);
+                ExceptionHandler.ShowException(ex);
             }
         }
 

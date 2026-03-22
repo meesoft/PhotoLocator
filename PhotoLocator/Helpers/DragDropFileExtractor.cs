@@ -1,8 +1,6 @@
-using OpenCvSharp.Dnn;
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Runtime.InteropServices;
 using System.Runtime.InteropServices.ComTypes;
 using System.Windows;
@@ -32,36 +30,28 @@ namespace PhotoLocator.Helpers
         /// Try to extract files from a drag-drop data object. Supports FileDrop and virtual file formats used by cameras (FileGroupDescriptor / FileContents).
         /// Returns saved file paths when any files were extracted.
         /// </summary>
-        public static List<string>? TryExtractFiles(System.Windows.IDataObject data, string targetDirectory, Func<string,bool> overwriteCheck)
+        public static List<string>? TryExtractFiles(System.Windows.IDataObject data, string targetDirectory, Func<string,bool> overwriteCheck, Action<double>? progressCallback)
         {
             // Standard file drop
-            if (data.GetDataPresent(DataFormats.FileDrop))
+            if (data.GetDataPresent(DataFormats.FileDrop) && data.GetData(DataFormats.FileDrop) is string[] dropped && dropped.Length > 0)
             {
                 var saved = new List<string>();
-                var droppedObj = data.GetData(DataFormats.FileDrop);
-                if (droppedObj is string[] dropped && dropped.Length > 0)
+                for (var i = 0; i < dropped.Length; i++)
                 {
-                    foreach (var sourceFileName in dropped)
-                    {
-                        var targetPath = Path.Combine(targetDirectory, Path.GetFileName(sourceFileName));
-                        if (sourceFileName == targetPath || File.Exists(targetPath) && !overwriteCheck(targetPath))
-                            continue;
-                        File.Copy(sourceFileName, targetPath, true);
-                        saved.Add(targetPath);
-                    }
-                    return saved;
+                    var targetPath = Path.Combine(targetDirectory, Path.GetFileName(dropped[i]));
+                    if (dropped[i] == targetPath || File.Exists(targetPath) && !overwriteCheck(targetPath))
+                        continue;
+                    File.Copy(dropped[i], targetPath, true);
+                    saved.Add(targetPath);
+                    progressCallback?.Invoke((i + 1) / (double)dropped.Length);
                 }
+                return saved;
             }
 
-            // Look for FileGroupDescriptorW or FileGroupDescriptor
-            var formats = data.GetFormats(true);
-            var fgFormat = formats.Contains("FileGroupDescriptorW") ? "FileGroupDescriptorW" : formats.Contains("FileGroupDescriptor") ? "FileGroupDescriptor" : null;
-            if (fgFormat is null)
-                return null;
-
             // Read FILEGROUPDESCRIPTOR bytes
-            var fgObj = data.GetData(fgFormat);
-            if (fgObj is null) return null;
+            var fgObj = data.GetData("FileGroupDescriptorW");
+            if (fgObj is null) 
+                return null;
             byte[] bytes;
             if (fgObj is MemoryStream fgStream)
                 bytes = fgStream.ToArray();
@@ -75,26 +65,29 @@ namespace PhotoLocator.Helpers
             else
                 return null;
 
-            var fileNames = new List<string>();
+            var fileInfos = new List<(string Name, uint SizeLow, uint SizeHigh, DateTime LastWriteTime)>();
             var handle = GCHandle.Alloc(bytes, GCHandleType.Pinned);
             try
             {
                 var ptr = handle.AddrOfPinnedObject();
                 int count = Marshal.ReadInt32(ptr);
                 var descSize = Marshal.SizeOf<FILEDESCRIPTOR>();
+                if (count * descSize + 4 > bytes.Length)
+                    return null;
                 for (int i = 0; i < count; i++)
                 {
                     var itemPtr = IntPtr.Add(ptr, 4 + i * descSize);
                     var fd = Marshal.PtrToStructure<FILEDESCRIPTOR>(itemPtr);
-                    fileNames.Add(fd.cFileName);
+                    fileInfos.Add((fd.cFileName, fd.nFileSizeLow, fd.nFileSizeHigh, 
+                        DateTime.FromFileTime((((long)fd.ftLastWriteTime.dwHighDateTime) << 32) + fd.ftLastWriteTime.dwLowDateTime)));
                 }
             }
             finally
             {
                 handle.Free();
             }
-
-            if (fileNames.Count == 0) return null;
+            if (fileInfos.Count == 0) 
+                return null;
 
             // Obtain COM IDataObject
             var unk = Marshal.GetIUnknownForObject(data);
@@ -110,17 +103,16 @@ namespace PhotoLocator.Helpers
                     var fileContentsId = System.Windows.Forms.DataFormats.GetFormat("FileContents").Id;
 
                     var saved = new List<string>();
-                    for (int index = 0; index < fileNames.Count; index++)
+                    for (int i = 0; i < fileInfos.Count; i++)
                     {
                         var fmt = new FORMATETC
                         {
                             cfFormat = (short)fileContentsId,
                             ptd = IntPtr.Zero,
                             dwAspect = DVASPECT.DVASPECT_CONTENT,
-                            lindex = index,
+                            lindex = i,
                             tymed = TYMED.TYMED_ISTREAM | TYMED.TYMED_HGLOBAL
                         };
-
                         var medium = new STGMEDIUM();
                         try
                         {
@@ -130,35 +122,45 @@ namespace PhotoLocator.Helpers
                         {
                             continue;
                         }
-
                         try
                         {
-                            var fileName = fileNames[index];
-                            var targetPath = Path.Combine(targetDirectory, fileName);
+                            var fileInfo = fileInfos[i];
+                            var targetPath = Path.Combine(targetDirectory, fileInfo.Name);
                             if (File.Exists(targetPath) && !overwriteCheck(targetPath))
                                 continue;
+                            if (fileInfo.SizeHigh > 0)
+                                throw new UserMessageException("Huge file import not supported");
 
                             // IStream
-                            if (((int)medium.tymed & (int)TYMED.TYMED_ISTREAM) != 0 && medium.unionmember != IntPtr.Zero)
+                            if ((medium.tymed & TYMED.TYMED_ISTREAM) != 0 && medium.unionmember != IntPtr.Zero)
                             {
+                                using var memStream = new MemoryStream();
                                 var comStream = (IStream)Marshal.GetObjectForIUnknown(medium.unionmember);
-                                using var outFs = File.Create(targetPath);
-                                CopyIStreamToStream(comStream, outFs);
+                                try
+                                {
+                                    CopyIStreamToStream(comStream, memStream);
+                                }
+                                finally
+                                {
+                                    Marshal.ReleaseComObject(comStream);
+                                }
+                                memStream.Position = 0;
+                                using (var outFs = File.Create(targetPath))
+                                    memStream.CopyTo(outFs);
+                                File.SetLastWriteTime(targetPath, fileInfo.LastWriteTime);
                                 saved.Add(targetPath);
                             }
-                            else if (((int)medium.tymed & (int)TYMED.TYMED_HGLOBAL) != 0 && medium.unionmember != IntPtr.Zero)
+                            else if ((medium.tymed & TYMED.TYMED_HGLOBAL) != 0 && medium.unionmember != IntPtr.Zero)
                             {
                                 // HGLOBAL: lock and copy
                                 var hglobal = medium.unionmember;
                                 var ptrData = GlobalLock(hglobal);
                                 try
                                 {
-                                    // We don't have size here; attempt to write until null or best-effort using FILEDESCRIPTOR values
-                                    // As a fallback, create file from bytes until GlobalSize
-                                    var globalSize = GlobalSize(hglobal);
-                                    var buffer = new byte[globalSize];
+                                    var buffer = new byte[fileInfo.SizeLow];
                                     Marshal.Copy(ptrData, buffer, 0, buffer.Length);
                                     File.WriteAllBytes(targetPath, buffer);
+                                    File.SetLastWriteTime(targetPath, fileInfo.LastWriteTime);
                                     saved.Add(targetPath);
                                 }
                                 finally
@@ -171,8 +173,8 @@ namespace PhotoLocator.Helpers
                         {
                             ReleaseStgMedium(ref medium);
                         }
+                        progressCallback?.Invoke((i + 1) / (double)fileInfos.Count);
                     }
-
                     return saved.Count > 0 ? saved : null;
                 }
                 finally
@@ -186,18 +188,19 @@ namespace PhotoLocator.Helpers
             }
         }
 
-        static void CopyIStreamToStream(IStream comStream, Stream outStream)
+        static void CopyIStreamToStream(IStream sourceStream, Stream outStream)
         {
-            const int chunk = 64 * 1024;
-            var buffer = new byte[chunk];
+            const int Chunk = 64 * 1024;
+            var buffer = new byte[Chunk];
             var pcbRead = Marshal.AllocCoTaskMem(sizeof(int));
             try
             {
                 while (true)
                 {
-                    comStream.Read(buffer, buffer.Length, pcbRead);
+                    sourceStream.Read(buffer, buffer.Length, pcbRead);
                     int read = Marshal.ReadInt32(pcbRead);
-                    if (read == 0) break;
+                    if (read == 0) 
+                        break;
                     outStream.Write(buffer, 0, read);
                 }
             }
@@ -213,9 +216,6 @@ namespace PhotoLocator.Helpers
         [DllImport("kernel32.dll", SetLastError = true), DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
         [return: MarshalAs(UnmanagedType.Bool)]
         static extern bool GlobalUnlock(IntPtr hMem);
-
-        [DllImport("kernel32.dll", SetLastError = true), DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
-        static extern int GlobalSize(IntPtr hMem);
 
         [DllImport("ole32.dll"), DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
         static extern void ReleaseStgMedium(ref STGMEDIUM pmedium);
