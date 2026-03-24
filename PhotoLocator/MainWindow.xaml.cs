@@ -332,15 +332,13 @@ namespace PhotoLocator
                 await _viewModel.RunProcessWithProgressBarAsync((progressCallback, ct) => Task.Run(() =>
                 {
                     var extracted = DragDropFileExtractor.TryExtractFiles(e.Data, _viewModel.PhotoFolderPath,
-                        existingFile =>
-                        {
-                            return MessageBox.Show(this, $"The file '{existingFile}' already exists. Do you wish to overwrite it?", "Copy files", MessageBoxButton.YesNoCancel, MessageBoxImage.Question) switch
+                        existingFile => Dispatcher.Invoke(() =>
+                            MessageBox.Show(this, existingFile + " already exists, do you want to overwrite it?", "Copy files", MessageBoxButton.YesNoCancel, MessageBoxImage.Question)) switch
                             {
                                 MessageBoxResult.Yes => true,
                                 MessageBoxResult.No => false,
                                 _ => throw new OperationCanceledException(),
-                            };
-                        }, progressCallback);
+                            }, progressCallback);
                     if (extracted is not null && extracted.Count > 0)
                         Dispatcher.BeginInvoke(() => _viewModel.SelectFileAsync(extracted[0]));
                 }, ct), "Copying...");

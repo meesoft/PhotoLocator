@@ -842,8 +842,8 @@ namespace PhotoLocator
                     var targetFileName = targetIsDirectory ? Path.Combine(target, item.Name) : target;
                     if (item.IsFile && File.Exists(targetFileName))
                     {
-                        var dialogResult = Application.Current.Dispatcher.Invoke(
-                            () => MessageBox.Show(targetFileName + " already exists, do you want to overwrite it?", "Copy files", MessageBoxButton.YesNoCancel, MessageBoxImage.Question));
+                        var dialogResult = Application.Current.Dispatcher.Invoke(() => MessageBox.Show(
+                            targetFileName + " already exists, do you want to overwrite it?", "Copy files", MessageBoxButton.YesNoCancel, MessageBoxImage.Question));
                         switch (dialogResult)
                         {
                             case MessageBoxResult.Yes: break;

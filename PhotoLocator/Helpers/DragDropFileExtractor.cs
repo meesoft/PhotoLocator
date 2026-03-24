@@ -78,7 +78,7 @@ namespace PhotoLocator.Helpers
                 {
                     var itemPtr = IntPtr.Add(ptr, 4 + i * descSize);
                     var fd = Marshal.PtrToStructure<FILEDESCRIPTOR>(itemPtr);
-                    fileInfos.Add((fd.cFileName, fd.nFileSizeLow, fd.nFileSizeHigh, 
+                    fileInfos.Add((Path.GetFileName(fd.cFileName), fd.nFileSizeLow, fd.nFileSizeHigh, 
                         DateTime.FromFileTime((((long)fd.ftLastWriteTime.dwHighDateTime) << 32) + fd.ftLastWriteTime.dwLowDateTime)));
                 }
             }
