@@ -70,16 +70,16 @@ namespace PhotoLocator.Helpers
             try
             {
                 var ptr = handle.AddrOfPinnedObject();
-                int count = Marshal.ReadInt32(ptr);
+                var count = Marshal.ReadInt32(ptr);
                 var descSize = Marshal.SizeOf<FILEDESCRIPTOR>();
-                if (count * descSize + 4 > bytes.Length)
+                if ((long)count * descSize + 4 > bytes.Length)
                     return null;
                 for (int i = 0; i < count; i++)
                 {
                     var itemPtr = IntPtr.Add(ptr, 4 + i * descSize);
                     var fd = Marshal.PtrToStructure<FILEDESCRIPTOR>(itemPtr);
                     fileInfos.Add((Path.GetFileName(fd.cFileName), fd.nFileSizeLow, fd.nFileSizeHigh, 
-                        DateTime.FromFileTime((((long)fd.ftLastWriteTime.dwHighDateTime) << 32) + fd.ftLastWriteTime.dwLowDateTime)));
+                        DateTime.FromFileTime((((long)(uint)fd.ftLastWriteTime.dwHighDateTime) << 32) | (uint)fd.ftLastWriteTime.dwLowDateTime)));
                 }
             }
             finally
@@ -145,8 +145,8 @@ namespace PhotoLocator.Helpers
                                     Marshal.ReleaseComObject(comStream);
                                 }
                                 memStream.Position = 0;
-                                using (var outFs = File.Create(targetPath))
-                                    memStream.CopyTo(outFs);
+                                using (var targetFile = File.Create(targetPath))
+                                    memStream.CopyTo(targetFile);
                                 File.SetLastWriteTime(targetPath, fileInfo.LastWriteTime);
                                 saved.Add(targetPath);
                             }
@@ -157,6 +157,8 @@ namespace PhotoLocator.Helpers
                                 var ptrData = GlobalLock(hglobal);
                                 try
                                 {
+                                    if (ptrData == nint.Zero || GlobalSize(hglobal) < fileInfo.SizeLow)
+                                        throw new UserMessageException("Failed to read file data");
                                     var buffer = new byte[fileInfo.SizeLow];
                                     Marshal.Copy(ptrData, buffer, 0, buffer.Length);
                                     File.WriteAllBytes(targetPath, buffer);
@@ -216,6 +218,9 @@ namespace PhotoLocator.Helpers
         [DllImport("kernel32.dll", SetLastError = true), DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
         [return: MarshalAs(UnmanagedType.Bool)]
         static extern bool GlobalUnlock(IntPtr hMem);
+
+        [DllImport("kernel32.dll", SetLastError = true), DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
+        static extern int GlobalSize(IntPtr hMem);
 
         [DllImport("ole32.dll"), DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
         static extern void ReleaseStgMedium(ref STGMEDIUM pmedium);
