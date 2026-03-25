@@ -26,6 +26,9 @@ namespace PhotoLocator.Helpers
             public string cFileName;
         }
 
+        const int FD_WRITESTIME = 0x20;
+        const int FD_FILESIZE = 0x40;
+
         /// <summary>
         /// Try to extract files from a drag-drop data object. Supports FileDrop and virtual file formats used by cameras (FileGroupDescriptor / FileContents).
         /// Returns saved file paths when any files were extracted.
@@ -49,7 +52,7 @@ namespace PhotoLocator.Helpers
             }
 
             // Read FILEGROUPDESCRIPTOR bytes
-            var fgObj = data.GetData("FileGroupDescriptorW");
+            var fgObj = data.GetData("FileGroupDescriptorW"); // Consider checking for the ANSI version "FileGroupDescriptor" if the Unicode one is not available
             if (fgObj is null) 
                 return null;
             byte[] bytes;
@@ -64,8 +67,10 @@ namespace PhotoLocator.Helpers
             }
             else
                 return null;
+            if (bytes.Length < 4) // At least the count of items
+                return null;
 
-            var fileInfos = new List<(string Name, uint SizeLow, uint SizeHigh, DateTime LastWriteTime)>();
+            var fileInfos = new List<(string Name, long Size, DateTime LastWriteTime)>();
             var handle = GCHandle.Alloc(bytes, GCHandleType.Pinned);
             try
             {
@@ -78,8 +83,13 @@ namespace PhotoLocator.Helpers
                 {
                     var itemPtr = IntPtr.Add(ptr, 4 + i * descSize);
                     var fd = Marshal.PtrToStructure<FILEDESCRIPTOR>(itemPtr);
-                    fileInfos.Add((Path.GetFileName(fd.cFileName), fd.nFileSizeLow, fd.nFileSizeHigh, 
-                        DateTime.FromFileTime((((long)(uint)fd.ftLastWriteTime.dwHighDateTime) << 32) | (uint)fd.ftLastWriteTime.dwLowDateTime)));
+                    var fileName = Path.GetFileName(fd.cFileName);
+                    if (string.IsNullOrWhiteSpace(fileName))
+                        continue;
+                    var timeStamp = (fd.dwFlags & FD_WRITESTIME) == 0 ? DateTime.Now :
+                        DateTime.FromFileTime((((long)(uint)fd.ftLastWriteTime.dwHighDateTime) << 32) | (uint)fd.ftLastWriteTime.dwLowDateTime);
+                    var fileSize = (fd.dwFlags & FD_FILESIZE) == 0 ? -1 : (((long)fd.nFileSizeHigh) << 32) | fd.nFileSizeLow;
+                    fileInfos.Add((fileName, fileSize, timeStamp));
                 }
             }
             finally
@@ -128,8 +138,6 @@ namespace PhotoLocator.Helpers
                             var targetPath = Path.Combine(targetDirectory, fileInfo.Name);
                             if (File.Exists(targetPath) && !overwriteCheck(targetPath))
                                 continue;
-                            if (fileInfo.SizeHigh > 0)
-                                throw new UserMessageException("Huge file import not supported");
 
                             // IStream
                             if ((medium.tymed & TYMED.TYMED_ISTREAM) != 0 && medium.unionmember != IntPtr.Zero)
@@ -157,9 +165,16 @@ namespace PhotoLocator.Helpers
                                 var ptrData = GlobalLock(hglobal);
                                 try
                                 {
-                                    if (ptrData == nint.Zero || GlobalSize(hglobal) < fileInfo.SizeLow)
-                                        throw new UserMessageException("Failed to read file data");
-                                    var buffer = new byte[fileInfo.SizeLow];
+                                    if (ptrData == nint.Zero)
+                                        throw new IOException("Failed to read file data");
+                                    var dataSize = GlobalSize(hglobal);
+                                    if (fileInfo.Size >= 0)
+                                    {
+                                        if (dataSize < fileInfo.Size)
+                                            throw new IOException("File size mismatch");
+                                        dataSize = (int)fileInfo.Size;
+                                    }
+                                    var buffer = new byte[dataSize];
                                     Marshal.Copy(ptrData, buffer, 0, buffer.Length);
                                     File.WriteAllBytes(targetPath, buffer);
                                     File.SetLastWriteTime(targetPath, fileInfo.LastWriteTime);
