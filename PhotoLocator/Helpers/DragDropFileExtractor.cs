@@ -128,8 +128,9 @@ namespace PhotoLocator.Helpers
                         {
                             comData.GetData(ref fmt, out medium);
                         }
-                        catch
+                        catch (Exception ex)
                         {
+                            ExceptionHandler.LogException(ex);
                             continue;
                         }
                         try
@@ -172,7 +173,7 @@ namespace PhotoLocator.Helpers
                                     {
                                         if (dataSize < fileInfo.Size)
                                             throw new IOException("File size mismatch");
-                                        dataSize = (int)fileInfo.Size;
+                                        dataSize = fileInfo.Size;
                                     }
                                     var buffer = new byte[dataSize];
                                     Marshal.Copy(ptrData, buffer, 0, buffer.Length);
@@ -235,7 +236,7 @@ namespace PhotoLocator.Helpers
         static extern bool GlobalUnlock(IntPtr hMem);
 
         [DllImport("kernel32.dll", SetLastError = true), DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
-        static extern int GlobalSize(IntPtr hMem);
+        static extern long GlobalSize(IntPtr hMem);
 
         [DllImport("ole32.dll"), DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
         static extern void ReleaseStgMedium(ref STGMEDIUM pmedium);
