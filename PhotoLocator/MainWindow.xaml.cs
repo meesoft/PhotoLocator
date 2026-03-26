@@ -317,12 +317,35 @@ namespace PhotoLocator
             }
         }
 
-        private void HandleDrop(object sender, DragEventArgs e)
+        private async void HandleDrop(object sender, DragEventArgs e)
         {
-            if (e.Data.GetDataPresent(DataFormats.FileDrop) && e.Data.GetData(DataFormats.FileDrop) is string[] droppedEntries && droppedEntries.Length > 0
-                && !droppedEntries.Equals(_draggedFiles))
+            if (e.Data.GetDataPresent(DataFormats.FileDrop) && e.Data.GetData(DataFormats.FileDrop) is string[] dropped && dropped.Length > 0)
             {
-                Dispatcher.BeginInvoke(() => _viewModel.HandleDroppedFiles(droppedEntries));
+                if (!dropped.Equals(_draggedFiles))
+                    await Dispatcher.BeginInvoke(() => _viewModel.HandleDroppedFiles(dropped));
+                return;
+            }
+            if (string.IsNullOrEmpty(_viewModel.PhotoFolderPath))
+                return;
+            try
+            {
+                await _viewModel.RunProcessWithProgressBarAsync((progressCallback, ct) => Task.Run(() =>
+                {
+                    var extracted = DragDropFileExtractor.TryExtractFiles(e.Data, _viewModel.PhotoFolderPath,
+                        existingFile => Dispatcher.Invoke(() =>
+                            MessageBox.Show(this, existingFile + " already exists, do you want to overwrite it?", "Copy files", MessageBoxButton.YesNoCancel, MessageBoxImage.Question)) switch
+                            {
+                                MessageBoxResult.Yes => true,
+                                MessageBoxResult.No => false,
+                                _ => throw new OperationCanceledException(),
+                            }, progressCallback);
+                    if (extracted is not null && extracted.Count > 0)
+                        Dispatcher.BeginInvoke(() => _viewModel.SelectFileAsync(extracted[0]));
+                }, ct), "Copying...");
+            }
+            catch (Exception ex) 
+            {
+                ExceptionHandler.ShowException(ex);
             }
         }
 
