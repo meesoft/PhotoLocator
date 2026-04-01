@@ -95,12 +95,34 @@ public class VideoTransformCommandsTest
     }
 
     [TestMethod]
+    public async Task ProcessSelected_ShouldRegisterAndAverageImagesInFolder()
+    {
+        const string FolderPath = @"Images";
+        if (!Directory.Exists(FolderPath))
+            Assert.Inconclusive("Test folder not found: " + FolderPath);
+
+        var images = Directory.GetFiles(FolderPath);
+        var mainViewModelMoq = SetupMainViewModelMoq(images);
+
+        var outputFileName = Path.Combine(_testDir, "combined.png");
+
+        File.Delete(outputFileName);
+        var commands = new VideoTransformCommands(mainViewModelMoq.Object);
+        commands.OutputMode = OutputMode.Average;
+        commands.RegistrationMode = RegistrationMode.ToFirst;
+        commands.ProcessSelected.Execute(outputFileName);
+        await (_processTask ?? throw new Exception("Process task not set"));
+
+        Assert.IsTrue(File.Exists(outputFileName));
+    }
+
+    [TestMethod]
     public async Task CombineFade_ShouldCombineVideos()
     {
         var mainViewModelMoq = SetupMainViewModelMoq([_sourceVideo, _sourceVideo, _sourceVideo]);
 
         var outputFileName = Path.Combine(_testDir, "combined.mp4");
-       
+
         File.Delete(outputFileName);
         var commands = new VideoTransformCommands(mainViewModelMoq.Object);
         commands.CombineFade.Execute(outputFileName);
