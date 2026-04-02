@@ -31,11 +31,11 @@ namespace PhotoLocator.PictureFileFormats
                 Math.Max(1, IntMath.Round(cropRect.Width)), Math.Max(1, IntMath.Round(cropRect.Height)));
         }
 
-        private static readonly char[] _lineSeparators = new[] { '\n', '\r' };
+        private static readonly char[] _lineSeparators = ['\n', '\r'];
 
         private static void ProcessFile(string sourceFileName, string newFileName, string args)
         {
-            var startInfo = new ProcessStartInfo(Path.Combine(Path.GetDirectoryName(typeof(JpegTransformations).Assembly.Location)!, "JpegTransform.exe"),
+            var startInfo = new ProcessStartInfo(Path.Combine(AppContext.BaseDirectory, "JpegTransform.exe"),
                 $"\"{sourceFileName}\" \"{newFileName}\" {args}");
             startInfo.CreateNoWindow = true;
             startInfo.RedirectStandardOutput = true;

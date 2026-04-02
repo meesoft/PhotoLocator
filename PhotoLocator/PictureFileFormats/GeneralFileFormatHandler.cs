@@ -1,5 +1,6 @@
 ﻿using PhotoLocator.Helpers;
 using PhotoLocator.Metadata;
+using System;
 using System.IO;
 using System.Threading;
 using System.Windows.Media.Imaging;
@@ -40,7 +41,7 @@ namespace PhotoLocator.PictureFileFormats
             {
                 if (!_jpegliChecked)
                 {
-                    _jpegliPath = Path.Combine(Path.GetDirectoryName(typeof(GeneralFileFormatHandler).Assembly.Location)!, "cjpegli.exe");
+                    _jpegliPath = Path.Combine(AppContext.BaseDirectory, "jpegli", "cjpegli.exe");
                     if (!File.Exists(_jpegliPath))
                     {
                         Log.Write("jpegli not found at " + _jpegliPath);

@@ -98,14 +98,14 @@ namespace PhotoLocator
         {
             if (string.IsNullOrEmpty(_viewModel.Settings.ExifToolPath) || !File.Exists(_viewModel.Settings.ExifToolPath))
             {
-                var exifToolPath = Path.Combine(Path.GetDirectoryName(GetType().Assembly.Location)!, "exiftool");
+                var exifToolPath = Path.Combine(AppContext.BaseDirectory, "exiftool");
                 exifToolPath = Directory.Exists(exifToolPath) ? Directory.EnumerateFiles(exifToolPath, "*.exe").FirstOrDefault() : null;
                 if (exifToolPath is not null)
                     _viewModel.Settings.ExifToolPath = exifToolPath;
             }
             if (string.IsNullOrEmpty(_viewModel.Settings.FFmpegPath) || !File.Exists(_viewModel.Settings.FFmpegPath))
             {
-                var ffmpegPath = Path.Combine(Path.GetDirectoryName(GetType().Assembly.Location)!, "ffmpeg", "ffmpeg.exe");
+                var ffmpegPath = Path.Combine(AppContext.BaseDirectory, "ffmpeg", "ffmpeg.exe");
                 if (File.Exists(ffmpegPath))
                     _viewModel.Settings.FFmpegPath = ffmpegPath;
             }
