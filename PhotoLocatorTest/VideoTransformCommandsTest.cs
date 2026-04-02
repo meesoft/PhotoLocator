@@ -16,7 +16,7 @@ public class VideoTransformCommandsTest
 
     public VideoTransformCommandsTest()
     {
-        _testDir = Path.GetDirectoryName(GetType().Assembly.Location)!;
+        _testDir = AppContext.BaseDirectory;
         _sourceVideo = Path.Combine(_testDir, "test.mp4");
     }
 
