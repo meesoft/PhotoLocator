@@ -62,13 +62,13 @@
         <Rectangle Grid.Column="1" Grid.Row="1" Fill="{StaticResource BorderFill}" HorizontalAlignment="Right" VerticalAlignment="Top" Cursor="SizeNESW" Tag="TopRight" Width="8" Height="8"/>
         <Rectangle Grid.Column="1" Grid.Row="1" Fill="{StaticResource BorderFill}" HorizontalAlignment="Left" VerticalAlignment="Bottom" Cursor="SizeNESW" Tag="BottomLeft" Width="8" Height="8"/>
         <Rectangle Grid.Column="1" Grid.Row="1" Fill="{StaticResource BorderFill}" HorizontalAlignment="Right" VerticalAlignment="Bottom" Cursor="SizeNWSE" Tag="BottomRight" Width="8" Height="8"/>
-        <Label Content="{Binding RatioText}" Grid.ColumnSpan="3" Grid.RowSpan="3" HorizontalAlignment="Left" VerticalAlignment="Top" Foreground="Black">
+        <Label Content="{Binding RatioText}" Grid.ColumnSpan="3" Grid.RowSpan="3" HorizontalAlignment="Left" VerticalAlignment="Top" Foreground="Black" IsHitTestVisible="False">
             <Label.RenderTransform>
                 <TransformGroup>
                     <TranslateTransform X="1" Y="1"/>
                 </TransformGroup>
             </Label.RenderTransform>
         </Label>
-        <Label Content="{Binding RatioText}" Grid.ColumnSpan="3" Grid.RowSpan="3" HorizontalAlignment="Left" VerticalAlignment="Top" Foreground="White"/>
+        <Label Content="{Binding RatioText}" Grid.ColumnSpan="3" Grid.RowSpan="3" HorizontalAlignment="Left" VerticalAlignment="Top" Foreground="White" IsHitTestVisible="False"/>
     </Grid>
 </UserControl>
