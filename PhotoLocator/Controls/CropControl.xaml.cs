@@ -1,10 +1,13 @@
-﻿using PhotoLocator.Helpers;
+﻿using PhotoLocator.BitmapOperations;
+using PhotoLocator.Helpers;
 using System;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
+using System.Windows.Media;
+using System.Windows.Media.Imaging;
 
 namespace PhotoLocator.Controls
 {
@@ -25,16 +28,27 @@ namespace PhotoLocator.Controls
         {
             InitializeComponent();
             if (DesignerProperties.GetIsInDesignMode(this))
-                Reset(1, 1, 500, 0);
+                Reset(null, 500, 0);
         }
 
-        public void Reset(int imageWidth, int imageHeight, double imageScale, double cropWidthHeightRatio)
+        public void Reset(BitmapSource? image, double imageScale, double cropWidthHeightRatio)
         {
-            _imageWidth = imageWidth;
-            _imageHeight = imageHeight;
+            double pixelMean;
+            if (image is null)
+            {
+                _imageWidth = _imageHeight = 1;
+                pixelMean = 0;
+            }
+            else
+            {
+                _imageWidth = image.PixelWidth;
+                _imageHeight = image.PixelHeight;
+                pixelMean = new FloatBitmap(image, 1).Mean();
+            }
+            CropBorderColor = new SolidColorBrush(pixelMean > 0.2 ? Color.FromArgb(128, 0, 0, 0) : Color.FromArgb(64, 255, 255, 255));
             Width = _imageWidth * imageScale;
             Height = _imageHeight * imageScale;
-            var imageWidthHeightRatio = (double)imageWidth / imageHeight;
+            var imageWidthHeightRatio = (double)_imageWidth / _imageHeight;
             if (cropWidthHeightRatio > 0 && Math.Abs(cropWidthHeightRatio - imageWidthHeightRatio) > 0.01)
             {
                 _widthHeightRatio = cropWidthHeightRatio;
@@ -58,7 +72,6 @@ namespace PhotoLocator.Controls
                 CropHeight = new(0.9, GridUnitType.Star);
                 CropBottomOffset = new(0.05, GridUnitType.Star);
             }
-            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(RatioText)));
         }
 
         public event PropertyChangedEventHandler? PropertyChanged;
@@ -73,22 +86,19 @@ namespace PhotoLocator.Controls
             return true;
         }
 
-        public GridLength CropLeftOffset { get => _cropLeftOffset; set => SetProperty(ref _cropLeftOffset, value); }
-        private GridLength _cropLeftOffset;
+        public SolidColorBrush? CropBorderColor { get => field; private set => SetProperty(ref field, value); }
 
-        public GridLength CropWidth { get => _cropWidth; set => SetProperty(ref _cropWidth, value); }
-        private GridLength _cropWidth;
+        public GridLength CropLeftOffset { get => field; set => SetProperty(ref field, value); }
 
-        public GridLength CropRightOffset { get => _cropRightOffset; set => SetProperty(ref _cropRightOffset, value); }
-        private GridLength _cropRightOffset;
+        public GridLength CropWidth { get => field; set => SetProperty(ref field, value); }
 
-        public GridLength CropTopOffset { get => _cropTopOffset; set => SetProperty(ref _cropTopOffset, value); }
-        private GridLength _cropTopOffset;
+        public GridLength CropRightOffset { get => field; set => SetProperty(ref field, value); }
 
-        public GridLength CropHeight { get => _cropHeight; set => SetProperty(ref _cropHeight, value); }
-        private GridLength _cropHeight;
-        public GridLength CropBottomOffset { get => _cropBottomOffset; set => SetProperty(ref _cropBottomOffset, value); }
-        private GridLength _cropBottomOffset;
+        public GridLength CropTopOffset { get => field; set => SetProperty(ref field, value); }
+
+        public GridLength CropHeight { get => field; set => SetProperty(ref field, value); }
+        
+        public GridLength CropBottomOffset { get => field; set => SetProperty(ref field, value); }
 
         public Rect CropRectangle
         {

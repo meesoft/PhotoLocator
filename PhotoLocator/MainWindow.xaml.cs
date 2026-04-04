@@ -406,7 +406,7 @@ namespace PhotoLocator
             else
             {
                 var imageScale = Math.Min(PreviewCanvas.ActualWidth / sourceImage.PixelWidth, PreviewCanvas.ActualHeight / sourceImage.PixelHeight);
-                CropGrid.Reset(sourceImage.PixelWidth, sourceImage.PixelHeight, imageScale, _viewModel.Settings.CropWidthHeightRatio);
+                CropGrid.Reset(sourceImage, imageScale, _viewModel.Settings.CropWidthHeightRatio);
                 _viewModel.CropControl = CropGrid;
             }
         }

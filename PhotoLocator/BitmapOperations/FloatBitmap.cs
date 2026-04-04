@@ -386,6 +386,21 @@ namespace PhotoLocator.BitmapOperations
             return (min, max);
         }
 
+        public double Mean()
+        {
+            double sum = 0;
+            var size = Size;
+            unsafe
+            {
+                fixed (float* elements = Elements)
+                {
+                    for (var i = 0; i < size; i++)
+                        sum += elements[i];
+                }
+            }
+            return sum / size;
+        }
+
         /// <summary>
         /// Apply operation to all elements
         /// </summary>
