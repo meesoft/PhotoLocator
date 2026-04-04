@@ -33,17 +33,18 @@ namespace PhotoLocator.Controls
 
         public void Reset(BitmapSource? image, double imageScale, double cropWidthHeightRatio)
         {
-            double pixelMean;
+            double pixelMean = 0;
             if (image is null)
-            {
                 _imageWidth = _imageHeight = 1;
-                pixelMean = 0;
-            }
             else
             {
                 _imageWidth = image.PixelWidth;
                 _imageHeight = image.PixelHeight;
-                pixelMean = new FloatBitmap(image, 1).Mean();
+                try
+                {
+                    pixelMean = new FloatBitmap(image, 1).Mean();
+                }
+                catch { } // Ignore unsupported pixel formats
             }
             CropBorderColor = new SolidColorBrush(pixelMean > 0.2 ? Color.FromArgb(128, 0, 0, 0) : Color.FromArgb(64, 255, 255, 255));
             Width = _imageWidth * imageScale;

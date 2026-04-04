@@ -405,6 +405,7 @@ namespace PhotoLocator
                 _viewModel.IsCropControlVisible = false;
             else
             {
+                using var cursor = new MouseCursorOverride();
                 var imageScale = Math.Min(PreviewCanvas.ActualWidth / sourceImage.PixelWidth, PreviewCanvas.ActualHeight / sourceImage.PixelHeight);
                 CropGrid.Reset(sourceImage, imageScale, _viewModel.Settings.CropWidthHeightRatio);
                 _viewModel.CropControl = CropGrid;
