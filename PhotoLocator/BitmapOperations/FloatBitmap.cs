@@ -84,12 +84,12 @@ namespace PhotoLocator.BitmapOperations
                     Parallel.For(0, Height, y =>
                     {
                         fixed (float* gamma = gammaLut)
-                        fixed (float* elements = &Elements[y, 0])
-                        fixed (ushort* sourceRow = &sourcePixels[y * Stride])
+                        fixed (float* dstRow = &Elements[y, 0])
+                        fixed (ushort* srcRow = &sourcePixels[y * Stride])
                         {
                             var stride = Stride;
                             for (var x = 0; x < stride; x++)
-                                elements[x] = gamma[sourceRow[x]];
+                                dstRow[x] = gamma[srcRow[x]];
                         }
                     });
                 }
@@ -106,14 +106,14 @@ namespace PhotoLocator.BitmapOperations
                     Parallel.For(0, Height, y =>
                     {
                         fixed (float* gamma = gammaLut)
-                        fixed (float* elements = &Elements[y, 0])
-                        fixed (byte* sourceRow = &sourcePixels[y * Stride])
+                        fixed (float* dstRow = &Elements[y, 0])
+                        fixed (byte* srcRow = &sourcePixels[y * Stride])
                         {
                             for (var x = 0; x < Width; x++)
                             {
-                                elements[x * 3 + 2] = gamma[sourceRow[x * 3 + 0]];
-                                elements[x * 3 + 1] = gamma[sourceRow[x * 3 + 1]];
-                                elements[x * 3 + 0] = gamma[sourceRow[x * 3 + 2]];
+                                dstRow[x * 3 + 2] = gamma[srcRow[x * 3 + 0]];
+                                dstRow[x * 3 + 1] = gamma[srcRow[x * 3 + 1]];
+                                dstRow[x * 3 + 0] = gamma[srcRow[x * 3 + 2]];
                             }
                         }
                     });
@@ -133,39 +133,36 @@ namespace PhotoLocator.BitmapOperations
                     Parallel.For(0, Height, y =>
                     {
                         fixed (float* gamma = gammaLut)
-                        fixed (float* elements = &Elements[y, 0])
-                        fixed (byte* sourceRow = &sourcePixels[y * Width * 4])
+                        fixed (float* dstRow = &Elements[y, 0])
+                        fixed (byte* srcRow = &sourcePixels[y * Width * 4])
                         {
                             var w = Width;
                             var srcIndex = 0;
                             var dstIndex = 0;
-                            float* g = gamma;
-                            float* e = elements;
-                            byte* s = sourceRow;
                             int x = 0;
 
                             // Process 4 pixels per iteration to reduce loop overhead
                             for (; x + 3 < w; x += 4)
                             {
                                 // pixel 0
-                                e[dstIndex + 2] = g[s[srcIndex + 0]];
-                                e[dstIndex + 1] = g[s[srcIndex + 1]];
-                                e[dstIndex + 0] = g[s[srcIndex + 2]];
+                                dstRow[dstIndex + 2] = gamma[srcRow[srcIndex + 0]];
+                                dstRow[dstIndex + 1] = gamma[srcRow[srcIndex + 1]];
+                                dstRow[dstIndex + 0] = gamma[srcRow[srcIndex + 2]];
 
                                 // pixel 1
-                                e[dstIndex + 5] = g[s[srcIndex + 4 + 0]];
-                                e[dstIndex + 4] = g[s[srcIndex + 4 + 1]];
-                                e[dstIndex + 3] = g[s[srcIndex + 4 + 2]];
+                                dstRow[dstIndex + 5] = gamma[srcRow[srcIndex + 4 + 0]];
+                                dstRow[dstIndex + 4] = gamma[srcRow[srcIndex + 4 + 1]];
+                                dstRow[dstIndex + 3] = gamma[srcRow[srcIndex + 4 + 2]];
 
                                 // pixel 2
-                                e[dstIndex + 8] = g[s[srcIndex + 8 + 0]];
-                                e[dstIndex + 7] = g[s[srcIndex + 8 + 1]];
-                                e[dstIndex + 6] = g[s[srcIndex + 8 + 2]];
+                                dstRow[dstIndex + 8] = gamma[srcRow[srcIndex + 8 + 0]];
+                                dstRow[dstIndex + 7] = gamma[srcRow[srcIndex + 8 + 1]];
+                                dstRow[dstIndex + 6] = gamma[srcRow[srcIndex + 8 + 2]];
 
                                 // pixel 3
-                                e[dstIndex + 11] = g[s[srcIndex + 12 + 0]];
-                                e[dstIndex + 10] = g[s[srcIndex + 12 + 1]];
-                                e[dstIndex + 9] = g[s[srcIndex + 12 + 2]];
+                                dstRow[dstIndex + 11] = gamma[srcRow[srcIndex + 12 + 0]];
+                                dstRow[dstIndex + 10] = gamma[srcRow[srcIndex + 12 + 1]];
+                                dstRow[dstIndex + 9] = gamma[srcRow[srcIndex + 12 + 2]];
 
                                 srcIndex += 16;
                                 dstIndex += 12;
@@ -174,9 +171,9 @@ namespace PhotoLocator.BitmapOperations
                             // Remainder
                             for (; x < w; x++)
                             {
-                                e[dstIndex + 2] = g[s[srcIndex + 0]];
-                                e[dstIndex + 1] = g[s[srcIndex + 1]];
-                                e[dstIndex + 0] = g[s[srcIndex + 2]];
+                                dstRow[dstIndex + 2] = gamma[srcRow[srcIndex + 0]];
+                                dstRow[dstIndex + 1] = gamma[srcRow[srcIndex + 1]];
+                                dstRow[dstIndex + 0] = gamma[srcRow[srcIndex + 2]];
                                 srcIndex += 4;
                                 dstIndex += 3;
                             }
@@ -206,12 +203,12 @@ namespace PhotoLocator.BitmapOperations
                     Parallel.For(0, Height, y =>
                     {
                         fixed (float* gamma = gammaLut)
-                        fixed (float* elements = &Elements[y, 0])
-                        fixed (byte* sourceRow = &sourcePixels[y * Stride])
+                        fixed (float* dstRow = &Elements[y, 0])
+                        fixed (byte* srcRow = &sourcePixels[y * Stride])
                         {
                             var stride = Stride;
                             for (var x = 0; x < stride; x++)
-                                elements[x] = gamma[sourceRow[x]];
+                                dstRow[x] = gamma[srcRow[x]];
                         }
                     });
                 }
@@ -266,17 +263,19 @@ namespace PhotoLocator.BitmapOperations
             var gammaLut = CreateGammaLookupFloatToByte(gamma);
             unsafe
             {
-                //gamma = 1 / gamma;
                 Parallel.For(0, Height, y =>
                 {
+                    var stride = Stride;
                     fixed (byte* gamma = gammaLut)
-                    fixed (float* elements = &Elements[y, 0])
-                    fixed (byte* destRow = &pixels[y * Stride])
+                    fixed (float* srcRow = &Elements[y, 0])
+                    fixed (byte* dstRow = &pixels[y * stride])
                     {
-                        var stride = Stride;
                         for (var x = 0; x < stride; x++)
-                            //destRow[x] = (byte)IntMath.Clamp((int)(Math.Pow(elements[x], gamma) * 255 + 0.5), 0, 255);
-                            destRow[x] = gamma[IntMath.Clamp((int)(elements[x] * FloatToByteGammaLutRange + 0.5f), 0, FloatToByteGammaLutRange)];
+                        {
+                            int idx = (int)(srcRow[x] * FloatToByteGammaLutRange + 0.5f);
+                            if (idx < 0) idx = 0; else if (idx > FloatToByteGammaLutRange) idx = FloatToByteGammaLutRange;
+                            dstRow[x] = gamma[idx];
+                        }
                     }
                 });
             }
