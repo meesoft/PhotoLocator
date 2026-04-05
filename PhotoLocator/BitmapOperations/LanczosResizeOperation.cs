@@ -1,9 +1,10 @@
-﻿using System;
+﻿using PhotoLocator.Helpers;
+using System;
+using System.Buffers;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
-using PhotoLocator.Helpers;
 
 namespace PhotoLocator.BitmapOperations
 {
@@ -290,12 +291,14 @@ namespace PhotoLocator.BitmapOperations
             else
                 return null;
 
-            var pixels = new byte[width * height * pixelSize];
-            source.CopyPixels(pixels, width * pixelSize, 0);
+            var srcPixels = ArrayPool<byte>.Shared.Rent(width * height * pixelSize);
+            source.CopyPixels(srcPixels, width * pixelSize, 0);
 
-            pixels = Apply(pixels, width, height, planes, pixelSize, newWidth, newHeight, ct);
+            var dstPixels = Apply(srcPixels, width, height, planes, pixelSize, newWidth, newHeight, ct);
+            ArrayPool<byte>.Shared.Return(srcPixels);
 
-            var result = BitmapSource.Create(newWidth, newHeight, newDpiX, newDpiY, source.Format, null, pixels, newWidth * pixelSize);
+            var result = BitmapSource.Create(newWidth, newHeight, newDpiX, newDpiY, source.Format, null, dstPixels, newWidth * pixelSize);
+            
             result.Freeze();
             return result;
         }
