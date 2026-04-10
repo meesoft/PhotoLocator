@@ -174,6 +174,30 @@ namespace PhotoLocator.BitmapOperations
             }
         }
 
+        public void ApplyUsingCenterOfMass(byte[] pixels)
+        {
+            static Point2f CalcCenterOfMass(Mat im)
+            {
+                var moments = Cv2.Moments(im);
+                return new Point2f((float)(moments.M10 / moments.M00), (float)(moments.M01 / moments.M00));
+            }
+
+            var sw = Stopwatch.StartNew();
+            using var image = CreateMatFromPixels(pixels);
+            using var grayImage = _pixelSize == 1 ? image.Clone() : image.CvtColor(ColorConversionCodes.BGR2GRAY); // Channel order is not important since it is only an internal image used for feature matching
+            _frameCount++;
+
+            var refCenter = CalcCenterOfMass(_referenceGrayImage);
+            var center = CalcCenterOfMass(grayImage);
+            var translation = new Point2f(refCenter.X - center.X, refCenter.Y - center.Y);
+            var trans = Mat.Eye(3, 3, MatType.CV_64F).ToMat();
+            trans.Set<double>(0, 2, translation.X);
+            trans.Set<double>(1, 2, translation.Y);
+            Log.Write($"Center of mass translation: ({translation.X:F2},{translation.Y:F2}) in {sw.ElapsedMilliseconds} ms");
+
+            WarpImage(image, trans);
+        }
+
         private void WarpImage(Mat image, Mat trans)
         {
             using var warped = image.WarpPerspective(trans, image.Size(), InterpolationFlags.Cubic,
