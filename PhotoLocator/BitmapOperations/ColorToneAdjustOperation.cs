@@ -104,9 +104,9 @@ namespace PhotoLocator.BitmapOperations
 
         public static void ColorTransformRGB2HSI(float r, float g, float b, out float h, out float s, out float i)
         {
-            r = RealMath.Clamp(r, 0f, 1f);
-            g = RealMath.Clamp(g, 0f, 1f);
-            b = RealMath.Clamp(b, 0f, 1f);
+            r = Math.Clamp(r, 0f, 1f);
+            g = Math.Clamp(g, 0f, 1f);
+            b = Math.Clamp(b, 0f, 1f);
             i = (r + g + b) / 3f;
             if (i == 0)
             {
@@ -115,17 +115,17 @@ namespace PhotoLocator.BitmapOperations
             }
             else
             {
-                var D = r;
-                if (g < D)
-                    D = g;
-                if (b < D)
-                    D = b;
-                s = Math.Max(0, 1 - 3f / (r + g + b) * D);
+                var min = r;
+                if (g < min)
+                    min = g;
+                if (b < min)
+                    min = b;
+                s = Math.Max(0, 1 - 3f / (r + g + b) * min);
                 if (s == 0)
                     h = 0;
                 else
                 {
-                    var a = 0.5 * (r - g + (r - b)) / Math.Sqrt(RealMath.Sqr(r - g) + (r - b) * (g - b));
+                    var a = 0.5 * (r - g + (r - b)) / Math.Sqrt((r - g) * (r - g) + (r - b) * (g - b));
                     double rh;
                     if (a <= -1)
                         rh = Math.PI;
@@ -177,13 +177,14 @@ namespace PhotoLocator.BitmapOperations
             Parallel.For(0, _srcHSI.Height, y =>
             {
                 var toneAdjustments = ToneAdjustments;
+                var width = _srcHSI.Width;
                 unsafe
                 {
                     fixed (float* src = &_srcHSI.Elements[y, 0])
                     fixed (float* dst = &DstBitmap.Elements[y, 0])
                     {
                         int xx = 0;
-                        for (var x = 0; x < _srcHSI.Width; x++)
+                        for (var x = 0; x < width; x++)
                         {
                             var tone = (src[xx] - Rotation) * NumberOfTones;
                             if (tone < 0)
