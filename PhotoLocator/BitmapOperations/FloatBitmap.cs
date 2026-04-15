@@ -217,8 +217,8 @@ namespace PhotoLocator.BitmapOperations
             return (bitmap, Task.Run(() =>
             {
                 var histogram = new int[256];
-                var length = Height * Stride;
-                for (int i = 0; i < length; i++)
+                var size = Size;
+                for (int i = 0; i < size; i++)
                     histogram[pixels[i]]++;
                 ArrayPool<byte>.Shared.Return(pixels);
                 return histogram;
