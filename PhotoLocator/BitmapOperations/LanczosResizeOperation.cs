@@ -313,10 +313,9 @@ namespace PhotoLocator.BitmapOperations
             source.CopyPixels(srcPixels, width * pixelSize, 0);
 
             var dstPixels = Apply(srcPixels, width, height, planes, pixelSize, newWidth, newHeight, ct);
-            ArrayPool<byte>.Shared.Return(srcPixels);
-
             var result = BitmapSource.Create(newWidth, newHeight, newDpiX, newDpiY, source.Format, null, dstPixels, newWidth * pixelSize);
-            
+            ArrayPool<byte>.Shared.Return(srcPixels); // Apply may return srcPixels so only return after creating result
+
             result.Freeze();
             return result;
         }
