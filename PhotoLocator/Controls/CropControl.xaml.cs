@@ -46,7 +46,7 @@ namespace PhotoLocator.Controls
                 }
                 catch { } // Ignore unsupported pixel formats
             }
-            CropBorderColor = new SolidColorBrush(pixelMean > 0.2 ? Color.FromArgb(128, 0, 0, 0) : Color.FromArgb(64, 255, 255, 255));
+            CropBorderColor = new SolidColorBrush(pixelMean > 0.25 ? Color.FromArgb(128, 0, 0, 0) : Color.FromArgb(64, 255, 255, 255));
             Width = _imageWidth * imageScale;
             Height = _imageHeight * imageScale;
             var imageWidthHeightRatio = (double)_imageWidth / _imageHeight;

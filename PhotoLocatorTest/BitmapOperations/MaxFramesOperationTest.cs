@@ -7,6 +7,29 @@ namespace PhotoLocator.BitmapOperations;
 public class MaxFramesOperationTest
 {
     [TestMethod]
+    [DataRow(0, 1)]
+    [DataRow(0.5f, 0)]
+    public void GetResult8_ShouldReturnMax(float firstImageValue, float secondImageValue)
+    {
+        var floatImage1 = new FloatBitmap(6, 4, 3);
+        floatImage1.ProcessElementWise(p => firstImageValue);
+        var floatImage2 = new FloatBitmap(floatImage1.Width, floatImage1.Height, floatImage1.PlaneCount);
+        floatImage2.ProcessElementWise(p => secondImageValue);
+
+        var op = new MaxFramesOperation(null, null, default);
+        var sw = Stopwatch.StartNew();
+        op.ProcessImage(floatImage1.ToBitmapSource(96, 96, 1));
+        op.ProcessImage(floatImage2.ToBitmapSource(96, 96, 1));
+        Console.WriteLine(sw.ElapsedMilliseconds);
+
+        Assert.IsTrue(op.IsResultReady);
+        Assert.AreEqual(2, op.ProcessedImages);
+
+        var result = new FloatBitmap(op.GetResult8(), 1);
+        Assert.AreEqual(Math.Max(firstImageValue, secondImageValue), result.Mean(), 0.01);
+    }
+
+    [TestMethod]
     public void ProcessImage_ShouldUseDarkFrame()
     {
         using var bitmapStream = File.OpenRead(@"TestData\2022-06-17_19.03.02.jpg");

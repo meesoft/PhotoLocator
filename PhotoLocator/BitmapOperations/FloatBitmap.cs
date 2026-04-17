@@ -84,12 +84,12 @@ namespace PhotoLocator.BitmapOperations
                     Parallel.For(0, Height, y =>
                     {
                         fixed (float* gamma = gammaLut)
-                        fixed (float* elements = &Elements[y, 0])
-                        fixed (ushort* sourceRow = &sourcePixels[y * Stride])
+                        fixed (float* dstRow = &Elements[y, 0])
+                        fixed (ushort* srcRow = &sourcePixels[y * Stride])
                         {
                             var stride = Stride;
                             for (var x = 0; x < stride; x++)
-                                elements[x] = gamma[sourceRow[x]];
+                                dstRow[x] = gamma[srcRow[x]];
                         }
                     });
                 }
@@ -106,14 +106,15 @@ namespace PhotoLocator.BitmapOperations
                     Parallel.For(0, Height, y =>
                     {
                         fixed (float* gamma = gammaLut)
-                        fixed (float* elements = &Elements[y, 0])
-                        fixed (byte* sourceRow = &sourcePixels[y * Stride])
+                        fixed (float* dstRow = &Elements[y, 0])
+                        fixed (byte* srcRow = &sourcePixels[y * Stride])
                         {
-                            for (var x = 0; x < Width; x++)
+                            var width = Width;
+                            for (var x = 0; x < width; x++)
                             {
-                                elements[x * 3 + 2] = gamma[sourceRow[x * 3 + 0]];
-                                elements[x * 3 + 1] = gamma[sourceRow[x * 3 + 1]];
-                                elements[x * 3 + 0] = gamma[sourceRow[x * 3 + 2]];
+                                dstRow[x * 3 + 2] = gamma[srcRow[x * 3 + 0]];
+                                dstRow[x * 3 + 1] = gamma[srcRow[x * 3 + 1]];
+                                dstRow[x * 3 + 0] = gamma[srcRow[x * 3 + 2]];
                             }
                         }
                     });
@@ -133,14 +134,15 @@ namespace PhotoLocator.BitmapOperations
                     Parallel.For(0, Height, y =>
                     {
                         fixed (float* gamma = gammaLut)
-                        fixed (float* elements = &Elements[y, 0])
-                        fixed (byte* sourceRow = &sourcePixels[y * Width * 4])
+                        fixed (float* dstRow = &Elements[y, 0])
+                        fixed (byte* srcRow = &sourcePixels[y * Width * 4])
                         {
-                            for (var x = 0; x < Width; x++)
+                            var width = Width;
+                            for (var x = 0; x < width; x++)
                             {
-                                elements[x * 3 + 2] = gamma[sourceRow[x * 4 + 0]];
-                                elements[x * 3 + 1] = gamma[sourceRow[x * 4 + 1]];
-                                elements[x * 3 + 0] = gamma[sourceRow[x * 4 + 2]];
+                                dstRow[x * 3 + 2] = gamma[srcRow[x * 4 + 0]];
+                                dstRow[x * 3 + 1] = gamma[srcRow[x * 4 + 1]];
+                                dstRow[x * 3 + 0] = gamma[srcRow[x * 4 + 2]];
                             }
                         }
                     });
@@ -168,12 +170,12 @@ namespace PhotoLocator.BitmapOperations
                     Parallel.For(0, Height, y =>
                     {
                         fixed (float* gamma = gammaLut)
-                        fixed (float* elements = &Elements[y, 0])
-                        fixed (byte* sourceRow = &sourcePixels[y * Stride])
+                        fixed (float* dstRow = &Elements[y, 0])
+                        fixed (byte* srcRow = &sourcePixels[y * Stride])
                         {
                             var stride = Stride;
                             for (var x = 0; x < stride; x++)
-                                elements[x] = gamma[sourceRow[x]];
+                                dstRow[x] = gamma[srcRow[x]];
                         }
                     });
                 }
@@ -192,7 +194,8 @@ namespace PhotoLocator.BitmapOperations
                     fixed (Int16* srcPix = &src.Elements[y, 0])
                     fixed (float* dstPix = &Elements[y, 0])
                     {
-                        for (int x = 0; x < Width; x++)
+                        var width = Width;
+                        for (int x = 0; x < width; x++)
                             dstPix[x] = remap(srcPix[x]);
                     }
                 });
@@ -214,8 +217,8 @@ namespace PhotoLocator.BitmapOperations
             return (bitmap, Task.Run(() =>
             {
                 var histogram = new int[256];
-                var length = Height * Stride;
-                for (int i = 0; i < length; i++)
+                var size = Size;
+                for (int i = 0; i < size; i++)
                     histogram[pixels[i]]++;
                 ArrayPool<byte>.Shared.Return(pixels);
                 return histogram;
@@ -228,17 +231,19 @@ namespace PhotoLocator.BitmapOperations
             var gammaLut = CreateGammaLookupFloatToByte(gamma);
             unsafe
             {
-                //gamma = 1 / gamma;
                 Parallel.For(0, Height, y =>
                 {
+                    var stride = Stride;
                     fixed (byte* gamma = gammaLut)
-                    fixed (float* elements = &Elements[y, 0])
-                    fixed (byte* destRow = &pixels[y * Stride])
+                    fixed (float* srcRow = &Elements[y, 0])
+                    fixed (byte* dstRow = &pixels[y * stride])
                     {
-                        var stride = Stride;
                         for (var x = 0; x < stride; x++)
-                            //destRow[x] = (byte)IntMath.Clamp((int)(Math.Pow(elements[x], gamma) * 255 + 0.5), 0, 255);
-                            destRow[x] = gamma[IntMath.Clamp((int)(elements[x] * FloatToByteGammaLutRange + 0.5f), 0, FloatToByteGammaLutRange)];
+                        {
+                            int idx = (int)(srcRow[x] * FloatToByteGammaLutRange + 0.5f);
+                            if (idx < 0) idx = 0; else if (idx > FloatToByteGammaLutRange) idx = FloatToByteGammaLutRange;
+                            dstRow[x] = gamma[idx];
+                        }
                     }
                 });
             }
@@ -266,7 +271,7 @@ namespace PhotoLocator.BitmapOperations
             GeneralFileFormatHandler.SaveToFile(ToBitmapSource(96, 96, gamma), fileName);
         }
 
-        static float[] CreateDeGammaLookup(double gamma, int range)
+        internal static float[] CreateDeGammaLookup(double gamma, int range)
         {
             var gammaLUT = ArrayPool<float>.Shared.Rent(range);
             var scale = 1.0 / (range - 1);
@@ -374,12 +379,28 @@ namespace PhotoLocator.BitmapOperations
             {
                 fixed (float* elements = Elements)
                 {
-                    var size = Size;
-                    for (var i = 0; i < size; i++)
+                    var p = elements;
+                    // Process in blocks of 8 to reduce loop overhead and branch misprediction
+                    var remaining = Size;
+                    while (remaining >= 8)
                     {
-                        var value = elements[i];
-                        min = Math.Min(min, value);
-                        max = Math.Max(max, value);
+                        var v0 = p[0]; if (v0 < min) min = v0; if (v0 > max) max = v0;
+                        var v1 = p[1]; if (v1 < min) min = v1; if (v1 > max) max = v1;
+                        var v2 = p[2]; if (v2 < min) min = v2; if (v2 > max) max = v2;
+                        var v3 = p[3]; if (v3 < min) min = v3; if (v3 > max) max = v3;
+                        var v4 = p[4]; if (v4 < min) min = v4; if (v4 > max) max = v4;
+                        var v5 = p[5]; if (v5 < min) min = v5; if (v5 > max) max = v5;
+                        var v6 = p[6]; if (v6 < min) min = v6; if (v6 > max) max = v6;
+                        var v7 = p[7]; if (v7 < min) min = v7; if (v7 > max) max = v7;
+                        p += 8;
+                        remaining -= 8;
+                    }
+                    // Finish remaining elements
+                    for (var i = 0; i < remaining; i++)
+                    {
+                        var value = *p++;
+                        if (value < min) min = value;
+                        if (value > max) max = value;
                     }
                 }
             }
@@ -394,8 +415,16 @@ namespace PhotoLocator.BitmapOperations
             {
                 fixed (float* elements = Elements)
                 {
-                    for (var i = 0; i < size; i++)
-                        sum += elements[i];
+                    float* p = elements;
+                    var remaining = size;
+                    while (remaining >= 8)
+                    {
+                        sum += p[0] + p[1] + p[2] + p[3] + p[4] + p[5] + p[6] + p[7];
+                        p += 8;
+                        remaining -= 8;
+                    }
+                    for (var i = 0; i < remaining; i++)
+                        sum += *p++;
                 }
             }
             return sum / size;
