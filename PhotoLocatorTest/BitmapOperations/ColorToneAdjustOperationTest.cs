@@ -1,7 +1,6 @@
 ﻿using PhotoLocator.PictureFileFormats;
 using System.Diagnostics;
 using System.Windows.Media.Imaging;
-using static PhotoLocator.BitmapOperations.ColorToneAdjustOperation;
 
 namespace PhotoLocator.BitmapOperations
 {
