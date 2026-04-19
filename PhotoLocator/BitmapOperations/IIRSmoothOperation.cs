@@ -2,6 +2,7 @@
 using System.Threading.Tasks;
 using System.Runtime.Intrinsics;
 using System.Runtime.Intrinsics.X86;
+using System.Numerics;
 
 namespace PhotoLocator.BitmapOperations
 {
@@ -43,9 +44,7 @@ namespace PhotoLocator.BitmapOperations
                 // Vertical smooth - vectorized over columns when possible
                 unsafe
                 {
-                    // Prefer hardware intrinsics if available (AVX/ SSE). Fallback to scalar per-column processing.
                     bool hasAvx = Avx.IsSupported;
-                    bool hasSse = Sse.IsSupported;
                     int vectorSize = hasAvx ? 8 : 4;
                     int vectorizedSegments = plane.Stride / vectorSize;
 
@@ -61,7 +60,6 @@ namespace PhotoLocator.BitmapOperations
                             {
                                 float* colPtr = &pixels[x];
                                 var v = Avx.LoadVector256(colPtr);
-                                Avx.Store(colPtr, v);
                                 for (var y = height; y > 1; y--)
                                 {
                                     colPtr += stride;
@@ -79,10 +77,10 @@ namespace PhotoLocator.BitmapOperations
                             }
                         });
                     }
-                    else if (hasSse)
+                    else
                     {
-                        var filterSizeV = Vector128.Create(filterSize);
-                        var scaleV = Vector128.Create(scale);
+                        var filterSizeV = Vector4.Create(filterSize);
+                        var scaleV = Vector4.Create(scale);
                         Parallel.For(0, vectorizedSegments, vi =>
                         {
                             int x = vi * 4;
@@ -90,75 +88,27 @@ namespace PhotoLocator.BitmapOperations
                             fixed (float* pixels = plane.Elements)
                             {
                                 float* colPtr = &pixels[x];
-                                var v = Sse.LoadVector128(colPtr);
-                                Sse.Store(colPtr, v);
+                                int vectorizedSegments = plane.Stride / vectorSize;
+                                var v = Vector4.Load(colPtr);
                                 for (var y = height; y > 1; y--)
                                 {
                                     colPtr += stride;
-                                    var inV = Sse.LoadVector128(colPtr);
-                                    v = Sse.Multiply(Sse.Add(Sse.Multiply(v, filterSizeV), inV), scaleV);
-                                    Sse.Store(colPtr, v);
+                                    var inV = Vector4.Load(colPtr);
+                                    v = Vector4.Multiply(Vector4.Add(Vector4.Multiply(v, filterSizeV), inV), scaleV);
+                                    v.Store(colPtr);
                                 }
                                 for (var y = height; y > 1; y--)
                                 {
                                     colPtr -= stride;
-                                    var inV = Sse.LoadVector128(colPtr);
-                                    v = Sse.Multiply(Sse.Add(Sse.Multiply(v, filterSizeV), inV), scaleV);
-                                    Sse.Store(colPtr, v);
+                                    var inV = Vector4.Load(colPtr);
+                                    v = Vector4.Multiply(Vector4.Add(Vector4.Multiply(v, filterSizeV), inV), scaleV);
+                                    v.Store(colPtr);
                                 }
                             }
                         });
                     }
-                    else
-                    {
-                        Parallel.For(0, vectorizedSegments, vi =>
-                        {
-                            int x = vi * 4;
-                            var stride = plane.Stride;
-                            fixed (float* pixels = plane.Elements)
-                            {
-                                var pix0 = &pixels[x];
-                                var value0 = *pix0;
-                                var pix1 = pix0 + 1;
-                                var value1 = *pix1;
-                                var pix2 = pix0 + 2;
-                                var value2 = *pix2;
-                                var pix3 = pix0 + 3;
-                                var value3 = *pix3;
-                                for (var y = height; y > 1; y--)
-                                {
-                                    pix0 += stride;
-                                    value0 = (value0 * filterSize + *pix0) * scale;
-                                    *pix0 = value0;
-                                    pix1 += stride;
-                                    value1 = (value1 * filterSize + *pix1) * scale;
-                                    *pix1 = value1;
-                                    pix2 += stride;
-                                    value2 = (value2 * filterSize + *pix2) * scale;
-                                    *pix2 = value2;
-                                    pix3 += stride;
-                                    value3 = (value3 * filterSize + *pix3) * scale;
-                                    *pix3 = value3;
-                                }
-                                for (var y = height; y > 1; y--)
-                                {
-                                    pix0 -= stride;
-                                    value0 = (value0 * filterSize + *pix0) * scale;
-                                    *pix0 = value0;
-                                    pix1 -= stride;
-                                    value1 = (value1 * filterSize + *pix1) * scale;
-                                    *pix1 = value1;
-                                    pix2 -= stride;
-                                    value2 = (value2 * filterSize + *pix2) * scale;
-                                    *pix2 = value2;
-                                    pix3 -= stride;
-                                    value3 = (value3 * filterSize + *pix3) * scale;
-                                    *pix3 = value3;
-                                }
-                            }
-                        });
-                    }
-                    // Remaining columns (scalar) - includes columns not divisible by vectorSize
+                    
+                    // Remaining columns - columns not divisible by vectorSize
                     Parallel.For(vectorizedSegments * vectorSize, plane.Stride, x =>
                     {
                         var stride = plane.Stride;
