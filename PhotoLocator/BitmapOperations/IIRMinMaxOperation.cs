@@ -48,8 +48,8 @@ namespace PhotoLocator.BitmapOperations
                         }
                     });
                     // Vertical
-                    int quaterWidth = plane.Stride / 4;
-                    Parallel.For(0, quaterWidth, x4 =>
+                    int quarterWidth = plane.Stride / 4;
+                    Parallel.For(0, quarterWidth, x4 =>
                     {
                         int x = x4 * 4;
                         var width = plane.Stride;
@@ -100,7 +100,7 @@ namespace PhotoLocator.BitmapOperations
                             }
                         }
                     });
-                    Parallel.For(quaterWidth * 4, plane.Stride, x =>
+                    Parallel.For(quarterWidth * 4, plane.Stride, x =>
                     {
                         var width = plane.Stride;
                         var height = plane.Height;
@@ -171,8 +171,8 @@ namespace PhotoLocator.BitmapOperations
                         }
                     });
                     // Vertical
-                    int quaterWidth = plane.Stride / 4;
-                    Parallel.For(0, quaterWidth, x4 =>
+                    int quarterWidth = plane.Stride / 4;
+                    Parallel.For(0, quarterWidth, x4 =>
                     {
                         int x = x4 * 4;
                         var width = plane.Stride;
@@ -223,7 +223,7 @@ namespace PhotoLocator.BitmapOperations
                             }
                         }
                     });
-                    Parallel.For(quaterWidth * 4, plane.Stride, x =>
+                    Parallel.For(quarterWidth * 4, plane.Stride, x =>
                     {
                         var width = plane.Stride;
                         var height = plane.Height;

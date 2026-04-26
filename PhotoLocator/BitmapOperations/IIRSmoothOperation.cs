@@ -88,7 +88,6 @@ namespace PhotoLocator.BitmapOperations
                             fixed (float* pixels = plane.Elements)
                             {
                                 float* colPtr = &pixels[x];
-                                int vectorizedSegments = plane.Stride / vectorSize;
                                 var v = Vector4.Load(colPtr);
                                 for (var y = height; y > 1; y--)
                                 {

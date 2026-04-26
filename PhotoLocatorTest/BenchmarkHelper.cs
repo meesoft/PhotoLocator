@@ -3,7 +3,7 @@ using System.Linq;
 
 namespace PhotoLocator
 {
-    public class BenchmarkHelper
+    public static class BenchmarkHelper
     {
         public static void Run(Action action, int innerLoops = 1, int outerIterations = 5)
         {
@@ -27,7 +27,7 @@ namespace PhotoLocator
             var min = iterationTimes.Min();
             Console.WriteLine($"Median time: {median} ms");
             Console.WriteLine($"Minimum time: {min} ms");
-            throw new AssertFailedException($"Min={min} ms, median={median} ms");
+            throw new AssertInconclusiveException($"Min={min} ms, median={median} ms");
         }
     }
 }
