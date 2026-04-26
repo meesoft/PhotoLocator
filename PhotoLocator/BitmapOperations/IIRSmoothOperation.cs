@@ -42,60 +42,57 @@ namespace PhotoLocator.BitmapOperations
                 });
 
                 // Vertical smooth - vectorized over columns when possible
-                unsafe
+                int vectorSize = Vector<float>.Count;
+                int vectorizedSegments = plane.Stride / vectorSize;
+                var filterSizeV = Vector.Create(filterSize);
+                var scaleV = Vector.Create(scale);
+                Parallel.For(0, vectorizedSegments, vi =>
                 {
-                    int vectorSize = Vector<float>.Count;
-                    int vectorizedSegments = plane.Stride / vectorSize;
-                    var filterSizeV = Vector.Create(filterSize);
-                    var scaleV = Vector.Create(scale);
-                    Parallel.For(0, vectorizedSegments, vi =>
+                    int x = vi * vectorSize;
+                    var stride = plane.Stride;
+                    fixed (float* pixels = plane.Elements)
                     {
-                        int x = vi * vectorSize;
-                        var stride = plane.Stride;
-                        fixed (float* pixels = plane.Elements)
+                        float* colPtr = &pixels[x];
+                        var v = Vector.Load(colPtr);
+                        for (var y = height; y > 1; y--)
                         {
-                            float* colPtr = &pixels[x];
-                            var v = Vector.Load(colPtr);
-                            for (var y = height; y > 1; y--)
-                            {
-                                colPtr += stride;
-                                var inV = Vector.Load(colPtr);
-                                v = Vector.Multiply(Vector.Add(Vector.Multiply(v, filterSizeV), inV), scaleV);
-                                v.Store(colPtr);
-                            }
-                            for (var y = height; y > 1; y--)
-                            {
-                                colPtr -= stride;
-                                var inV = Vector.Load(colPtr);
-                                v = Vector.Multiply(Vector.Add(Vector.Multiply(v, filterSizeV), inV), scaleV);
-                                v.Store(colPtr);
-                            }
+                            colPtr += stride;
+                            var inV = Vector.Load(colPtr);
+                            v = Vector.Multiply(Vector.Add(Vector.Multiply(v, filterSizeV), inV), scaleV);
+                            v.Store(colPtr);
                         }
-                    });
-                    
-                    // Remaining columns - columns not divisible by vectorSize
-                    Parallel.For(vectorizedSegments * vectorSize, plane.Stride, x =>
+                        for (var y = height; y > 1; y--)
+                        {
+                            colPtr -= stride;
+                            var inV = Vector.Load(colPtr);
+                            v = Vector.Multiply(Vector.Add(Vector.Multiply(v, filterSizeV), inV), scaleV);
+                            v.Store(colPtr);
+                        }
+                    }
+                });
+
+                // Remaining columns - columns not divisible by vectorSize
+                Parallel.For(vectorizedSegments * vectorSize, plane.Stride, x =>
+                {
+                    var stride = plane.Stride;
+                    fixed (float* pixels = plane.Elements)
                     {
-                        var stride = plane.Stride;
-                        fixed (float* pixels = plane.Elements)
+                        var pix = &pixels[x];
+                        var value = *pix;
+                        for (var y = height; y > 1; y--)
                         {
-                            var pix = &pixels[x];
-                            var value = *pix;
-                            for (var y = height; y > 1; y--)
-                            {
-                                pix += stride;
-                                value = (value * filterSize + *pix) * scale;
-                                *pix = value;
-                            }
-                            for (var y = height; y > 1; y--)
-                            {
-                                pix -= stride;
-                                value = (value * filterSize + *pix) * scale;
-                                *pix = value;
-                            }
+                            pix += stride;
+                            value = (value * filterSize + *pix) * scale;
+                            *pix = value;
                         }
-                    });
-                }
+                        for (var y = height; y > 1; y--)
+                        {
+                            pix -= stride;
+                            value = (value * filterSize + *pix) * scale;
+                            *pix = value;
+                        }
+                    }
+                });
             }
         }
     }   
