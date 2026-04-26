@@ -44,68 +44,34 @@ namespace PhotoLocator.BitmapOperations
                 // Vertical smooth - vectorized over columns when possible
                 unsafe
                 {
-                    bool hasAvx = Avx.IsSupported;
-                    int vectorSize = hasAvx ? 8 : 4;
+                    int vectorSize = Vector<float>.Count;
                     int vectorizedSegments = plane.Stride / vectorSize;
-
-                    if (hasAvx)
+                    var filterSizeV = Vector.Create(filterSize);
+                    var scaleV = Vector.Create(scale);
+                    Parallel.For(0, vectorizedSegments, vi =>
                     {
-                        var filterSizeV = Vector256.Create(filterSize);
-                        var scaleV = Vector256.Create(scale);
-                        Parallel.For(0, vectorizedSegments, vi =>
+                        int x = vi * vectorSize;
+                        var stride = plane.Stride;
+                        fixed (float* pixels = plane.Elements)
                         {
-                            int x = vi * 8;
-                            var stride = plane.Stride;
-                            fixed (float* pixels = plane.Elements)
+                            float* colPtr = &pixels[x];
+                            var v = Vector.Load(colPtr);
+                            for (var y = height; y > 1; y--)
                             {
-                                float* colPtr = &pixels[x];
-                                var v = Avx.LoadVector256(colPtr);
-                                for (var y = height; y > 1; y--)
-                                {
-                                    colPtr += stride;
-                                    var inV = Avx.LoadVector256(colPtr);
-                                    v = Avx.Multiply(Avx.Add(Avx.Multiply(v, filterSizeV), inV), scaleV);
-                                    Avx.Store(colPtr, v);
-                                }
-                                for (var y = height; y > 1; y--)
-                                {
-                                    colPtr -= stride;
-                                    var inV = Avx.LoadVector256(colPtr);
-                                    v = Avx.Multiply(Avx.Add(Avx.Multiply(v, filterSizeV), inV), scaleV);
-                                    Avx.Store(colPtr, v);
-                                }
+                                colPtr += stride;
+                                var inV = Vector.Load(colPtr);
+                                v = Vector.Multiply(Vector.Add(Vector.Multiply(v, filterSizeV), inV), scaleV);
+                                v.Store(colPtr);
                             }
-                        });
-                    }
-                    else
-                    {
-                        var filterSizeV = Vector4.Create(filterSize);
-                        var scaleV = Vector4.Create(scale);
-                        Parallel.For(0, vectorizedSegments, vi =>
-                        {
-                            int x = vi * 4;
-                            var stride = plane.Stride;
-                            fixed (float* pixels = plane.Elements)
+                            for (var y = height; y > 1; y--)
                             {
-                                float* colPtr = &pixels[x];
-                                var v = Vector4.Load(colPtr);
-                                for (var y = height; y > 1; y--)
-                                {
-                                    colPtr += stride;
-                                    var inV = Vector4.Load(colPtr);
-                                    v = Vector4.Multiply(Vector4.Add(Vector4.Multiply(v, filterSizeV), inV), scaleV);
-                                    v.Store(colPtr);
-                                }
-                                for (var y = height; y > 1; y--)
-                                {
-                                    colPtr -= stride;
-                                    var inV = Vector4.Load(colPtr);
-                                    v = Vector4.Multiply(Vector4.Add(Vector4.Multiply(v, filterSizeV), inV), scaleV);
-                                    v.Store(colPtr);
-                                }
+                                colPtr -= stride;
+                                var inV = Vector.Load(colPtr);
+                                v = Vector.Multiply(Vector.Add(Vector.Multiply(v, filterSizeV), inV), scaleV);
+                                v.Store(colPtr);
                             }
-                        });
-                    }
+                        }
+                    });
                     
                     // Remaining columns - columns not divisible by vectorSize
                     Parallel.For(vectorizedSegments * vectorSize, plane.Stride, x =>
