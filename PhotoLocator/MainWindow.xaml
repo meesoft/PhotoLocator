@@ -35,6 +35,7 @@
         <KeyBinding Key="O" Modifiers="Ctrl" Command="{Binding BrowseForPhotosCommand}" />
         <KeyBinding Key="P" Modifiers="Ctrl" Command="{Binding VideoTransformCommandsShared.ProcessSelected}" />
         <KeyBinding Key="Q" Modifiers="Ctrl" Command="{Binding ViewModeCommand}" />
+        <KeyBinding Key="R" Modifiers="Ctrl" Command="{Binding JpegTransformCommands.LocalContrastCommand}" CommandParameter="Astro"/>
         <KeyBinding Key="S" Modifiers="Ctrl" Command="{Binding SaveGeotagsCommand}" />
         <KeyBinding Key="T" Modifiers="Ctrl" Command="{Binding AutoGeotagCommand}" />
         <KeyBinding Key="V" Modifiers="Ctrl" Command="{Binding PasteLocationCommand}" />
@@ -216,6 +217,11 @@
                     <MenuItem Header="Local contrast, brightness and colors (Ctrl+L)" Command="{Binding JpegTransformCommands.LocalContrastCommand}">
                         <MenuItem.Icon>
                             <TextBlock FontFamily="Segoe MDL2 Assets" Text="&#xE790;" FontSize="14" />
+                        </MenuItem.Icon>
+                    </MenuItem>
+                    <MenuItem Header="Astrophoto stretch (Ctrl+R)" Command="{Binding JpegTransformCommands.LocalContrastCommand}" CommandParameter="Astro">
+                        <MenuItem.Icon>
+                            <TextBlock FontFamily="Segoe MDL2 Assets" Text="&#xE734;" FontSize="14" />
                         </MenuItem.Icon>
                     </MenuItem>
                     <MenuItem Header="Transform jpeg" >
