@@ -227,6 +227,8 @@ namespace PhotoLocator.BitmapOperations
 
         private byte[] ToPixels8(double gamma)
         {
+            if (Elements is null)
+                throw new InvalidOperationException("Bitmap not initialized");
             var pixels = ArrayPool<byte>.Shared.Rent(Height * Stride);
             var gammaLut = CreateGammaLookupFloatToByte(gamma);
             unsafe

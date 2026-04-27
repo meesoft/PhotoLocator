@@ -32,6 +32,7 @@ namespace PhotoLocator.BitmapOperations
 #if DEBUG
             GeneralFileFormatHandler.SaveToFile(result, "localContrast.png");
 #endif
+            Assert.AreEqual(0.23394798570186837, op.DstBitmap.Mean(), 1e-5);
         }
     }
 }
