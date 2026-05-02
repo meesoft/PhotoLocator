@@ -17,6 +17,8 @@ namespace PhotoLocator
 {
     class LocalContrastViewModel : INotifyPropertyChanged, IImageZoomPreviewViewModel
     {
+        enum FirstParamChanged { Astro, LaplacianPyramid, LocalContrast, ColorTone, None }
+
         static readonly List<double> _adjustmentClipboard = [];
         static readonly List<double> _lastUsedValues = [];
         readonly DispatcherTimer _updateTimer;
@@ -24,7 +26,7 @@ namespace PhotoLocator
         readonly IncreaseLocalContrastOperation _localContrastOperation = new() { DstBitmap = new() };
         readonly ColorToneAdjustOperation _colorToneOperation = new();
         Task _previewTask = Task.CompletedTask;
-        bool _laplacianPyramidParamsChanged, _localContrastParamsChanged;
+        FirstParamChanged _firstParamChanged = FirstParamChanged.None;
 
         public LocalContrastViewModel()
         {
@@ -40,7 +42,7 @@ namespace PhotoLocator
         void NotifyPropertyChanged([CallerMemberName] string? propertyName = null)
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
-            StartUpdateTimer(false, false);
+            StartUpdateTimer(FirstParamChanged.ColorTone);
         }
 
         bool SetProperty<T>(ref T field, T newValue, [CallerMemberName] string? propertyName = null)
@@ -65,6 +67,8 @@ namespace PhotoLocator
                 {
                     Mouse.OverrideCursor = Cursors.AppStarting;
                     _sourceFloatBitmap.Assign(value, FloatBitmap.DefaultMonitorGamma);
+                    if (IsAstroModeEnabled)
+                        ResetCommand.Execute(null);
                     _updateTimer.Start();
                 }
                 field = value;
@@ -96,24 +100,19 @@ namespace PhotoLocator
         public bool IsAstroModeEnabled
         {
             get;
-            set
-            {
-                if (value && SetProperty(ref field, value) && SourceBitmap is not null)
-                    AstroStretch = AstroStretchOperation.OptimizeStretch(_sourceFloatBitmap);
-            }
+            set => SetProperty(ref field, value);
         }
 
-        public const double DefaultAstroStretch = 10;
         public double AstroStretch
         {
             get;
             set
             {
                 if (SetProperty(ref field, value))
-                    StartUpdateTimer(true, true);
+                    StartUpdateTimer(FirstParamChanged.Astro);
             }
-        } = DefaultAstroStretch;
-        public ICommand ResetAstroStretchCommand => new RelayCommand(o => AstroStretch = DefaultAstroStretch);
+        }
+        public ICommand ResetAstroStretchCommand => new RelayCommand(o => AstroStretch = IsAstroModeEnabled ? AstroStretchOperation.OptimizeStretch(_sourceFloatBitmap) : 0);
 
         public const double DefaultBackgroundRemovalSmooth = 8;
         public double BackgroundRemovalSmooth
@@ -122,7 +121,7 @@ namespace PhotoLocator
             set
             {
                 if (SetProperty(ref field, value))
-                    StartUpdateTimer(true, true);
+                    StartUpdateTimer(FirstParamChanged.Astro);
             }
         } = DefaultBackgroundRemovalSmooth;
         public ICommand ResetBackgroundRemovalSmoothCommand => new RelayCommand(o => BackgroundRemovalSmooth = DefaultBackgroundRemovalSmooth);
@@ -134,7 +133,7 @@ namespace PhotoLocator
             set
             {
                 if (SetProperty(ref field, RealMath.Clamp(value, 0, 100)))
-                    StartUpdateTimer(false, true);
+                    StartUpdateTimer(FirstParamChanged.LocalContrast);
             }
         } = DefaultHighlightStrength;
         public ICommand ResetHighlightCommand => new RelayCommand(o => HighlightStrength = DefaultHighlightStrength);
@@ -146,7 +145,7 @@ namespace PhotoLocator
             set
             {
                 if (SetProperty(ref field, RealMath.Clamp(value, 0, 100)))
-                    StartUpdateTimer(false, true);
+                    StartUpdateTimer(FirstParamChanged.LocalContrast);
             }
         } = DefaultShadowStrength;
         public ICommand ResetShadowCommand => new RelayCommand(o => ShadowStrength = DefaultShadowStrength);
@@ -158,10 +157,10 @@ namespace PhotoLocator
             set
             {
                 if (SetProperty(ref field, RealMath.Clamp(value, 0, 100)))
-                    StartUpdateTimer(false, true);
+                    StartUpdateTimer(FirstParamChanged.LocalContrast);
             }
         } = DefaultMaxStretch;
-        public ICommand ResetMaxStretchCommand => new RelayCommand(o => MaxStretch = DefaultMaxStretch);
+        public ICommand ResetMaxStretchCommand => new RelayCommand(o => MaxStretch = ToneMapping > 1 || IsAstroModeEnabled ? 100 : DefaultMaxStretch);
 
         public const double DefaultOutlierReductionStrength = 10;
         public double OutlierReductionStrength
@@ -170,7 +169,7 @@ namespace PhotoLocator
             set
             {
                 if (SetProperty(ref field, value))
-                    StartUpdateTimer(false, true);
+                    StartUpdateTimer(FirstParamChanged.LocalContrast);
             }
         } = DefaultOutlierReductionStrength;
         public ICommand ResetOutlierReductionCommand => new RelayCommand(o => OutlierReductionStrength = DefaultOutlierReductionStrength);
@@ -182,7 +181,7 @@ namespace PhotoLocator
             set
             {
                 if (SetProperty(ref field, value))
-                    StartUpdateTimer(false, true);
+                    StartUpdateTimer(FirstParamChanged.LocalContrast);
             }
         } = DefaultContrast;
         public ICommand ResetContrastCommand => new RelayCommand(o => Contrast = DefaultContrast);
@@ -197,7 +196,7 @@ namespace PhotoLocator
                 {
                     if (value > 1)
                         MaxStretch = 100;
-                    StartUpdateTimer(true, true);
+                    StartUpdateTimer(FirstParamChanged.LaplacianPyramid);
                 }
             }
         } = DefaultToneMapping;
@@ -210,7 +209,7 @@ namespace PhotoLocator
             set
             {
                 if (SetProperty(ref field, value))
-                    StartUpdateTimer(true, true);
+                    StartUpdateTimer(FirstParamChanged.LaplacianPyramid);
             }
         } = DefaultDetailHandling;
         public ICommand ResetDetailHandlingCommand => new RelayCommand(o => DetailHandling = DefaultDetailHandling);
@@ -279,7 +278,7 @@ namespace PhotoLocator
                     NotifyPropertyChanged();
                 }
                 else if (SetProperty(ref _colorToneOperation.ToneAdjustments[ActiveToneIndex].AdjustHue, value))
-                    StartUpdateTimer(false, false);
+                    StartUpdateTimer(FirstParamChanged.ColorTone);
             }
         }
 
@@ -297,7 +296,7 @@ namespace PhotoLocator
                     NotifyPropertyChanged();
                 }
                 else if (SetProperty(ref _colorToneOperation.ToneAdjustments[ActiveToneIndex].AdjustSaturation, value))
-                    StartUpdateTimer(false, false);
+                    StartUpdateTimer(FirstParamChanged.ColorTone);
             }
         }
 
@@ -315,7 +314,7 @@ namespace PhotoLocator
                     NotifyPropertyChanged();
                 }
                 else if (SetProperty(ref _colorToneOperation.ToneAdjustments[ActiveToneIndex].AdjustIntensity, value))
-                    StartUpdateTimer(false, false);
+                    StartUpdateTimer(FirstParamChanged.ColorTone);
             }
         }
 
@@ -333,7 +332,7 @@ namespace PhotoLocator
                     NotifyPropertyChanged();
                 }
                 else if (SetProperty(ref _colorToneOperation.ToneAdjustments[ActiveToneIndex].HueUniformity, value))
-                    StartUpdateTimer(false, false);
+                    StartUpdateTimer(FirstParamChanged.ColorTone);
             }
         }
 
@@ -347,7 +346,7 @@ namespace PhotoLocator
                 if (SetProperty(ref field, RealMath.Clamp(value, -0.5, 0.5)))
                 {
                     UpdateColorTones();
-                    StartUpdateTimer(false, false);
+                    StartUpdateTimer(FirstParamChanged.ColorTone);
                 }
             }
         }
@@ -361,20 +360,20 @@ namespace PhotoLocator
 
         public ICommand ResetCommand => new RelayCommand(o =>
         {
-            AstroStretch = DefaultAstroStretch;
+            ResetAstroStretchCommand.Execute(null);
             BackgroundRemovalSmooth = DefaultBackgroundRemovalSmooth;
             HighlightStrength = DefaultHighlightStrength;
             ShadowStrength = DefaultShadowStrength;
-            MaxStretch = DefaultMaxStretch;
             OutlierReductionStrength = DefaultOutlierReductionStrength;
             Contrast = DefaultContrast;
             ToneMapping = DefaultToneMapping;
             DetailHandling = DefaultDetailHandling;
+            ResetMaxStretchCommand.Execute(null);
             _colorToneOperation.ResetToneAdjustments();
             ToneRotation = 0;
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(null));
             ActiveToneIndex = ColorToneAdjustOperation.NumberOfTones;
-            StartUpdateTimer(false, false);
+            StartUpdateTimer(FirstParamChanged.ColorTone);
         });
 
         public ICommand CopyAdjustmentsCommand => new RelayCommand(o => StoreAdjustmentValues(_adjustmentClipboard));
@@ -432,16 +431,16 @@ namespace PhotoLocator
             }
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(null));
             ActiveToneIndex = 0;
-            StartUpdateTimer(false, false);
+            StartUpdateTimer(FirstParamChanged.ColorTone);
             if (a != valueStore.Count)
                 throw new InvalidOperationException("Unexpected number of adjustments");
         }
 
-        private void StartUpdateTimer(bool laplacianPyramidParamsChanged, bool localContrastParamsChanged)
+        private void StartUpdateTimer(FirstParamChanged firstParamChanged)
         {
             Mouse.OverrideCursor = Cursors.AppStarting;
-            _laplacianPyramidParamsChanged |= laplacianPyramidParamsChanged;
-            _localContrastParamsChanged |= localContrastParamsChanged;
+            if (firstParamChanged < _firstParamChanged)
+                _firstParamChanged = firstParamChanged;
             _updateTimer.Stop();
             _updateTimer.Start();
         }
@@ -458,6 +457,7 @@ namespace PhotoLocator
                     BackgroundSmooth = BackgroundRemovalSmooth,
                 };
                 astroStretch.Apply();
+                _laplacianFilterOperation.SourceChanged();
                 _laplacianFilterOperation.SrcBitmap = astroStretch.DstBitmap;
             }
             else
@@ -507,16 +507,13 @@ namespace PhotoLocator
             }
             await (_previewTask = Task.Run(async () =>
             {
-                if (_laplacianPyramidParamsChanged || _localContrastParamsChanged)
-                {
-                    _localContrastParamsChanged = false;
-                    _colorToneOperation.SourceChanged();
-                }
-                if (_laplacianPyramidParamsChanged)
-                {
+                if (_firstParamChanged < FirstParamChanged.LaplacianPyramid)
+                    _laplacianFilterOperation.SourceChanged();
+                if (_firstParamChanged < FirstParamChanged.LocalContrast)
                     _localContrastOperation.SourceChanged();
-                    _laplacianPyramidParamsChanged = false;
-                }
+                if (_firstParamChanged < FirstParamChanged.ColorTone)
+                    _colorToneOperation.SourceChanged();
+                _firstParamChanged = FirstParamChanged.None;
                 ApplyAstroStretchOperation();
                 ApplyLaplacianFilterOperation();
                 if (SourceBitmap is null || _updateTimer.IsEnabled)

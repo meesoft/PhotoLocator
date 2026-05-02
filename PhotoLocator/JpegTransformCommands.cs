@@ -103,7 +103,7 @@ namespace PhotoLocator
             using (var cursor = new MouseCursorOverride())
             {
                 (var image, metadata) = await Task.Run(() => LoadImageWithMetadataAsync(selectedItem));
-                localContrastViewModel = new LocalContrastViewModel() { SourceBitmap = image, IsAstroModeEnabled = o as string == "Astro" };
+                localContrastViewModel = new LocalContrastViewModel() { IsAstroModeEnabled = o as string == "Astro", SourceBitmap = image };
             }
             var window = new LocalContrastView();
             window.Owner = Application.Current.MainWindow;
@@ -131,7 +131,7 @@ namespace PhotoLocator
         private static async Task<(BitmapSource, BitmapMetadata?)> LoadImageWithMetadataAsync(PictureItemViewModel item)
         {
             BitmapMetadata? metadata = null;
-            var image = await item.LoadPreviewAsync(default, int.MaxValue, preservePixelFormat: true);
+            var image = await item.LoadPreviewAsync(default, preservePixelFormat: true);
             try
             {
                 using var file = File.OpenRead(item.FullPath);

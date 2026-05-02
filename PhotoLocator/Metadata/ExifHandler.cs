@@ -656,6 +656,8 @@ namespace PhotoLocator.Metadata
                     _ => Rotation.Rotate0
                 };
                 var timeStamp = DecodeTimeStamp(metadata, file);
+                if (GeneralFileFormatHandler.IsRawFile(fileName))
+                    return (GetGeotag(metadata), timeStamp, GetMetadataString(metadata, 0, 0, timeStamp), orientation);
                 return (GetGeotag(metadata), timeStamp, GetMetadataString(metadata, frame.PixelWidth, frame.PixelHeight, timeStamp), orientation);
             }
             catch (NotSupportedException)
@@ -664,6 +666,6 @@ namespace PhotoLocator.Metadata
                     throw;
                 return ExifTool.DecodeMetadata(fileName, exifToolPath);
             }
-        }             
+        }
     }
 }

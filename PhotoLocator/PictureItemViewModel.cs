@@ -105,9 +105,7 @@ namespace PhotoLocator
             {
                 if (IsDirectory)
                     return false;
-                var ext = Path.GetExtension(FullPath).ToLowerInvariant();
-                var isVideo = ext is ".mp4" or ".mov" or ".avi";
-                return isVideo;
+                return GeneralFileFormatHandler.IsVideoFile(FullPath);
             }
         }
 
@@ -254,7 +252,7 @@ namespace PhotoLocator
             }
         }
 
-        public async Task<BitmapSource?> LoadPreviewAsync(CancellationToken ct, int maxWidth = int.MaxValue, bool preservePixelFormat = false, string? skipTo = null)
+        public async Task<BitmapSource?> LoadPreviewAsync(CancellationToken ct, bool preservePixelFormat = false, string? skipTo = null)
         {
             try
             {
@@ -262,7 +260,7 @@ namespace PhotoLocator
                     await LoadMetadataAsync(ct);
                 Log.Write("Loading preview of " + Name);
                 var sw = Stopwatch.StartNew();
-                var preview = LoadPreviewInternal(maxWidth, preservePixelFormat, skipTo, ct);
+                var preview = LoadPreviewInternal(int.MaxValue, preservePixelFormat, skipTo, ct);
                 Log.Write($"Loaded preview of {Name} in {sw.ElapsedMilliseconds} ms");
                 return preview;
             }
