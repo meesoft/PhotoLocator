@@ -8,6 +8,8 @@ namespace PhotoLocator.BitmapOperations
 
         public double BackgroundSmooth { get; set; } = 8;
 
+        public double BlackPoint { get; set; }
+
         public override void Apply()
         {
             if (SrcBitmap is not null && DstBitmap != SrcBitmap)
@@ -21,7 +23,18 @@ namespace PhotoLocator.BitmapOperations
             {
                 var background = ConvertToGrayscaleOperation.ConvertToGrayscale(DstBitmap);
                 IIRSmoothOperation.Apply(background, (float)Math.Exp(BackgroundSmooth));
-                DstBitmap.ProcessElementWise(background, (p, b) => Math.Max(p - b, 0));
+                if (BlackPoint > 0)
+                {
+                    var bp = (float)BlackPoint;
+                    DstBitmap.ProcessElementWise(background, (p, b) => Math.Max(p - b - bp, 0));
+                }
+                else
+                    DstBitmap.ProcessElementWise(background, (p, b) => Math.Max(p - b, 0));
+            }
+            else if (BlackPoint > 0)
+            {
+                var bp = (float)BlackPoint;
+                DstBitmap.ProcessElementWise(p => Math.Max(p - bp, 0));
             }
         }
 

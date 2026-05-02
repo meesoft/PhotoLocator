@@ -126,6 +126,17 @@ namespace PhotoLocator
         } = DefaultBackgroundRemovalSmooth;
         public ICommand ResetBackgroundRemovalSmoothCommand => new RelayCommand(o => BackgroundRemovalSmooth = DefaultBackgroundRemovalSmooth);
 
+        public double BlackPoint
+        {
+            get;
+            set
+            {
+                if (SetProperty(ref field, value))
+                    StartUpdateTimer(FirstParamChanged.Astro);
+            }
+        }
+        public ICommand ResetBlackPointCommand => new RelayCommand(o => BlackPoint = 0);
+
         public const double DefaultHighlightStrength = 10;
         public double HighlightStrength
         {
@@ -362,6 +373,7 @@ namespace PhotoLocator
         {
             ResetAstroStretchCommand.Execute(null);
             BackgroundRemovalSmooth = DefaultBackgroundRemovalSmooth;
+            BlackPoint = 0;
             HighlightStrength = DefaultHighlightStrength;
             ShadowStrength = DefaultShadowStrength;
             OutlierReductionStrength = DefaultOutlierReductionStrength;
@@ -392,6 +404,7 @@ namespace PhotoLocator
             valueStore.Clear();
             valueStore.Add(AstroStretch);
             valueStore.Add(BackgroundRemovalSmooth);
+            valueStore.Add(BlackPoint);
             valueStore.Add(HighlightStrength);
             valueStore.Add(ShadowStrength);
             valueStore.Add(MaxStretch);
@@ -414,6 +427,7 @@ namespace PhotoLocator
             int a = 0;
             AstroStretch = valueStore[a++];
             BackgroundRemovalSmooth = valueStore[a++];
+            BlackPoint = valueStore[a++];
             HighlightStrength = valueStore[a++];
             ShadowStrength = valueStore[a++];
             MaxStretch = valueStore[a++];
@@ -447,7 +461,7 @@ namespace PhotoLocator
 
         void ApplyAstroStretchOperation()
         {
-            if (IsAstroModeEnabled && (AstroStretch > 0 || BackgroundRemovalSmooth > 0))
+            if (IsAstroModeEnabled && (AstroStretch > 0 || BackgroundRemovalSmooth > 0 || BlackPoint > 0))
             {
                 var astroStretch = new AstroStretchOperation()
                 {
@@ -455,6 +469,7 @@ namespace PhotoLocator
                     DstBitmap = new(),
                     Stretch = AstroStretch,
                     BackgroundSmooth = BackgroundRemovalSmooth,
+                    BlackPoint = BlackPoint,
                 };
                 astroStretch.Apply();
                 _laplacianFilterOperation.SourceChanged();

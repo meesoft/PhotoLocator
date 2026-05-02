@@ -77,6 +77,16 @@
                         <TextBox Text="{Binding BackgroundRemovalSmooth,StringFormat=N2,UpdateSourceTrigger=PropertyChanged,Delay=500}" Width="80" HorizontalAlignment="Right" />
                     </DockPanel>
                     <Slider Value="{Binding BackgroundRemovalSmooth}" Minimum="0" Maximum="16" SmallChange="0.05" LargeChange="0.1" />
+
+                    <DockPanel>
+                        <TextBlock Text="Black point">
+                            <TextBlock.InputBindings>
+                                <MouseBinding Command="{Binding ResetBlackPointCommand}" MouseAction="LeftClick" />
+                            </TextBlock.InputBindings>
+                        </TextBlock>
+                        <TextBox Text="{Binding BlackPoint,StringFormat=N4,UpdateSourceTrigger=PropertyChanged,Delay=500}" Width="80" HorizontalAlignment="Right" />
+                    </DockPanel>
+                    <Slider Value="{Binding BlackPoint}" Minimum="0" Maximum="0.1" SmallChange="0.0001" LargeChange="0.001" />
                 </StackPanel>
 
                 <DockPanel>
