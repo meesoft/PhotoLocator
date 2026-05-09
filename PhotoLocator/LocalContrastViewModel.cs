@@ -103,6 +103,8 @@ namespace PhotoLocator
             set => SetProperty(ref field, value);
         }
 
+        public bool IsLocalAdjustmentsLabelVisible => !IsAstroModeEnabled;
+
         public double AstroStretch
         {
             get;

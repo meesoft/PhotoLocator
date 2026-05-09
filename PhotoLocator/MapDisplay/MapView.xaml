@@ -212,7 +212,7 @@
                 <ToggleButton Margin="2" Width="36" Height="36" ToolTip="Sun and moon" IsChecked="{Binding IsSunAndMoonVisible}"
                               Content="&#xF08C;" FontFamily="Segoe MDL2 Assets" FontSize="25" />
                 <DatePicker Visibility="{Binding IsSunAndMoonVisible, Converter={StaticResource BooleanToVisibility}}" VerticalAlignment="Center" 
-                            SelectedDate="{Binding SunAndMoonDate}"  />
+                            SelectedDate="{Binding SunAndMoonDate}" />
             </StackPanel>
 
             <Slider Orientation="Vertical" Margin="8" Height="100"
