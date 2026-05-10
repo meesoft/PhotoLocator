@@ -498,7 +498,8 @@ namespace PhotoLocator.BitmapOperations
                         fixed (float* otherElements = &other.Elements[y, 0])
                         {
                             int xx = 0;
-                            for (var x = 0; x < Width; x++)
+                            var width = Width;
+                            for (var x = 0; x < width; x++)
                             {
                                 var otherElement = otherElements[x];
                                 elements[xx] = operation(elements[xx++], otherElement);

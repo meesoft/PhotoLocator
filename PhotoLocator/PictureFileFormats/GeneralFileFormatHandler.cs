@@ -14,6 +14,16 @@ namespace PhotoLocator.PictureFileFormats
         static string? _jpegliPath;
         static bool _jpegliChecked;
 
+        public static bool IsRawFile(string fileName)
+        {
+            return Path.GetExtension(fileName).ToLowerInvariant() is ".cr2" or ".cr3" or ".dng" or ".arw" or ".nef";
+        }
+
+        public static bool IsVideoFile(string fileName)
+        {
+            return Path.GetExtension(fileName).ToLowerInvariant() is ".mp4" or ".mov" or ".avi";
+        }
+
         public static BitmapSource LoadFromStream(Stream source, Rotation rotation, int maxPixelWidth, bool preservePixelFormat, CancellationToken ct)
         {
             var bitmap = new BitmapImage();

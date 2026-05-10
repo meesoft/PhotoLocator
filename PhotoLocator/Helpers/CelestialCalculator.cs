@@ -33,10 +33,10 @@ namespace PhotoLocator.Helpers
             return (sunrise, sunriseAzimuth, sunset, sunsetAzimuth);
         }
 
-        public static double? GetSunPosition(Location location, DateTime time)
+        public static (double Azimuth, double Altitude) GetSunPosition(Location location, DateTime time)
         {
             var pos = SunCalc.GetSunPosition(time, location.Latitude, location.Longitude);
-            return pos.Altitude < 0 ? null : SunCalcNetAzimuthRadiansToDegrees(pos.Azimuth);
+            return (SunCalcNetAzimuthRadiansToDegrees(pos.Azimuth), pos.Altitude * 180 / Math.PI);
         }
 
         /// <summary>

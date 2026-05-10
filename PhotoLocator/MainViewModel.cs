@@ -668,8 +668,7 @@ namespace PhotoLocator
             if (sun.Sunset.HasValue)
                 AddLineSeg(sun.SetAzimuth!.Value, Colors.Yellow, $"Sunset: {sun.Sunset.Value.ToLocalTime()}\nAzimuth: {sun.SetAzimuth:F0}°");
             var sunPos = CelestialCalculator.GetSunPosition(MapCenter, now);
-            if (sunPos.HasValue)
-                AddLineSeg(sunPos.Value, Colors.Orange, $"Sun now:\nAzimuth: {sunPos:F1}°");
+            AddLineSeg(sunPos.Azimuth, sunPos.Altitude > 0 ? Colors.Orange : Colors.OrangeRed, $"Sun now:\nAzimuth: {sunPos.Azimuth:F0}°, altitude {sunPos.Altitude:F0}°");
 
             var moon = CelestialCalculator.GetMoonRiseSet(MapCenter, SunAndMoonDate);
             if (moon.Moonrise.HasValue)
@@ -678,7 +677,7 @@ namespace PhotoLocator
                 AddLineSeg(moon.SetAzimuth!.Value, Colors.LightGray, $"Moonset: {moon.Moonset.Value.ToLocalTime()}\n{moon.SetIllumination * 100:F0}%, azimuth: {moon.SetAzimuth:F0}°");
             var moonPos = CelestialCalculator.GetMoonPosition(MapCenter, now);
             if (moonPos.Azimuth.HasValue)
-                AddLineSeg(moonPos.Azimuth.Value, Colors.Gray, $"Moon now: {moonPos.Illumination * 100:F0}%\nAzimuth: {moonPos.Azimuth:F1}°");
+                AddLineSeg(moonPos.Azimuth.Value, Colors.Gray, $"Moon now: {moonPos.Illumination * 100:F0}%\nAzimuth: {moonPos.Azimuth:F0}°");
         }
 
         public static ICommand AboutCommand => new RelayCommand(o =>

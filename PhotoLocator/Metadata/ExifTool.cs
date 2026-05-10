@@ -144,7 +144,8 @@ static class ExifTool
             !metadata.TryGetValue("SubSecDateTimeOriginal", out timeStampStr) &&
             !metadata.TryGetValue("CreationDate", out timeStampStr) &&
             !metadata.TryGetValue("CreateDate", out timeStampStr) &&
-            !metadata.TryGetValue("DateTimeOriginal", out timeStampStr))
+            !metadata.TryGetValue("DateTimeOriginal", out timeStampStr) &&
+            !metadata.TryGetValue("ModifyDate", out timeStampStr))
             return null;
         var fractionStart = timeStampStr.IndexOf('.', StringComparison.Ordinal);
         if (fractionStart > 0)
@@ -166,7 +167,8 @@ static class ExifTool
                 return timestampOffset;
         }
         var timeZone = metadata.TryGetValue("FileType", out var fileType) && fileType == "JPEG" ? DateTimeStyles.AssumeLocal : DateTimeStyles.AssumeUniversal;
-        if (DateTime.TryParseExact(timeStampStr, "yyyy:MM:dd HH:mm:ss", CultureInfo.InvariantCulture, DateTimeStyles.AllowWhiteSpaces | timeZone, out var timestamp))
+        if (DateTime.TryParseExact(timeStampStr, "yyyy:MM:dd HH:mm:ss", CultureInfo.InvariantCulture, DateTimeStyles.AllowWhiteSpaces | timeZone, out var timestamp) ||
+            DateTime.TryParse(timeStampStr, CultureInfo.InvariantCulture, DateTimeStyles.AllowWhiteSpaces | timeZone, out timestamp))
             return timestamp;
         return null;
     }
