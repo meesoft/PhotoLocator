@@ -12,7 +12,7 @@ using System.Windows.Media.Imaging;
 
 namespace PhotoLocator
 {
-    public sealed class JpegTransformCommands
+    public sealed class ImageTransformCommands
     {
         public const string AstroCommandParameter = "Astro";
 
@@ -20,7 +20,7 @@ namespace PhotoLocator
 
         private bool HasFileSelected(object? o) => _mainViewModel.SelectedItem is not null && _mainViewModel.SelectedItem.IsFile;
 
-        public JpegTransformCommands(IMainViewModel mainViewModel)
+        public ImageTransformCommands(IMainViewModel mainViewModel)
         {
             _mainViewModel = mainViewModel;
         }
