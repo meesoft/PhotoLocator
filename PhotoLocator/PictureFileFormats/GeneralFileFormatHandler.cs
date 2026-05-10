@@ -45,9 +45,9 @@ namespace PhotoLocator.PictureFileFormats
 
         public static void SaveToFile(BitmapSource image, string targetPath, BitmapMetadata? metadata = null, int jpegQuality = 95)
         {
-            var ext = Path.GetExtension(targetPath).ToUpperInvariant();
+            var ext = Path.GetExtension(targetPath).ToLowerInvariant();
             BitmapEncoder encoder;
-            if (ext is ".JPG" or ".JPEG")
+            if (ext is ".jpg" or ".jpeg")
             {
                 if (!_jpegliChecked)
                 {
@@ -67,13 +67,13 @@ namespace PhotoLocator.PictureFileFormats
                 }
                 encoder = new JpegBitmapEncoder() { QualityLevel = jpegQuality };
             }
-            else if (ext is ".TIF" or ".TIFF")
+            else if (ext is ".tif" or ".tiff")
                 encoder = new TiffBitmapEncoder(); // Default is best compression
-            else if (ext is ".PNG")
+            else if (ext is ".png")
                 encoder = new PngBitmapEncoder();
-            else if (ext is ".BMP")
+            else if (ext is ".bmp")
                 encoder = new BmpBitmapEncoder();
-            else if (ext is ".JXR")
+            else if (ext is ".jxr")
                 encoder = new WmpBitmapEncoder() { Lossless = true };
             else
                 throw new UserMessageException("Unsupported file format " + ext);

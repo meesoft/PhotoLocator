@@ -262,6 +262,13 @@
                         <MenuItem Header="Generate max frame" Command="{Binding VideoTransformCommands.GenerateMaxFrame}" />
                         <MenuItem Header="Generate time slice video" Command="{Binding VideoTransformCommands.GenerateTimeSliceVideo}" />
                     </MenuItem>
+                    <MenuItem Header="Convert to" >
+                        <MenuItem Header="JPEG (jpegli)" Command="{Binding JpegTransformCommands.ConvertFileFormatCommand}" CommandParameter="jpg"/>
+                        <MenuItem Header="TIFF (LZW)" Command="{Binding JpegTransformCommands.ConvertFileFormatCommand}" CommandParameter="tif"/>
+                        <MenuItem Header="PNG" Command="{Binding JpegTransformCommands.ConvertFileFormatCommand}" CommandParameter="png"/>
+                        <MenuItem Header="JPEG XR (lossless)" Command="{Binding JpegTransformCommands.ConvertFileFormatCommand}" CommandParameter="jxr"/>
+                        <MenuItem Header="BMP" Command="{Binding JpegTransformCommands.ConvertFileFormatCommand}" CommandParameter="bmp"/>
+                    </MenuItem>
                     <Separator />
                     <MenuItem Header="Rename (F2)" Command="{Binding RenameCommand}">
                         <MenuItem.Icon>
