@@ -14,6 +14,8 @@ namespace PhotoLocator
 {
     public sealed class JpegTransformCommands
     {
+        public const string AstroCommandParameter = "Astro";
+
         private readonly IMainViewModel _mainViewModel;
 
         private bool HasFileSelected(object? o) => _mainViewModel.SelectedItem is not null && _mainViewModel.SelectedItem.IsFile;
@@ -103,7 +105,7 @@ namespace PhotoLocator
             using (var cursor = new MouseCursorOverride())
             {
                 (var image, metadata) = await Task.Run(() => LoadImageWithMetadataAsync(selectedItem));
-                localContrastViewModel = new LocalContrastViewModel() { IsAstroModeEnabled = o as string == "Astro", SourceBitmap = image };
+                localContrastViewModel = new LocalContrastViewModel() { IsAstroModeEnabled = o as string == AstroCommandParameter, SourceBitmap = image };
             }
             var window = new LocalContrastView();
             window.Owner = Application.Current.MainWindow;

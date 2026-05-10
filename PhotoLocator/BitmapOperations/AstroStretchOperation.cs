@@ -44,7 +44,7 @@ namespace PhotoLocator.BitmapOperations
             const int SampleHeight = 100;
 
             var grayImage = ConvertToGrayscaleOperation.ConvertToGrayscale(srcBitmap);
-            srcBitmap = new FloatBitmap(srcBitmap.Width * SampleHeight / srcBitmap.Height, SampleHeight, 1);
+            srcBitmap = new FloatBitmap(Math.Max(1, srcBitmap.Width * SampleHeight / srcBitmap.Height), SampleHeight, 1);
             BilinearResizeOperation.ApplyToPlaneParallel(grayImage, srcBitmap);  
 
             double bestStretch = 1;

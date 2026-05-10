@@ -29,7 +29,7 @@ namespace PhotoLocator.BitmapOperations
             var result = op.DstBitmap.ToBitmapSource(source.DpiX, source.DpiY, FloatBitmap.DefaultMonitorGamma);
             Console.WriteLine(sw.ElapsedMilliseconds);
 
-            Assert.AreEqual(0.0026545193517195226, op.DstBitmap.Mean(), 0.000001);
+            Assert.AreEqual(0.0026545193517195226, op.DstBitmap.Mean(), 1e-5);
 #if DEBUG
             GeneralFileFormatHandler.SaveToFile(result, "astroStretch.png");
 #endif

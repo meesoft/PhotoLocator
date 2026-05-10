@@ -570,7 +570,8 @@ namespace PhotoLocator
             HistogramPoints = histogramPoints;
         }
 
-        public bool IsNoOperation => DetailHandling == 1 && ToneMapping == 1 && HighlightStrength == 0 && ShadowStrength == 0 && Contrast == DefaultContrast 
+        public bool IsNoOperation => (!IsAstroModeEnabled || AstroStretch == 0 && BackgroundRemovalSmooth == 0 && BlackPoint == 0)
+            && DetailHandling == 1 && ToneMapping == 1 && HighlightStrength == 0 && ShadowStrength == 0 && Contrast == DefaultContrast
             && !_colorToneOperation.AreToneAdjustmentsChanged;
 
         public BitmapSource ApplyOperations(BitmapSource source)
