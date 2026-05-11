@@ -12,7 +12,7 @@ using System.Windows.Media.Imaging;
 
 namespace PhotoLocator
 {
-    public sealed class JpegTransformCommands
+    public sealed class ImageTransformCommands
     {
         public const string AstroCommandParameter = "Astro";
 
@@ -20,7 +20,7 @@ namespace PhotoLocator
 
         private bool HasFileSelected(object? o) => _mainViewModel.SelectedItem is not null && _mainViewModel.SelectedItem.IsFile;
 
-        public JpegTransformCommands(IMainViewModel mainViewModel)
+        public ImageTransformCommands(IMainViewModel mainViewModel)
         {
             _mainViewModel = mainViewModel;
         }
@@ -200,5 +200,46 @@ namespace PhotoLocator
                 }
             }, ct), "Batch process");
         }
+
+        public ICommand ConvertFileFormatCommand => new RelayCommand(async o =>
+        {
+            var allSelected = _mainViewModel.GetSelectedItems(true).ToArray();
+            if (allSelected.Length == 0)
+                return;
+            var targetType = o as string ?? throw new ArgumentException("Invalid target type");
+
+            var browser = new System.Windows.Forms.FolderBrowserDialog();
+            browser.InitialDirectory = Path.GetDirectoryName(allSelected[0].FullPath)!;
+            browser.Description = $"Select target folder for converted {targetType} files";
+            browser.UseDescriptionForTitle = true;
+            if (browser.ShowDialog() != System.Windows.Forms.DialogResult.OK)
+                return;
+            var targetDir = browser.SelectedPath;
+            var targetIsSourceDir = string.Equals(targetDir, browser.InitialDirectory, StringComparison.OrdinalIgnoreCase);
+
+            await _mainViewModel.RunProcessWithProgressBarAsync(async (progressCallback, ct) =>
+            {
+                var overwriteAll = false;
+                int i = 0;
+                foreach (var item in allSelected)
+                {
+                    var targetFileName = targetIsSourceDir ? Path.ChangeExtension(item.GetProcessedFileName(), targetType)
+                        : Path.Combine(targetDir, Path.GetFileNameWithoutExtension(item.Name) + "." + targetType);
+                    if (!overwriteAll && File.Exists(targetFileName))
+                    {
+                        if (MessageBox.Show(App.Current.MainWindow, $"File {targetFileName} already exists. Overwrite all conflicting files?",
+                            "Confirm Overwrite All", MessageBoxButton.OKCancel, MessageBoxImage.Question) != MessageBoxResult.OK)
+                            break;
+                        overwriteAll = true;
+                    }
+
+                    var (image, itemMetadata) = await LoadImageWithMetadataAsync(item);
+                    await Task.Run(() => GeneralFileFormatHandler.SaveToFile(image, targetFileName,
+                        ExifHandler.ResetOrientation(itemMetadata), _mainViewModel.Settings.JpegQuality), ct);
+
+                    progressCallback((double)(++i) / allSelected.Length);
+                }
+            }, "Convert to " + targetType);
+        });
     }
 }

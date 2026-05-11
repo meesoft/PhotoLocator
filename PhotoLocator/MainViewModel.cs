@@ -1073,7 +1073,7 @@ namespace PhotoLocator
                 if (SelectedItem is not null && SelectedItem.IsVideo)
                     VideoTransformCommandsShared.CropSelected(cropRectangle);
                 else
-                    await JpegTransformCommands.CropSelectedItemAsync(PreviewPictureSource, cropRectangle);
+                    await ImageTransformCommands.CropSelectedItemAsync(PreviewPictureSource, cropRectangle);
             }
             else
             {
@@ -1087,7 +1087,7 @@ namespace PhotoLocator
 
         public ICommand ToggleLogCommand => new RelayCommand(o => LogViewHeight = LogViewHeight > 4 ? 4 : 100);
 
-        public JpegTransformCommands JpegTransformCommands => field ??= new(this);
+        public ImageTransformCommands ImageTransformCommands => field ??= new(this);
 
         public VideoTransformCommands VideoTransformCommands => new(this);
 

@@ -19,7 +19,7 @@ namespace PhotoLocator.PictureFileFormats
             return extension == ".psd";
         }
 
-        public static BitmapSource LoadFromStream(Stream stream, Rotation rotation, int maxWidth, bool preservePixelFormat, CancellationToken ct)
+        public static BitmapSource LoadFromStream(Stream stream, CancellationToken ct)
         {
             var psd = new PsdFile(stream, new LoadContext());
             foreach (var psdLayer in (new[] { psd.BaseLayer }).Concat(psd.Layers))

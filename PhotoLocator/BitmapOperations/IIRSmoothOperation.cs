@@ -1,8 +1,7 @@
 ﻿using System.Diagnostics;
-using System.Threading.Tasks;
-using System.Runtime.Intrinsics;
-using System.Runtime.Intrinsics.X86;
 using System.Numerics;
+using System.Runtime.Intrinsics;
+using System.Threading.Tasks;
 
 namespace PhotoLocator.BitmapOperations
 {

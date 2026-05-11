@@ -31,11 +31,11 @@
         <KeyBinding Key="D4" Modifiers="Ctrl" Command="{Binding Zoom400Command}" />
         <KeyBinding Key="E" Modifiers="Ctrl" Command="{Binding ExploreCommand}" />
         <KeyBinding Key="F" Modifiers="Ctrl" Command="{Binding QuickSearchCommand}" />
-        <KeyBinding Key="L" Modifiers="Ctrl" Command="{Binding JpegTransformCommands.LocalContrastCommand}" />
+        <KeyBinding Key="L" Modifiers="Ctrl" Command="{Binding ImageTransformCommands.LocalContrastCommand}" />
         <KeyBinding Key="O" Modifiers="Ctrl" Command="{Binding BrowseForPhotosCommand}" />
         <KeyBinding Key="P" Modifiers="Ctrl" Command="{Binding VideoTransformCommandsShared.ProcessSelected}" />
         <KeyBinding Key="Q" Modifiers="Ctrl" Command="{Binding ViewModeCommand}" />
-        <KeyBinding Key="R" Modifiers="Ctrl" Command="{Binding JpegTransformCommands.LocalContrastCommand}" CommandParameter="{x:Static local:JpegTransformCommands.AstroCommandParameter}"/>
+        <KeyBinding Key="R" Modifiers="Ctrl" Command="{Binding ImageTransformCommands.LocalContrastCommand}" CommandParameter="{x:Static local:ImageTransformCommands.AstroCommandParameter}"/>
         <KeyBinding Key="S" Modifiers="Ctrl" Command="{Binding SaveGeotagsCommand}" />
         <KeyBinding Key="T" Modifiers="Ctrl" Command="{Binding AutoGeotagCommand}" />
         <KeyBinding Key="V" Modifiers="Ctrl" Command="{Binding PasteLocationCommand}" />
@@ -119,7 +119,7 @@
                     ToolTip="Rename (F2)" Width="32" />
             <Button Content="&#xECC5;" FontFamily="Segoe MDL2 Assets" FontSize="18" Command="{Binding AdjustTimestampsCommand}"
                     ToolTip="Adjust timestamps" Width="32" />
-            <Button Content="&#xE790;" FontFamily="Segoe MDL2 Assets" FontSize="18" Command="{Binding JpegTransformCommands.LocalContrastCommand}"
+            <Button Content="&#xE790;" FontFamily="Segoe MDL2 Assets" FontSize="18" Command="{Binding ImageTransformCommands.LocalContrastCommand}"
                     ToolTip="Local contrast, brightness and colors (Ctrl+L)" Width="32" />
             <Button Content="&#xE714;" FontFamily="Segoe MDL2 Assets" FontSize="18" Command="{Binding VideoTransformCommandsShared.ProcessSelected}"
                     ToolTip="Process video (Ctrl+P)" Width="32" />
@@ -201,7 +201,7 @@
                                 <TextBlock FontFamily="Segoe MDL2 Assets" Text="&#xE77F;" FontSize="14" />
                             </MenuItem.Icon>
                         </MenuItem>
-                        <MenuItem Header="Reset rotation tag" Command="{Binding JpegTransformCommands.Rotate0Command}" />
+                        <MenuItem Header="Reset rotation tag" Command="{Binding ImageTransformCommands.Rotate0Command}" />
                         <MenuItem Header="Show metadata" Command="{Binding ShowMetadataCommand}" />
                     </MenuItem>
                     <Separator />
@@ -214,18 +214,18 @@
                     <MenuItem Header="Open Explorer (Ctrl+E)" Command="{Binding ExploreCommand}" />
                     <MenuItem Header="Shell context menu (Shift+right click)" Command="{Binding ShellContextMenuCommand}" />
                     <Separator />
-                    <MenuItem Header="Local contrast, brightness and colors (Ctrl+L)" Command="{Binding JpegTransformCommands.LocalContrastCommand}">
+                    <MenuItem Header="Local contrast, brightness and colors (Ctrl+L)" Command="{Binding ImageTransformCommands.LocalContrastCommand}">
                         <MenuItem.Icon>
                             <TextBlock FontFamily="Segoe MDL2 Assets" Text="&#xE790;" FontSize="14" />
                         </MenuItem.Icon>
                     </MenuItem>
-                    <MenuItem Header="Astrophoto stretch (Ctrl+R)" Command="{Binding JpegTransformCommands.LocalContrastCommand}" CommandParameter="{x:Static local:JpegTransformCommands.AstroCommandParameter}">
+                    <MenuItem Header="Astrophoto stretch (Ctrl+R)" Command="{Binding ImageTransformCommands.LocalContrastCommand}" CommandParameter="{x:Static local:ImageTransformCommands.AstroCommandParameter}">
                         <MenuItem.Icon>
                             <TextBlock FontFamily="Segoe MDL2 Assets" Text="&#xE734;" FontSize="14" />
                         </MenuItem.Icon>
                     </MenuItem>
                     <MenuItem Header="Transform jpeg" >
-                        <MenuItem Header="Rotate left" Command="{Binding JpegTransformCommands.RotateLeftCommand}">
+                        <MenuItem Header="Rotate left" Command="{Binding ImageTransformCommands.RotateLeftCommand}">
                             <MenuItem.Icon>
                                 <TextBlock FontFamily="Segoe MDL2 Assets" Text="&#xE7AD;" FontSize="14" >
                                     <TextBlock.RenderTransform>
@@ -234,12 +234,12 @@
                                 </TextBlock>
                             </MenuItem.Icon>
                         </MenuItem>
-                        <MenuItem Header="Rotate right" Command="{Binding JpegTransformCommands.RotateRightCommand}">
+                        <MenuItem Header="Rotate right" Command="{Binding ImageTransformCommands.RotateRightCommand}">
                             <MenuItem.Icon>
                                 <TextBlock FontFamily="Segoe MDL2 Assets" Text="&#xE7AD;" FontSize="14" />
                             </MenuItem.Icon>
                         </MenuItem>
-                        <MenuItem Header="Rotate 180°" Command="{Binding JpegTransformCommands.Rotate180Command}" />
+                        <MenuItem Header="Rotate 180°" Command="{Binding ImageTransformCommands.Rotate180Command}" />
                         <MenuItem Header="Crop (Alt-C)" Command="{Binding CropCommand}" IsChecked="{Binding IsCropControlVisible}">
                             <MenuItem.Icon>
                                 <TextBlock FontFamily="Segoe MDL2 Assets" Text="&#xE7A8;" FontSize="14" />
@@ -261,6 +261,13 @@
                         <MenuItem Header="Generate average frame" Command="{Binding VideoTransformCommands.GenerateAverageFrame}" />
                         <MenuItem Header="Generate max frame" Command="{Binding VideoTransformCommands.GenerateMaxFrame}" />
                         <MenuItem Header="Generate time slice video" Command="{Binding VideoTransformCommands.GenerateTimeSliceVideo}" />
+                    </MenuItem>
+                    <MenuItem Header="Convert to" >
+                        <MenuItem Header="JPEG (jpegli)" Command="{Binding ImageTransformCommands.ConvertFileFormatCommand}" CommandParameter="jpg"/>
+                        <MenuItem Header="TIFF (LZW)" Command="{Binding ImageTransformCommands.ConvertFileFormatCommand}" CommandParameter="tif"/>
+                        <MenuItem Header="PNG" Command="{Binding ImageTransformCommands.ConvertFileFormatCommand}" CommandParameter="png"/>
+                        <MenuItem Header="JPEG XR (lossless)" Command="{Binding ImageTransformCommands.ConvertFileFormatCommand}" CommandParameter="jxr"/>
+                        <MenuItem Header="BMP" Command="{Binding ImageTransformCommands.ConvertFileFormatCommand}" CommandParameter="bmp"/>
                     </MenuItem>
                     <Separator />
                     <MenuItem Header="Rename (F2)" Command="{Binding RenameCommand}">
@@ -346,7 +353,7 @@
                         <MenuItem Header="400% (Ctrl+4)" IsCheckable="True" Name="Zoom400Item" Command="{Binding Zoom400Command}"  />
                         <Separator />
                         <MenuItem Header="Transform jpeg" >
-                            <MenuItem Header="Rotate left" Command="{Binding JpegTransformCommands.RotateLeftCommand}">
+                            <MenuItem Header="Rotate left" Command="{Binding ImageTransformCommands.RotateLeftCommand}">
                                 <MenuItem.Icon>
                                     <TextBlock FontFamily="Segoe MDL2 Assets" Text="&#xE7AD;" FontSize="14" >
                                         <TextBlock.RenderTransform>
@@ -355,12 +362,12 @@
                                     </TextBlock>
                                 </MenuItem.Icon>
                             </MenuItem>
-                            <MenuItem Header="Rotate right" Command="{Binding JpegTransformCommands.RotateRightCommand}">
+                            <MenuItem Header="Rotate right" Command="{Binding ImageTransformCommands.RotateRightCommand}">
                                 <MenuItem.Icon>
                                     <TextBlock FontFamily="Segoe MDL2 Assets" Text="&#xE7AD;" FontSize="14" />
                                 </MenuItem.Icon>
                             </MenuItem>
-                            <MenuItem Header="Rotate 180°" Command="{Binding JpegTransformCommands.Rotate180Command}" />
+                            <MenuItem Header="Rotate 180°" Command="{Binding ImageTransformCommands.Rotate180Command}" />
                             <MenuItem Header="Crop (Alt-C)" Command="{Binding CropCommand}" IsChecked="{Binding IsCropControlVisible}" >
                                 <MenuItem.Icon>
                                     <TextBlock FontFamily="Segoe MDL2 Assets" Text="&#xE7A8;" FontSize="14" />
