@@ -53,8 +53,7 @@ namespace PhotoLocator.PictureFileFormats
                     using (var sourceWriter = new BinaryWriter(sourcePipe))
                     {
                         var srcBytes = new byte[srcStream.Length];
-                        if (srcStream.Read(srcBytes, 0, srcBytes.Length) < srcBytes.Length)
-                            throw new IOException("Failed to read from source stream");
+                        srcStream.ReadExactly(srcBytes);
                         sourceWriter.Write(srcBytes.Length);
                         sourceWriter.Write(srcBytes);
                     }

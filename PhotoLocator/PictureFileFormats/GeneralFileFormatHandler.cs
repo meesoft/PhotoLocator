@@ -1,4 +1,5 @@
-﻿using PhotoLocator.Helpers;
+﻿using MeeSoft.ImageProcessing.FileFormats;
+using PhotoLocator.Helpers;
 using PhotoLocator.Metadata;
 using System;
 using System.IO;
@@ -9,7 +10,7 @@ namespace PhotoLocator.PictureFileFormats
 {
     static class GeneralFileFormatHandler
     {
-        public const string SaveImageFilter = "JPEG|*.jpg|PNG|*.png|TIFF|*.tif|JPEG XR lossless|*.jxr|BMP|*.bmp";
+        public const string SaveImageFilter = "JPEG|*.jpg|PNG|*.png|TIFF|*.tif|JPEG XR lossless|*.jxr|JPEG XL|*.jxl|BMP|*.bmp";
 
         static string? _jpegliPath;
         static bool _jpegliChecked;
@@ -75,6 +76,11 @@ namespace PhotoLocator.PictureFileFormats
                 encoder = new BmpBitmapEncoder();
             else if (ext is ".jxr")
                 encoder = new WmpBitmapEncoder() { Lossless = true };
+            else if (ext is ".jxl")
+            {
+                JpegXlFileFormatHandler.SaveToFile(image, targetPath, metadata, jpegQuality, default);
+                return;
+            }
             else
                 throw new UserMessageException("Unsupported file format " + ext);
 

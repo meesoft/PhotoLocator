@@ -1,4 +1,5 @@
-﻿using Microsoft.Win32;
+﻿using MeeSoft.ImageProcessing.FileFormats;
+using Microsoft.Win32;
 using PhotoLocator.Helpers;
 using PhotoLocator.Metadata;
 using PhotoLocator.PictureFileFormats;
@@ -233,10 +234,16 @@ namespace PhotoLocator
                         overwriteAll = true;
                     }
 
-                    var (image, itemMetadata) = await LoadImageWithMetadataAsync(item);
-                    await Task.Run(() => GeneralFileFormatHandler.SaveToFile(image, targetFileName,
-                        ExifHandler.ResetOrientation(itemMetadata), _mainViewModel.Settings.JpegQuality), ct);
-
+                    if (targetType == "jxl" && Path.GetExtension(item.Name).ToLowerInvariant() is ".jpg" or ".jpeg")
+                    {
+                        JpegXlFileFormatHandler.Transcode(item.FullPath, targetFileName, null, ct);
+                    }
+                    else
+                    {
+                        var (image, itemMetadata) = await LoadImageWithMetadataAsync(item);
+                        await Task.Run(() => GeneralFileFormatHandler.SaveToFile(image, targetFileName,
+                            ExifHandler.ResetOrientation(itemMetadata), _mainViewModel.Settings.JpegQuality), ct);
+                    }
                     progressCallback((double)(++i) / allSelected.Length);
                 }
             }, "Convert to " + targetType);
