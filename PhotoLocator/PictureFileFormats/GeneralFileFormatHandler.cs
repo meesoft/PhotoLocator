@@ -1,5 +1,4 @@
-﻿using MeeSoft.ImageProcessing.FileFormats;
-using PhotoLocator.Helpers;
+﻿using PhotoLocator.Helpers;
 using PhotoLocator.Metadata;
 using System;
 using System.IO;
@@ -44,7 +43,7 @@ namespace PhotoLocator.PictureFileFormats
             return bitmap;
         }
 
-        public static void SaveToFile(BitmapSource image, string targetPath, BitmapMetadata? metadata = null, int jpegQuality = 95)
+        public static void SaveToFile(BitmapSource bitmap, string targetPath, BitmapMetadata? metadata = null, int jpegQuality = 95)
         {
             var ext = Path.GetExtension(targetPath).ToLowerInvariant();
             BitmapEncoder encoder;
@@ -63,7 +62,7 @@ namespace PhotoLocator.PictureFileFormats
                 if (_jpegliPath is not null)
                 {
                     Log.Write("Saving using " + _jpegliPath);
-                    JpegliEncoder.SaveToFile(image, targetPath, metadata, jpegQuality, _jpegliPath);
+                    JpegliEncoder.SaveToFile(bitmap, targetPath, metadata, jpegQuality, _jpegliPath);
                     return;
                 }
                 encoder = new JpegBitmapEncoder() { QualityLevel = jpegQuality };
@@ -78,16 +77,16 @@ namespace PhotoLocator.PictureFileFormats
                 encoder = new WmpBitmapEncoder() { Lossless = true };
             else if (ext is ".jxl")
             {
-                JpegXlFileFormatHandler.SaveToFile(image, targetPath, metadata, jpegQuality, default);
+                JpegXlFileFormatHandler.SaveToFile(bitmap, targetPath, metadata, jpegQuality);
                 return;
             }
             else
                 throw new UserMessageException("Unsupported file format " + ext);
 
             if (metadata is null)
-                encoder.Frames.Add(BitmapFrame.Create(image));
+                encoder.Frames.Add(BitmapFrame.Create(bitmap));
             else
-                encoder.Frames.Add(BitmapFrame.Create(image, null, ExifHandler.CreateMetadataForEncoder(metadata, encoder), null));
+                encoder.Frames.Add(BitmapFrame.Create(bitmap, null, ExifHandler.CreateMetadataForEncoder(metadata, encoder), null));
             
             using var fileStream = new FileStream(targetPath, FileMode.Create);
             encoder.Save(fileStream);

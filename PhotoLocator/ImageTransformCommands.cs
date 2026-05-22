@@ -1,5 +1,4 @@
-﻿using MeeSoft.ImageProcessing.FileFormats;
-using Microsoft.Win32;
+﻿using Microsoft.Win32;
 using PhotoLocator.Helpers;
 using PhotoLocator.Metadata;
 using PhotoLocator.PictureFileFormats;
@@ -236,7 +235,7 @@ namespace PhotoLocator
 
                     if (targetType == "jxl" && Path.GetExtension(item.Name).ToLowerInvariant() is ".jpg" or ".jpeg")
                     {
-                        JpegXlFileFormatHandler.Transcode(item.FullPath, targetFileName, null, ct);
+                        JpegXlFileFormatHandler.TranscodeToJxl(item.FullPath, targetFileName, null, ct);
                     }
                     else
                     {

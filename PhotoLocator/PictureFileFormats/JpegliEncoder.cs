@@ -11,10 +11,10 @@ namespace PhotoLocator.PictureFileFormats
 {
     class JpegliEncoder
     {
-        public static void SaveToFile(BitmapSource image, string targetPath, BitmapMetadata? metadata, int quality, string encoderPath)
+        public static void SaveToFile(BitmapSource bitmap, string targetPath, BitmapMetadata? metadata, int quality, string encoderPath)
         {
             var pngEncoder = new PngBitmapEncoder();
-            pngEncoder.Frames.Add(BitmapFrame.Create(image));
+            pngEncoder.Frames.Add(BitmapFrame.Create(bitmap));
             using var srcStream = new MemoryStream();
             pngEncoder.Save(srcStream);
             srcStream.Position = 0;
@@ -29,7 +29,7 @@ namespace PhotoLocator.PictureFileFormats
             finalStream.CopyTo(fileStream);
         }
 
-        private static void Process(string executablePath, Stream srcStream, string srcFormatExt, Stream dstStream, string dstFormatExt, string? arguments = null)
+        internal static void Process(string executablePath, Stream srcStream, string srcFormatExt, Stream dstStream, string dstFormatExt, string? arguments = null)
         {
             using var process = new Process();
             process.StartInfo.FileName = executablePath;
@@ -61,7 +61,7 @@ namespace PhotoLocator.PictureFileFormats
                     {
                         var size = destReader.ReadInt32();
                         if (size <= 0)
-                            throw new IOException("jpegli encoder failed, result is empty");
+                            throw new IOException(Path.GetFileNameWithoutExtension(executablePath) + " failed, result is empty");
                         var destBytes = destReader.ReadBytes(size);
                         if (destBytes.Length != size)
                             throw new IOException("Failed to read all bytes from destination pipe");
@@ -70,7 +70,7 @@ namespace PhotoLocator.PictureFileFormats
                     if (!process.WaitForExit(60000))
                         throw new TimeoutException();
                     if (process.ExitCode != 0)
-                        throw new IOException("jpegli failed with exit code " + process.ExitCode);
+                        throw new IOException(Path.GetFileNameWithoutExtension(executablePath) + " failed with exit code " + process.ExitCode);
                 }
                 finally
                 {
@@ -82,7 +82,7 @@ namespace PhotoLocator.PictureFileFormats
             {
                 if (output is null)
                     throw;
-                throw new IOException("jpegli failed with: " + output, ex);
+                throw new IOException(Path.GetFileNameWithoutExtension(executablePath) + " failed with: " + output, ex);
             }
         }
     }

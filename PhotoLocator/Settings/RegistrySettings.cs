@@ -64,7 +64,7 @@ namespace PhotoLocator.Settings
         
         public int JpegQuality
         {
-            get => Key.GetValue(nameof(JpegQuality)) as int? ?? 93;
+            get => Key.GetValue(nameof(JpegQuality)) as int? ?? 90;
             set => Key.SetValue(nameof(JpegQuality), value);
         }
 
