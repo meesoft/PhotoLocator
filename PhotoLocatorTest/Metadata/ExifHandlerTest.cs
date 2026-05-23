@@ -1,4 +1,5 @@
 ﻿using PhotoLocator.PictureFileFormats;
+using PhotoLocator.Settings;
 using System.Diagnostics;
 using System.Globalization;
 using System.Windows.Media;
@@ -74,6 +75,33 @@ namespace PhotoLocator.Metadata
             Assert.AreEqual(source.CameraModel, target.CameraModel);
             Assert.AreEqual(ExifHandler.GetMetadataString(source, sourceStream), ExifHandler.GetMetadataString(target, targetStream));
             //Assert.AreEqual(ExifHandler.GetGeotag(source), ExifHandler.GetGeotag(target));
+        }
+
+        [TestMethod]
+        public void SetMetadata_ShouldSetJpegMetadataOnJpegXl()
+        {
+            if (!File.Exists(ExifToolTest.ExifToolPath))
+                Assert.Inconclusive("ExifTool not found");
+
+            const string TestFileName = "fromJpeg.jxl";
+
+            var settings = new ObservableSettings();
+            settings.ExifToolPath = ExifToolTest.ExifToolPath;
+
+            using var sourceStream = GetType().Assembly.GetManifestResourceStream(@"PhotoLocator.TestData.2022-06-17_19.03.02.jpg")
+                ?? throw new FileNotFoundException("Resource not found");
+            var source = ExifHandler.LoadMetadata(sourceStream) ?? throw new Exception("Unable to load metadata");
+            Assert.IsFalse(string.IsNullOrEmpty(source.CameraModel));
+
+            var bitmap = BitmapSource.Create(2, 2, 96, 96, PixelFormats.Gray8, null, new byte[4], 2);
+
+            GeneralFileFormatHandler.SaveToFile(bitmap, TestFileName, source, settings);
+
+            using var targetStream = File.OpenRead(TestFileName);
+            var target = ExifHandler.LoadMetadata(targetStream)!;
+            Assert.AreEqual(source.CameraModel, target.CameraModel);
+            Assert.AreEqual(ExifHandler.GetMetadataString(source, sourceStream), ExifHandler.GetMetadataString(target, targetStream));
+            Assert.AreEqual(ExifHandler.GetGeotag(source), ExifHandler.GetGeotag(target));
         }
 
         [TestMethod]
@@ -279,7 +307,7 @@ namespace PhotoLocator.Metadata
 
             // Apply ResetOrientation and save
             var resetMetadata = ExifHandler.ResetOrientation(metadata);
-            GeneralFileFormatHandler.SaveToFile(bitmap, TestFileName, resetMetadata, 90);
+            GeneralFileFormatHandler.SaveToFile(bitmap, TestFileName, resetMetadata);
 
             // Verify orientation was reset
             using var targetStream = File.OpenRead(TestFileName);
@@ -309,7 +337,7 @@ namespace PhotoLocator.Metadata
 
             // Create and save bitmap
             var bitmap = BitmapSource.Create(10, 10, 96, 96, PixelFormats.Bgr24, null, new byte[10 * 10 * 3], 10 * 3);
-            GeneralFileFormatHandler.SaveToFile(bitmap, TestFileName, resetMetadata, 90);
+            GeneralFileFormatHandler.SaveToFile(bitmap, TestFileName, resetMetadata);
 
             // Verify other metadata is preserved
             using var targetStream = File.OpenRead(TestFileName);

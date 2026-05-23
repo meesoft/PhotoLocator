@@ -1,4 +1,5 @@
 ﻿using Microsoft.Win32;
+using PhotoLocator.PictureFileFormats;
 using System;
 using System.Windows.Media;
 
@@ -64,7 +65,7 @@ namespace PhotoLocator.Settings
         
         public int JpegQuality
         {
-            get => Key.GetValue(nameof(JpegQuality)) as int? ?? 90;
+            get => Key.GetValue(nameof(JpegQuality)) as int? ?? GeneralFileFormatHandler.DefaultJpegQuality;
             set => Key.SetValue(nameof(JpegQuality), value);
         }
 
