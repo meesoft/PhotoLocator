@@ -1045,10 +1045,9 @@ public class VideoTransformCommands : INotifyPropertyChanged
     {
         using var process = new AverageFramesOperation(DarkFramePath, ParseRegistrationSettings(), ct);
         await _videoTransforms.RunFFmpegWithStreamOutputImagesAsync($"{InputArguments} {ProcessArguments}", process.ProcessImage, ProcessStdError, ct).ConfigureAwait(false);
-        if (process.Supports16BitResult() && Path.GetExtension(outFileName).ToUpperInvariant() is ".PNG" or ".TIF" or ".TIFF" or ".JXR")
-            GeneralFileFormatHandler.SaveToFile(process.GetResult16(), outFileName, CreateImageMetadata());
-        else
-            GeneralFileFormatHandler.SaveToFile(process.GetResult8(), outFileName, CreateImageMetadata(), _mainViewModel.Settings.JpegQuality);
+        GeneralFileFormatHandler.SaveToFile(
+            process.Supports16BitResult() && Path.GetExtension(outFileName).ToLowerInvariant() is ".png" or ".tif" or ".tiff" or ".jxr" ? process.GetResult16() : process.GetResult8(), 
+            outFileName, CreateImageMetadata(), _mainViewModel.Settings);
         return $"Processed {process.ProcessedImages} frames in {sw.Elapsed.TotalSeconds:N1}s";
     }
 
@@ -1056,7 +1055,7 @@ public class VideoTransformCommands : INotifyPropertyChanged
     {
         using var process = new MaxFramesOperation(DarkFramePath, ParseRegistrationSettings(), ct);
         await _videoTransforms.RunFFmpegWithStreamOutputImagesAsync($"{InputArguments} {ProcessArguments}", process.ProcessImage, ProcessStdError, ct).ConfigureAwait(false);
-        GeneralFileFormatHandler.SaveToFile(process.GetResult8(), outFileName, CreateImageMetadata(), _mainViewModel.Settings.JpegQuality);
+        GeneralFileFormatHandler.SaveToFile(process.GetResult8(), outFileName, CreateImageMetadata(), _mainViewModel.Settings);
         return $"Processed {process.ProcessedImages} frames in {sw.Elapsed.TotalSeconds:N1}s";
     }
 
@@ -1095,7 +1094,7 @@ public class VideoTransformCommands : INotifyPropertyChanged
             var timeSliceImage = CombineFramesMode == CombineFramesMode.TimeSliceInterpolated
                 ? timeSlice.GenerateTimeSliceImageInterpolated()
                 : timeSlice.GenerateTimeSliceImage();
-            GeneralFileFormatHandler.SaveToFile(timeSliceImage, outFileName, CreateImageMetadata(), _mainViewModel.Settings.JpegQuality);
+            GeneralFileFormatHandler.SaveToFile(timeSliceImage, outFileName, CreateImageMetadata(), _mainViewModel.Settings);
         }
         else
         {

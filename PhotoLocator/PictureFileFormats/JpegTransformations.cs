@@ -12,7 +12,7 @@ namespace PhotoLocator.PictureFileFormats
     {
         public static bool IsFileTypeSupported(string fileName)
         {
-            return Path.GetExtension(fileName).ToUpperInvariant() is ".JPG" or ".JPEG";
+            return Path.GetExtension(fileName).ToLowerInvariant() is ".jpg" or ".jpeg";
         }
 
         public static void Rotate(string sourceFileName, string newFileName, int angleDegrees)

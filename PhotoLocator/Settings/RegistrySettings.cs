@@ -1,4 +1,5 @@
 ﻿using Microsoft.Win32;
+using PhotoLocator.PictureFileFormats;
 using System;
 using System.Windows.Media;
 
@@ -6,7 +7,7 @@ namespace PhotoLocator.Settings
 {
     sealed class RegistrySettings : IDisposable, IRegistrySettings
     {
-        public const string DefaultPhotoFileExtensions = ".jpg, .jpeg, .png, .cr2, .cr3, .arw, .nef, .dng, .psd, .tif, .tiff, .jxr, .mp4, .mov";
+        public const string DefaultPhotoFileExtensions = ".jpg, .jpeg, .png, .cr2, .cr3, .arw, .nef, .dng, .psd, .tif, .tiff, .jxr, .jxl, .mp4, .mov";
 
         public RegistryKey Key = Registry.CurrentUser.CreateSubKey(@"SOFTWARE\MeeSoft\PhotoLocator");
 
@@ -64,7 +65,7 @@ namespace PhotoLocator.Settings
         
         public int JpegQuality
         {
-            get => Key.GetValue(nameof(JpegQuality)) as int? ?? 93;
+            get => Key.GetValue(nameof(JpegQuality)) as int? ?? GeneralFileFormatHandler.DefaultJpegQuality;
             set => Key.SetValue(nameof(JpegQuality), value);
         }
 

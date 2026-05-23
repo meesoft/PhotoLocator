@@ -28,11 +28,11 @@ namespace PhotoLocator.PictureFileFormats
             sourceFile.Position = 0;
             var metadata = ExifHandler.LoadMetadata(sourceFile);
 
-            GeneralFileFormatHandler.SaveToFile(source, TargetPathJpeg, metadata, 95);
+            GeneralFileFormatHandler.SaveToFile(source, TargetPathJpeg, metadata);
             var sizeJpeg = new FileInfo(TargetPathJpeg).Length;
             Debug.WriteLine($"Dest size jpeg: {sizeJpeg / 1024} kb");
 
-            JpegliEncoder.SaveToFile(source, TargetPathJpegli, metadata, 94, EncoderPath);
+            JpegliEncoder.SaveToFile(source, TargetPathJpegli, metadata, GeneralFileFormatHandler.DefaultJpegQuality, EncoderPath);
             var sizeJpegli = new FileInfo(TargetPathJpegli).Length;
             Debug.WriteLine($"Dest size jpegli: {sizeJpegli / 1024} kb");
             Debug.WriteLine($"{100.0 * sizeJpegli / sizeJpeg:0.0}%");
