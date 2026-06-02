@@ -49,13 +49,13 @@ static class ExifTool
         await RunExifToolAsync(sourceFileName, targetFileName, startInfo, ct);
     }
 
-    public  static async Task SetMetadataAsync(string sourceFileName, string targetFileName, BitmapMetadata metadata, string exifToolPath, CancellationToken ct)
+    public static async Task SetMetadataAsync(string sourceFileName, string targetFileName, BitmapMetadata metadata, string exifToolPath, CancellationToken ct)
     {
         var sb = new StringBuilder();
 
         var cameraModel = metadata.CameraModel;
         if (!string.IsNullOrEmpty(cameraModel))
-            sb.Append(CultureInfo.InvariantCulture, $"-Model=\"{cameraModel}\" ");
+            sb.Append(CultureInfo.InvariantCulture, $"-Model=\"{cameraModel.Replace('"', '\'')}\" ");
 
         var location = ExifHandler.GetGeotag(metadata);
         if (location is not null)
@@ -87,7 +87,7 @@ static class ExifTool
             return;
         sb.Append(CultureInfo.InvariantCulture, $"\"{sourceFileName}\"");
         var startInfo = new ProcessStartInfo(exifToolPath, sb.ToString());
-        await RunExifToolAsync(sourceFileName, targetFileName, startInfo, ct);
+        await RunExifToolAsync(sourceFileName, targetFileName, startInfo, ct).ConfigureAwait(false);
     }
 
     private static string GetLocationParameters(Location location)

@@ -235,7 +235,7 @@ namespace PhotoLocator
 
                     if (targetType == "jxl" && Path.GetExtension(item.Name).ToLowerInvariant() is ".jpg" or ".jpeg")
                     {
-                        JpegXlFileFormatHandler.TranscodeToJxl(item.FullPath, targetFileName, null, ct);
+                        await Task.Run(() => JpegXlFileFormatHandler.TranscodeToJxl(item.FullPath, targetFileName, null, ct), ct);
                     }
                     else
                     {

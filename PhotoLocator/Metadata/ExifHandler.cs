@@ -116,7 +116,7 @@ namespace PhotoLocator.Metadata
             return result;
         }
 
-        internal static (Rational? ExposureTime, Location? Location)  DecodePngMetadata(BitmapMetadata metadata)
+        internal static (Rational? ExposureTime, Location? Location) DecodePngMetadata(BitmapMetadata metadata)
         {
             if (metadata.GetQuery("/Text/Description") is not string str)
                 return (null, null);
