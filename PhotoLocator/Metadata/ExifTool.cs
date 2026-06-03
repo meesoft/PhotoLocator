@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Globalization;
 using System.IO;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Media.Imaging;
@@ -21,19 +22,19 @@ static class ExifTool
             throw new UserMessageException("Offset must have a sign followed by a value");
         var sign = offset[0];
         offset = offset[1..];
-        var startInfo = new ProcessStartInfo(exifToolPath, $"\"-AllDates{sign}={offset}\" \"{sourceFileName}\" ");
+        var startInfo = new ProcessStartInfo(exifToolPath, $"\"-AllDates{sign}={offset}\" \"{sourceFileName}\"");
         await RunExifToolAsync(sourceFileName, targetFileName, startInfo, ct);
     }
 
     public static async Task SetTimestampAsync(string sourceFileName, string targetFileName, string timestamp, string exifToolPath, CancellationToken ct)
     {
-        var startInfo = new ProcessStartInfo(exifToolPath, $"\"-AllDates={timestamp}\" \"{sourceFileName}\" ");
+        var startInfo = new ProcessStartInfo(exifToolPath, $"\"-AllDates={timestamp}\" \"{sourceFileName}\"");
         await RunExifToolAsync(sourceFileName, targetFileName, startInfo, ct);
     }
 
     public static async Task TransferMetadataAsync(string metadataFileName, string sourceFileName, string targetFileName, string exifToolPath, CancellationToken ct)
     {
-        var startInfo = new ProcessStartInfo(exifToolPath, $"-tagsfromfile \"{metadataFileName}\" \"{sourceFileName}\" "); // -exif 
+        var startInfo = new ProcessStartInfo(exifToolPath, $"-tagsfromfile \"{metadataFileName}\" \"{sourceFileName}\""); // -exif 
         await RunExifToolAsync(sourceFileName, targetFileName, startInfo, ct);
     }
 
@@ -44,25 +45,69 @@ static class ExifTool
             ExifHandler.SetJpegGeotag(sourceFileName, targetFileName, location);
             return;
         }
+        var startInfo = new ProcessStartInfo(exifToolPath, GetLocationParameters(location) + $"\"{sourceFileName}\"");
+        await RunExifToolAsync(sourceFileName, targetFileName, startInfo, ct);
+    }
 
-        var startInfo = new ProcessStartInfo(exifToolPath, string.Create(CultureInfo.InvariantCulture,
-            //"-m " + // Ignore minor errors and warnings
+    public static async Task SetMetadataAsync(string sourceFileName, string targetFileName, BitmapMetadata metadata, string exifToolPath, CancellationToken ct)
+    {
+        var sb = new StringBuilder();
+
+        var cameraModel = metadata.CameraModel;
+        if (!string.IsNullOrEmpty(cameraModel))
+            sb.Append(CultureInfo.InvariantCulture, $"-Model=\"{cameraModel.Replace('"', '\'')}\" ");
+
+        var location = ExifHandler.GetGeotag(metadata);
+        if (location is not null)
+            sb.Append(GetLocationParameters(location));
+
+        var altitude = ExifHandler.GetRelativeAltitude(metadata);
+        if (altitude.HasValue)
+            sb.Append(CultureInfo.InvariantCulture, $"-RelativeAltitude={altitude.Value} ");
+
+        var exposureTime = Rational.Decode(metadata.GetQuery(ExifHandler.ExposureTimeQuery1) ?? metadata.GetQuery(ExifHandler.ExposureTimeQuery2));
+        if (exposureTime is null && metadata.TryGetFormat() == "png")
+            (exposureTime, var _) = ExifHandler.DecodePngMetadata(metadata);
+        if (exposureTime is not null && exposureTime.Numerator > 0 && exposureTime.Denominator > 0)
+            sb.Append(CultureInfo.InvariantCulture, $"-ExposureTime={exposureTime.ToDouble()} ");
+
+        var lensAperture = Rational.Decode(metadata.GetQuery(ExifHandler.LensApertureQuery1) ?? metadata.GetQuery(ExifHandler.LensApertureQuery2));
+        if (lensAperture is not null && lensAperture.Numerator > 0 && lensAperture.Denominator > 0)
+            sb.Append(CultureInfo.InvariantCulture, $"-FNumber={lensAperture.ToDouble()} ");
+
+        var focalLength = Rational.Decode(metadata.GetQuery(ExifHandler.FocalLengthQuery1) ?? metadata.GetQuery(ExifHandler.FocalLengthQuery2));
+        if (focalLength is not null && focalLength.Numerator > 0 && focalLength.Denominator > 0)
+            sb.Append(CultureInfo.InvariantCulture, $"-FocalLength={focalLength.ToDouble()} ");
+
+        var iso = metadata.GetQuery(ExifHandler.IsoQuery1) ?? metadata.GetQuery(ExifHandler.IsoQuery2);
+        if (iso is not null)
+            sb.Append(CultureInfo.InvariantCulture, $"-ISO={iso} ");
+
+        if (sb.Length == 0)
+            return;
+        sb.Append(CultureInfo.InvariantCulture, $"\"{sourceFileName}\"");
+        var startInfo = new ProcessStartInfo(exifToolPath, sb.ToString());
+        await RunExifToolAsync(sourceFileName, targetFileName, startInfo, ct).ConfigureAwait(false);
+    }
+
+    private static string GetLocationParameters(Location location)
+    {
+        return string.Create(CultureInfo.InvariantCulture,
+            //$"-m " + // Ignore minor errors and warnings
             $"-GPSLatitude={location.Latitude} " +
             $"-GPSLatitudeRef={Math.Sign(location.Latitude)} " +
             $"-GPSLongitude={location.Longitude} " +
-            $"-GPSLongitudeRef={Math.Sign(location.Longitude)} " +
-            $"\"{sourceFileName}\" "));
-        await RunExifToolAsync(sourceFileName, targetFileName, startInfo, ct);
+            $"-GPSLongitudeRef={Math.Sign(location.Longitude)} ");
     }
 
     private static async Task RunExifToolAsync(string sourceFileName, string targetFileName, ProcessStartInfo startInfo, CancellationToken ct)
     {
         if (targetFileName == sourceFileName)
-            startInfo.Arguments += "-overwrite_original";
+            startInfo.Arguments += " -overwrite_original";
         else
         {
             File.Delete(targetFileName);
-            startInfo.Arguments += $"-out \"{targetFileName}\"";
+            startInfo.Arguments += $" -out \"{targetFileName}\"";
         }
         startInfo.CreateNoWindow = true;
         startInfo.RedirectStandardOutput = true;

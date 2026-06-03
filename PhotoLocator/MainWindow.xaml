@@ -267,6 +267,7 @@
                         <MenuItem Header="TIFF (LZW)" Command="{Binding ImageTransformCommands.ConvertFileFormatCommand}" CommandParameter="tif"/>
                         <MenuItem Header="PNG" Command="{Binding ImageTransformCommands.ConvertFileFormatCommand}" CommandParameter="png"/>
                         <MenuItem Header="JPEG XR (lossless)" Command="{Binding ImageTransformCommands.ConvertFileFormatCommand}" CommandParameter="jxr"/>
+                        <MenuItem Header="JPEG XL" Command="{Binding ImageTransformCommands.ConvertFileFormatCommand}" CommandParameter="jxl"/>
                         <MenuItem Header="BMP" Command="{Binding ImageTransformCommands.ConvertFileFormatCommand}" CommandParameter="bmp"/>
                     </MenuItem>
                     <Separator />

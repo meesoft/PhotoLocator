@@ -88,7 +88,7 @@ namespace PhotoLocator
                             metadata = ExifHandler.LoadMetadata(file);
                         }
                         catch { } // Ignore if there is no supported metadata
-                        GeneralFileFormatHandler.SaveToFile(pictureSource, sourceFileName, metadata, _mainViewModel.Settings.JpegQuality);
+                        GeneralFileFormatHandler.SaveToFile(pictureSource, sourceFileName, metadata, _mainViewModel.Settings);
                     }, ct);
                 }
                 await Task.Run(() => JpegTransformations.Crop(sourceFileName, targetFileName, cropRectangle), ct);
@@ -170,7 +170,7 @@ namespace PhotoLocator
                 await using var pause = _mainViewModel.PauseFileSystemWatcher();
                 var sameDir = Path.GetDirectoryName(selectedItem.FullPath) == Path.GetDirectoryName(dlg.FileName);
                 await Task.Run(() => GeneralFileFormatHandler.SaveToFile(localContrastViewModel.PreviewPictureSource!, dlg.FileName,
-                    ExifHandler.ResetOrientation(metadata), _mainViewModel.Settings.JpegQuality));
+                    ExifHandler.ResetOrientation(metadata), _mainViewModel.Settings));
                 if (sameDir)
                     await _mainViewModel.AddOrUpdateItemAsync(dlg.FileName, false, false);
             }
@@ -187,14 +187,14 @@ namespace PhotoLocator
                     if (item == selectedItem)
                     {
                         GeneralFileFormatHandler.SaveToFile(localContrastViewModel.PreviewPictureSource!, targetFileName,
-                            ExifHandler.ResetOrientation(metadata), _mainViewModel.Settings.JpegQuality);
+                            ExifHandler.ResetOrientation(metadata), _mainViewModel.Settings);
                     }
                     else
                     {
                         var (image, itemMetadata) = await LoadImageWithMetadataAsync(item);
                         image = localContrastViewModel.ApplyOperations(image);
                         GeneralFileFormatHandler.SaveToFile(image, targetFileName,
-                            ExifHandler.ResetOrientation(itemMetadata), _mainViewModel.Settings.JpegQuality);
+                            ExifHandler.ResetOrientation(itemMetadata), _mainViewModel.Settings);
                     }
                     progressCallback((double)(++i) / allSelected.Length);
                 }
@@ -233,10 +233,16 @@ namespace PhotoLocator
                         overwriteAll = true;
                     }
 
-                    var (image, itemMetadata) = await LoadImageWithMetadataAsync(item);
-                    await Task.Run(() => GeneralFileFormatHandler.SaveToFile(image, targetFileName,
-                        ExifHandler.ResetOrientation(itemMetadata), _mainViewModel.Settings.JpegQuality), ct);
-
+                    if (targetType == "jxl" && Path.GetExtension(item.Name).ToLowerInvariant() is ".jpg" or ".jpeg")
+                    {
+                        await Task.Run(() => JpegXlFileFormatHandler.TranscodeToJxl(item.FullPath, targetFileName, null, ct), ct);
+                    }
+                    else
+                    {
+                        var (image, itemMetadata) = await LoadImageWithMetadataAsync(item);
+                        await Task.Run(() => GeneralFileFormatHandler.SaveToFile(image, targetFileName,
+                            ExifHandler.ResetOrientation(itemMetadata), _mainViewModel.Settings), ct);
+                    }
                     progressCallback((double)(++i) / allSelected.Length);
                 }
             }, "Convert to " + targetType);
