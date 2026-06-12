@@ -106,7 +106,7 @@ public class ExifToolTest
         const string FileName = @"TestData\Test.CR3";
 
         if (!File.Exists(FileName))
-            Assert.Inconclusive("Image not found");
+            Assert.Inconclusive("CR3 image not found");
         if (!File.Exists(ExifToolPath))
             Assert.Inconclusive("ExifTool not found");
 

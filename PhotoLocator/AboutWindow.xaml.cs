@@ -1,4 +1,5 @@
 ﻿using PhotoLocator.Helpers;
+using System;
 using System.Diagnostics;
 using System.IO;
 using System.Text;
@@ -18,13 +19,12 @@ namespace PhotoLocator
             DataContext = this;
         }
 
-        public string AboutText
+        public static string AboutText
         {
             get
             {
                 var text = new StringBuilder();
-                var assembly = GetType().Assembly;
-                var versionInfo = FileVersionInfo.GetVersionInfo(assembly.Location);
+                var versionInfo = FileVersionInfo.GetVersionInfo(Environment.ProcessPath!);
                 text.AppendLine(versionInfo.FileDescription + " " + versionInfo.FileVersion);
                 text.AppendLine(versionInfo.LegalCopyright);
                 text.AppendLine(versionInfo.CompanyName);

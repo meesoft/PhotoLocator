@@ -65,7 +65,7 @@ namespace PhotoLocator.BitmapOperations
 #if DEBUG
             GeneralFileFormatHandler.SaveToFile(result, @"TimeSlice.png");
 #endif
-            Assert.AreEqual(5, timeSlice.UsedFrames);
+            Assert.AreEqual(6, timeSlice.UsedFrames);
             Assert.AreEqual(0, timeSlice.SkippedFrames);
         }
 
@@ -92,7 +92,7 @@ namespace PhotoLocator.BitmapOperations
             Debug.WriteLine(sw.Elapsed);
 
             Debug.Assert(File.Exists(TargetPath), "Output file not found");
-            Assert.AreEqual(5, timeSlice.UsedFrames);
+            Assert.AreEqual(6, timeSlice.UsedFrames);
             Assert.AreEqual(0, timeSlice.SkippedFrames);
         }
     }

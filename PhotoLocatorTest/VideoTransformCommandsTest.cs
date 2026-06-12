@@ -74,7 +74,27 @@ public class VideoTransformCommandsTest
             commands.ProcessSelected.Execute(outputFileName);
             await (_processTask ?? throw new Exception("Process task not set"));
 
-            Assert.IsTrue(File.Exists(outputFileName));
+            Assert.IsGreaterThan(0, new FileInfo(outputFileName).Length);
+        }
+    }
+
+    [TestMethod]
+    public async Task ProcessSelected_ShouldHandleAllVideoFormats()
+    {
+        var mainViewModelMoq = SetupMainViewModelMoq([_sourceVideo]);
+
+        var commands = new VideoTransformCommands(mainViewModelMoq.Object);
+        foreach (var formatItem in commands.VideoFormats)
+        {
+            var outputFileName = Path.Combine(_testDir, $"format_{formatItem.Text.Split(' ')[0].ToLowerInvariant()}.mp4");
+
+            File.Delete(outputFileName);
+            Debug.WriteLine("Using format: " + formatItem.Text);
+            commands.SelectedVideoFormat = formatItem;
+            commands.ProcessSelected.Execute(outputFileName);
+            await (_processTask ?? throw new Exception("Process task not set"));
+
+            Assert.IsGreaterThan(0, new FileInfo(outputFileName).Length);
         }
     }
 
@@ -90,7 +110,7 @@ public class VideoTransformCommandsTest
         commands.ProcessSelected.Execute(outputFileName);
         await (_processTask ?? throw new Exception("Process task not set"));
 
-        Assert.IsTrue(File.Exists(outputFileName));
+        Assert.IsGreaterThan(0, new FileInfo(outputFileName).Length);
         Assert.IsFalse(File.Exists(transformFileName));
     }
 
@@ -106,6 +126,6 @@ public class VideoTransformCommandsTest
         commands.CombineFade.Execute(outputFileName);
         await (_processTask ?? throw new Exception("Process task not set"));
 
-        Assert.IsTrue(File.Exists(outputFileName));
+        Assert.IsGreaterThan(0, new FileInfo(outputFileName).Length);
     }
 }
