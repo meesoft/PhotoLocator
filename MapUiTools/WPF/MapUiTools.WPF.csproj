@@ -18,6 +18,6 @@
     </ItemGroup>
 
     <ItemGroup>
-		<PackageReference Include="XAML.MapControl.WPF" Version="13.6.0" />
+		<PackageReference Include="XAML.MapControl.WPF" Version="17.1.0" />
     </ItemGroup>
 </Project>

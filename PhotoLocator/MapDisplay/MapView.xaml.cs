@@ -90,7 +90,7 @@ namespace PhotoLocator.MapDisplay
 
                 if (start != null)
                 {
-                    measurementLine.Locations = LocationCollection.OrthodromeLocations(start, location);
+                    measurementLine.Locations = LocationCollection.GeodesicLocations(start, location);
                     mouseLocation.Text += GetDistanceText(location.GetDistance(start));
                 }
             }
