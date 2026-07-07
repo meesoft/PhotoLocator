@@ -36,7 +36,7 @@ namespace MapControl.UiTools
 #endif
     public class MapProjectionsMenuButton : MenuButton
     {
-        private string selectedProjection;
+        private string _selectedProjection;
 
         public MapProjectionsMenuButton()
             : base("\uE809")
@@ -86,10 +86,10 @@ namespace MapControl.UiTools
 
         private void SetMapProjection(string projection)
         {
-            if (selectedProjection != projection)
+            if (_selectedProjection != projection)
             {
-                selectedProjection = projection;
-                Map.MapProjection = MapProjectionFactory.Instance.GetProjection(selectedProjection);
+                _selectedProjection = projection;
+                Map.MapProjection = MapProjection.Parse(_selectedProjection);
             }
 
             UpdateCheckedStates();
@@ -99,7 +99,7 @@ namespace MapControl.UiTools
         {
             foreach (var item in GetMenuItems())
             {
-                item.IsChecked = selectedProjection == (string)item.Tag;
+                item.IsChecked = _selectedProjection == (string)item.Tag;
             }
         }
     }
