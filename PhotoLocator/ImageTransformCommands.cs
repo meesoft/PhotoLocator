@@ -169,8 +169,11 @@ namespace PhotoLocator
             {
                 await using var pause = _mainViewModel.PauseFileSystemWatcher();
                 var sameDir = Path.GetDirectoryName(selectedItem.FullPath) == Path.GetDirectoryName(dlg.FileName);
-                await Task.Run(() => GeneralFileFormatHandler.SaveToFile(localContrastViewModel.PreviewPictureSource!, dlg.FileName,
-                    ExifHandler.ResetOrientation(metadata), _mainViewModel.Settings));
+                await Task.Run(() =>
+                {
+                    var resultImage = localContrastViewModel.GetResultImage(GeneralFileFormatHandler.Produce16bitOutputForFormat(dlg.FileName, _mainViewModel.Settings));
+                    GeneralFileFormatHandler.SaveToFile(resultImage, dlg.FileName, ExifHandler.ResetOrientation(metadata), _mainViewModel.Settings);
+                });
                 if (sameDir)
                     await _mainViewModel.AddOrUpdateItemAsync(dlg.FileName, false, false);
             }
