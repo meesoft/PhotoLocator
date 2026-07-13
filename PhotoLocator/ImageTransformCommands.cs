@@ -171,7 +171,7 @@ namespace PhotoLocator
                 var sameDir = Path.GetDirectoryName(selectedItem.FullPath) == Path.GetDirectoryName(dlg.FileName);
                 await Task.Run(() =>
                 {
-                    var resultImage = localContrastViewModel.GetResultImage(GeneralFileFormatHandler.Produce16bitOutputForFormat(dlg.FileName, _mainViewModel.Settings));
+                    var resultImage = localContrastViewModel.GetResultImage(GeneralFileFormatHandler.ShouldProduce16bitOutputForFormat(dlg.FileName, _mainViewModel.Settings));
                     GeneralFileFormatHandler.SaveToFile(resultImage, dlg.FileName, ExifHandler.ResetOrientation(metadata), _mainViewModel.Settings);
                 });
                 if (sameDir)

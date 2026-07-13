@@ -46,7 +46,7 @@ namespace PhotoLocator.PictureFileFormats
             return bitmap;
         }
 
-        public static bool Produce16bitOutputForFormat(string fileName, ISettings settings)
+        public static bool ShouldProduce16bitOutputForFormat(string fileName, ISettings settings)
         {
             var format = Path.GetExtension(fileName).ToLowerInvariant();
             return format is ".png" or ".tif" or ".tiff" or ".jxr" || format is ".jxl" && settings?.JpegQuality == 100;

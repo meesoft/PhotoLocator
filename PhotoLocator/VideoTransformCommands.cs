@@ -1046,7 +1046,7 @@ public class VideoTransformCommands : INotifyPropertyChanged
         using var process = new AverageFramesOperation(DarkFramePath, ParseRegistrationSettings(), ct);
         await _videoTransforms.RunFFmpegWithStreamOutputImagesAsync($"{InputArguments} {ProcessArguments}", process.ProcessImage, ProcessStdError, ct).ConfigureAwait(false);
         GeneralFileFormatHandler.SaveToFile(
-            process.Supports16BitResult() && GeneralFileFormatHandler.Produce16bitOutputForFormat(outFileName, _mainViewModel.Settings) ? process.GetResult16() : process.GetResult8(),
+            process.Supports16BitResult() && GeneralFileFormatHandler.ShouldProduce16bitOutputForFormat(outFileName, _mainViewModel.Settings) ? process.GetResult16() : process.GetResult8(),
             outFileName, CreateImageMetadata(), _mainViewModel.Settings);
         return $"Processed {process.ProcessedImages} frames in {sw.Elapsed.TotalSeconds:N1}s";
     }
