@@ -33,7 +33,19 @@ namespace PhotoLocator
             _updateTimer = new DispatcherTimer(
                 TimeSpan.FromMilliseconds(100),
                 DispatcherPriority.Background,
-                async (s, e) => await UpdatePreviewAsync(),
+                async (s, e) =>
+                {
+                    try
+                    {
+                        await UpdatePreviewAsync();
+                    }
+                    catch(Exception ex)
+                    {
+                        _previewTask = Task.CompletedTask;
+                        Mouse.OverrideCursor = null;
+                        ExceptionHandler.ShowException(ex);
+                    }
+                },
                 Application.Current.Dispatcher) { IsEnabled = false };
         }
 

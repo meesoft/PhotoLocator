@@ -8,6 +8,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
+using System.Windows.Media;
 using System.Windows.Media.Imaging;
 
 namespace PhotoLocator
@@ -171,7 +172,9 @@ namespace PhotoLocator
                 var sameDir = Path.GetDirectoryName(selectedItem.FullPath) == Path.GetDirectoryName(dlg.FileName);
                 await Task.Run(() =>
                 {
-                    var resultImage = localContrastViewModel.GetResultImage(GeneralFileFormatHandler.ShouldProduce16bitOutputForFormat(dlg.FileName, _mainViewModel.Settings));
+                    var resultImage = localContrastViewModel.GetResultImage(
+                        localContrastViewModel.SourceBitmap?.Format != PixelFormats.Cmyk32 &&
+                        GeneralFileFormatHandler.ShouldProduce16bitOutputForFormat(dlg.FileName, _mainViewModel.Settings));
                     GeneralFileFormatHandler.SaveToFile(resultImage, dlg.FileName, ExifHandler.ResetOrientation(metadata), _mainViewModel.Settings);
                 });
                 if (sameDir)
