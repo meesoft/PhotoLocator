@@ -225,6 +225,38 @@ namespace PhotoLocator.BitmapOperations
             }));
         }
 
+        public BitmapSource ToBitmapSource16(double dpiX, double dpiY, double gamma)
+        {
+            if (Elements is null)
+                throw new InvalidOperationException("Bitmap not initialized");
+
+            gamma = 1 / gamma;
+            var pixels = new ushort[Height * Stride];
+            unsafe
+            {
+                Parallel.For(0, Height, y =>
+                {
+                    var stride = Stride;
+                    fixed (float* srcRow = &Elements[y, 0])
+                    fixed (ushort* dstRow = &pixels[y * stride])
+                    {
+                        for (var x = 0; x < stride; x++)
+                            dstRow[x] = (ushort)(Math.Pow(float.Clamp(srcRow[x], 0, 1), gamma) * 0xffff + 0.5);
+                    }
+                });
+            }
+
+            PixelFormat pixelFormat16 = PlaneCount switch
+            {
+                1 => PixelFormats.Gray16,
+                3 => PixelFormats.Rgb48,
+                _ => throw new UserMessageException("Unsupported number of planes for 16 bit output: " + PlaneCount)
+            };
+            var result = BitmapSource.Create(Width, Height, dpiX, dpiY, pixelFormat16, null, pixels, Stride * 2);
+            result.Freeze();
+            return result;
+        }
+
         private byte[] ToPixels8(double gamma)
         {
             if (Elements is null)

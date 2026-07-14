@@ -33,7 +33,19 @@ namespace PhotoLocator
             _updateTimer = new DispatcherTimer(
                 TimeSpan.FromMilliseconds(100),
                 DispatcherPriority.Background,
-                async (s, e) => await UpdatePreviewAsync(),
+                async (s, e) =>
+                {
+                    try
+                    {
+                        await UpdatePreviewAsync();
+                    }
+                    catch(Exception ex)
+                    {
+                        _previewTask = Task.CompletedTask;
+                        Mouse.OverrideCursor = null;
+                        ExceptionHandler.ShowException(ex);
+                    }
+                },
                 Application.Current.Dispatcher) { IsEnabled = false };
         }
 
@@ -573,6 +585,16 @@ namespace PhotoLocator
         public bool IsNoOperation => (!IsAstroModeEnabled || AstroStretch == 0 && BackgroundRemovalSmooth == 0 && BlackPoint == 0)
             && DetailHandling == 1 && ToneMapping == 1 && HighlightStrength == 0 && ShadowStrength == 0 && Contrast == DefaultContrast
             && !_colorToneOperation.AreToneAdjustmentsChanged;
+
+        public BitmapSource GetResultImage(bool produce16bitOutput)
+        {
+            if (produce16bitOutput)
+            {
+                var srcBitmap = SourceBitmap ?? throw new InvalidOperationException("Source bitmap not set");
+                return _localContrastOperation.DstBitmap.ToBitmapSource16(srcBitmap.DpiX, srcBitmap.DpiY, FloatBitmap.DefaultMonitorGamma);
+            }
+            return PreviewPictureSource ?? throw new InvalidOperationException("Operation has not completed");
+        }
 
         public BitmapSource ApplyOperations(BitmapSource source)
         {

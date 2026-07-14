@@ -118,6 +118,31 @@ namespace PhotoLocator.BitmapOperations
         }
 
         [TestMethod]
+        [DataRow(6, 4, 1, 1, null)]
+        [DataRow(6, 4, 3, 1, null)]
+        public void ToBitmapSource16_ShouldCreateBitmapSource(int width, int height, int planes, int iterations, string? fileName)
+        {
+            var floatBitmap = new FloatBitmap(width, height, planes);
+            var scale = 1.0f / width;
+            floatBitmap.ProcessElementWise((x, y) => x * scale);
+            for (int i = 0; i < iterations; i++)
+            {
+                var sw = Stopwatch.StartNew();
+                var bitmap = floatBitmap.ToBitmapSource16(96, 96, FloatBitmap.DefaultMonitorGamma);
+                Console.WriteLine(sw.ElapsedMilliseconds);
+
+                Assert.AreEqual(width, bitmap.PixelWidth);
+                Assert.AreEqual(height, bitmap.PixelHeight);
+                if (planes == 1)
+                    Assert.AreEqual(PixelFormats.Gray16, bitmap.Format);
+                else if (planes == 3)
+                    Assert.AreEqual(PixelFormats.Rgb48, bitmap.Format);
+                if (fileName is not null)
+                    GeneralFileFormatHandler.SaveToFile(bitmap, fileName);
+            }
+        }
+
+        [TestMethod]
         public void MinMax_ShouldReturnMinMax()
         {
             var floatBitmap = new FloatBitmap(6, 4, 3);
