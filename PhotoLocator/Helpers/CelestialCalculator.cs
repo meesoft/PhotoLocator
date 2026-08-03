@@ -70,13 +70,13 @@ namespace PhotoLocator.Helpers
             return (moonrise, moonriseAzimuth, moonriseIllumination?.Fraction, moonset, moonsetAzimuth, moonsetIllumination?.Fraction);
         }
 
-        public static (double? Azimuth, double? Illumination) GetMoonPosition(Location location, DateTime time)
+        public static (double? Azimuth, double? Illumination, double Altitude) GetMoonPosition(Location location, DateTime time)
         {
             var pos = MoonCalc.GetMoonPosition(time, location.Latitude, location.Longitude);
             if (pos.Altitude < 0)
-                return (null, null);
+                return (null, null, pos.Altitude * 180 / Math.PI);
             var illumination = MoonCalc.GetMoonIllumination(time);
-            return (SunCalcNetAzimuthRadiansToDegrees(pos.Azimuth), illumination.Fraction);
+            return (SunCalcNetAzimuthRadiansToDegrees(pos.Azimuth), illumination.Fraction, pos.Altitude * 180 / Math.PI);
         }
 
         private static double SunCalcNetAzimuthRadiansToDegrees(double radians)
