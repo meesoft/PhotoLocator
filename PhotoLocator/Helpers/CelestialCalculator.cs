@@ -36,7 +36,7 @@ namespace PhotoLocator.Helpers
         public static (double Azimuth, double Altitude) GetSunPosition(Location location, DateTime time)
         {
             var pos = SunCalc.GetSunPosition(time, location.Latitude, location.Longitude);
-            return (SunCalcNetAzimuthRadiansToDegrees(pos.Azimuth), pos.Altitude * 180 / Math.PI);
+            return (SunCalcNetAzimuthRadiansToDegrees(pos.Azimuth), RadiansToDegrees(pos.Altitude));
         }
 
         /// <summary>
@@ -74,16 +74,16 @@ namespace PhotoLocator.Helpers
         {
             var pos = MoonCalc.GetMoonPosition(time, location.Latitude, location.Longitude);
             if (pos.Altitude < 0)
-                return (null, null, pos.Altitude * 180 / Math.PI);
+                return (null, null, RadiansToDegrees(pos.Altitude));
             var illumination = MoonCalc.GetMoonIllumination(time);
-            return (SunCalcNetAzimuthRadiansToDegrees(pos.Azimuth), illumination.Fraction, pos.Altitude * 180 / Math.PI);
+            return (SunCalcNetAzimuthRadiansToDegrees(pos.Azimuth), illumination.Fraction, RadiansToDegrees(pos.Altitude));
         }
 
         private static double SunCalcNetAzimuthRadiansToDegrees(double radians)
         {
             // SunCalcNet azimuth: 0 = south, positive westward, negative eastward
             // To convert to compass: (azimuth * 180 / Math.PI + 180) % 360
-            var deg = (radians * 180.0 / Math.PI + 180.0) % 360.0;
+            var deg = (RadiansToDegrees(radians) + 180.0) % 360.0;
             return deg <= 180 ? deg : deg - 360;
         }
 
@@ -112,7 +112,7 @@ namespace PhotoLocator.Helpers
             return new Location(RadiansToDegrees(lat2), RadiansToDegrees(lon2));
         }
 
-        private static double DegreesToRadians(double degrees) => degrees * Math.PI / 180.0;
-        private static double RadiansToDegrees(double radians) => radians * 180.0 / Math.PI;
+        private static double DegreesToRadians(double degrees) => degrees * (Math.PI / 180.0);
+        private static double RadiansToDegrees(double radians) => radians * (180.0 / Math.PI);
     }
 }
