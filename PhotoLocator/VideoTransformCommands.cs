@@ -713,7 +713,7 @@ public class VideoTransformCommands : INotifyPropertyChanged
         if (IsCropChecked)
             filters.Add($"crop={CropWindow}");
         if (IsStabilizeChecked)
-            filters.Add($"vidstabtransform=smoothing={SmoothFrames}"
+            filters.Add($"vidstabtransform=smoothing={SmoothFrames}:optzoom=1"
                 + (IsTripodChecked ? ":tripod=1" : null)
                 + (IsBicubicStabilizeChecked ? ":interpol=bicubic" : null));
         if (IsScaleChecked && SelectedEffect.Text != ZoomEffect && SelectedEffect.Text != Crossfade)
