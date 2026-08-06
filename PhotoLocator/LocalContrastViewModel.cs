@@ -46,7 +46,7 @@ namespace PhotoLocator
                         ExceptionHandler.ShowException(ex);
                     }
                 },
-                Application.Current.Dispatcher) { IsEnabled = false };
+                Application.Current?.Dispatcher ?? Dispatcher.CurrentDispatcher) { IsEnabled = false };
         }
 
         public event PropertyChangedEventHandler? PropertyChanged;
@@ -458,7 +458,7 @@ namespace PhotoLocator
                 _colorToneOperation.ToneAdjustments[i].HueUniformity = (float)valueStore[a++];
             }
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(null));
-            ActiveToneIndex = 0;
+            ActiveToneIndex = _colorToneOperation.AreToneAdjustmentsChanged ? 0 : ColorToneAdjustOperation.NumberOfTones;
             StartUpdateTimer(FirstParamChanged.ColorTone);
             if (a != valueStore.Count)
                 throw new InvalidOperationException("Unexpected number of adjustments");
@@ -466,6 +466,8 @@ namespace PhotoLocator
 
         private void StartUpdateTimer(FirstParamChanged firstParamChanged)
         {
+            if (Application.Current is null)
+                return;
             Mouse.OverrideCursor = Cursors.AppStarting;
             if (firstParamChanged < _firstParamChanged)
                 _firstParamChanged = firstParamChanged;
