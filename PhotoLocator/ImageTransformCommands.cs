@@ -44,17 +44,17 @@ namespace PhotoLocator
             var allSelected = _mainViewModel.GetSelectedItems(true).Where(item => JpegTransformations.IsFileTypeSupported(item.Name)).ToArray();
             if (allSelected.Length == 0)
                 throw new UserMessageException("Unsupported file format");
-            await _mainViewModel.RunProcessWithProgressBarAsync((progressCallback, ct) => Task.Run(() =>
+            await _mainViewModel.RunProcessWithProgressBarAsync(async (progressCallback, ct) =>
             {
                 progressCallback(-1);
                 int i = 0;
                 foreach (var item in allSelected)
                 {
-                    JpegTransformations.Rotate(item.FullPath, item.GetProcessedFileName(), angle); //TODO: Make async
+                    await JpegTransformations.RotateAsync(item.FullPath, item.GetProcessedFileName(), angle, ct);
                     item.IsChecked = false;
                     progressCallback((double)(++i) / allSelected.Length);
                 }
-            }, ct), "Rotating...");
+            }, "Rotating...");
         }
 
         public async Task CropSelectedItemAsync(BitmapSource pictureSource, Rect cropRectangle)
@@ -92,7 +92,7 @@ namespace PhotoLocator
                         GeneralFileFormatHandler.SaveToFile(pictureSource, sourceFileName, metadata, _mainViewModel.Settings);
                     }, ct);
                 }
-                await Task.Run(() => JpegTransformations.Crop(sourceFileName, targetFileName, cropRectangle), ct);
+                await JpegTransformations.CropAsync(sourceFileName, targetFileName, cropRectangle, ct);
                 await _mainViewModel.AddOrUpdateItemAsync(targetFileName, false, true);
             }, "Cropping...");
         }

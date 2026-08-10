@@ -4,6 +4,8 @@ using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 using System.Windows;
 
 namespace PhotoLocator.PictureFileFormats
@@ -15,39 +17,49 @@ namespace PhotoLocator.PictureFileFormats
             return Path.GetExtension(fileName).ToLowerInvariant() is ".jpg" or ".jpeg";
         }
 
-        public static void Rotate(string sourceFileName, string newFileName, int angleDegrees)
+        public static async Task RotateAsync(string sourceFileName, string newFileName, int angleDegrees, CancellationToken ct)
         {
-            ProcessFile(sourceFileName, newFileName, angleDegrees.ToString(CultureInfo.InvariantCulture));
+            await ProcessFileAsync(sourceFileName, newFileName, angleDegrees.ToString(CultureInfo.InvariantCulture), ct);
         }
 
-        public static void Crop(string sourceFileName, string newFileName, int left, int top, int width, int height)
+        public static async Task CropAsync(string sourceFileName, string newFileName, int left, int top, int width, int height, CancellationToken ct)
         {
-            ProcessFile(sourceFileName, newFileName, $"{left} {top} {width} {height}");
+            await ProcessFileAsync(sourceFileName, newFileName, $"{left} {top} {width} {height}", ct);
         }
 
-        public static void Crop(string sourceFileName, string newFileName, Rect cropRect)
+        public static async Task CropAsync(string sourceFileName, string newFileName, Rect cropRect, CancellationToken ct)
         {
-            Crop(sourceFileName, newFileName, IntMath.Round(cropRect.Left), IntMath.Round(cropRect.Top),
-                Math.Max(1, IntMath.Round(cropRect.Width)), Math.Max(1, IntMath.Round(cropRect.Height)));
+            await CropAsync(sourceFileName, newFileName, IntMath.Round(cropRect.Left), IntMath.Round(cropRect.Top),
+                Math.Max(1, IntMath.Round(cropRect.Width)), Math.Max(1, IntMath.Round(cropRect.Height)), ct);
         }
 
         private static readonly char[] _lineSeparators = ['\n', '\r'];
 
-        private static void ProcessFile(string sourceFileName, string newFileName, string args)
+        private static async Task ProcessFileAsync(string sourceFileName, string newFileName, string args, CancellationToken ct)
         {
             var startInfo = new ProcessStartInfo(Path.Combine(AppContext.BaseDirectory, "JpegTransform.exe"),
                 $"\"{sourceFileName}\" \"{newFileName}\" {args}");
             startInfo.CreateNoWindow = true;
             startInfo.RedirectStandardOutput = true;
             Log.Write($"{startInfo.FileName} {startInfo.Arguments}");
-            using var process = Process.Start(startInfo) ?? throw new IOException("Failed to start JpegTransform");
-            var output = process.StandardOutput.ReadToEnd(); // We must read before waiting
-            if (!process.WaitForExit(60000))
-                throw new TimeoutException();
-            if (process.ExitCode != 0)
+            for (int i = 0; ; i++)
             {
-                var lines = output.Split(_lineSeparators, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
-                throw new UserMessageException(lines.First());
+                using var process = Process.Start(startInfo) ?? throw new IOException("Failed to start JpegTransform");
+                var output = await process.StandardOutput.ReadToEndAsync(ct); // We must read before waiting
+                await process.WaitForExitAsync(ct);
+                if (process.ExitCode != 0)
+                {
+                    var lines = output.Split(_lineSeparators, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+                    var error = lines.First();
+                    if (i < 5 && error.Contains("The process cannot access the file because it is being used by another process", StringComparison.Ordinal))
+                    {
+                        Log.Write($"Retrying because of file access error: {error}"); // Often happens because of Dropbox or OneDrive syncing
+                        await Task.Delay(600, ct);
+                        continue;
+                    }
+                    throw new UserMessageException(error);
+                }
+                break;
             }
         }
     }
