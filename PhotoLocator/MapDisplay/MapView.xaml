@@ -216,7 +216,7 @@
                             SelectedDate="{Binding SunAndMoonDate}" />
                 <controls:DropDownSlider Visibility="{Binding IsSunAndMoonVisible, Converter={StaticResource BooleanToVisibility}}"
                     NumericValue="{Binding SunAndMoonTimeOffset, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Width="70" Height="20"
-                    ToolTip="Offset from current time" Minimum="-12" Maximum="12" Decimals="2" SliderValueUnits="h" />
+                    ToolTip="Offset from current time" Minimum="-12" Maximum="12" Decimals="2" SliderValueUnits="h" ResetText="0" />
             </StackPanel>
 
             <Slider Orientation="Vertical" Margin="8" Height="100"

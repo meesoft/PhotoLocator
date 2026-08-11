@@ -35,11 +35,13 @@
         <DockPanel Margin="10,4,0,0">
             <CheckBox Content="Rotate in frame:" IsChecked="{Binding IsRotateChecked}" Width="130" />
             <controls:DropDownSlider Text="{Binding RotationAngle, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" IsEnabled="{Binding IsRotateChecked}" Width="140"
-                                     ToolTip="Clockwise rotation angle in degrees" Minimum="-180" Maximum="180" TickFrequency="45" Decimals="2" SliderValueUnits="°" />
+                                     Minimum="-180" Maximum="180" TickFrequency="45" Decimals="2" SliderValueUnits="°" ResetText="0"
+                                     ToolTip="Clockwise rotation angle in degrees"  />
             <TextBlock Text="°" IsEnabled="{Binding IsRotateChecked}" Margin="4,0,0,0" Width="16"/>
             <CheckBox Content="Speedup by:" IsChecked="{Binding IsSpeedupChecked}" />
             <controls:DropDownSlider Text="{Binding SpeedupBy, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" IsEnabled="{Binding IsSpeedupChecked}" Width="140" HorizontalAlignment="Right"
-                                     ToolTip="Speedup factor (below 1 means slowdown)" Minimum="0.1" Maximum="10" TickFrequency="1" Decimals="2" />
+                                     Minimum="0.1" Maximum="10" TickFrequency="1" Decimals="2" ResetText="1"
+                                     ToolTip="Speedup factor (below 1 means slowdown)" />
         </DockPanel>
         <DockPanel Margin="10,4,0,0">
             <CheckBox Content="Crop:" IsChecked="{Binding IsCropChecked}" Width="130"/>
