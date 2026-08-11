@@ -13,8 +13,6 @@ namespace PhotoLocator.Helpers
         public static (DateTime? Sunrise, double? RiseAzimuth, DateTime? Sunset, double? SetAzimuth) GetSunRiseSet(
             Location location, DateTime date)
         {
-            date = (date - date.TimeOfDay + TimeSpan.FromHours(12)).ToUniversalTime();
-
             DateTime? sunrise = null, sunset = null;
             double? sunriseAzimuth = null, sunsetAzimuth = null;
             foreach (var phase in SunCalc.GetSunPhases(date, location.Latitude, location.Longitude))
@@ -45,8 +43,6 @@ namespace PhotoLocator.Helpers
         public static (DateTime? Moonrise, double? RiseAzimuth, double? RiseIllumination, DateTime? Moonset, double? SetAzimuth, double? SetIllumination) GetMoonRiseSet(
             Location location, DateTime date)
         {
-            date = (date - date.TimeOfDay + TimeSpan.FromHours(12)).ToUniversalTime();
-
             var times = MoonCalc.GetMoonPhase(date, location.Latitude, location.Longitude);
             var moonrise = times.Rise;
             var moonset = times.Set;

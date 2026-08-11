@@ -640,7 +640,7 @@ namespace PhotoLocator
                     UpdateSunAndMoonPosition();
 
             }
-        } = DateTime.Now;
+        } = DateTime.Today;
 
         public double SunAndMoonTimeOffset
         {
@@ -675,11 +675,10 @@ namespace PhotoLocator
                 Points.Add(new PointItem { Location = trace.Locations[1], Name = text });
             }
 
-            var now = DateTime.Now.AddHours(SunAndMoonTimeOffset);
-            var sunAndMoonTimeLocal = (SunAndMoonDate.Date == DateTime.Now.Date) ? now : SunAndMoonDate.Date.AddHours(now.TimeOfDay.TotalHours);
+            var sunAndMoonTimeLocal = SunAndMoonDate.Date.AddHours(DateTime.Now.TimeOfDay.TotalHours + SunAndMoonTimeOffset);
             var sunAndMoonTimeUtc = sunAndMoonTimeLocal.ToUniversalTime();
 
-            var sun = CelestialCalculator.GetSunRiseSet(_sunAndMoonMapCenter, SunAndMoonDate);
+            var sun = CelestialCalculator.GetSunRiseSet(_sunAndMoonMapCenter, sunAndMoonTimeLocal);
             if (sun.Sunrise.HasValue)
                 AddLineSeg(sun.RiseAzimuth!.Value, Colors.Yellow, $"Sunrise: {sun.Sunrise.Value.ToLocalTime()}\nAzimuth: {sun.RiseAzimuth:F0}°");
             if (sun.Sunset.HasValue)
@@ -687,7 +686,7 @@ namespace PhotoLocator
             var sunPos = CelestialCalculator.GetSunPosition(_sunAndMoonMapCenter, sunAndMoonTimeUtc);
             AddLineSeg(sunPos.Azimuth, sunPos.Altitude > 0 ? Colors.Orange : Colors.OrangeRed, $"Sun at {sunAndMoonTimeLocal}:\nAzimuth: {sunPos.Azimuth:F0}°, altitude {sunPos.Altitude:F0}°");
 
-            var moon = CelestialCalculator.GetMoonRiseSet(_sunAndMoonMapCenter, SunAndMoonDate);
+            var moon = CelestialCalculator.GetMoonRiseSet(_sunAndMoonMapCenter, sunAndMoonTimeLocal);
             if (moon.Moonrise.HasValue)
                 AddLineSeg(moon.RiseAzimuth!.Value, Colors.LightGray, $"Moonrise: {moon.Moonrise.Value.ToLocalTime()}\n{moon.RiseIllumination * 100:F0}%, azimuth: {moon.RiseAzimuth:F0}°");
             if (moon.Moonset.HasValue)
