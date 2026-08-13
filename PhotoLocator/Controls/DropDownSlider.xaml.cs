@@ -14,6 +14,16 @@ public partial class DropDownSlider : UserControl
         InitializeComponent();
     }
 
+    public static readonly DependencyProperty ResetTextProperty = DependencyProperty.Register(
+        nameof(ResetText), typeof(string), typeof(DropDownSlider), new PropertyMetadata(string.Empty));
+
+    public string ResetText { get => (string)GetValue(ResetTextProperty); set => SetValue(ResetTextProperty, value); }
+
+    void HandleResetButtonClicked(object sender, RoutedEventArgs e)
+    {
+        Text = ResetText ?? string.Empty;
+    }
+
     public static readonly DependencyProperty TextProperty = DependencyProperty.Register(
         nameof(Text), typeof(string), typeof(DropDownSlider), new FrameworkPropertyMetadata(string.Empty, FrameworkPropertyMetadataOptions.BindsTwoWayByDefault, OnTextChanged));
 

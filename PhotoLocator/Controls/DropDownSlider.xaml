@@ -26,9 +26,10 @@
                             Value="{Binding NumericValue, RelativeSource={RelativeSource AncestorType=UserControl}, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                             TickPlacement="BottomRight"
                             TickFrequency="{Binding TickFrequency, RelativeSource={RelativeSource AncestorType=UserControl}}" IsSnapToTickEnabled="False" />
-                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,6,0,0">
-                        <TextBlock Foreground="#FFEEEEEE" Margin="0,0,6,0" Text="{Binding FormattedNumericValue, RelativeSource={RelativeSource AncestorType=UserControl}}" />
-                    </StackPanel>
+                    <Grid Margin="0,6,0,0">
+                        <TextBlock Foreground="#FFEEEEEE" Text="{Binding FormattedNumericValue, RelativeSource={RelativeSource AncestorType=UserControl}}" HorizontalAlignment="Center" />
+                        <Button x:Name="ResetButton" Width="64" Height="22" Content="Reset" Click="HandleResetButtonClicked" HorizontalAlignment="Right" />
+                    </Grid>
                 </StackPanel>
             </Border>
         </Popup>

@@ -255,8 +255,8 @@ public class VideoTransformCommands : INotifyPropertyChanged
         new TextComboBoxItem { Text = ZoomEffect, Tag = new ParameterizedFilter( "scale=4*iw:4*ih, zoompan=z='if(lte(it,0),1,min(pzoom+{0},10))':d=1:x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':s={1}:fps={2}", "Zoom speed", "0.001" ) },
         new TextComboBoxItem { Text = "Normalize", Tag = new ParameterizedFilter( "normalize=smoothing={0}:independence=0", "Smooth frames", "50" ) },
         new TextComboBoxItem { Text = "Midtones", Tag = new ParameterizedFilter( "colorbalance=rm={0}:gm={0}:bm={0}", "Strength", "0.05" ) },
-        new TextComboBoxItem { Text = "Saturation", Tag = new ParameterizedFilter( "eq=saturation={0}", "Strength","1.3" ) },
-        new TextComboBoxItem { Text = "Contrast and brightness", Tag = new ParameterizedFilter( "eq=brightness=0.05:contrast={0}", "Contrast", "1.3" ) },
+        new TextComboBoxItem { Text = "Saturation", Tag = new ParameterizedFilter( "eq=brightness=0:contrast=1:gamma=1:saturation={0}", "Strength","1.3" ) },
+        new TextComboBoxItem { Text = "Contrast and brightness", Tag = new ParameterizedFilter( "eq=brightness=0.05:contrast={0}:gamma=1:saturation=1", "Contrast", "1.3" ) },
         new TextComboBoxItem { Text = "Denoise (atadenoise)", Tag = new ParameterizedFilter( "atadenoise=s={0}", "Strength", "9" ) },
         new TextComboBoxItem { Text = "Denoise (hqdn3d)", Tag = new ParameterizedFilter( "hqdn3d=luma_spatial={0}", "Strength", "4" ) },
         new TextComboBoxItem { Text = "Denoise (nlmeans)", Tag = new ParameterizedFilter( "nlmeans=s={0}", "Strength", "1.0" ) },
@@ -713,7 +713,7 @@ public class VideoTransformCommands : INotifyPropertyChanged
         if (IsCropChecked)
             filters.Add($"crop={CropWindow}");
         if (IsStabilizeChecked)
-            filters.Add($"vidstabtransform=smoothing={SmoothFrames}"
+            filters.Add($"vidstabtransform=smoothing={SmoothFrames}:optzoom=1"
                 + (IsTripodChecked ? ":tripod=1" : null)
                 + (IsBicubicStabilizeChecked ? ":interpol=bicubic" : null));
         if (IsScaleChecked && SelectedEffect.Text != ZoomEffect && SelectedEffect.Text != Crossfade)

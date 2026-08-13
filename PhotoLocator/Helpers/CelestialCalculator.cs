@@ -13,8 +13,6 @@ namespace PhotoLocator.Helpers
         public static (DateTime? Sunrise, double? RiseAzimuth, DateTime? Sunset, double? SetAzimuth) GetSunRiseSet(
             Location location, DateTime date)
         {
-            date = (date - date.TimeOfDay + TimeSpan.FromHours(12)).ToUniversalTime();
-
             DateTime? sunrise = null, sunset = null;
             double? sunriseAzimuth = null, sunsetAzimuth = null;
             foreach (var phase in SunCalc.GetSunPhases(date, location.Latitude, location.Longitude))
@@ -36,7 +34,7 @@ namespace PhotoLocator.Helpers
         public static (double Azimuth, double Altitude) GetSunPosition(Location location, DateTime time)
         {
             var pos = SunCalc.GetSunPosition(time, location.Latitude, location.Longitude);
-            return (SunCalcNetAzimuthRadiansToDegrees(pos.Azimuth), pos.Altitude * 180 / Math.PI);
+            return (SunCalcNetAzimuthRadiansToDegrees(pos.Azimuth), RadiansToDegrees(pos.Altitude));
         }
 
         /// <summary>
@@ -45,8 +43,6 @@ namespace PhotoLocator.Helpers
         public static (DateTime? Moonrise, double? RiseAzimuth, double? RiseIllumination, DateTime? Moonset, double? SetAzimuth, double? SetIllumination) GetMoonRiseSet(
             Location location, DateTime date)
         {
-            date = (date - date.TimeOfDay + TimeSpan.FromHours(12)).ToUniversalTime();
-
             var times = MoonCalc.GetMoonPhase(date, location.Latitude, location.Longitude);
             var moonrise = times.Rise;
             var moonset = times.Set;
@@ -70,20 +66,20 @@ namespace PhotoLocator.Helpers
             return (moonrise, moonriseAzimuth, moonriseIllumination?.Fraction, moonset, moonsetAzimuth, moonsetIllumination?.Fraction);
         }
 
-        public static (double? Azimuth, double? Illumination) GetMoonPosition(Location location, DateTime time)
+        public static (double? Azimuth, double? Illumination, double Altitude) GetMoonPosition(Location location, DateTime time)
         {
             var pos = MoonCalc.GetMoonPosition(time, location.Latitude, location.Longitude);
             if (pos.Altitude < 0)
-                return (null, null);
+                return (null, null, RadiansToDegrees(pos.Altitude));
             var illumination = MoonCalc.GetMoonIllumination(time);
-            return (SunCalcNetAzimuthRadiansToDegrees(pos.Azimuth), illumination.Fraction);
+            return (SunCalcNetAzimuthRadiansToDegrees(pos.Azimuth), illumination.Fraction, RadiansToDegrees(pos.Altitude));
         }
 
         private static double SunCalcNetAzimuthRadiansToDegrees(double radians)
         {
             // SunCalcNet azimuth: 0 = south, positive westward, negative eastward
             // To convert to compass: (azimuth * 180 / Math.PI + 180) % 360
-            var deg = (radians * 180.0 / Math.PI + 180.0) % 360.0;
+            var deg = (RadiansToDegrees(radians) + 180.0) % 360.0;
             return deg <= 180 ? deg : deg - 360;
         }
 
@@ -112,7 +108,7 @@ namespace PhotoLocator.Helpers
             return new Location(RadiansToDegrees(lat2), RadiansToDegrees(lon2));
         }
 
-        private static double DegreesToRadians(double degrees) => degrees * Math.PI / 180.0;
-        private static double RadiansToDegrees(double radians) => radians * 180.0 / Math.PI;
+        private static double DegreesToRadians(double degrees) => degrees * (Math.PI / 180.0);
+        private static double RadiansToDegrees(double radians) => radians * (180.0 / Math.PI);
     }
 }

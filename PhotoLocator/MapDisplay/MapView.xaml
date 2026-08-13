@@ -5,7 +5,8 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:map="clr-namespace:MapControl;assembly=MapControl.WPF"
         xmlns:tools="clr-namespace:MapControl.UiTools;assembly=MapUiTools.WPF"
-        xmlns:local="clr-namespace:PhotoLocator.MapDisplay"
+        xmlns:local="clr-namespace:PhotoLocator.MapDisplay" 
+        xmlns:controls="clr-namespace:PhotoLocator.Controls"
         mc:Ignorable="d"
         d:DesignWidth="600"
         d:DesignHeight="600"
@@ -213,6 +214,9 @@
                               Content="&#xF08C;" FontFamily="Segoe MDL2 Assets" FontSize="25" />
                 <DatePicker Visibility="{Binding IsSunAndMoonVisible, Converter={StaticResource BooleanToVisibility}}" VerticalAlignment="Center" 
                             SelectedDate="{Binding SunAndMoonDate}" />
+                <controls:DropDownSlider Visibility="{Binding IsSunAndMoonVisible, Converter={StaticResource BooleanToVisibility}}"
+                    NumericValue="{Binding SunAndMoonTimeOffset, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Width="70" Height="20"
+                    ToolTip="Offset from current time" Minimum="-12" Maximum="12" Decimals="2" SliderValueUnits="h" ResetText="0" />
             </StackPanel>
 
             <Slider Orientation="Vertical" Margin="8" Height="100"

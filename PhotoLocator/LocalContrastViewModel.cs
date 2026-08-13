@@ -39,14 +39,14 @@ namespace PhotoLocator
                     {
                         await UpdatePreviewAsync();
                     }
-                    catch(Exception ex)
+                    catch (Exception ex)
                     {
                         _previewTask = Task.CompletedTask;
                         Mouse.OverrideCursor = null;
                         ExceptionHandler.ShowException(ex);
                     }
                 },
-                Application.Current.Dispatcher) { IsEnabled = false };
+                Application.Current?.Dispatcher ?? Dispatcher.CurrentDispatcher) { IsEnabled = false };
         }
 
         public event PropertyChangedEventHandler? PropertyChanged;
@@ -421,11 +421,11 @@ namespace PhotoLocator
             valueStore.Add(BlackPoint);
             valueStore.Add(HighlightStrength);
             valueStore.Add(ShadowStrength);
-            valueStore.Add(MaxStretch);
             valueStore.Add(OutlierReductionStrength);
             valueStore.Add(Contrast);
             valueStore.Add(ToneMapping);
             valueStore.Add(DetailHandling);
+            valueStore.Add(MaxStretch);
             valueStore.Add(ToneRotation);
             for (int i = 0; i < _colorToneOperation.ToneAdjustments.Length; i++)
             {
@@ -444,11 +444,11 @@ namespace PhotoLocator
             BlackPoint = valueStore[a++];
             HighlightStrength = valueStore[a++];
             ShadowStrength = valueStore[a++];
-            MaxStretch = valueStore[a++];
             OutlierReductionStrength = valueStore[a++];
             Contrast = valueStore[a++];
             ToneMapping = valueStore[a++];
             DetailHandling = valueStore[a++];
+            MaxStretch = valueStore[a++];
             ToneRotation = valueStore[a++];
             for (int i = 0; i < _colorToneOperation.ToneAdjustments.Length; i++)
             {
@@ -458,7 +458,7 @@ namespace PhotoLocator
                 _colorToneOperation.ToneAdjustments[i].HueUniformity = (float)valueStore[a++];
             }
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(null));
-            ActiveToneIndex = 0;
+            ActiveToneIndex = _colorToneOperation.AreToneAdjustmentsChanged ? 0 : ColorToneAdjustOperation.NumberOfTones;
             StartUpdateTimer(FirstParamChanged.ColorTone);
             if (a != valueStore.Count)
                 throw new InvalidOperationException("Unexpected number of adjustments");
@@ -466,6 +466,8 @@ namespace PhotoLocator
 
         private void StartUpdateTimer(FirstParamChanged firstParamChanged)
         {
+            if (Application.Current is null)
+                return;
             Mouse.OverrideCursor = Cursors.AppStarting;
             if (firstParamChanged < _firstParamChanged)
                 _firstParamChanged = firstParamChanged;
