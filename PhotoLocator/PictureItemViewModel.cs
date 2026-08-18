@@ -422,11 +422,11 @@ namespace PhotoLocator
             FullPath = newFullPath;
         }
 
-        private IEnumerable<string> GetSidecarFiles()
+        public IEnumerable<string> GetSidecarFiles()
         {
             var folder = Path.GetDirectoryName(FullPath)!;
             return Directory.GetFiles(folder, Path.ChangeExtension(Name, "xmp")).Concat(
-                Directory.GetFiles(folder, Name + ".*", System.IO.SearchOption.AllDirectories));
+                Directory.GetFiles(folder, Name + ".*", System.IO.SearchOption.AllDirectories).Except([FullPath]));
         }
 
         internal void Renamed(string newFullPath)

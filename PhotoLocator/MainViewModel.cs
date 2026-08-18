@@ -664,8 +664,7 @@ namespace PhotoLocator
                 UpdatePushpins();
                 return;
             }
-            if (_sunAndMoonMapCenter is null)
-                _sunAndMoonMapCenter = MapCenter;
+            _sunAndMoonMapCenter ??= MapCenter;
 
             void AddLineSeg(double azimuth, Color color, string text)
             {
@@ -816,10 +815,21 @@ namespace PhotoLocator
             if (allSelected.Length == 0)
                 return;
             focusedItem = GetNearestUnchecked(focusedItem, allSelected);
-            if (MessageBox.Show(
-                (allSelected.Length == 1 ? $"Delete '{allSelected[0].Name}'?" : $"Delete {allSelected.Length} selected items?") +
-                (Settings.IncludeSidecarFiles ? "\nSidecar files will be included." : string.Empty),
-                "Confirm", MessageBoxButton.OKCancel, MessageBoxImage.Question) != MessageBoxResult.OK)
+
+            string msg;
+            if (allSelected.Length == 1)
+            {
+                msg = $"Delete '{allSelected[0].Name}'?";
+                if (Settings.IncludeSidecarFiles)
+                {
+                    var sidecarFiles = allSelected[0].GetSidecarFiles().ToArray();
+                    if (sidecarFiles.Length > 0)
+                        msg += "\nIncluding sidecar files:" + $"\n{string.Join("\n", sidecarFiles.Select(f => Path.GetFileName(f)))}";
+                }
+            }
+            else
+                msg = $"Delete {allSelected.Length} selected items?" + (Settings.IncludeSidecarFiles ? "\nSidecar files will be included." : string.Empty);
+            if (MessageBox.Show(msg, "Confirm", MessageBoxButton.OKCancel, MessageBoxImage.Question) != MessageBoxResult.OK)
                 return;
             var selectedIndex = Items.IndexOf(SelectedItem!);
             SelectedItem = null;

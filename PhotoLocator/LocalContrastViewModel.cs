@@ -1,8 +1,11 @@
-﻿using PhotoLocator.BitmapOperations;
+﻿using Microsoft.Win32;
+using PhotoLocator.BitmapOperations;
 using PhotoLocator.Helpers;
+using PhotoLocator.PictureFileFormats;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.IO;
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using System.Windows;
@@ -19,8 +22,8 @@ namespace PhotoLocator
     {
         enum FirstParamChanged { Astro, LaplacianPyramid, LocalContrast, ColorTone, None }
 
-        static readonly List<double> _adjustmentClipboard = [];
-        static readonly List<double> _lastUsedValues = [];
+        static AdjustmentValues? _adjustmentClipboard;
+        static AdjustmentValues? _lastUsedValues;
         readonly DispatcherTimer _updateTimer;
         readonly LaplacianFilterOperation _laplacianFilterOperation = new();
         readonly IncreaseLocalContrastOperation _localContrastOperation = new() { DstBitmap = new() };
@@ -65,6 +68,8 @@ namespace PhotoLocator
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
             return true;
         }
+
+        public string FileName { get; set; } = string.Empty;
 
         public BitmapSource? SourceBitmap
         {
@@ -402,66 +407,112 @@ namespace PhotoLocator
             StartUpdateTimer(FirstParamChanged.ColorTone);
         });
 
-        public ICommand CopyAdjustmentsCommand => new RelayCommand(o => StoreAdjustmentValues(_adjustmentClipboard));
+        public ICommand CopyAdjustmentsCommand => new RelayCommand(o => _adjustmentClipboard = StoreAdjustmentValues());
 
-        public ICommand PasteAdjustmentsCommand => new RelayCommand(o => RestoreAdjustmentValues(_adjustmentClipboard), o => _adjustmentClipboard.Count > 0);
+        public ICommand PasteAdjustmentsCommand => new RelayCommand(o => RestoreAdjustmentValues(_adjustmentClipboard ?? throw new UserMessageException("No adjustments saved")), o => _adjustmentClipboard is not null);
 
-        public ICommand RestoreLastUsedValuesCommand => new RelayCommand(o => RestoreAdjustmentValues(_lastUsedValues), o => _lastUsedValues.Count > 0);
+        public ICommand RestoreLastUsedValuesCommand => new RelayCommand(o => RestoreAdjustmentValues(_lastUsedValues ?? throw new UserMessageException("No adjustments saved")), o => _lastUsedValues is not null);
+
+        public ICommand SaveAdjustmentsCommand => new RelayCommand(o =>
+        {
+            var dlg = new SaveFileDialog
+            {
+                Title = "Save adjustments",
+                Filter = "Adjustment values (*.pla)|*.pla",
+                DefaultExt = "pla",
+                FileName = FileName + ".pla"
+            };
+            if (dlg.ShowDialog() is true)
+                StoreAdjustmentValues().SaveToJsonFile(dlg.FileName);
+        });
+
+        public ICommand LoadAdjustmentsCommand => new RelayCommand(o =>
+        {
+            var dlg = new OpenFileDialog
+            {
+                Title = "Load adjustments",
+                Filter = "Adjustment values (*.pla)|*.pla"
+            };
+            if (dlg.ShowDialog() is true)
+                RestoreAdjustmentValues(AdjustmentValues.LoadFromJsonFile(dlg.FileName));
+        });
+
+        public void TryLoadAdjustments()
+        {
+            var adjustmentsFileName = FileName + ".pla";
+            if (File.Exists(adjustmentsFileName))
+                try
+                {
+                    RestoreAdjustmentValues(AdjustmentValues.LoadFromJsonFile(adjustmentsFileName));
+                }
+                catch (Exception ex)
+                {
+                    Log.Write($"Error loading adjustments from '{adjustmentsFileName}': {ex.Message}");
+                }
+        }
 
         public void SaveLastUsedValues()
         {
-            StoreAdjustmentValues(_lastUsedValues);
+            _lastUsedValues = StoreAdjustmentValues();
         }
 
-        private void StoreAdjustmentValues(List<double> valueStore)
+        private AdjustmentValues StoreAdjustmentValues()
         {
-            valueStore.Clear();
-            valueStore.Add(AstroStretch);
-            valueStore.Add(BackgroundRemovalSmooth);
-            valueStore.Add(BlackPoint);
-            valueStore.Add(HighlightStrength);
-            valueStore.Add(ShadowStrength);
-            valueStore.Add(OutlierReductionStrength);
-            valueStore.Add(Contrast);
-            valueStore.Add(ToneMapping);
-            valueStore.Add(DetailHandling);
-            valueStore.Add(MaxStretch);
-            valueStore.Add(ToneRotation);
-            for (int i = 0; i < _colorToneOperation.ToneAdjustments.Length; i++)
+            var av = new AdjustmentValues();
+            av.AstroStretch = AstroStretch;
+            av.BackgroundRemovalSmooth = BackgroundRemovalSmooth;
+            av.BlackPoint = BlackPoint;
+            av.HighlightStrength = HighlightStrength;
+            av.ShadowStrength = ShadowStrength;
+            av.OutlierReductionStrength = OutlierReductionStrength;
+            av.Contrast = Contrast;
+            av.ToneMapping = ToneMapping;
+            av.DetailHandling = DetailHandling;
+            av.MaxStretch = MaxStretch;
+            av.ToneRotation = ToneRotation;
+            if (_colorToneOperation.AreToneAdjustmentsChanged)
             {
-                valueStore.Add(_colorToneOperation.ToneAdjustments[i].AdjustHue);
-                valueStore.Add(_colorToneOperation.ToneAdjustments[i].AdjustSaturation);
-                valueStore.Add(_colorToneOperation.ToneAdjustments[i].AdjustIntensity);
-                valueStore.Add(_colorToneOperation.ToneAdjustments[i].HueUniformity);
+                av.ToneAdjustments = new ToneAdjustmentValues[_colorToneOperation.ToneAdjustments.Length];
+                for (int i = 0; i < av.ToneAdjustments.Length; i++)
+                {
+                    var src = _colorToneOperation.ToneAdjustments[i];
+                    var dst = av.ToneAdjustments[i] = new ToneAdjustmentValues();
+                    dst.AdjustHue = src.AdjustHue;
+                    dst.AdjustSaturation = src.AdjustSaturation;
+                    dst.AdjustIntensity = src.AdjustIntensity;
+                    dst.HueUniformity = src.HueUniformity;
+                }
             }
+            return av;
         }
 
-        private void RestoreAdjustmentValues(List<double> valueStore)
+        private void RestoreAdjustmentValues(AdjustmentValues av)
         {
-            int a = 0;
-            AstroStretch = valueStore[a++];
-            BackgroundRemovalSmooth = valueStore[a++];
-            BlackPoint = valueStore[a++];
-            HighlightStrength = valueStore[a++];
-            ShadowStrength = valueStore[a++];
-            OutlierReductionStrength = valueStore[a++];
-            Contrast = valueStore[a++];
-            ToneMapping = valueStore[a++];
-            DetailHandling = valueStore[a++];
-            MaxStretch = valueStore[a++];
-            ToneRotation = valueStore[a++];
-            for (int i = 0; i < _colorToneOperation.ToneAdjustments.Length; i++)
-            {
-                _colorToneOperation.ToneAdjustments[i].AdjustHue = (float)valueStore[a++];
-                _colorToneOperation.ToneAdjustments[i].AdjustSaturation = (float)valueStore[a++];
-                _colorToneOperation.ToneAdjustments[i].AdjustIntensity = (float)valueStore[a++];
-                _colorToneOperation.ToneAdjustments[i].HueUniformity = (float)valueStore[a++];
-            }
+            AstroStretch = av.AstroStretch;
+            BackgroundRemovalSmooth = av.BackgroundRemovalSmooth;
+            BlackPoint = av.BlackPoint;
+            HighlightStrength = av.HighlightStrength;
+            ShadowStrength = av.ShadowStrength;
+            OutlierReductionStrength = av.OutlierReductionStrength;
+            Contrast = av.Contrast;
+            ToneMapping = av.ToneMapping;
+            DetailHandling = av.DetailHandling;
+            MaxStretch = av.MaxStretch;
+            ToneRotation = av.ToneRotation;
+            if (_colorToneOperation.ToneAdjustments.Length != av.ToneAdjustments.Length)
+                _colorToneOperation.ResetToneAdjustments();
+            else
+                for (int i = 0; i < av.ToneAdjustments.Length; i++)
+                {
+                    var src = av.ToneAdjustments[i];
+                    _colorToneOperation.ToneAdjustments[i].AdjustHue = src?.AdjustHue ?? 0;
+                    _colorToneOperation.ToneAdjustments[i].AdjustSaturation = src?.AdjustSaturation ?? 1;
+                    _colorToneOperation.ToneAdjustments[i].AdjustIntensity = src?.AdjustIntensity ?? 1;
+                    _colorToneOperation.ToneAdjustments[i].HueUniformity = src?.HueUniformity ?? 0;
+                }
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(null));
             ActiveToneIndex = _colorToneOperation.AreToneAdjustmentsChanged ? 0 : ColorToneAdjustOperation.NumberOfTones;
             StartUpdateTimer(FirstParamChanged.ColorTone);
-            if (a != valueStore.Count)
-                throw new InvalidOperationException("Unexpected number of adjustments");
         }
 
         private void StartUpdateTimer(FirstParamChanged firstParamChanged)
