@@ -1,4 +1,5 @@
 ﻿using Microsoft.Win32;
+using PhotoLocator.BitmapOperations;
 using PhotoLocator.Helpers;
 using PhotoLocator.Metadata;
 using PhotoLocator.PictureFileFormats;
@@ -57,28 +58,42 @@ namespace PhotoLocator
             }, "Rotating...");
         }
 
+        enum CropMode { CropJpeg, CropOther, CreateJpeg }
+
         public async Task CropSelectedItemAsync(BitmapSource pictureSource, Rect cropRectangle)
         {
             var selectedItem = _mainViewModel.SelectedItem;
             if (selectedItem is null || !selectedItem.IsFile)
                 return;
-            string sourceFileName, targetFileName;
+
+            CropMode mode;
+            var sourceFileName = selectedItem.FullPath;
+            var targetFileName = selectedItem.GetProcessedFileName();
             if (JpegTransformations.IsFileTypeSupported(selectedItem.Name))
-            {
-                sourceFileName = selectedItem.FullPath;
-                targetFileName = selectedItem.GetProcessedFileName();
-            }
+                mode = CropMode.CropJpeg;
+            else if (Path.GetExtension(selectedItem.Name).ToLowerInvariant() is ".tif" or ".tiff" or ".png" or ".bmp" or ".jxr")
+                mode = CropMode.CropOther;
             else
             {
-                sourceFileName = targetFileName = Path.ChangeExtension(selectedItem.GetProcessedFileName(), "jpg");
+                sourceFileName = targetFileName = Path.ChangeExtension(targetFileName, "jpg");
                 if (File.Exists(sourceFileName) && MessageBox.Show($"Do you wish to overwrite the file '{Path.GetFileName(sourceFileName)}'?", "Crop", MessageBoxButton.OKCancel, MessageBoxImage.Question) != MessageBoxResult.OK)
                     return;
+                mode = CropMode.CreateJpeg;
             }
             await _mainViewModel.RunProcessWithProgressBarAsync(async (progressCallback, ct) =>
             {
                 progressCallback(-1);
                 await using var pause = _mainViewModel.PauseFileSystemWatcher();
-                if (sourceFileName != selectedItem.FullPath)
+                if (mode == CropMode.CropOther)
+                {
+                    var (sourceImage, metadata) = await LoadImageWithMetadataAsync(selectedItem);
+                    var cropped = new FloatBitmap(sourceImage, 1).CopyRect((int)cropRectangle.Left, (int)cropRectangle.Top, (int)cropRectangle.Width, (int)cropRectangle.Height);
+                    var use16bit = sourceImage.Format.BitsPerPixel is 16 or 48 or 96;
+                    GeneralFileFormatHandler.SaveToFile(
+                        use16bit ? cropped.ToBitmapSource16(sourceImage.DpiX, sourceImage.DpiY, 1) : cropped.ToBitmapSource(sourceImage.DpiX, sourceImage.DpiY, 1),
+                        targetFileName, metadata, _mainViewModel.Settings);
+                }
+                if (mode == CropMode.CreateJpeg)
                 {
                     using var file = await FileHelpers.OpenFileWithRetryAsync(selectedItem.FullPath, ct);
                     await Task.Run(() =>
@@ -92,7 +107,8 @@ namespace PhotoLocator
                         GeneralFileFormatHandler.SaveToFile(pictureSource, sourceFileName, metadata, _mainViewModel.Settings);
                     }, ct);
                 }
-                await JpegTransformations.CropAsync(sourceFileName, targetFileName, cropRectangle, ct);
+                if (mode != CropMode.CropOther)
+                    await JpegTransformations.CropAsync(sourceFileName, targetFileName, cropRectangle, ct);
                 await _mainViewModel.AddOrUpdateItemAsync(targetFileName, false, true);
             }, "Cropping...");
         }

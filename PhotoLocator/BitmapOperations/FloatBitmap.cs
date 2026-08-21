@@ -150,6 +150,25 @@ namespace PhotoLocator.BitmapOperations
                 ArrayPool<float>.Shared.Return(gammaLut);
                 ArrayPool<byte>.Shared.Return(sourcePixels);
             }
+            else if (source.Format.Masks.Count == 3 && source.Format.BitsPerPixel == 96)
+            {
+                New(source.PixelWidth, source.PixelHeight, 3);
+                var sourcePixels = new float[Height * Stride];
+                source.CopyPixels(sourcePixels, Stride * 4, 0);
+                unsafe
+                {
+                    Parallel.For(0, Height, y =>
+                    {
+                        fixed (float* dstRow = &Elements[y, 0])
+                        fixed (float* srcRow = &sourcePixels[y * Stride])
+                        {
+                            var stride = Stride;
+                            for (var x = 0; x < stride; x++)
+                                dstRow[x] = (float)Math.Pow(srcRow[x], gamma);
+                        }
+                    });
+                }
+            }
             else
             {
                 int planes;
@@ -200,6 +219,27 @@ namespace PhotoLocator.BitmapOperations
                     }
                 });
             }
+        }
+
+        public FloatBitmap CopyRect(int left, int top, int width, int height)
+        {
+            if (left < 0 || left + width > Width || top < 0 || top + height > Height)
+                throw new ArgumentException("Rectangle out of bounds");
+            var result = new FloatBitmap(width, height, PlaneCount);
+            unsafe
+            {
+                Parallel.For(0, height, y =>
+                {
+                    fixed (float* srcRow = &Elements[top + y, left * PlaneCount])
+                    fixed (float* dstRow = &result.Elements[y, 0])
+                    {
+                        var stride = width * PlaneCount;
+                        for (var x = 0; x < stride; x++)
+                            dstRow[x] = srcRow[x];
+                    }
+                });
+            }
+            return result;
         }
 
         public BitmapSource ToBitmapSource(double dpiX, double dpiY, double gamma, PixelFormat? format = null)
