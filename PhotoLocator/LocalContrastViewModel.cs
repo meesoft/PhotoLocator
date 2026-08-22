@@ -499,7 +499,7 @@ namespace PhotoLocator
             DetailHandling = av.DetailHandling;
             MaxStretch = av.MaxStretch;
             ToneRotation = av.ToneRotation;
-            if (_colorToneOperation.ToneAdjustments.Length != av.ToneAdjustments.Length)
+            if (_colorToneOperation.ToneAdjustments.Length != av.ToneAdjustments?.Length)
                 _colorToneOperation.ResetToneAdjustments();
             else
                 for (int i = 0; i < av.ToneAdjustments.Length; i++)

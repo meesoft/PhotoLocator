@@ -817,7 +817,7 @@ namespace PhotoLocator
             focusedItem = GetNearestUnchecked(focusedItem, allSelected);
 
             string msg;
-            if (allSelected.Length == 1)
+            if (allSelected.Length == 1 && allSelected[0].IsFile)
             {
                 msg = $"Delete '{allSelected[0].Name}'?";
                 if (Settings.IncludeSidecarFiles)
