@@ -21,6 +21,9 @@
     <Window.InputBindings>
         <KeyBinding Key="C" Modifiers="Ctrl+Shift" Command="{Binding CopyAdjustmentsCommand}" />
         <KeyBinding Key="V" Modifiers="Ctrl+Shift" Command="{Binding PasteAdjustmentsCommand}" />
+        <KeyBinding Key="R" Modifiers="Ctrl+Shift" Command="{Binding RestoreLastUsedValuesCommand}" />
+        <KeyBinding Key="S" Modifiers="Ctrl" Command="{Binding SaveAdjustmentsCommand}" />
+        <KeyBinding Key="O" Modifiers="Ctrl" Command="{Binding LoadAdjustmentsCommand}" />
         <KeyBinding Key="D1" Modifiers="Ctrl" Command="{Binding ZoomToFitCommand}" />
         <KeyBinding Key="D2" Modifiers="Ctrl" Command="{Binding Zoom100Command}" />
         <KeyBinding Key="D3" Modifiers="Ctrl" Command="{Binding Zoom200Command}" />
@@ -39,7 +42,9 @@
                     <TextBlock FontFamily="Segoe MDL2 Assets" Text="&#xE77F;" FontSize="14" Foreground="Black" />
                 </MenuItem.Icon>
             </MenuItem>
-            <MenuItem Header="Restore last used values" Command="{Binding RestoreLastUsedValuesCommand}" />
+            <MenuItem Header="Save adjustments (Ctrl+S)" Command="{Binding SaveAdjustmentsCommand}" />
+            <MenuItem Header="Load adjustments (Ctrl+O)" Command="{Binding LoadAdjustmentsCommand}" />
+            <MenuItem Header="Restore last used values (Ctrl+Shift+R)" Command="{Binding RestoreLastUsedValuesCommand}" />
         </ContextMenu>
     </Window.ContextMenu>
 
@@ -262,7 +267,9 @@
                             <TextBlock FontFamily="Segoe MDL2 Assets" Text="&#xE77F;" FontSize="14" Foreground="Black" />
                         </MenuItem.Icon>
                     </MenuItem>
-                    <MenuItem Header="Restore last used values" Command="{Binding RestoreLastUsedValuesCommand}" />
+                    <MenuItem Header="Save adjustments (Ctrl+S)" Command="{Binding SaveAdjustmentsCommand}" />
+                    <MenuItem Header="Load adjustments (Ctrl+O)" Command="{Binding LoadAdjustmentsCommand}" />
+                    <MenuItem Header="Restore last used values (Ctrl+Shift+R)" Command="{Binding RestoreLastUsedValuesCommand}" />
                 </ContextMenu>
             </Grid.ContextMenu>
         </Grid>
