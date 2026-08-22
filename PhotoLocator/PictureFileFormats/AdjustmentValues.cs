@@ -24,7 +24,7 @@ namespace PhotoLocator.PictureFileFormats
         public double DetailHandling { get; set; }
         public double MaxStretch { get; set; }
         public double ToneRotation { get; set; }
-        public ToneAdjustmentValues[] ToneAdjustments { get; set; } = [];
+        public ToneAdjustmentValues[]? ToneAdjustments { get; set; }
 
         static JsonSerializerOptions? _saveOptions, _loadOptions;
 
