@@ -65,10 +65,9 @@ namespace PhotoLocator
             var selectedItem = _mainViewModel.SelectedItem;
             if (selectedItem is null || !selectedItem.IsFile)
                 return;
-
-            CropMode mode;
             var sourceFileName = selectedItem.FullPath;
             var targetFileName = selectedItem.GetProcessedFileName();
+            CropMode mode;
             if (JpegTransformations.IsFileTypeSupported(selectedItem.Name))
                 mode = CropMode.CropJpeg;
             else if (Path.GetExtension(selectedItem.Name).ToLowerInvariant() is ".tif" or ".tiff" or ".png" or ".bmp" or ".jxr")
@@ -76,7 +75,7 @@ namespace PhotoLocator
             else
             {
                 sourceFileName = targetFileName = Path.ChangeExtension(targetFileName, "jpg");
-                if (File.Exists(sourceFileName) && MessageBox.Show($"Do you wish to overwrite the file '{Path.GetFileName(sourceFileName)}'?", "Crop", MessageBoxButton.OKCancel, MessageBoxImage.Question) != MessageBoxResult.OK)
+                if (File.Exists(targetFileName) && MessageBox.Show($"Do you wish to overwrite the file '{Path.GetFileName(targetFileName)}'?", "Crop", MessageBoxButton.OKCancel, MessageBoxImage.Question) != MessageBoxResult.OK)
                     return;
                 mode = CropMode.CreateJpeg;
             }
@@ -87,28 +86,31 @@ namespace PhotoLocator
                 if (mode == CropMode.CropOther)
                 {
                     var (sourceImage, metadata) = await LoadImageWithMetadataAsync(selectedItem);
-                    var cropped = new FloatBitmap(sourceImage, 1).CopyRect((int)cropRectangle.Left, (int)cropRectangle.Top, (int)cropRectangle.Width, (int)cropRectangle.Height);
+                    var cropped = new FloatBitmap(sourceImage, 1).CopyRect(
+                        IntMath.Round(cropRectangle.Left), IntMath.Round(cropRectangle.Top), IntMath.Round(cropRectangle.Width), IntMath.Round(cropRectangle.Height));
                     var use16bit = sourceImage.Format.BitsPerPixel is 16 or 48 or 96;
-                    GeneralFileFormatHandler.SaveToFile(
+                    await Task.Run(() => GeneralFileFormatHandler.SaveToFile(
                         use16bit ? cropped.ToBitmapSource16(sourceImage.DpiX, sourceImage.DpiY, 1) : cropped.ToBitmapSource(sourceImage.DpiX, sourceImage.DpiY, 1),
-                        targetFileName, metadata, _mainViewModel.Settings);
+                        targetFileName, metadata, _mainViewModel.Settings), ct);
                 }
-                if (mode == CropMode.CreateJpeg)
+                else
                 {
-                    using var file = await FileHelpers.OpenFileWithRetryAsync(selectedItem.FullPath, ct);
-                    await Task.Run(() =>
+                    if (mode == CropMode.CreateJpeg)
                     {
-                        BitmapMetadata? metadata = null;
-                        try
+                        using var file = await FileHelpers.OpenFileWithRetryAsync(selectedItem.FullPath, ct);
+                        await Task.Run(() =>
                         {
-                            metadata = ExifHandler.LoadMetadata(file);
-                        }
-                        catch { } // Ignore if there is no supported metadata
-                        GeneralFileFormatHandler.SaveToFile(pictureSource, sourceFileName, metadata, _mainViewModel.Settings);
-                    }, ct);
-                }
-                if (mode != CropMode.CropOther)
+                            BitmapMetadata? metadata = null;
+                            try
+                            {
+                                metadata = ExifHandler.LoadMetadata(file);
+                            }
+                            catch { } // Ignore if there is no supported metadata
+                            GeneralFileFormatHandler.SaveToFile(pictureSource, sourceFileName, metadata, _mainViewModel.Settings);
+                        }, ct);
+                    }
                     await JpegTransformations.CropAsync(sourceFileName, targetFileName, cropRectangle, ct);
+                }
                 await _mainViewModel.AddOrUpdateItemAsync(targetFileName, false, true);
             }, "Cropping...");
         }
