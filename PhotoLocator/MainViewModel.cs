@@ -825,8 +825,8 @@ namespace PhotoLocator
                     var sidecarFiles = allSelected[0].GetSidecarFiles().ToArray();
                     if (sidecarFiles.Length > 0)
                     {
-                        var folderLength = Path.GetDirectoryName(allSelected[0].FullPath)?.Length + 1 ?? 0;
-                        msg += "\nIncluding sidecar files:" + $"\n{string.Join("\n", sidecarFiles.Select(f => f[folderLength..]))}";
+                        var folder = Path.GetDirectoryName(allSelected[0].FullPath) ?? string.Empty;
+                        msg += "\nIncluding sidecar files:" + $"\n{string.Join("\n", sidecarFiles.Select(f => Path.GetRelativePath(folder, f)))}";
                     }
                 }
             }
