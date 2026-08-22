@@ -91,7 +91,7 @@ namespace PhotoLocator
                     var use16bit = sourceImage.Format.BitsPerPixel is 16 or 48 or 96;
                     await Task.Run(() => GeneralFileFormatHandler.SaveToFile(
                         use16bit ? cropped.ToBitmapSource16(sourceImage.DpiX, sourceImage.DpiY, 1) : cropped.ToBitmapSource(sourceImage.DpiX, sourceImage.DpiY, 1),
-                        targetFileName, metadata, _mainViewModel.Settings), ct);
+                        targetFileName, sourceImage.Format.BitsPerPixel == 96 ? null : metadata, _mainViewModel.Settings), ct);
                 }
                 else
                 {
