@@ -58,32 +58,18 @@ namespace PhotoLocator
             }, "Rotating...");
         }
 
-        enum CropMode { CropJpeg, CropOther, CreateJpeg }
-
         public async Task CropSelectedItemAsync(BitmapSource pictureSource, Rect cropRectangle)
         {
             var selectedItem = _mainViewModel.SelectedItem;
             if (selectedItem is null || !selectedItem.IsFile)
                 return;
-            var sourceFileName = selectedItem.FullPath;
-            var targetFileName = selectedItem.GetProcessedFileName();
-            CropMode mode;
-            if (JpegTransformations.IsFileTypeSupported(selectedItem.Name))
-                mode = CropMode.CropJpeg;
-            else if (Path.GetExtension(selectedItem.Name).ToLowerInvariant() is ".tif" or ".tiff" or ".png" or ".bmp" or ".jxr")
-                mode = CropMode.CropOther;
-            else
-            {
-                sourceFileName = targetFileName = Path.ChangeExtension(targetFileName, "jpg");
-                if (File.Exists(targetFileName) && MessageBox.Show($"Do you wish to overwrite the file '{Path.GetFileName(targetFileName)}'?", "Crop", MessageBoxButton.OKCancel, MessageBoxImage.Question) != MessageBoxResult.OK)
-                    return;
-                mode = CropMode.CreateJpeg;
-            }
             await _mainViewModel.RunProcessWithProgressBarAsync(async (progressCallback, ct) =>
             {
                 progressCallback(-1);
                 await using var pause = _mainViewModel.PauseFileSystemWatcher();
-                if (mode == CropMode.CropOther)
+                var sourceFileName = selectedItem.FullPath;
+                var targetFileName = selectedItem.GetProcessedFileName(); 
+                if (Path.GetExtension(selectedItem.Name).ToLowerInvariant() is ".tif" or ".tiff" or ".png" or ".bmp" or ".jxr")
                 {
                     var (sourceImage, metadata) = await LoadImageWithMetadataAsync(selectedItem);
                     var cropped = new FloatBitmap(sourceImage, 1).CopyRect(
@@ -95,8 +81,11 @@ namespace PhotoLocator
                 }
                 else
                 {
-                    if (mode == CropMode.CreateJpeg)
+                    if (!JpegTransformations.IsFileTypeSupported(selectedItem.Name))
                     {
+                        sourceFileName = targetFileName = Path.ChangeExtension(targetFileName, "jpg");
+                        if (File.Exists(targetFileName) && MessageBox.Show($"Do you wish to overwrite the file '{Path.GetFileName(targetFileName)}'?", "Crop", MessageBoxButton.OKCancel, MessageBoxImage.Question) != MessageBoxResult.OK)
+                            return;
                         using var file = await FileHelpers.OpenFileWithRetryAsync(selectedItem.FullPath, ct);
                         await Task.Run(() =>
                         {
