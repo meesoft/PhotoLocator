@@ -6,14 +6,17 @@ namespace PhotoLocator.BitmapOperations
 {
     class ColorToneAdjustOperation : OperationBase
     {
-        public const int NumberOfTones = 8;
+        public const int NumberOfHues = 8;
+
+        public const int NumberOfTones = NumberOfHues * 2;
 
         FloatBitmap? _srcHSI;
         bool _updateSrcHsi;
 
-        public struct ToneAdjustment(float toneHue)
+        public struct ToneAdjustment(float toneHue, float toneSaturation)
         {
             public readonly float ToneHue = toneHue;
+            public readonly float ToneSaturation = toneSaturation;
             public float AdjustHue = 0;
             public float AdjustSaturation = 1;
             public float AdjustIntensity = 1;
@@ -40,8 +43,11 @@ namespace PhotoLocator.BitmapOperations
 
         public void ResetToneAdjustments()
         {
-            for (var i = 0; i < NumberOfTones; i++)
-                ToneAdjustments[i] = new ToneAdjustment((float)i / NumberOfTones);
+            for (var i = 0; i < NumberOfHues; i++)
+            {
+                ToneAdjustments[i] = new ToneAdjustment((float)i / NumberOfHues, 0.4f);
+                ToneAdjustments[i + NumberOfHues] = new ToneAdjustment((float)i / NumberOfHues, 0.8f);
+            }
         }
 
         public bool AreToneAdjustmentsChanged
@@ -186,14 +192,14 @@ namespace PhotoLocator.BitmapOperations
                         int xx = 0;
                         for (var x = 0; x < width; x++)
                         {
-                            var tone = (src[xx] - Rotation) * NumberOfTones;
+                            var tone = (src[xx] - Rotation) * NumberOfHues;
                             if (tone < 0)
-                                tone += NumberOfTones;
-                            if (tone >= NumberOfTones)
-                                tone -= NumberOfTones;
+                                tone += NumberOfHues;
+                            if (tone >= NumberOfHues)
+                                tone -= NumberOfHues;
                             var toneIndex = (int)tone;
                             var nextToneIndex = toneIndex + 1;
-                            if (nextToneIndex == NumberOfTones)
+                            if (nextToneIndex == NumberOfHues)
                                 nextToneIndex = 0;
                             var nextToneWeight = RealMath.SmoothStep(tone - toneIndex);
                             var toneWeight = 1 - nextToneWeight;

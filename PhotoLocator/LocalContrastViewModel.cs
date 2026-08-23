@@ -265,7 +265,8 @@ namespace PhotoLocator
             for (int i = 0; i < ColorToneAdjustOperation.NumberOfTones; i++)
             {
                 _colorTones[i] ??= new Rectangle() { Width = 35, Height = 12, RadiusX = 4, RadiusY = 4, Stroke = Brushes.Black };
-                ColorToneAdjustOperation.ColorTransformHSI2RGB(_colorToneOperation.ToneAdjustments[i].ToneHue + (float)ToneRotation, 0.8f, 0.5f,
+                ColorToneAdjustOperation.ColorTransformHSI2RGB(
+                    _colorToneOperation.ToneAdjustments[i].ToneHue + (float)ToneRotation, _colorToneOperation.ToneAdjustments[i].ToneSaturation, 0.5f,
                     out var r, out var g, out var b);
                 _colorTones[i].Fill = new SolidColorBrush(Color.FromRgb((byte)(r * 255), (byte)(g * 255), (byte)(b * 255)));
             }

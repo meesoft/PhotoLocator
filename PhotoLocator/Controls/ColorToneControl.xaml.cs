@@ -130,8 +130,8 @@ namespace PhotoLocator.Controls
             var rotation = _viewModel.ToneRotation;
             for (int i = 0; i < ToneAdjustments.Length; i++)
             {
-                var p1 = HS2XY(ToneAdjustments[i].ToneHue + rotation, 0.5);
-                var p2 = HS2XY(ToneAdjustments[i].ToneHue + rotation + ToneAdjustments[i].AdjustHue, 0.5 * ToneAdjustments[i].AdjustSaturation);
+                var p1 = HS2XY(ToneAdjustments[i].ToneHue + rotation, ToneAdjustments[i].ToneSaturation);
+                var p2 = HS2XY(ToneAdjustments[i].ToneHue + rotation + ToneAdjustments[i].AdjustHue, ToneAdjustments[i].ToneSaturation * ToneAdjustments[i].AdjustSaturation);
 
                 var group = new GeometryGroup();
                 group.Children.Add(new EllipseGeometry(p1, 2, 2));
@@ -187,7 +187,7 @@ namespace PhotoLocator.Controls
                     else if (h < -0.5f)
                         h += 1;
                     _viewModel.HueAdjust = h;
-                    _viewModel.SaturationAdjust = s * 2f;
+                    _viewModel.SaturationAdjust = s / ToneAdjustments[ActiveToneIndex].ToneSaturation;
                     UpdateToneControlImage();
                 }
             }
@@ -198,8 +198,8 @@ namespace PhotoLocator.Controls
                 _highlightTone = -1;
                 for (int i = 0; i < ToneAdjustments.Length; i++)
                 {
-                    var p1 = HS2XY(ToneAdjustments[i].ToneHue + rotation, 0.5);
-                    var p2 = HS2XY(ToneAdjustments[i].ToneHue + rotation + ToneAdjustments[i].AdjustHue, 0.5 * ToneAdjustments[i].AdjustSaturation);
+                    var p1 = HS2XY(ToneAdjustments[i].ToneHue + rotation, ToneAdjustments[i].ToneSaturation);
+                    var p2 = HS2XY(ToneAdjustments[i].ToneHue + rotation + ToneAdjustments[i].AdjustHue, ToneAdjustments[i].ToneSaturation * ToneAdjustments[i].AdjustSaturation);
                     var distance = SqrDistance(p1, pt);
                     if (distance < bestDistance)
                     {
