@@ -150,9 +150,10 @@ namespace PhotoLocator.BitmapOperations
                 ArrayPool<float>.Shared.Return(gammaLut);
                 ArrayPool<byte>.Shared.Return(sourcePixels);
             }
-            else if (source.Format.Masks.Count == 3 && source.Format.BitsPerPixel == 96)
+            else if (source.Format == PixelFormats.Gray32Float ||
+                source.Format.Masks.Count == 3 && source.Format.BitsPerPixel == 96)
             {
-                New(source.PixelWidth, source.PixelHeight, 3);
+                New(source.PixelWidth, source.PixelHeight, source.Format.Masks.Count);
                 var sourcePixels = new float[Height * Stride];
                 source.CopyPixels(sourcePixels, Stride * 4, 0);
                 unsafe
