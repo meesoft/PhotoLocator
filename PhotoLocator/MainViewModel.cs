@@ -742,6 +742,13 @@ namespace PhotoLocator
                 SelectIfNotNull(previous);
         });
 
+        public ICommand OrderByCommand => new RelayCommand(o =>
+        {
+            using var cursor = new MouseCursorOverride();
+            Items.SortOrder = o as ItemSortOrder? ?? ItemSortOrder.Name;
+            SelectIfNotNull(SelectedItem);
+        });
+
         public ICommand SetFilterCommand => new RelayCommand(o =>
         {
             var filter = TextInputWindow.Show("Items containing the filter text will be listed first.", query =>
@@ -754,7 +761,7 @@ namespace PhotoLocator
                     SelectIfNotNull(firstMatch);
                     return true;
                 },  
-                "Filter", Items.FilterText);
+                "Filter by name", Items.FilterText);
             if (filter is null)
                 return;
             using var cursor = new MouseCursorOverride();
@@ -1349,6 +1356,8 @@ namespace PhotoLocator
             }
             while (_loadPicturesPending && !ct.IsCancellationRequested);
             Log.Write($"Loaded thumbnails and metadata in {sw.Elapsed.TotalSeconds} s");
+            if (Items.SortOrder == ItemSortOrder.ImageTimestamp)
+                Items.Sort();
         }
 
         private static void AssertInMainThread()

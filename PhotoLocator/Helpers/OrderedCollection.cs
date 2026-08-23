@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.IO;
 using System.Linq;
 
 namespace PhotoLocator.Helpers
@@ -33,6 +34,19 @@ namespace PhotoLocator.Helpers
             Clear();
             foreach (var item in list)
                 Add(item);
+        }
+
+        public ItemSortOrder SortOrder
+        { 
+            get;
+            set
+            {
+                if (value != field)
+                {
+                    field = value;
+                    Sort();
+                }
+            }
         }
 
         public string? FilterText 
@@ -77,10 +91,33 @@ namespace PhotoLocator.Helpers
                 if (yContainsFilter && !xContainsFilter)
                     return 1;
             }
+            if (SortOrder == ItemSortOrder.ImageTimestamp)
+            {
+                if (x.TimeStamp.HasValue && !y.TimeStamp.HasValue)
+                    return -1;
+                if (y.TimeStamp.HasValue && !x.TimeStamp.HasValue)
+                    return 1;
+                var compareTimeStamp = Nullable.Compare(x.TimeStamp, y.TimeStamp);
+                if (compareTimeStamp != 0)
+                    return compareTimeStamp;
+            }
+            else if (SortOrder == ItemSortOrder.FileModifiedTimestamp)
+            {
+                var compareFileModified = File.GetLastWriteTime(x.FullPath).CompareTo(File.GetLastWriteTime(y.FullPath));
+                if (compareFileModified != 0)
+                    return compareFileModified;
+            }
             var compareName = string.Compare(x.Name, y.Name, StringComparison.CurrentCultureIgnoreCase);
             if (compareName != 0)
                 return compareName;
             return string.Compare(x.FullPath, y.FullPath, StringComparison.CurrentCultureIgnoreCase);
         }
+    }
+
+    public enum ItemSortOrder
+    {
+        Name,
+        ImageTimestamp,
+        FileModifiedTimestamp,
     }
 }

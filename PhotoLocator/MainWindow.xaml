@@ -5,6 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:map="clr-namespace:MapControl;assembly=MapControl.WPF"
         xmlns:local="clr-namespace:PhotoLocator" 
+        xmlns:helpers="clr-namespace:PhotoLocator.Helpers"
         xmlns:mapDisplay="clr-namespace:PhotoLocator.MapDisplay"
         xmlns:controls="clr-namespace:PhotoLocator.Controls"
         mc:Ignorable="d"
@@ -177,7 +178,16 @@
                                 <TextBlock FontFamily="Segoe MDL2 Assets" Text="&#xE721;" FontSize="14" />
                             </MenuItem.Icon>
                         </MenuItem>
-                        <MenuItem Header="Filter (Ctrl+F6)" Command="{Binding SetFilterCommand}">
+                    </MenuItem>
+                    <MenuItem Header="Order by">
+                        <MenuItem.Icon>
+                            <TextBlock FontFamily="Segoe MDL2 Assets" Text="&#xE8CB;" FontSize="14" />
+                        </MenuItem.Icon>
+                        <MenuItem Header="Name" Command="{Binding OrderByCommand}" CommandParameter="{x:Static helpers:ItemSortOrder.Name}" />
+                        <MenuItem Header="Image timestamp" Command="{Binding OrderByCommand}" CommandParameter="{x:Static helpers:ItemSortOrder.ImageTimestamp}" />
+                        <MenuItem Header="File timestamp" Command="{Binding OrderByCommand}" CommandParameter="{x:Static helpers:ItemSortOrder.FileModifiedTimestamp}" />
+                        <Separator />
+                        <MenuItem Header="Filter by name (Ctrl+F6)" Command="{Binding SetFilterCommand}">
                             <MenuItem.Icon>
                                 <TextBlock FontFamily="Segoe MDL2 Assets" Text="&#xE71C;" FontSize="14" />
                             </MenuItem.Icon>
