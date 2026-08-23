@@ -685,7 +685,7 @@ namespace PhotoLocator
             var sunPos = CelestialCalculator.GetSunPosition(_sunAndMoonMapCenter, sunAndMoonTimeUtc);
             AddLineSeg(sunPos.Azimuth, sunPos.Altitude > 0 ? Colors.Orange : Colors.OrangeRed, $"Sun at {sunAndMoonTimeLocal}:\nAzimuth: {sunPos.Azimuth:F0}°, altitude {sunPos.Altitude:F0}°");
 
-            var moon = CelestialCalculator.GetMoonRiseSet(_sunAndMoonMapCenter, sunAndMoonTimeLocal);
+            var moon = CelestialCalculator.GetMoonRiseSet(_sunAndMoonMapCenter, sunAndMoonTimeUtc);
             if (moon.Moonrise.HasValue)
                 AddLineSeg(moon.RiseAzimuth!.Value, Colors.LightGray, $"Moonrise: {moon.Moonrise.Value.ToLocalTime()}\n{moon.RiseIllumination * 100:F0}%, azimuth: {moon.RiseAzimuth:F0}°");
             if (moon.Moonset.HasValue)
