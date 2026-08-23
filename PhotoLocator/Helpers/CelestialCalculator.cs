@@ -43,7 +43,7 @@ namespace PhotoLocator.Helpers
         public static (DateTime? Moonrise, double? RiseAzimuth, double? RiseIllumination, DateTime? Moonset, double? SetAzimuth, double? SetIllumination) GetMoonRiseSet(
             Location location, DateTime date)
         {
-            var times = MoonCalc.GetMoonPhase(date, location.Latitude, location.Longitude);
+            var times = MoonCalc.GetMoonPhase(date.ToUniversalTime(), location.Latitude, location.Longitude);
             var moonrise = times.Rise;
             var moonset = times.Set;
 

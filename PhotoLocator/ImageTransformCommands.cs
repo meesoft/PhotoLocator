@@ -1,4 +1,5 @@
 ﻿using Microsoft.Win32;
+using PhotoLocator.BitmapOperations;
 using PhotoLocator.Helpers;
 using PhotoLocator.Metadata;
 using PhotoLocator.PictureFileFormats;
@@ -62,37 +63,44 @@ namespace PhotoLocator
             var selectedItem = _mainViewModel.SelectedItem;
             if (selectedItem is null || !selectedItem.IsFile)
                 return;
-            string sourceFileName, targetFileName;
-            if (JpegTransformations.IsFileTypeSupported(selectedItem.Name))
-            {
-                sourceFileName = selectedItem.FullPath;
-                targetFileName = selectedItem.GetProcessedFileName();
-            }
-            else
-            {
-                sourceFileName = targetFileName = Path.ChangeExtension(selectedItem.GetProcessedFileName(), "jpg");
-                if (File.Exists(sourceFileName) && MessageBox.Show($"Do you wish to overwrite the file '{Path.GetFileName(sourceFileName)}'?", "Crop", MessageBoxButton.OKCancel, MessageBoxImage.Question) != MessageBoxResult.OK)
-                    return;
-            }
             await _mainViewModel.RunProcessWithProgressBarAsync(async (progressCallback, ct) =>
             {
                 progressCallback(-1);
                 await using var pause = _mainViewModel.PauseFileSystemWatcher();
-                if (sourceFileName != selectedItem.FullPath)
+                var sourceFileName = selectedItem.FullPath;
+                var targetFileName = selectedItem.GetProcessedFileName(); 
+                if (Path.GetExtension(selectedItem.Name).ToLowerInvariant() is ".tif" or ".tiff" or ".png" or ".bmp" or ".jxr")
                 {
-                    using var file = await FileHelpers.OpenFileWithRetryAsync(selectedItem.FullPath, ct);
-                    await Task.Run(() =>
-                    {
-                        BitmapMetadata? metadata = null;
-                        try
-                        {
-                            metadata = ExifHandler.LoadMetadata(file);
-                        }
-                        catch { } // Ignore if there is no supported metadata
-                        GeneralFileFormatHandler.SaveToFile(pictureSource, sourceFileName, metadata, _mainViewModel.Settings);
-                    }, ct);
+                    var (sourceImage, metadata) = await LoadImageWithMetadataAsync(selectedItem);
+                    var cropped = new FloatBitmap(sourceImage, 1).CopyRect(
+                        IntMath.Round(cropRectangle.Left), IntMath.Round(cropRectangle.Top), Math.Max(1, IntMath.Round(cropRectangle.Width)), Math.Max(1, IntMath.Round(cropRectangle.Height)));
+                    var use16bit = sourceImage.Format == PixelFormats.Gray16 || sourceImage.Format == PixelFormats.Gray32Float || 
+                        sourceImage.Format == PixelFormats.Rgb48 || sourceImage.Format.BitsPerPixel == 96;
+                    await Task.Run(() => GeneralFileFormatHandler.SaveToFile(
+                        use16bit ? cropped.ToBitmapSource16(sourceImage.DpiX, sourceImage.DpiY, 1) : cropped.ToBitmapSource(sourceImage.DpiX, sourceImage.DpiY, 1),
+                        targetFileName, sourceImage.Format.BitsPerPixel == 96 ? null : metadata, _mainViewModel.Settings), ct);
                 }
-                await JpegTransformations.CropAsync(sourceFileName, targetFileName, cropRectangle, ct);
+                else
+                {
+                    if (!JpegTransformations.IsFileTypeSupported(selectedItem.Name))
+                    {
+                        sourceFileName = targetFileName = Path.ChangeExtension(targetFileName, "jpg");
+                        if (File.Exists(targetFileName) && MessageBox.Show($"Do you wish to overwrite the file '{Path.GetFileName(targetFileName)}'?", "Crop", MessageBoxButton.OKCancel, MessageBoxImage.Question) != MessageBoxResult.OK)
+                            return;
+                        using var file = await FileHelpers.OpenFileWithRetryAsync(selectedItem.FullPath, ct);
+                        await Task.Run(() =>
+                        {
+                            BitmapMetadata? metadata = null;
+                            try
+                            {
+                                metadata = ExifHandler.LoadMetadata(file);
+                            }
+                            catch { } // Ignore if there is no supported metadata
+                            GeneralFileFormatHandler.SaveToFile(pictureSource, sourceFileName, metadata, _mainViewModel.Settings);
+                        }, ct);
+                    }
+                    await JpegTransformations.CropAsync(sourceFileName, targetFileName, cropRectangle, ct);
+                }
                 await _mainViewModel.AddOrUpdateItemAsync(targetFileName, false, true);
             }, "Cropping...");
         }
