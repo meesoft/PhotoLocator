@@ -73,7 +73,7 @@ namespace PhotoLocator
                 {
                     var (sourceImage, metadata) = await LoadImageWithMetadataAsync(selectedItem);
                     var cropped = new FloatBitmap(sourceImage, 1).CopyRect(
-                        IntMath.Round(cropRectangle.Left), IntMath.Round(cropRectangle.Top), IntMath.Round(cropRectangle.Width), IntMath.Round(cropRectangle.Height));
+                        IntMath.Round(cropRectangle.Left), IntMath.Round(cropRectangle.Top), Math.Max(1, IntMath.Round(cropRectangle.Width)), Math.Max(1, IntMath.Round(cropRectangle.Height)));
                     var use16bit = sourceImage.Format.BitsPerPixel is 16 or 48 or 96;
                     await Task.Run(() => GeneralFileFormatHandler.SaveToFile(
                         use16bit ? cropped.ToBitmapSource16(sourceImage.DpiX, sourceImage.DpiY, 1) : cropped.ToBitmapSource(sourceImage.DpiX, sourceImage.DpiY, 1),

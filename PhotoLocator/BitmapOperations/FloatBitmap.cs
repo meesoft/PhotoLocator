@@ -223,7 +223,7 @@ namespace PhotoLocator.BitmapOperations
 
         public FloatBitmap CopyRect(int left, int top, int width, int height)
         {
-            if (left < 0 || left + width > Width || top < 0 || top + height > Height)
+            if (left < 0 || left + width > Width || top < 0 || top + height > Height || width <= 0 || height <= 0)
                 throw new ArgumentException("Rectangle out of bounds");
             var result = new FloatBitmap(width, height, PlaneCount);
             unsafe
