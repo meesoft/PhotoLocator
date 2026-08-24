@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.ComponentModel;
 using System.IO;
 using System.Linq;
 
@@ -27,7 +28,7 @@ namespace PhotoLocator.Helpers
             return ~min;
         }
 
-        internal void Sort()
+        public void Sort()
         {
             var list = Items.ToList();
             list.Sort(this);
@@ -45,6 +46,7 @@ namespace PhotoLocator.Helpers
                 {
                     field = value;
                     Sort();
+                    OnPropertyChanged(new PropertyChangedEventArgs(nameof(SortOrder)));
                 }
             }
         }
@@ -67,6 +69,12 @@ namespace PhotoLocator.Helpers
         /// <summary> Return new item or existing item if one with the same name and path already exists </summary>
         public PictureItemViewModel InsertOrdered(PictureItemViewModel item)
         {
+            if (SortOrder != ItemSortOrder.Name)
+            {
+                var existing = Items.FirstOrDefault(i => string.Equals(i.FullPath, item.FullPath, StringComparison.CurrentCultureIgnoreCase));
+                if (existing is not null)
+                    return existing;
+            }
             var index = BinarySearch(item);
             if (index >= 0)
                 return Items[index];
