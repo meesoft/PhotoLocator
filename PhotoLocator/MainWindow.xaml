@@ -22,6 +22,7 @@
 
     <Window.Resources>
         <BooleanToVisibilityConverter x:Key="BooleanToVisibility" />
+        <helpers:ComparisonConverter x:Key="ComparisonConverter" />
     </Window.Resources>
 
     <Window.InputBindings>
@@ -183,9 +184,21 @@
                         <MenuItem.Icon>
                             <TextBlock FontFamily="Segoe MDL2 Assets" Text="&#xE8CB;" FontSize="14" />
                         </MenuItem.Icon>
-                        <MenuItem Header="Name" Command="{Binding OrderByCommand}" CommandParameter="{x:Static helpers:ItemSortOrder.Name}" />
-                        <MenuItem Header="Image timestamp" Command="{Binding OrderByCommand}" CommandParameter="{x:Static helpers:ItemSortOrder.ImageTimestamp}" />
-                        <MenuItem Header="File timestamp" Command="{Binding OrderByCommand}" CommandParameter="{x:Static helpers:ItemSortOrder.FileModifiedTimestamp}" />
+                        <MenuItem Header="Name" Command="{Binding OrderByCommand}" CommandParameter="{x:Static helpers:ItemSortOrder.Name}" IsCheckable="True">
+                            <MenuItem.IsChecked>
+                                <Binding Path="PlacementTarget.DataContext.Items.SortOrder" RelativeSource="{RelativeSource AncestorType=ContextMenu}" Converter="{StaticResource ComparisonConverter}" ConverterParameter="{x:Static helpers:ItemSortOrder.Name}" />
+                            </MenuItem.IsChecked>
+                        </MenuItem>
+                        <MenuItem Header="Image timestamp" Command="{Binding OrderByCommand}" CommandParameter="{x:Static helpers:ItemSortOrder.ImageTimestamp}" IsCheckable="True">
+                            <MenuItem.IsChecked>
+                                <Binding Path="PlacementTarget.DataContext.Items.SortOrder" RelativeSource="{RelativeSource AncestorType=ContextMenu}" Converter="{StaticResource ComparisonConverter}" ConverterParameter="{x:Static helpers:ItemSortOrder.ImageTimestamp}" />
+                            </MenuItem.IsChecked>
+                        </MenuItem>
+                        <MenuItem Header="File timestamp" Command="{Binding OrderByCommand}" CommandParameter="{x:Static helpers:ItemSortOrder.FileModifiedTimestamp}" IsCheckable="True">
+                            <MenuItem.IsChecked>
+                                <Binding Path="PlacementTarget.DataContext.Items.SortOrder" RelativeSource="{RelativeSource AncestorType=ContextMenu}" Converter="{StaticResource ComparisonConverter}" ConverterParameter="{x:Static helpers:ItemSortOrder.FileModifiedTimestamp}" />
+                            </MenuItem.IsChecked>
+                        </MenuItem>
                         <Separator />
                         <MenuItem Header="Filter by name (Ctrl+F6)" Command="{Binding SetFilterCommand}">
                             <MenuItem.Icon>
