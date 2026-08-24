@@ -1314,7 +1314,7 @@ namespace PhotoLocator
                 }
             }
         }
-        
+
         public async Task LoadPicturesAsync()
         {
             AssertInMainThread();
@@ -1357,7 +1357,10 @@ namespace PhotoLocator
             while (_loadPicturesPending && !ct.IsCancellationRequested);
             Log.Write($"Loaded thumbnails and metadata in {sw.Elapsed.TotalSeconds} s");
             if (Items.SortOrder == ItemSortOrder.ImageTimestamp)
+            {
                 Items.Sort();
+                SelectIfNotNull(SelectedItem);
+            }
         }
 
         private static void AssertInMainThread()

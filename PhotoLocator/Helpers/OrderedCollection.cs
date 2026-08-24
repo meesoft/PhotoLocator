@@ -116,8 +116,8 @@ namespace PhotoLocator.Helpers
 
     public enum ItemSortOrder
     {
-        Name,
-        ImageTimestamp,
-        FileModifiedTimestamp,
+        Name = 0,
+        ImageTimestamp = 1,
+        FileModifiedTimestamp = 2,
     }
 }

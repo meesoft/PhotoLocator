@@ -67,6 +67,7 @@ namespace PhotoLocator
                 ViewMode.Split => SplitViewItem,
                 _ => MapViewItem
             };
+            _viewModel.Items.SortOrder = registrySettings.SortOrder;
 
             var args = Environment.GetCommandLineArgs();
             if (args.Length > 1 && File.Exists(args[1]))
@@ -129,6 +130,7 @@ namespace PhotoLocator
             registrySettings.ViewMode = _viewModel.SelectedViewModeItem?.Tag as ViewMode? ?? ViewMode.Map;
             registrySettings.LeftColumnWidth = (int)LeftColumn.Width.Value;
             registrySettings.SelectedLayer = GetSelectedMapLayerName();
+            registrySettings.SortOrder = _viewModel.Items.SortOrder;
             _viewModel.Dispose();
         }
 
