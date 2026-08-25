@@ -99,7 +99,16 @@ namespace PhotoLocator.Helpers
                 if (yContainsFilter && !xContainsFilter)
                     return 1;
             }
-            if (SortOrder == ItemSortOrder.ImageTimestamp)
+            if (SortOrder == ItemSortOrder.FileSize)
+            {
+                if (x.IsFile && y.IsFile)
+                {
+                    var compareFileSize = new FileInfo(x.FullPath).Length.CompareTo(new FileInfo(y.FullPath).Length);
+                    if (compareFileSize != 0)
+                        return compareFileSize;
+                }
+            }
+            else if (SortOrder == ItemSortOrder.ImageTimestamp)
             {
                 if (x.TimeStamp.HasValue && !y.TimeStamp.HasValue)
                     return -1;
@@ -125,7 +134,8 @@ namespace PhotoLocator.Helpers
     public enum ItemSortOrder
     {
         Name = 0,
-        ImageTimestamp = 1,
-        FileModifiedTimestamp = 2,
+        FileSize = 1,
+        ImageTimestamp = 2,
+        FileModifiedTimestamp = 3,
     }
 }

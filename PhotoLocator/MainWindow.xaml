@@ -47,6 +47,10 @@
         <KeyBinding Key="F2" Command="{Binding RenameCommand}" />
         <KeyBinding Key="F3" Command="{Binding SlideShowCommand}" />
         <KeyBinding Key="F5" Command="{Binding CopySelectedCommand}" />
+        <KeyBinding Key="F1" Modifiers="Ctrl" Command="{Binding OrderByCommand}" CommandParameter="{x:Static helpers:ItemSortOrder.Name}" />
+        <KeyBinding Key="F2" Modifiers="Ctrl" Command="{Binding OrderByCommand}" CommandParameter="{x:Static helpers:ItemSortOrder.FileSize}" />
+        <KeyBinding Key="F3" Modifiers="Ctrl" Command="{Binding OrderByCommand}" CommandParameter="{x:Static helpers:ItemSortOrder.ImageTimestamp}" />
+        <KeyBinding Key="F4" Modifiers="Ctrl" Command="{Binding OrderByCommand}" CommandParameter="{x:Static helpers:ItemSortOrder.FileModifiedTimestamp}" />
         <KeyBinding Key="F5" Modifiers="Ctrl" Command="{Binding RefreshFolderCommand}" />
         <KeyBinding Key="F6" Command="{Binding MoveSelectedCommand}" />
         <KeyBinding Key="F6" Modifiers="Ctrl" Command="{Binding SetFilterCommand}" />
@@ -129,8 +133,6 @@
                     ToolTip="Open in Google maps" Width="32" />
             <Button Content="&#xE74D;" FontFamily="Segoe MDL2 Assets" FontSize="18" Command="{Binding DeleteSelectedCommand}"
                     ToolTip="Delete files (Del)" Width="32" />
-
-
             <Button Content="&#xE768;" FontFamily="Segoe MDL2 Assets" FontSize="18" Command="{Binding SlideShowCommand}"
                     ToolTip="Full screen slide show with map (F3)" Width="32" />
             <Button Content="&#xE721;" FontFamily="Segoe MDL2 Assets" FontSize="18" Command="{Binding QuickSearchCommand}"
@@ -184,17 +186,22 @@
                         <MenuItem.Icon>
                             <TextBlock FontFamily="Segoe MDL2 Assets" Text="&#xE8CB;" FontSize="14" />
                         </MenuItem.Icon>
-                        <MenuItem Header="Name" Command="{Binding OrderByCommand}" CommandParameter="{x:Static helpers:ItemSortOrder.Name}" IsCheckable="True">
+                        <MenuItem Header="Name (Ctrl+F1)" Command="{Binding OrderByCommand}" CommandParameter="{x:Static helpers:ItemSortOrder.Name}" IsCheckable="True">
                             <MenuItem.IsChecked>
                                 <Binding Path="PlacementTarget.DataContext.Items.SortOrder" RelativeSource="{RelativeSource AncestorType=ContextMenu}" Converter="{StaticResource ComparisonConverter}" ConverterParameter="{x:Static helpers:ItemSortOrder.Name}" />
                             </MenuItem.IsChecked>
                         </MenuItem>
-                        <MenuItem Header="Image timestamp" Command="{Binding OrderByCommand}" CommandParameter="{x:Static helpers:ItemSortOrder.ImageTimestamp}" IsCheckable="True">
+                        <MenuItem Header="File size (Ctrl+F2)" Command="{Binding OrderByCommand}" CommandParameter="{x:Static helpers:ItemSortOrder.FileSize}" IsCheckable="True">
+                            <MenuItem.IsChecked>
+                                <Binding Path="PlacementTarget.DataContext.Items.SortOrder" RelativeSource="{RelativeSource AncestorType=ContextMenu}" Converter="{StaticResource ComparisonConverter}" ConverterParameter="{x:Static helpers:ItemSortOrder.FileSize}" />
+                            </MenuItem.IsChecked>
+                        </MenuItem>
+                        <MenuItem Header="Image timestamp (Ctrl+F3)" Command="{Binding OrderByCommand}" CommandParameter="{x:Static helpers:ItemSortOrder.ImageTimestamp}" IsCheckable="True">
                             <MenuItem.IsChecked>
                                 <Binding Path="PlacementTarget.DataContext.Items.SortOrder" RelativeSource="{RelativeSource AncestorType=ContextMenu}" Converter="{StaticResource ComparisonConverter}" ConverterParameter="{x:Static helpers:ItemSortOrder.ImageTimestamp}" />
                             </MenuItem.IsChecked>
                         </MenuItem>
-                        <MenuItem Header="File timestamp" Command="{Binding OrderByCommand}" CommandParameter="{x:Static helpers:ItemSortOrder.FileModifiedTimestamp}" IsCheckable="True">
+                        <MenuItem Header="File timestamp (Ctrl+F4)" Command="{Binding OrderByCommand}" CommandParameter="{x:Static helpers:ItemSortOrder.FileModifiedTimestamp}" IsCheckable="True">
                             <MenuItem.IsChecked>
                                 <Binding Path="PlacementTarget.DataContext.Items.SortOrder" RelativeSource="{RelativeSource AncestorType=ContextMenu}" Converter="{StaticResource ComparisonConverter}" ConverterParameter="{x:Static helpers:ItemSortOrder.FileModifiedTimestamp}" />
                             </MenuItem.IsChecked>
