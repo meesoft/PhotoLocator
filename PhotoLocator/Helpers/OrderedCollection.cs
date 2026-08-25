@@ -102,11 +102,13 @@ namespace PhotoLocator.Helpers
             if (SortOrder == ItemSortOrder.FileSize)
             {
                 if (x.IsFile && y.IsFile)
-                {
-                    var compareFileSize = new FileInfo(x.FullPath).Length.CompareTo(new FileInfo(y.FullPath).Length);
-                    if (compareFileSize != 0)
-                        return compareFileSize;
-                }
+                    try
+                    {
+                        var compareFileSize = new FileInfo(x.FullPath).Length.CompareTo(new FileInfo(y.FullPath).Length);
+                        if (compareFileSize != 0)
+                            return compareFileSize;
+                    }
+                    catch { } // Ignore exceptions when accessing file
             }
             else if (SortOrder == ItemSortOrder.ImageTimestamp)
             {
@@ -120,9 +122,12 @@ namespace PhotoLocator.Helpers
             }
             else if (SortOrder == ItemSortOrder.FileModifiedTimestamp)
             {
-                var compareFileModified = File.GetLastWriteTime(x.FullPath).CompareTo(File.GetLastWriteTime(y.FullPath));
-                if (compareFileModified != 0)
-                    return compareFileModified;
+                try
+                {
+                    var compareFileModified = File.GetLastWriteTime(x.FullPath).CompareTo(File.GetLastWriteTime(y.FullPath));
+                    if (compareFileModified != 0)
+                        return compareFileModified;
+                } catch { } // Ignore exceptions when accessing file
             }
             var compareName = string.Compare(x.Name, y.Name, StringComparison.CurrentCultureIgnoreCase);
             if (compareName != 0)
