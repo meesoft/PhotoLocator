@@ -5,6 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:map="clr-namespace:MapControl;assembly=MapControl.WPF"
         xmlns:local="clr-namespace:PhotoLocator" 
+        xmlns:helpers="clr-namespace:PhotoLocator.Helpers"
         xmlns:mapDisplay="clr-namespace:PhotoLocator.MapDisplay"
         xmlns:controls="clr-namespace:PhotoLocator.Controls"
         mc:Ignorable="d"
@@ -21,6 +22,7 @@
 
     <Window.Resources>
         <BooleanToVisibilityConverter x:Key="BooleanToVisibility" />
+        <helpers:ComparisonConverter x:Key="ComparisonConverter" />
     </Window.Resources>
 
     <Window.InputBindings>
@@ -45,6 +47,10 @@
         <KeyBinding Key="F2" Command="{Binding RenameCommand}" />
         <KeyBinding Key="F3" Command="{Binding SlideShowCommand}" />
         <KeyBinding Key="F5" Command="{Binding CopySelectedCommand}" />
+        <KeyBinding Key="F1" Modifiers="Ctrl" Command="{Binding OrderByCommand}" CommandParameter="{x:Static helpers:ItemSortOrder.Name}" />
+        <KeyBinding Key="F2" Modifiers="Ctrl" Command="{Binding OrderByCommand}" CommandParameter="{x:Static helpers:ItemSortOrder.FileSize}" />
+        <KeyBinding Key="F3" Modifiers="Ctrl" Command="{Binding OrderByCommand}" CommandParameter="{x:Static helpers:ItemSortOrder.ImageTimestamp}" />
+        <KeyBinding Key="F4" Modifiers="Ctrl" Command="{Binding OrderByCommand}" CommandParameter="{x:Static helpers:ItemSortOrder.FileModifiedTimestamp}" />
         <KeyBinding Key="F5" Modifiers="Ctrl" Command="{Binding RefreshFolderCommand}" />
         <KeyBinding Key="F6" Command="{Binding MoveSelectedCommand}" />
         <KeyBinding Key="F6" Modifiers="Ctrl" Command="{Binding SetFilterCommand}" />
@@ -127,8 +133,6 @@
                     ToolTip="Open in Google maps" Width="32" />
             <Button Content="&#xE74D;" FontFamily="Segoe MDL2 Assets" FontSize="18" Command="{Binding DeleteSelectedCommand}"
                     ToolTip="Delete files (Del)" Width="32" />
-
-
             <Button Content="&#xE768;" FontFamily="Segoe MDL2 Assets" FontSize="18" Command="{Binding SlideShowCommand}"
                     ToolTip="Full screen slide show with map (F3)" Width="32" />
             <Button Content="&#xE721;" FontFamily="Segoe MDL2 Assets" FontSize="18" Command="{Binding QuickSearchCommand}"
@@ -177,7 +181,33 @@
                                 <TextBlock FontFamily="Segoe MDL2 Assets" Text="&#xE721;" FontSize="14" />
                             </MenuItem.Icon>
                         </MenuItem>
-                        <MenuItem Header="Filter (Ctrl+F6)" Command="{Binding SetFilterCommand}">
+                    </MenuItem>
+                    <MenuItem Header="Order by">
+                        <MenuItem.Icon>
+                            <TextBlock FontFamily="Segoe MDL2 Assets" Text="&#xE8CB;" FontSize="14" />
+                        </MenuItem.Icon>
+                        <MenuItem Header="Name (Ctrl+F1)" Command="{Binding OrderByCommand}" CommandParameter="{x:Static helpers:ItemSortOrder.Name}" IsCheckable="True">
+                            <MenuItem.IsChecked>
+                                <Binding Path="PlacementTarget.DataContext.Items.SortOrder" RelativeSource="{RelativeSource AncestorType=ContextMenu}" Converter="{StaticResource ComparisonConverter}" ConverterParameter="{x:Static helpers:ItemSortOrder.Name}" />
+                            </MenuItem.IsChecked>
+                        </MenuItem>
+                        <MenuItem Header="File size (Ctrl+F2)" Command="{Binding OrderByCommand}" CommandParameter="{x:Static helpers:ItemSortOrder.FileSize}" IsCheckable="True">
+                            <MenuItem.IsChecked>
+                                <Binding Path="PlacementTarget.DataContext.Items.SortOrder" RelativeSource="{RelativeSource AncestorType=ContextMenu}" Converter="{StaticResource ComparisonConverter}" ConverterParameter="{x:Static helpers:ItemSortOrder.FileSize}" />
+                            </MenuItem.IsChecked>
+                        </MenuItem>
+                        <MenuItem Header="Image timestamp (Ctrl+F3)" Command="{Binding OrderByCommand}" CommandParameter="{x:Static helpers:ItemSortOrder.ImageTimestamp}" IsCheckable="True">
+                            <MenuItem.IsChecked>
+                                <Binding Path="PlacementTarget.DataContext.Items.SortOrder" RelativeSource="{RelativeSource AncestorType=ContextMenu}" Converter="{StaticResource ComparisonConverter}" ConverterParameter="{x:Static helpers:ItemSortOrder.ImageTimestamp}" />
+                            </MenuItem.IsChecked>
+                        </MenuItem>
+                        <MenuItem Header="File timestamp (Ctrl+F4)" Command="{Binding OrderByCommand}" CommandParameter="{x:Static helpers:ItemSortOrder.FileModifiedTimestamp}" IsCheckable="True">
+                            <MenuItem.IsChecked>
+                                <Binding Path="PlacementTarget.DataContext.Items.SortOrder" RelativeSource="{RelativeSource AncestorType=ContextMenu}" Converter="{StaticResource ComparisonConverter}" ConverterParameter="{x:Static helpers:ItemSortOrder.FileModifiedTimestamp}" />
+                            </MenuItem.IsChecked>
+                        </MenuItem>
+                        <Separator />
+                        <MenuItem Header="Filter by name (Ctrl+F6)" Command="{Binding SetFilterCommand}">
                             <MenuItem.Icon>
                                 <TextBlock FontFamily="Segoe MDL2 Assets" Text="&#xE71C;" FontSize="14" />
                             </MenuItem.Icon>

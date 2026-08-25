@@ -1,4 +1,5 @@
 ﻿using Microsoft.Win32;
+using PhotoLocator.Helpers;
 using PhotoLocator.PictureFileFormats;
 using System;
 using System.Windows.Media;
@@ -151,6 +152,12 @@ namespace PhotoLocator.Settings
         {
             get => Key.GetValue(nameof(CropRatioDenominator)) as int? ?? 0;
             set => Key.SetValue(nameof(CropRatioDenominator), value);
+        }
+
+        public ItemSortOrder SortOrder
+        {
+            get => (ItemSortOrder)(Key.GetValue(nameof(SortOrder)) as int? ?? 0);
+            set => Key.SetValue(nameof(SortOrder), (int)value);
         }
 
         public void Dispose()

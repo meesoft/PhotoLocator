@@ -467,11 +467,12 @@ namespace PhotoLocator
             ProgressBarText = text;
             IsProgressBarVisible = true;
             IsWindowEnabled = false;
-            _processCancellation = new CancellationTokenSource();
             bool completed = false;
+            _processCancellation = new CancellationTokenSource();
             var ct = _processCancellation.Token;
             try
             {
+                focusItem ??= SelectedItem;
                 await body(progress =>
                 {
                     ct.ThrowIfCancellationRequested();
@@ -479,19 +480,21 @@ namespace PhotoLocator
                     ProgressBarValue = Math.Max(ProgressBarValue, progress);
                 }, ct);
                 completed = true;
+                if (focusItem != null && Items.IndexOf(focusItem) < 0)
+                {
+                    await SelectFileAsync(focusItem.FullPath);
+                    focusItem = null;
+                }
             }
             finally
             {
                 IsWindowEnabled = true;
                 IsProgressBarVisible = false;
                 TaskbarProgressState = completed ? TaskbarItemProgressState.None : TaskbarItemProgressState.Error;
-                if (focusItem is not null)
-                    SelectIfNotNull(focusItem);
-                else
-                    SelectIfNotNull(SelectedItem);
                 await _processCancellation.CancelAsync();
                 _processCancellation.Dispose();
                 _processCancellation = null;
+                SelectIfNotNull(focusItem);
             }
         }
 
@@ -547,18 +550,17 @@ namespace PhotoLocator
             var selectedItems = GetSelectedItems(false).ToArray();
             if (selectedItems.Length == 0)
                 return;
-            var focused = SelectedItem;
+            var selectedItem = SelectedItem!;
             if (selectedItems.Any(i => i.ThumbnailImage is null))
                 await WaitForPicturesLoadedAsync();
-            var renameWin = new RenameWindow(selectedItems, Items, focused!, Settings);
+            var renameWin = new RenameWindow(selectedItems, Items, selectedItem, Settings);
             renameWin.Owner = App.Current.MainWindow;
             renameWin.DataContext = renameWin;
             await using (PauseFileSystemWatcher())
                 renameWin.ShowDialog();
             renameWin.DataContext = null;
             _pictureCache.Clear();
-            if (focused != null)
-                FocusListBoxItem?.Invoke(focused);
+            FocusListBoxItem?.Invoke(selectedItem);
             UpdatePreviewPictureAsync().WithExceptionLogging();
             UpdatePushpins();
             UpdatePoints();
@@ -742,6 +744,14 @@ namespace PhotoLocator
                 SelectIfNotNull(previous);
         });
 
+        public ICommand OrderByCommand => new RelayCommand(o =>
+        {
+            using var cursor = new MouseCursorOverride();
+            var selectedItem = SelectedItem;
+            Items.SortOrder = o as ItemSortOrder? ?? ItemSortOrder.Name;
+            SelectIfNotNull(selectedItem);
+        });
+
         public ICommand SetFilterCommand => new RelayCommand(o =>
         {
             var filter = TextInputWindow.Show("Items containing the filter text will be listed first.", query =>
@@ -754,7 +764,7 @@ namespace PhotoLocator
                     SelectIfNotNull(firstMatch);
                     return true;
                 },  
-                "Filter", Items.FilterText);
+                "Filter by name", Items.FilterText);
             if (filter is null)
                 return;
             using var cursor = new MouseCursorOverride();
@@ -834,7 +844,6 @@ namespace PhotoLocator
                 msg = $"Delete {allSelected.Length} selected items?" + (Settings.IncludeSidecarFiles ? "\nSidecar files will be included." : string.Empty);
             if (MessageBox.Show(msg, "Confirm", MessageBoxButton.OKCancel, MessageBoxImage.Question) != MessageBoxResult.OK)
                 return;
-            var selectedIndex = Items.IndexOf(SelectedItem!);
             SelectedItem = null;
             await using var pause = PauseFileSystemWatcher();
             await RunProcessWithProgressBarAsync((progressCallback, ct) => Task.Run(() =>
@@ -1022,7 +1031,6 @@ namespace PhotoLocator
                             Settings.ExifToolPath ?? throw new UserMessageException(ExifToolNotConfigured), ct);
                         progressCallback((double)Interlocked.Increment(ref i) / selectedItems.Length);
                     });
-                await SelectFileAsync(selectedItems[0].FullPath);
             }, "Adjust timestamps...");
         });
 
@@ -1047,7 +1055,6 @@ namespace PhotoLocator
                             Settings.ExifToolPath ?? throw new UserMessageException(ExifToolNotConfigured), ct);
                         progressCallback((double)Interlocked.Increment(ref i) / selectedItems.Length);
                     });
-                await SelectFileAsync(selectedItems[0].FullPath);
             }, "Set timestamps");
         });
 
@@ -1226,11 +1233,11 @@ namespace PhotoLocator
                     var ext = Path.GetExtension(e.FullPath).ToLowerInvariant();
                     if (File.Exists(e.FullPath) && PhotoFileExtensions.Contains(ext))
                     {
-                        await AddOrUpdateItemAsync(e.FullPath, false, false);
+                        await AddOrUpdateItemAsync(e.FullPath, isDirectory: false, selectItem: false);
                     }
                     else if (Directory.Exists(e.FullPath))
                     {
-                        await AddOrUpdateItemAsync(e.FullPath, true, false);
+                        await AddOrUpdateItemAsync(e.FullPath, isDirectory: true, selectItem: false);
                     }
                     else if (GpsTrace.TraceExtensions.Contains(ext))
                     {
@@ -1307,7 +1314,7 @@ namespace PhotoLocator
                 }
             }
         }
-        
+
         public async Task LoadPicturesAsync()
         {
             AssertInMainThread();
@@ -1349,6 +1356,12 @@ namespace PhotoLocator
             }
             while (_loadPicturesPending && !ct.IsCancellationRequested);
             Log.Write($"Loaded thumbnails and metadata in {sw.Elapsed.TotalSeconds} s");
+            if (Items.SortOrder == ItemSortOrder.ImageTimestamp)
+            {
+                var selectedItem = SelectedItem;
+                Items.Sort();
+                SelectIfNotNull(selectedItem);
+            }
         }
 
         private static void AssertInMainThread()
