@@ -243,7 +243,7 @@
             </StackPanel>
         </ScrollViewer>
 
-        <Grid Grid.Column="1" PreviewMouseWheel="HandlePreviewMouseWheel">
+        <Grid Grid.Column="1" PreviewMouseWheel="HandlePreviewMouseWheel" PreviewMouseMove="HandlePreviewMouseMove" MouseLeave="HandlePreviewMouseLeave" >
             <Image Name="FullPreviewImage" Source="{Binding PreviewPictureSource}" SnapsToDevicePixels="True" />
             <Canvas Name="PreviewCanvas" ClipToBounds="True" UseLayoutRounding="True">
                 <Image Name="ZoomedPreviewImage" Source="{Binding PreviewPictureSource}" SnapsToDevicePixels="True"
