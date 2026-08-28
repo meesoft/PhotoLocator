@@ -9,7 +9,8 @@
         d:DataContext="{d:DesignInstance Type=local:LocalContrastViewModel, IsDesignTimeCreatable=True}"
         Background="Black"
         WindowStartupLocation="CenterOwner" ShowInTaskbar="False" 
-        Title="Local contrast, brightness and colors" Height="1000" Width="800" WindowState="Maximized">
+        Title="Local contrast, brightness and colors" Height="1000" Width="800" WindowState="Maximized"
+        Loaded="HandleWindowLoaded">
 
     <Window.Resources>
         <Style TargetType="TextBlock">
@@ -243,7 +244,7 @@
             </StackPanel>
         </ScrollViewer>
 
-        <Grid Grid.Column="1" PreviewMouseWheel="HandlePreviewMouseWheel" PreviewMouseMove="HandlePreviewMouseMove" MouseLeave="HandlePreviewMouseLeave" >
+        <Grid Name="PreviewGrid" Grid.Column="1" PreviewMouseWheel="HandlePreviewMouseWheel" MouseLeave="HandlePreviewMouseLeave" >
             <Image Name="FullPreviewImage" Source="{Binding PreviewPictureSource}" SnapsToDevicePixels="True" />
             <Canvas Name="PreviewCanvas" ClipToBounds="True" UseLayoutRounding="True">
                 <Image Name="ZoomedPreviewImage" Source="{Binding PreviewPictureSource}" SnapsToDevicePixels="True"

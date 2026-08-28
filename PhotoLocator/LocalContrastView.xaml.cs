@@ -8,6 +8,7 @@ using System.Windows.Input;
 using System.Windows.Media;
 using PhotoLocator.BitmapOperations;
 using System.Numerics;
+using System.Threading.Tasks;
 
 namespace PhotoLocator
 {
@@ -97,10 +98,19 @@ namespace PhotoLocator
             DialogResult ??= true;
         }
 
+        private async void HandleWindowLoaded(object sender, RoutedEventArgs e)
+        {
+            await Task.Delay(1000);
+            PreviewGrid.PreviewMouseMove += HandlePreviewMouseMove;
+        }
+
         private void HandlePreviewMouseMove(object sender, MouseEventArgs e)
         {
             if (e.LeftButton == MouseButtonState.Pressed || e.RightButton == MouseButtonState.Pressed)
+            {
+                _viewModel.ColorUnderCursor = null;
                 return;
+            }
 
             var pos = e.GetPosition(this);
             var dpi = VisualTreeHelper.GetDpi(this);
