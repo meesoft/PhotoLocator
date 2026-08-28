@@ -3,16 +3,17 @@ using System.Runtime.InteropServices;
 
 namespace PhotoLocator.Helpers
 {
-    static class WinAPI
+    static partial class WinAPI
     {
-        [DllImport("User32.dll"), DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
-        public static extern bool SetCursorPos(int X, int Y);
+        [LibraryImport("User32.dll"), DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        public static partial bool SetCursorPos(int X, int Y);
 
-        [DllImport("kernel32.dll"), DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
-        public static extern EXECUTION_STATE SetThreadExecutionState(EXECUTION_STATE esFlags);
+        [LibraryImport("kernel32.dll"), DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
+        private static partial EXECUTION_STATE SetThreadExecutionState(EXECUTION_STATE esFlags);
 
         [Flags]
-        public enum EXECUTION_STATE : uint
+        private enum EXECUTION_STATE : uint
         {
             ES_AWAYMODE_REQUIRED = 0x00000040,
             ES_CONTINUOUS = 0x80000000,
@@ -66,5 +67,15 @@ namespace PhotoLocator.Helpers
             info.fMask = SEE_MASK_INVOKEIDLIST;
             ShellExecuteEx(ref info);
         }
+
+
+        [LibraryImport("user32.dll"), DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
+        public static partial IntPtr GetDC(IntPtr hWnd);
+
+        [LibraryImport("gdi32.dll"), DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
+        public static partial uint GetPixel(IntPtr hdc, int nXPos, int nYPos);
+
+        [LibraryImport("user32.dll"), DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
+        public static partial int ReleaseDC(IntPtr hWnd, IntPtr hDc);
     }
 }

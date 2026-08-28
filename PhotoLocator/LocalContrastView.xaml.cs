@@ -27,8 +27,7 @@ namespace PhotoLocator
 
         private void HandleDataContextChanged(object sender, DependencyPropertyChangedEventArgs e)
         {
-            if (_viewModel is not null)
-                _viewModel.PropertyChanged -= HandleViewModelPropertyChanged;
+            _viewModel?.PropertyChanged -= HandleViewModelPropertyChanged;
             _viewModel = (LocalContrastViewModel)DataContext;
             if (_viewModel is not null)
             {
@@ -110,10 +109,10 @@ namespace PhotoLocator
 
             // Read pixel from the current window DC
             var hwnd = new WindowInteropHelper(this).Handle;
-            var hdc = GetDC(hwnd);
+            var hdc = WinAPI.GetDC(hwnd);
             try
             {
-                var pixel = GetPixel(hdc, windowX, windowY);
+                var pixel = WinAPI.GetPixel(hdc, windowX, windowY);
                 var r = (pixel & 0x000000FF);
                 var g = (pixel & 0x0000FF00) >> 8;
                 var b = (pixel & 0x00FF0000) >> 16;
@@ -128,7 +127,7 @@ namespace PhotoLocator
             }
             finally
             {
-                _ = ReleaseDC(hwnd, hdc);
+                _ = WinAPI.ReleaseDC(hwnd, hdc);
             }
         }
 
@@ -136,14 +135,5 @@ namespace PhotoLocator
         {
             _viewModel?.ColorUnderCursor = null;
         }
-
-        [LibraryImport("user32.dll"), DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
-        private static partial IntPtr GetDC(IntPtr hWnd);
-
-        [LibraryImport("gdi32.dll"), DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
-        private static partial uint GetPixel(IntPtr hdc, int nXPos, int nYPos);
-
-        [LibraryImport("user32.dll"), DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
-        private static partial int ReleaseDC(IntPtr hWnd, IntPtr hDc);
     }
 }

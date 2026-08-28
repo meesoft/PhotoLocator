@@ -333,7 +333,7 @@ namespace PhotoLocator
 
         public Vector3? ColorUnderCursor
         {
-            get => field;
+            get;
             set => SetProperty(ref field, value);
         }
 
