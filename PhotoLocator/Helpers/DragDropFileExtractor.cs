@@ -7,7 +7,7 @@ using System.Windows;
 
 namespace PhotoLocator.Helpers
 {
-    static class DragDropFileExtractor
+    static partial class DragDropFileExtractor
     {
         [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
         struct FILEDESCRIPTOR
@@ -228,17 +228,17 @@ namespace PhotoLocator.Helpers
             }
         }
 
-        [DllImport("kernel32.dll", SetLastError = true), DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
-        static extern IntPtr GlobalLock(IntPtr hMem);
+        [LibraryImport("kernel32.dll", SetLastError = true), DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
+        private static partial IntPtr GlobalLock(IntPtr hMem);
 
-        [DllImport("kernel32.dll", SetLastError = true), DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
+        [LibraryImport("kernel32.dll", SetLastError = true), DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
         [return: MarshalAs(UnmanagedType.Bool)]
-        static extern bool GlobalUnlock(IntPtr hMem);
+        private static partial bool GlobalUnlock(IntPtr hMem);
 
-        [DllImport("kernel32.dll", SetLastError = true), DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
-        static extern long GlobalSize(IntPtr hMem);
+        [LibraryImport("kernel32.dll", SetLastError = true), DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
+        private static partial long GlobalSize(IntPtr hMem);
 
         [DllImport("ole32.dll"), DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
-        static extern void ReleaseStgMedium(ref STGMEDIUM pmedium);
+        private static extern void ReleaseStgMedium(ref STGMEDIUM pmedium);
     }
 }

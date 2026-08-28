@@ -27,10 +27,10 @@ namespace PhotoLocator.Helpers
         }
 
         [DllImport("shell32.dll", CharSet = CharSet.Auto), DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
-        public static extern bool ShellExecuteEx(ref SHELLEXECUTEINFO lpExecInfo);
+        private static extern bool ShellExecuteEx(ref SHELLEXECUTEINFO lpExecInfo);
 
         [StructLayout(LayoutKind.Sequential)]
-        public struct SHELLEXECUTEINFO
+        private struct SHELLEXECUTEINFO
         {
             public int cbSize;
             public uint fMask;
@@ -67,7 +67,6 @@ namespace PhotoLocator.Helpers
             info.fMask = SEE_MASK_INVOKEIDLIST;
             ShellExecuteEx(ref info);
         }
-
 
         [LibraryImport("user32.dll"), DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
         public static partial IntPtr GetDC(IntPtr hWnd);
