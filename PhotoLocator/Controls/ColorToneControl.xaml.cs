@@ -46,7 +46,8 @@ namespace PhotoLocator.Controls
                 || e.PropertyName == nameof(_viewModel.HueAdjust)
                 || e.PropertyName == nameof(_viewModel.SaturationAdjust)
                 || e.PropertyName == nameof(_viewModel.IntensityAdjust)
-                || e.PropertyName == nameof(_viewModel.ToneRotation))
+                || e.PropertyName == nameof(_viewModel.ToneRotation)
+                || e.PropertyName == nameof(_viewModel.ColorUnderCursor))
                 UpdateToneControlImage();
         }
 
@@ -143,6 +144,16 @@ namespace PhotoLocator.Controls
                 else
                     thickness = i == ActiveToneIndex ? ActivePenThickness : InactivePenThickness;
                 var drawing = new GeometryDrawing(Brushes.Black, new Pen(Brushes.Black, thickness), group);
+                drawings.Children.Add(drawing);
+            }
+            if (_viewModel.ColorUnderCursor.HasValue)
+            {
+                var color = _viewModel.ColorUnderCursor.Value;
+                ColorToneAdjustOperation.ColorTransformRGB2HSI(color[0], color[1], color[2], out float h, out float s, out _);
+                var xy = HS2XY(h, s);
+                var group = new GeometryGroup();
+                group.Children.Add(new EllipseGeometry(xy, 2, 2));
+                var drawing = new GeometryDrawing(Brushes.Transparent, new Pen(Brushes.White, InactivePenThickness), group);
                 drawings.Children.Add(drawing);
             }
             drawings.ClipGeometry = new RectangleGeometry(new Rect(new Size(ActualWidth, ActualWidth)));

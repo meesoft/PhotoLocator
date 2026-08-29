@@ -222,15 +222,13 @@ namespace PhotoLocator.BitmapOperations
                                 toneAdjustments[toneIndex].AdjustHue * toneWeight +
                                 toneAdjustments[nextToneIndex].AdjustHue * nextToneWeight;
                             var s = src[xx + 1] *
-                                (1 - toneWeight + toneAdjustments[toneIndex].AdjustSaturation * toneWeight) *
-                                (1 - nextToneWeight + toneAdjustments[nextToneIndex].AdjustSaturation * nextToneWeight);
+                                (toneAdjustments[toneIndex].AdjustSaturation * toneWeight +
+                                 toneAdjustments[nextToneIndex].AdjustSaturation * nextToneWeight);
                             if (s > 1)
                                 s = 1;
-                            toneWeight *= s;
-                            nextToneWeight *= s;
                             var i = src[xx + 2] *
-                                (1 - toneWeight + toneAdjustments[toneIndex].AdjustIntensity * toneWeight) *
-                                (1 - nextToneWeight + toneAdjustments[nextToneIndex].AdjustIntensity * nextToneWeight);
+                                (toneAdjustments[toneIndex].AdjustIntensity * toneWeight +
+                                 toneAdjustments[nextToneIndex].AdjustIntensity * nextToneWeight);
                             ColorTransformHSI2RGB(h, s, i, out dst[xx], out dst[xx + 1], out dst[xx + 2]);
                             xx += 3;
                         }

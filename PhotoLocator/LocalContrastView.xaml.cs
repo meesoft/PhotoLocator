@@ -1,7 +1,14 @@
 ﻿using PhotoLocator.Helpers;
+using System;
 using System.ComponentModel;
+using System.Runtime.InteropServices;
+using System.Windows.Interop;
 using System.Windows;
 using System.Windows.Input;
+using System.Windows.Media;
+using PhotoLocator.BitmapOperations;
+using System.Numerics;
+using System.Threading.Tasks;
 
 namespace PhotoLocator
 {
@@ -21,8 +28,7 @@ namespace PhotoLocator
 
         private void HandleDataContextChanged(object sender, DependencyPropertyChangedEventArgs e)
         {
-            if (_viewModel is not null)
-                _viewModel.PropertyChanged -= HandleViewModelPropertyChanged;
+            _viewModel?.PropertyChanged -= HandleViewModelPropertyChanged;
             _viewModel = (LocalContrastViewModel)DataContext;
             if (_viewModel is not null)
             {
@@ -90,6 +96,54 @@ namespace PhotoLocator
                 return;
             await _viewModel.FinishPreviewAsync();
             DialogResult ??= true;
+        }
+
+        private async void HandleWindowLoaded(object sender, RoutedEventArgs e)
+        {
+            await Task.Delay(1000);
+            PreviewGrid.PreviewMouseMove += HandlePreviewMouseMove;
+        }
+
+        private void HandlePreviewMouseMove(object sender, MouseEventArgs e)
+        {
+            if (e.LeftButton == MouseButtonState.Pressed || e.RightButton == MouseButtonState.Pressed)
+            {
+                _viewModel.ColorUnderCursor = null;
+                return;
+            }
+
+            var pos = e.GetPosition(this);
+            var dpi = VisualTreeHelper.GetDpi(this);
+            var windowX = IntMath.Round(pos.X * dpi.PixelsPerInchX / 96);
+            var windowY = IntMath.Round(pos.Y * dpi.PixelsPerInchY / 96);
+
+            // Read pixel from the current window DC
+            var hwnd = new WindowInteropHelper(this).Handle;
+            var hdc = WinAPI.GetDC(hwnd);
+            try
+            {
+                var pixel = WinAPI.GetPixel(hdc, windowX, windowY);
+                var r = (pixel & 0x000000FF);
+                var g = (pixel & 0x0000FF00) >> 8;
+                var b = (pixel & 0x00FF0000) >> 16;
+                
+                if (r == 0 && g == 0 && b == 0)
+                    _viewModel.ColorUnderCursor = null;
+                else
+                    _viewModel.ColorUnderCursor = new Vector3(
+                        (float)Math.Pow(r / 255.0, FloatBitmap.DefaultMonitorGamma), 
+                        (float)Math.Pow(g / 255.0, FloatBitmap.DefaultMonitorGamma), 
+                        (float)Math.Pow(b / 255.0, FloatBitmap.DefaultMonitorGamma));
+            }
+            finally
+            {
+                _ = WinAPI.ReleaseDC(hwnd, hdc);
+            }
+        }
+
+        private void HandlePreviewMouseLeave(object sender, MouseEventArgs e)
+        {
+            _viewModel?.ColorUnderCursor = null;
         }
     }
 }

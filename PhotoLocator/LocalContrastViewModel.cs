@@ -6,6 +6,7 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.IO;
+using System.Numerics;
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using System.Windows;
@@ -328,6 +329,12 @@ namespace PhotoLocator
                 else if (SetProperty(ref _colorToneOperation.ToneAdjustments[ActiveToneIndex].AdjustSaturation, value))
                     StartUpdateTimer(FirstParamChanged.ColorTone);
             }
+        }
+
+        public Vector3? ColorUnderCursor
+        {
+            get;
+            set => SetProperty(ref field, value);
         }
 
         public ICommand ResetSaturationAdjustCommand => new RelayCommand(o => SaturationAdjust = 1);
