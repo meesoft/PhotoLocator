@@ -82,6 +82,8 @@ namespace PhotoLocator.PictureFileFormats
             {
                 if (output is null)
                     throw;
+                if (ex is EndOfStreamException)
+                    output += "\nYou may need to install the latest Visual C++ Redistributable";
                 throw new IOException(Path.GetFileNameWithoutExtension(executablePath) + " failed with: " + output, ex);
             }
         }
