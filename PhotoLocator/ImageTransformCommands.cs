@@ -149,7 +149,7 @@ namespace PhotoLocator
         private static async Task<(BitmapSource, BitmapMetadata?)> LoadImageWithMetadataAsync(PictureItemViewModel item)
         {
             BitmapMetadata? metadata = null;
-            var image = await item.LoadPreviewAsync(default, preservePixelFormat: true);
+            var image = await item.LoadPreviewAsync(default, preservePixelFormat: true).ConfigureAwait(false);
             try
             {
                 using var file = File.OpenRead(item.FullPath);
@@ -217,6 +217,7 @@ namespace PhotoLocator
                         GeneralFileFormatHandler.SaveToFile(image, targetFileName,
                             ExifHandler.ResetOrientation(itemMetadata), _mainViewModel.Settings);
                     }
+                    item.IsChecked = false;
                     progressCallback((double)(++i) / allSelected.Length);
                 }
             }, ct), "Batch process");
@@ -264,6 +265,7 @@ namespace PhotoLocator
                         await Task.Run(() => GeneralFileFormatHandler.SaveToFile(image, targetFileName,
                             ExifHandler.ResetOrientation(itemMetadata), _mainViewModel.Settings), ct);
                     }
+                    item.IsChecked = false;
                     progressCallback((double)(++i) / allSelected.Length);
                 }
             }, "Convert to " + targetType);
@@ -315,8 +317,11 @@ namespace PhotoLocator
                         ?? throw new UserMessageException("Unsupported pixel format " + image.Format);
 
                     await (previousSaveTask ?? Task.CompletedTask);
-                    previousSaveTask = Task.Run(() => GeneralFileFormatHandler.SaveToFile(newImage, targetFileName,
-                        ExifHandler.ResetOrientation(itemMetadata), _mainViewModel.Settings), ct);
+                    previousSaveTask = Task.Run(() =>
+                    {
+                        GeneralFileFormatHandler.SaveToFile(newImage, targetFileName, ExifHandler.ResetOrientation(itemMetadata), _mainViewModel.Settings);
+                        item.IsChecked = false;
+                    }, ct);
                     progressCallback((double)(i++) / allSelected.Length);
                 }
                 await (previousSaveTask ?? Task.CompletedTask);
