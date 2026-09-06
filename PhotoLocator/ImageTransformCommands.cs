@@ -4,6 +4,7 @@ using PhotoLocator.Helpers;
 using PhotoLocator.Metadata;
 using PhotoLocator.PictureFileFormats;
 using System;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
@@ -266,6 +267,57 @@ namespace PhotoLocator
                     progressCallback((double)(++i) / allSelected.Length);
                 }
             }, "Convert to " + targetType);
+        });
+
+        int _resizeTargetHeight = 2160;
+
+        public ICommand ResizeCommand => new RelayCommand(async o =>
+        {
+            var allSelected = _mainViewModel.GetSelectedItems(true).ToArray();
+            if (allSelected.Length == 0)
+                return;
+            int newHeight = 0;
+            if (TextInputWindow.Show("New image height (width will be adjusted to keep ratio):", str => int.TryParse(str, CultureInfo.CurrentCulture, out newHeight) && newHeight > 0, 
+                "Resize", _resizeTargetHeight.ToString(CultureInfo.CurrentCulture)) is null)
+                return;
+            _resizeTargetHeight = newHeight;
+
+            var browser = new System.Windows.Forms.FolderBrowserDialog();
+            browser.InitialDirectory = Path.GetDirectoryName(allSelected[0].FullPath)!;
+            browser.Description = $"Select target folder for resized images";
+            browser.UseDescriptionForTitle = true;
+            if (browser.ShowDialog() != System.Windows.Forms.DialogResult.OK)
+                return;
+            var targetDir = browser.SelectedPath;
+            var targetIsSourceDir = string.Equals(targetDir, browser.InitialDirectory, StringComparison.OrdinalIgnoreCase);
+
+            await _mainViewModel.RunProcessWithProgressBarAsync(async (progressCallback, ct) =>
+            {
+                var overwriteAll = targetIsSourceDir;
+                int i = 0;
+                foreach (var item in allSelected)
+                {
+                    var targetFileName = targetIsSourceDir ? item.GetProcessedFileName() : Path.Combine(targetDir, item.Name);
+                    if (!overwriteAll && File.Exists(targetFileName))
+                    {
+                        if (MessageBox.Show(App.Current.MainWindow, $"File {targetFileName} already exists. Overwrite all conflicting files?",
+                            "Confirm Overwrite All", MessageBoxButton.OKCancel, MessageBoxImage.Question) != MessageBoxResult.OK)
+                            break;
+                        overwriteAll = true;
+                    }
+
+                    var (image, itemMetadata) = await LoadImageWithMetadataAsync(item);
+
+                    var op = new LanczosResizeOperation();
+                    op.FilterFunc = LanczosResizeOperation.Lanczos2;
+                    var newImage = op.Apply(image, int.Max(1, IntMath.Round(image.PixelWidth * newHeight / (double)image.PixelHeight)), newHeight, image.DpiX, image.DpiY, ct) 
+                        ?? throw new UserMessageException("Unsupported pixel format " + image.Format);
+
+                    await Task.Run(() => GeneralFileFormatHandler.SaveToFile(newImage, targetFileName,
+                        ExifHandler.ResetOrientation(itemMetadata), _mainViewModel.Settings), ct);
+                    progressCallback((double)(++i) / allSelected.Length);
+                }
+            }, "Resize");
         });
     }
 }
