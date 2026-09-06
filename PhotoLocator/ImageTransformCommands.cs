@@ -295,6 +295,7 @@ namespace PhotoLocator
             {
                 var overwriteAll = targetIsSourceDir;
                 int i = 0;
+                Task? previousSaveTask = null;
                 foreach (var item in allSelected)
                 {
                     var targetFileName = targetIsSourceDir ? item.GetProcessedFileName() : Path.Combine(targetDir, item.Name);
@@ -313,10 +314,13 @@ namespace PhotoLocator
                     var newImage = op.Apply(image, int.Max(1, IntMath.Round(image.PixelWidth * newHeight / (double)image.PixelHeight)), newHeight, image.DpiX, image.DpiY, ct) 
                         ?? throw new UserMessageException("Unsupported pixel format " + image.Format);
 
-                    await Task.Run(() => GeneralFileFormatHandler.SaveToFile(newImage, targetFileName,
+                    await (previousSaveTask ?? Task.CompletedTask);
+                    previousSaveTask = Task.Run(() => GeneralFileFormatHandler.SaveToFile(newImage, targetFileName,
                         ExifHandler.ResetOrientation(itemMetadata), _mainViewModel.Settings), ct);
-                    progressCallback((double)(++i) / allSelected.Length);
+                    progressCallback((double)(i++) / allSelected.Length);
                 }
+                await (previousSaveTask ?? Task.CompletedTask);
+                progressCallback(1);
             }, "Resize");
         });
     }
