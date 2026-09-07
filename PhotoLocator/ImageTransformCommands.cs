@@ -296,6 +296,8 @@ namespace PhotoLocator
             await _mainViewModel.RunProcessWithProgressBarAsync(async (progressCallback, ct) =>
             {
                 var overwriteAll = targetIsSourceDir;
+                var op = new LanczosResizeOperation();
+                op.FilterFunc = LanczosResizeOperation.Lanczos2;
                 int i = 0;
                 Task? previousSaveTask = null;
                 foreach (var item in allSelected)
@@ -311,10 +313,9 @@ namespace PhotoLocator
 
                     var (image, itemMetadata) = await LoadImageWithMetadataAsync(item);
 
-                    var op = new LanczosResizeOperation();
-                    op.FilterFunc = LanczosResizeOperation.Lanczos2;
-                    var newImage = op.Apply(image, int.Max(1, IntMath.Round(image.PixelWidth * newHeight / (double)image.PixelHeight)), newHeight, image.DpiX, image.DpiY, ct) 
-                        ?? throw new UserMessageException("Unsupported pixel format " + image.Format);
+                    var newImage = await Task.Run(
+                        () => op.Apply(image, int.Max(1, IntMath.Round(image.PixelWidth * newHeight / (double)image.PixelHeight)), newHeight, image.DpiX, image.DpiY, ct)
+                        ?? throw new UserMessageException("Unsupported pixel format " + image.Format), ct);
 
                     await (previousSaveTask ?? Task.CompletedTask);
                     previousSaveTask = Task.Run(() =>
