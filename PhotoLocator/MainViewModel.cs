@@ -884,7 +884,7 @@ namespace PhotoLocator
                         {
                             case MessageBoxResult.Yes: break;
                             case MessageBoxResult.No: i++; continue;
-                            default: break;
+                            default: return;
                         }
                     }
                     await Task.Run(() => item.CopyTo(targetFileName), ct);
@@ -922,7 +922,7 @@ namespace PhotoLocator
                         {
                             case MessageBoxResult.Yes: break;
                             case MessageBoxResult.No: i++; continue;
-                            default: break;
+                            default: return;
                         }
                     }
                     await Task.Run(() => item.MoveTo(targetFileName), ct);
@@ -1291,7 +1291,7 @@ namespace PhotoLocator
             if (_titleUpdatePending)
                 return;
             _titleUpdatePending = true;
-            Dispatcher.CurrentDispatcher.BeginInvoke(() =>
+            Application.Current.Dispatcher.BeginInvoke(() =>
             {
                 _titleUpdatePending = false;
                 NotifyPropertyChanged(nameof(WindowTitle));
