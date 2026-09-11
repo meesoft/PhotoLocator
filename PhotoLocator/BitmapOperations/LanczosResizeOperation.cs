@@ -204,8 +204,8 @@ namespace PhotoLocator.BitmapOperations
                     }
                     else
                     {
-                        _weights[i].SourceIndices = Array.Empty<int>();
-                        _weights[i].SourceWeights = Array.Empty<int>();
+                        _weights[i].SourceIndices = [];
+                        _weights[i].SourceWeights = [];
                     }
                 });
             }

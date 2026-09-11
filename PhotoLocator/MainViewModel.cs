@@ -846,16 +846,16 @@ namespace PhotoLocator
                 return;
             SelectedItem = null;
             await using var pause = PauseFileSystemWatcher();
-            await RunProcessWithProgressBarAsync((progressCallback, ct) => Task.Run(() =>
+            await RunProcessWithProgressBarAsync(async (progressCallback, ct) =>
             {
                 int i = 0;
                 foreach (var item in allSelected)
                 {
-                    item.Recycle(Settings.IncludeSidecarFiles);
-                    Application.Current.Dispatcher.BeginInvoke(() => Items.Remove(item));
+                    await Task.Run(() => item.Recycle(Settings.IncludeSidecarFiles), ct);
+                    Items.Remove(item);
                     progressCallback((double)(++i) / allSelected.Length);
                 }
-            }, ct), "Deleting...", focusedItem);
+            }, "Deleting...", focusedItem);
         });
 
         public ICommand CopySelectedCommand => new RelayCommand(async o =>
@@ -871,7 +871,7 @@ namespace PhotoLocator
             var targetIsDirectory = Directory.Exists(target) || allSelected.Length > 1 || string.IsNullOrEmpty(Path.GetExtension(target)) || target.EndsWith('\\');
             if (targetIsDirectory && !ConfirmCreateMissingDirectory(target, "Copy files"))
                 return;
-            await RunProcessWithProgressBarAsync((progressCallback, ct) => Task.Run(() =>
+            await RunProcessWithProgressBarAsync(async (progressCallback, ct) =>
             {
                 int i = 0;
                 foreach (var item in allSelected)
@@ -879,8 +879,7 @@ namespace PhotoLocator
                     var targetFileName = targetIsDirectory ? Path.Combine(target, item.Name) : target;
                     if (item.IsFile && File.Exists(targetFileName))
                     {
-                        var dialogResult = Application.Current.Dispatcher.Invoke(() => MessageBox.Show(
-                            targetFileName + " already exists, do you want to overwrite it?", "Copy files", MessageBoxButton.YesNoCancel, MessageBoxImage.Question));
+                        var dialogResult = MessageBox.Show(targetFileName + " already exists, do you want to overwrite it?", "Copy files", MessageBoxButton.YesNoCancel, MessageBoxImage.Question);
                         switch (dialogResult)
                         {
                             case MessageBoxResult.Yes: break;
@@ -888,10 +887,11 @@ namespace PhotoLocator
                             default: return;
                         }
                     }
-                    item.CopyTo(targetFileName);
+                    await Task.Run(() => item.CopyTo(targetFileName), ct);
+                    item.IsChecked = false;
                     progressCallback((double)(++i) / allSelected.Length);
                 }
-            }, ct), "Copying...");
+            }, "Copying...");
         });
 
         public ICommand MoveSelectedCommand => new RelayCommand(async o =>
@@ -909,7 +909,7 @@ namespace PhotoLocator
             if (!ConfirmCreateMissingDirectory(target, "Move files"))
                 return;
             SelectedItem = null;
-            await RunProcessWithProgressBarAsync((progressCallback, ct) => Task.Run(() =>
+            await RunProcessWithProgressBarAsync(async (progressCallback, ct) =>
             {
                 int i = 0;
                 foreach (var item in allSelected)
@@ -917,8 +917,7 @@ namespace PhotoLocator
                     var targetFileName = Path.Combine(target, item.Name);
                     if (item.IsFile && File.Exists(targetFileName))
                     {
-                        var dialogResult = Application.Current.Dispatcher.Invoke(
-                            () => MessageBox.Show(targetFileName + " already exists, do you want to overwrite it?", "Move files", MessageBoxButton.YesNoCancel, MessageBoxImage.Question));
+                        var dialogResult = MessageBox.Show(targetFileName + " already exists, do you want to overwrite it?", "Move files", MessageBoxButton.YesNoCancel, MessageBoxImage.Question);
                         switch (dialogResult)
                         {
                             case MessageBoxResult.Yes: break;
@@ -926,11 +925,11 @@ namespace PhotoLocator
                             default: return;
                         }
                     }
-                    item.MoveTo(targetFileName);
-                    Application.Current.Dispatcher.Invoke(() => Items.Remove(item));
+                    await Task.Run(() => item.MoveTo(targetFileName), ct);
+                    Items.Remove(item);
                     progressCallback((double)(++i) / allSelected.Length);
                 }
-            }, ct), "Moving...", focusedItem);
+            }, "Moving...", focusedItem);
         });
 
         private static bool ConfirmCreateMissingDirectory(string target, string caption)
@@ -1029,6 +1028,7 @@ namespace PhotoLocator
                     {
                         await ExifTool.AdjustTimestampAsync(item.FullPath, item.GetProcessedFileName(), offset,
                             Settings.ExifToolPath ?? throw new UserMessageException(ExifToolNotConfigured), ct);
+                        item.IsChecked = false;
                         progressCallback((double)Interlocked.Increment(ref i) / selectedItems.Length);
                     });
             }, "Adjust timestamps...");
@@ -1053,6 +1053,7 @@ namespace PhotoLocator
                     {
                         await ExifTool.SetTimestampAsync(item.FullPath, item.GetProcessedFileName(), timestamp,
                             Settings.ExifToolPath ?? throw new UserMessageException(ExifToolNotConfigured), ct);
+                        item.IsChecked = false;
                         progressCallback((double)Interlocked.Increment(ref i) / selectedItems.Length);
                     });
             }, "Set timestamps");
@@ -1290,7 +1291,7 @@ namespace PhotoLocator
             if (_titleUpdatePending)
                 return;
             _titleUpdatePending = true;
-            Dispatcher.CurrentDispatcher.BeginInvoke(() =>
+            Application.Current.Dispatcher.BeginInvoke(() =>
             {
                 _titleUpdatePending = false;
                 NotifyPropertyChanged(nameof(WindowTitle));
