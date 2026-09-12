@@ -16,7 +16,7 @@
         <Image Source="{Binding ThumbnailImage}" VerticalAlignment="Top"/>
 
         <Grid Margin="2" >
-            <CheckBox IsChecked="{Binding IsChecked}" HorizontalAlignment="Left" VerticalAlignment="Top" />
+            <CheckBox IsChecked="{Binding IsChecked}" HorizontalAlignment="Left" VerticalAlignment="Top" Focusable="False" />
 
             <TextBlock Text="&#xE840;" FontSize="18" FontFamily="Segoe MDL2 Assets" 
                        VerticalAlignment="Top" HorizontalAlignment="Right" Foreground="White" 

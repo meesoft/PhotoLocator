@@ -372,12 +372,18 @@ namespace PhotoLocator
             }
             else if (e.PropertyName is nameof(_viewModel.IsLocationSearchVisible))
             {
-                if (_viewModel.IsLocationSearchVisible)
-                    Dispatcher.BeginInvoke(() =>
+                Dispatcher.BeginInvoke(() =>
+                {
+                    if (_viewModel.IsLocationSearchVisible)
                     {
                         LocationSearchTextBox.Focus();
                         LocationSearchTextBox.SelectAll();
-                    });
+                    }
+                    else
+                    {
+                        FocusListBoxItem(PictureListBox.SelectedItem);
+                    }
+                });
             }
         }
 
