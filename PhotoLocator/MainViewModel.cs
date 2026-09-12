@@ -186,6 +186,8 @@ namespace PhotoLocator
                 if (!SetProperty(ref field, value) || value is null)
                     return;
                 MapCenter = value.Location;
+                if (!IsMapVisible)
+                    ViewModeCommand?.Execute(null);
                 IsLocationSearchVisible = false;
             }
         }
