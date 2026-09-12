@@ -6,8 +6,6 @@ name: .NET
 on:
   push:
     branches: [ "main", "features/**" ]
-  pull_request:
-    branches: [ "main" ]
 
 jobs:
   build:
@@ -15,11 +13,11 @@ jobs:
     runs-on: windows-latest
 
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v6
       with:
         submodules: recursive
     - name: Setup .NET
-      uses: actions/setup-dotnet@v3
+      uses: actions/setup-dotnet@v5
       with:
         dotnet-version: 10.0.x
     - name: Restore dependencies

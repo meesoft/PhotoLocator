@@ -33,6 +33,7 @@
         <KeyBinding Key="D4" Modifiers="Ctrl" Command="{Binding Zoom400Command}" />
         <KeyBinding Key="E" Modifiers="Ctrl" Command="{Binding ExploreCommand}" />
         <KeyBinding Key="F" Modifiers="Ctrl" Command="{Binding QuickSearchCommand}" />
+        <KeyBinding Key="G" Modifiers="Ctrl" Command="{Binding LocationSearchCommand}" />
         <KeyBinding Key="L" Modifiers="Ctrl" Command="{Binding ImageTransformCommands.LocalContrastCommand}" />
         <KeyBinding Key="O" Modifiers="Ctrl" Command="{Binding BrowseForPhotosCommand}" />
         <KeyBinding Key="P" Modifiers="Ctrl" Command="{Binding VideoTransformCommandsShared.ProcessSelected}" />
@@ -121,6 +122,25 @@
             <Button Content="Save changes" Width="100" Command="{Binding SaveGeotagsCommand}"
                     ToolTip="Save changed geotags to photo files (Ctrl+S)" />
 
+            <Button Content="&#xE707;" FontFamily="Segoe MDL2 Assets" FontSize="18" Command="{Binding LocationSearchCommand}" 
+                    ToolTip="Search for a location (Ctrl+G)" Width="32" Name="LocationSearchButton" />
+            <Popup IsOpen="{Binding IsLocationSearchVisible}" PlacementTarget="{Binding ElementName=LocationSearchButton}" Placement="Bottom" >
+                <Border BorderBrush="Gray" BorderThickness="1" CornerRadius="2">
+                    <StackPanel>
+                        <TextBox Name="LocationSearchTextBox" Text="{Binding LocationSearchText, UpdateSourceTrigger=PropertyChanged}"
+                                 Height="22" ToolTip="Enter a city, street, or place name" PreviewKeyUp="HandleLocationSearchKeyUp"/>
+                        <ListBox Width="500" ItemsSource="{Binding LocationSearchResults}" SelectedItem="{Binding SelectedLocationSearchResult}"
+                                 PreviewMouseMove="HandleLocationSearchResultMouseMove">
+                            <ListBox.ItemTemplate>
+                                <DataTemplate>
+                                    <TextBlock Text="{Binding DisplayName}" TextWrapping="Wrap" Margin="3" Foreground="White" />
+                                </DataTemplate>
+                            </ListBox.ItemTemplate>
+                        </ListBox>
+                    </StackPanel>
+                </Border>
+            </Popup>
+
             <Button Content="&#xE8AC;" FontFamily="Segoe MDL2 Assets" FontSize="18" Command="{Binding RenameCommand}"
                     ToolTip="Rename (F2)" Width="32" />
             <Button Content="&#xECC5;" FontFamily="Segoe MDL2 Assets" FontSize="18" Command="{Binding AdjustTimestampsCommand}"
@@ -136,7 +156,7 @@
             <Button Content="&#xE768;" FontFamily="Segoe MDL2 Assets" FontSize="18" Command="{Binding SlideShowCommand}"
                     ToolTip="Full screen slide show with map (F3)" Width="32" />
             <Button Content="&#xE721;" FontFamily="Segoe MDL2 Assets" FontSize="18" Command="{Binding QuickSearchCommand}"
-                    ToolTip="Search (Ctrl+F)" Width="32"/>
+                    ToolTip="File search (Ctrl+F)" Width="32"/>
             <Button Content="&#xE713;" FontFamily="Segoe MDL2 Assets" FontSize="18" Command="{Binding SettingsCommand}"
                     ToolTip="Settings (F12)" Width="32" />
             <Button Content="&#xE946;" FontFamily="Segoe MDL2 Assets" FontSize="18" Command="{Binding AboutCommand}"
@@ -176,7 +196,7 @@
                         <MenuItem Header="Non-geotagged (Num+)" Command="{Binding SelectCandidatesCommand}" />
                         <MenuItem Header="None (Num-)" Command="{Binding DeselectAllCommand}" />
                         <MenuItem Header="Invert (Num*)" Command="{Binding InvertSelectionCommand}" />
-                        <MenuItem Header="Search (Ctrl+F)" Command="{Binding QuickSearchCommand}">
+                        <MenuItem Header="File search (Ctrl+F)" Command="{Binding QuickSearchCommand}">
                             <MenuItem.Icon>
                                 <TextBlock FontFamily="Segoe MDL2 Assets" Text="&#xE721;" FontSize="14" />
                             </MenuItem.Icon>
