@@ -46,6 +46,7 @@ namespace PhotoLocator
         CancellationTokenSource? _loadCancellation;
         CancellationTokenSource? _previewCancellation;
         CancellationTokenSource? _processCancellation;
+        CancellationTokenSource? _locationSearchCancellation;
         FileSystemWatcher? _fileSystemWatcher;
         double _loadImagesProgress;
         bool _titleUpdatePending;
@@ -53,6 +54,8 @@ namespace PhotoLocator
         readonly List<(string Path, BitmapSource Picture)> _pictureCache = [];
         readonly HashSet<string> _gpsTraceFiles = [];
         Location? _sunAndMoonMapCenter;
+        NominatimLocationSearcher? _locationSearcher;
+        LocationWithName? _previewedLocationSearchResult;
 
         public event PropertyChangedEventHandler? PropertyChanged;
 
@@ -148,6 +151,86 @@ namespace PhotoLocator
             get;
             set => SetProperty(ref field, value);
         }
+
+        public bool IsLocationSearchVisible
+        {
+            get;
+            set
+            {
+                if (SetProperty(ref field, value) && !value)
+                {
+                    _locationSearchCancellation?.Cancel();
+                    _previewedLocationSearchResult = null;
+                    SelectedLocationSearchResult = null;
+                }
+            }
+        }
+
+        public string LocationSearchText
+        {
+            get;
+            set
+            { 
+                if (SetProperty(ref field, value)) 
+                    SearchLocationsAsync(value).WithExceptionLogging(); 
+            }
+        } = string.Empty;
+
+        public ObservableCollection<LocationWithName> LocationSearchResults { get; } = [];
+
+        public LocationWithName? SelectedLocationSearchResult
+        {
+            get;
+            set
+            {
+                if (!SetProperty(ref field, value) || value is null)
+                    return;
+                MapCenter = value.Location;
+                IsLocationSearchVisible = false;
+            }
+        }
+
+        public void PreviewLocationSearchResult(LocationWithName result)
+        {
+            if (ReferenceEquals(_previewedLocationSearchResult, result))
+                return;
+            _previewedLocationSearchResult = result;
+            MapCenter = result.Location;
+        }
+
+        async Task SearchLocationsAsync(string searchText)
+        {
+            await (_locationSearchCancellation?.CancelAsync() ?? Task.CompletedTask);
+            _locationSearchCancellation?.Dispose();
+            _locationSearchCancellation = null;
+            if (string.IsNullOrWhiteSpace(searchText))
+                return;
+
+            using var cursor = new MouseCursorOverride(Cursors.AppStarting);
+            var cancellation = new CancellationTokenSource();
+            _locationSearchCancellation = cancellation;
+            try
+            {
+                await Task.Delay(500, cancellation.Token);
+                _locationSearcher ??= new NominatimLocationSearcher();
+                var results = await _locationSearcher.SearchAsync(searchText, 10, cancellation.Token);
+                if (!ReferenceEquals(_locationSearchCancellation, cancellation))
+                    return;
+                LocationSearchResults.Clear();
+                foreach (var result in results)
+                    LocationSearchResults.Add(result);
+            }
+            finally
+            {
+                if (ReferenceEquals(_locationSearchCancellation, cancellation))
+                {
+                    _locationSearchCancellation = null;
+                    cancellation.Dispose();
+                }
+            }
+        }
+
+        public ICommand LocationSearchCommand => new RelayCommand(o => IsLocationSearchVisible = !IsLocationSearchVisible);
 
         public Location? SavedLocation
         {
@@ -1400,6 +1483,9 @@ namespace PhotoLocator
             _processCancellation?.Cancel();
             _processCancellation?.Dispose();
             _processCancellation = null;
+            _locationSearchCancellation?.Cancel();
+            _locationSearchCancellation?.Dispose();
+            _locationSearchCancellation = null;
             DisposeFileSystemWatcher();
         }
     }

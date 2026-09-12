@@ -370,6 +370,38 @@ namespace PhotoLocator
                 if (_viewModel.IsCropControlVisible)
                     ShowCropControl();
             }
+            else if (e.PropertyName is nameof(_viewModel.IsLocationSearchVisible))
+            {
+                if (_viewModel.IsLocationSearchVisible)
+                    Dispatcher.BeginInvoke(() =>
+                    {
+                        LocationSearchTextBox.Focus();
+                        LocationSearchTextBox.SelectAll();
+                    });
+            }
+        }
+
+        private void HandleLocationSearchResultMouseMove(object sender, MouseEventArgs e)
+        {
+            if (e.OriginalSource is not DependencyObject source)
+                return;
+            if (ItemsControl.ContainerFromElement((ItemsControl)sender, source) is ListBoxItem item &&
+                item.DataContext is LocationWithName result)
+                _viewModel.PreviewLocationSearchResult(result);
+        }
+
+        private void HandleLocationSearchKeyUp(object sender, KeyEventArgs e)
+        {
+            if ((e.Key == Key.Enter || e.Key == Key.Down) && _viewModel.LocationSearchResults.Count > 0)
+            {
+                e.Handled = true;
+                _viewModel.SelectedLocationSearchResult = _viewModel.LocationSearchResults[0];
+            }
+            else if (e.Key == Key.Escape)
+            {
+                e.Handled = true;
+                _viewModel.IsLocationSearchVisible = false;
+            }
         }
 
         private void UpdateLogView()
