@@ -330,6 +330,8 @@ namespace PhotoLocator
 
         public IEnumerable<PictureItemViewModel> GetSelectedItems(bool filesOnly)
         {
+            IsLocationSearchVisible = false;
+            IsCropControlVisible = false;
             var firstChecked = SelectedItem is not null && SelectedItem.IsChecked 
                 && (SelectedItem.IsFile || !filesOnly) 
                 ? SelectedItem : null;
@@ -546,6 +548,8 @@ namespace PhotoLocator
         public async Task RunProcessWithProgressBarAsync(Func<Action<double>, CancellationToken, Task> body, string text, PictureItemViewModel? focusItem = null)
         {
             using var cursor = new MouseCursorOverride();
+            IsLocationSearchVisible = false;
+            IsCropControlVisible = false;
             ProgressBarIsIndeterminate = false;
             ProgressBarValue = 0;
             TaskbarProgressState = TaskbarItemProgressState.Normal;
