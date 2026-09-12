@@ -6,8 +6,6 @@ name: .NET
 on:
   push:
     branches: [ "main", "features/**" ]
-  pull_request:
-    branches: [ "main" ]
 
 jobs:
   build:
