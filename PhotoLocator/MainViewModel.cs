@@ -210,12 +210,13 @@ namespace PhotoLocator
 
             using var cursor = new MouseCursorOverride(Cursors.AppStarting);
             var cancellation = new CancellationTokenSource();
+            var ct = cancellation.Token;
             _locationSearchCancellation = cancellation;
             try
             {
-                await Task.Delay(500, cancellation.Token);
+                await Task.Delay(1000, ct);
                 _locationSearcher ??= new NominatimLocationSearcher();
-                var results = await _locationSearcher.SearchAsync(searchText, 10, cancellation.Token);
+                var results = await _locationSearcher.SearchAsync(searchText, 10, ct);
                 if (!ReferenceEquals(_locationSearchCancellation, cancellation))
                     return;
                 LocationSearchResults.Clear();
