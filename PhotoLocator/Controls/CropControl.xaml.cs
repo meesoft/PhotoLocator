@@ -87,19 +87,19 @@ namespace PhotoLocator.Controls
             return true;
         }
 
-        public SolidColorBrush? CropBorderColor { get => field; private set => SetProperty(ref field, value); }
+        public SolidColorBrush? CropBorderColor { get; private set => SetProperty(ref field, value); }
 
-        public GridLength CropLeftOffset { get => field; set => SetProperty(ref field, value); }
+        public GridLength CropLeftOffset { get; set => SetProperty(ref field, value); }
 
-        public GridLength CropWidth { get => field; set => SetProperty(ref field, value); }
+        public GridLength CropWidth { get; set => SetProperty(ref field, value); }
 
-        public GridLength CropRightOffset { get => field; set => SetProperty(ref field, value); }
+        public GridLength CropRightOffset { get; set => SetProperty(ref field, value); }
 
-        public GridLength CropTopOffset { get => field; set => SetProperty(ref field, value); }
+        public GridLength CropTopOffset { get; set => SetProperty(ref field, value); }
 
-        public GridLength CropHeight { get => field; set => SetProperty(ref field, value); }
+        public GridLength CropHeight { get; set => SetProperty(ref field, value); }
         
-        public GridLength CropBottomOffset { get => field; set => SetProperty(ref field, value); }
+        public GridLength CropBottomOffset { get; set => SetProperty(ref field, value); }
 
         public Rect CropRectangle
         {
