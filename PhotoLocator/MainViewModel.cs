@@ -202,13 +202,15 @@ namespace PhotoLocator
 
         async Task SearchLocationsAsync(string searchText)
         {
-            await (_locationSearchCancellation?.CancelAsync() ?? Task.CompletedTask);
-            _locationSearchCancellation?.Dispose();
-            _locationSearchCancellation = null;
+#pragma warning disable CA1849 // Call async methods when in an async method
+            _locationSearchCancellation?.Cancel();
+#pragma warning restore CA1849 // Call async methods when in an async method
             if (string.IsNullOrWhiteSpace(searchText))
                 return;
+            _locationSearchCancellation?.Dispose();
+            _locationSearchCancellation = null;
 
-            using var cursor = new MouseCursorOverride(Cursors.AppStarting);
+            Mouse.OverrideCursor = Cursors.AppStarting;
             var cancellation = new CancellationTokenSource();
             var ct = cancellation.Token;
             _locationSearchCancellation = cancellation;
@@ -217,11 +219,12 @@ namespace PhotoLocator
                 await Task.Delay(1000, ct);
                 _locationSearcher ??= new NominatimLocationSearcher();
                 var results = await _locationSearcher.SearchAsync(searchText, 10, ct);
-                if (!ReferenceEquals(_locationSearchCancellation, cancellation))
-                    return;
-                LocationSearchResults.Clear();
-                foreach (var result in results)
-                    LocationSearchResults.Add(result);
+                if (ReferenceEquals(_locationSearchCancellation, cancellation))
+                {
+                    LocationSearchResults.Clear();
+                    foreach (var result in results)
+                        LocationSearchResults.Add(result);
+                }
             }
             finally
             {
@@ -229,6 +232,7 @@ namespace PhotoLocator
                 {
                     _locationSearchCancellation = null;
                     cancellation.Dispose();
+                    Mouse.OverrideCursor = null;
                 }
             }
         }
