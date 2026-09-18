@@ -46,6 +46,7 @@ namespace PhotoLocator
         CancellationTokenSource? _loadCancellation;
         CancellationTokenSource? _previewCancellation;
         CancellationTokenSource? _processCancellation;
+        CancellationTokenSource? _locationSearchCancellation;
         FileSystemWatcher? _fileSystemWatcher;
         double _loadImagesProgress;
         bool _titleUpdatePending;
@@ -53,6 +54,8 @@ namespace PhotoLocator
         readonly List<(string Path, BitmapSource Picture)> _pictureCache = [];
         readonly HashSet<string> _gpsTraceFiles = [];
         Location? _sunAndMoonMapCenter;
+        NominatimLocationSearcher? _locationSearcher;
+        LocationWithName? _previewedLocationSearchResult;
 
         public event PropertyChangedEventHandler? PropertyChanged;
 
@@ -148,6 +151,93 @@ namespace PhotoLocator
             get;
             set => SetProperty(ref field, value);
         }
+
+        public bool IsLocationSearchVisible
+        {
+            get;
+            set
+            {
+                if (SetProperty(ref field, value) && !value)
+                {
+                    _locationSearchCancellation?.Cancel();
+                    _previewedLocationSearchResult = null;
+                    SelectedLocationSearchResult = null;
+                }
+            }
+        }
+
+        public string LocationSearchText
+        {
+            get;
+            set
+            { 
+                if (SetProperty(ref field, value)) 
+                    SearchLocationsAsync(value).WithExceptionLogging(); 
+            }
+        } = string.Empty;
+
+        public ObservableCollection<LocationWithName> LocationSearchResults { get; } = [];
+
+        public LocationWithName? SelectedLocationSearchResult
+        {
+            get;
+            set
+            {
+                if (!SetProperty(ref field, value) || value is null)
+                    return;
+                MapCenter = value.Location;
+                if (!IsMapVisible)
+                    ViewModeCommand?.Execute(null);
+                IsLocationSearchVisible = false;
+            }
+        }
+
+        public void PreviewLocationSearchResult(LocationWithName result)
+        {
+            if (ReferenceEquals(_previewedLocationSearchResult, result))
+                return;
+            _previewedLocationSearchResult = result;
+            MapCenter = result.Location;
+        }
+
+        async Task SearchLocationsAsync(string searchText)
+        {
+#pragma warning disable CA1849 // Call async methods when in an async method
+            _locationSearchCancellation?.Cancel();
+#pragma warning restore CA1849 // Call async methods when in an async method
+            if (string.IsNullOrWhiteSpace(searchText))
+                return;
+            _locationSearchCancellation?.Dispose();
+            _locationSearchCancellation = null;
+
+            Mouse.OverrideCursor = Cursors.AppStarting;
+            var cancellation = new CancellationTokenSource();
+            var ct = cancellation.Token;
+            _locationSearchCancellation = cancellation;
+            try
+            {
+                await Task.Delay(1000, ct);
+                _locationSearcher ??= new NominatimLocationSearcher();
+                var results = await _locationSearcher.SearchAsync(searchText, 10, ct);
+                if (ReferenceEquals(_locationSearchCancellation, cancellation))
+                {
+                    LocationSearchResults.Clear();
+                    foreach (var result in results)
+                        LocationSearchResults.Add(result);
+                }
+            }
+            finally
+            {
+                if (ReferenceEquals(_locationSearchCancellation, cancellation))
+                {
+                    _locationSearchCancellation = null;
+                    cancellation.Dispose();
+                    Mouse.OverrideCursor = null;
+                }
+            }
+        }
+
+        public ICommand LocationSearchCommand => new RelayCommand(o => IsLocationSearchVisible = !IsLocationSearchVisible);
 
         public Location? SavedLocation
         {
@@ -245,6 +335,8 @@ namespace PhotoLocator
 
         public IEnumerable<PictureItemViewModel> GetSelectedItems(bool filesOnly)
         {
+            IsLocationSearchVisible = false;
+            IsCropControlVisible = false;
             var firstChecked = SelectedItem is not null && SelectedItem.IsChecked 
                 && (SelectedItem.IsFile || !filesOnly) 
                 ? SelectedItem : null;
@@ -461,6 +553,8 @@ namespace PhotoLocator
         public async Task RunProcessWithProgressBarAsync(Func<Action<double>, CancellationToken, Task> body, string text, PictureItemViewModel? focusItem = null)
         {
             using var cursor = new MouseCursorOverride();
+            IsLocationSearchVisible = false;
+            IsCropControlVisible = false;
             ProgressBarIsIndeterminate = false;
             ProgressBarValue = 0;
             TaskbarProgressState = TaskbarItemProgressState.Normal;
@@ -1400,6 +1494,9 @@ namespace PhotoLocator
             _processCancellation?.Cancel();
             _processCancellation?.Dispose();
             _processCancellation = null;
+            _locationSearchCancellation?.Cancel();
+            _locationSearchCancellation?.Dispose();
+            _locationSearchCancellation = null;
             DisposeFileSystemWatcher();
         }
     }
