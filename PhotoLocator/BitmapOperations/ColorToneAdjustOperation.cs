@@ -11,7 +11,7 @@ namespace PhotoLocator.BitmapOperations
         public const int NumberOfTones = NumberOfHues * 2;
 
         public const float ToneLowSaturation = 0.4f;
-        public const float ToneHighSaturation = 0.8f;
+        public const float ToneHighSaturation = 0.9f;
 
         FloatBitmap? _srcHSI;
         bool _updateSrcHsi;
@@ -78,6 +78,8 @@ namespace PhotoLocator.BitmapOperations
                 h -= 1;
             else if (h < 0)
                 h += 1;
+            if (s > 1)
+                s = 1;
             double rr, rg, rb, rh;
             if (h <= 1f / 3) // 0°<H<=120°
             {
@@ -208,20 +210,20 @@ namespace PhotoLocator.BitmapOperations
                             var hueWeight = 1 - nextHueWeight;
 
                             var saturation = src[xx + 1];
-                            float saturationWeight, nextSaturationWeight;
+                            float lowSaturationWeight, highSaturationWeight;
                             if (saturation <= ToneLowSaturation)
                             {
-                                saturationWeight = 1; nextSaturationWeight = 0;
+                                lowSaturationWeight = 1; highSaturationWeight = 0;
                             }
                             else if (saturation >= ToneHighSaturation)
                             {
-                                saturationWeight = 0; nextSaturationWeight = 1;
+                                lowSaturationWeight = 0; highSaturationWeight = 1;
                             }
                             else
                             {
                                 var saturationTone = (saturation - ToneLowSaturation) / (ToneHighSaturation - ToneLowSaturation);
-                                nextSaturationWeight = RealMath.SmoothStep(saturationTone);
-                                saturationWeight = 1 - nextSaturationWeight;
+                                highSaturationWeight = RealMath.SmoothStep(saturationTone);
+                                lowSaturationWeight = 1 - highSaturationWeight;
                             }
 
                             var hue = src[xx];
@@ -244,23 +246,38 @@ namespace PhotoLocator.BitmapOperations
                                     toneHue * toneHueWeight +
                                     nextToneHue * nextToneHueWeight;
                             }
+
+                            var haLow = toneAdjustments[hueIndex].AdjustHue;
+                            var haHigh = FixHue(toneAdjustments[hueIndex + NumberOfHues].AdjustHue, haLow);
+                            var haLowNext = FixHue(toneAdjustments[nextHueIndex].AdjustHue, haLow);
+                            var haHighNext = FixHue(toneAdjustments[nextHueIndex + NumberOfHues].AdjustHue, haLowNext);
                             var h = hue +
-                                (toneAdjustments[hueIndex].AdjustHue * saturationWeight + toneAdjustments[hueIndex + NumberOfHues].AdjustHue * nextSaturationWeight) * hueWeight +
-                                (toneAdjustments[nextHueIndex].AdjustHue * saturationWeight + toneAdjustments[nextHueIndex + NumberOfHues].AdjustHue * nextSaturationWeight) * nextHueWeight;
+                                (haLow * lowSaturationWeight + haHigh * highSaturationWeight) * hueWeight +
+                                (haLowNext * lowSaturationWeight + haHighNext * highSaturationWeight) * nextHueWeight;
+
                             var s = src[xx + 1] *
-                                ((toneAdjustments[hueIndex].AdjustSaturation * saturationWeight + toneAdjustments[hueIndex + NumberOfHues].AdjustSaturation * nextSaturationWeight) * hueWeight +
-                                 (toneAdjustments[nextHueIndex].AdjustSaturation * saturationWeight + toneAdjustments[nextHueIndex + NumberOfHues].AdjustSaturation * nextSaturationWeight) * nextHueWeight);
-                            if (s > 1)
-                                s = 1;
+                                ((toneAdjustments[hueIndex].AdjustSaturation * lowSaturationWeight + toneAdjustments[hueIndex + NumberOfHues].AdjustSaturation * highSaturationWeight) * hueWeight +
+                                 (toneAdjustments[nextHueIndex].AdjustSaturation * lowSaturationWeight + toneAdjustments[nextHueIndex + NumberOfHues].AdjustSaturation * highSaturationWeight) * nextHueWeight);
+                          
                             var i = src[xx + 2] *
-                                ((toneAdjustments[hueIndex].AdjustIntensity * saturationWeight + toneAdjustments[hueIndex + NumberOfHues].AdjustIntensity * nextSaturationWeight) * hueWeight +
-                                 (toneAdjustments[nextHueIndex].AdjustIntensity * saturationWeight + toneAdjustments[nextHueIndex + NumberOfHues].AdjustIntensity * nextSaturationWeight) * nextHueWeight);
+                                ((toneAdjustments[hueIndex].AdjustIntensity * lowSaturationWeight + toneAdjustments[hueIndex + NumberOfHues].AdjustIntensity * highSaturationWeight) * hueWeight +
+                                 (toneAdjustments[nextHueIndex].AdjustIntensity * lowSaturationWeight + toneAdjustments[nextHueIndex + NumberOfHues].AdjustIntensity * highSaturationWeight) * nextHueWeight);
+                            
                             ColorTransformHSI2RGB(h, s, i, out dst[xx], out dst[xx + 1], out dst[xx + 2]);
                             xx += 3;
                         }
                     }
                 }
             });
+        }
+
+        private static float FixHue(float hueAdjust, float hueAdjustBaseBase)
+        {
+            if (hueAdjust < hueAdjustBaseBase - 0.5f)
+                hueAdjust += 1;
+            else if (hueAdjust > hueAdjustBaseBase + 0.5f)
+                hueAdjust -= 1;
+            return hueAdjust;
         }
     }
 }
