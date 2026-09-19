@@ -8,8 +8,7 @@ namespace PhotoLocator.BitmapOperations
     {
         public const int NumberOfHues = 8;
 
-        public const int NumberOfTones = NumberOfHues * 2;
-
+        public const float SingleToneSaturation = 0.5f;
         public const float ToneLowSaturation = 0.4f;
         public const float ToneHighSaturation = 0.9f;
 
@@ -18,22 +17,24 @@ namespace PhotoLocator.BitmapOperations
 
         public struct ToneAdjustment(float toneHue, float toneSaturation)
         {
-            public readonly float ToneHue = toneHue;
-            public readonly float ToneSaturation = toneSaturation;
+            public float ToneHue { get; } = toneHue;
+            public float ToneSaturation { get; internal set; } = toneSaturation;
             public float AdjustHue = 0;
             public float AdjustSaturation = 1;
             public float AdjustIntensity = 1;
             public float HueUniformity = 0;
         }
+       
+        public int NumberOfTones => ToneAdjustments.Length;
 
-        public ToneAdjustment[] ToneAdjustments { get; } = new ToneAdjustment[NumberOfTones];
+        public ToneAdjustment[] ToneAdjustments { get; private set; } = new ToneAdjustment[NumberOfHues];
 
         public float Rotation
         {
             get;
             set
             {
-                if (value <= -1 || value >= 1)
+                if (value is <= -1 or >= 1)
                     throw new ArgumentOutOfRangeException(nameof(value));
                 field = value;
             }
@@ -43,13 +44,49 @@ namespace PhotoLocator.BitmapOperations
         {
             ResetToneAdjustments();
         }
-
+     
         public void ResetToneAdjustments()
         {
-            for (var i = 0; i < NumberOfHues; i++)
+            if (DualToneMode)
+                for (var i = 0; i < NumberOfHues; i++)
+                {
+                    ToneAdjustments[i] = new ToneAdjustment((float)i / NumberOfHues, ToneHighSaturation);
+                    ToneAdjustments[i + NumberOfHues] = new ToneAdjustment((float)i / NumberOfHues, ToneLowSaturation);
+                }
+            else
+                for (var i = 0; i < NumberOfHues; i++)
+                    ToneAdjustments[i] = new ToneAdjustment((float)i / NumberOfHues, SingleToneSaturation);
+
+        }
+
+        public bool DualToneMode
+        {
+            get => ToneAdjustments.Length > NumberOfHues;
+            set
             {
-                ToneAdjustments[i] = new ToneAdjustment((float)i / NumberOfHues, ToneLowSaturation);
-                ToneAdjustments[i + NumberOfHues] = new ToneAdjustment((float)i / NumberOfHues, ToneHighSaturation);
+                if (value != DualToneMode)
+                {
+                    if (value)
+                    {
+                        var newToneAdjustments = new ToneAdjustment[NumberOfHues * 2];
+                        Array.Copy(ToneAdjustments, newToneAdjustments, NumberOfHues);
+                        Array.Copy(ToneAdjustments, 0, newToneAdjustments, NumberOfHues, NumberOfHues);
+                        for (var i = 0; i < NumberOfHues; i++)
+                        {
+                            newToneAdjustments[i].ToneSaturation = ToneLowSaturation;
+                            newToneAdjustments[i + NumberOfHues].ToneSaturation = ToneHighSaturation;
+                        }
+                        ToneAdjustments = newToneAdjustments;
+                    }
+                    else
+                    {
+                        var newToneAdjustments = new ToneAdjustment[NumberOfHues];
+                        Array.Copy(ToneAdjustments, newToneAdjustments, NumberOfHues);
+                        for (var i = 0; i < NumberOfHues; i++)
+                            newToneAdjustments[i].ToneSaturation = SingleToneSaturation;
+                        ToneAdjustments = newToneAdjustments;
+                    }
+                }
             }
         }
 
@@ -185,7 +222,83 @@ namespace PhotoLocator.BitmapOperations
                 ColorTransformRGB2HSI(SrcBitmap, _srcHSI);
             }
             DstBitmap.New(_srcHSI.Width, _srcHSI.Height, 3);
-            Parallel.For(0, _srcHSI.Height, y =>
+            if (DualToneMode)
+                ApplyDualToneAdjustments();
+            else
+                ApplyToneAdjustments();
+        }
+
+        void ApplyToneAdjustments()
+        {
+            Parallel.For(0, _srcHSI!.Height, y =>
+            {
+                var toneAdjustments = ToneAdjustments;
+                var width = _srcHSI.Width;
+                unsafe
+                {
+                    fixed (float* src = &_srcHSI.Elements[y, 0])
+                    fixed (float* dst = &DstBitmap.Elements[y, 0])
+                    {
+                        int xx = 0;
+                        for (var x = 0; x < width; x++)
+                        {
+                            var tone = (src[xx] - Rotation) * NumberOfHues;
+                            if (tone < 0)
+                                tone += NumberOfHues;
+                            if (tone >= NumberOfHues)
+                                tone -= NumberOfHues;
+                            var toneIndex = (int)tone;
+                            var nextToneIndex = toneIndex + 1;
+                            if (nextToneIndex == NumberOfHues)
+                                nextToneIndex = 0;
+                            var nextToneWeight = RealMath.SmoothStep(tone - toneIndex);
+                            var toneWeight = 1 - nextToneWeight;
+
+                            var hue = src[xx];
+                            if (toneAdjustments[toneIndex].HueUniformity > 0 || toneAdjustments[nextToneIndex].HueUniformity > 0)
+                            {
+                                var toneHue = toneAdjustments[toneIndex].ToneHue + Rotation;
+                                if (toneHue < hue - 0.5f)
+                                    toneHue++;
+                                else if (toneHue > hue + 0.5f)
+                                    toneHue--;
+                                var nextToneHue = toneAdjustments[nextToneIndex].ToneHue + Rotation;
+                                if (nextToneHue < hue - 0.5f)
+                                    nextToneHue++;
+                                else if (nextToneHue > hue + 0.5f)
+                                    nextToneHue--;
+
+                                var toneHueWeight = toneAdjustments[toneIndex].HueUniformity * toneWeight;
+                                var nextToneHueWeight = toneAdjustments[nextToneIndex].HueUniformity * nextToneWeight;
+                                hue = hue * (1 - toneHueWeight - nextToneHueWeight) +
+                                    toneHue * toneHueWeight +
+                                    nextToneHue * nextToneHueWeight;
+                            }
+                            var ha = toneAdjustments[toneIndex].AdjustHue;
+                            var haNext = FixHue(toneAdjustments[nextToneIndex].AdjustHue, ha);
+                            var h = hue +
+                                ha * toneWeight +
+                                haNext * nextToneWeight;
+
+                            var s = src[xx + 1] *
+                                (toneAdjustments[toneIndex].AdjustSaturation * toneWeight +
+                                 toneAdjustments[nextToneIndex].AdjustSaturation * nextToneWeight);
+
+                            var i = src[xx + 2] *
+                                (toneAdjustments[toneIndex].AdjustIntensity * toneWeight +
+                                 toneAdjustments[nextToneIndex].AdjustIntensity * nextToneWeight);
+
+                            ColorTransformHSI2RGB(h, s, i, out dst[xx], out dst[xx + 1], out dst[xx + 2]);
+                            xx += 3;
+                        }
+                    }
+                }
+            });
+        }
+
+        void ApplyDualToneAdjustments()
+        { 
+            Parallel.For(0, _srcHSI!.Height, y =>
             {
                 var toneAdjustments = ToneAdjustments;
                 var width = _srcHSI.Width;

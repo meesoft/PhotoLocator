@@ -5,6 +5,7 @@ using PhotoLocator.PictureFileFormats;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Numerics;
 using System.Runtime.CompilerServices;
@@ -252,17 +253,17 @@ namespace PhotoLocator
             get
             {
                 UpdateColorTones();
-                for (int i = 0; i < ColorToneAdjustOperation.NumberOfTones; i++)
-                {
+                for (int i = 0; i < _colorTones.Length; i++)
                     yield return new ComboBoxItem { Content = _colorTones[i] };
-                }
                 yield return new ComboBoxItem { Content = "All" };
             }
         }
 
+        [MemberNotNull(nameof(_colorTones))]
         private void UpdateColorTones()
         {
-            for (int i = 0; i < ColorToneAdjustOperation.NumberOfTones; i++)
+            _colorTones = new Rectangle[_colorToneOperation.NumberOfTones];
+            for (int i = 0; i < _colorToneOperation.NumberOfTones; i++)
             {
                 _colorTones[i] ??= new Rectangle() { Width = 35, Height = 12, RadiusX = 4, RadiusY = 4, Stroke = Brushes.Black };
                 ColorToneAdjustOperation.ColorTransformHSI2RGB(
@@ -271,7 +272,19 @@ namespace PhotoLocator
                 _colorTones[i].Fill = new SolidColorBrush(Color.FromRgb((byte)(r * 255), (byte)(g * 255), (byte)(b * 255)));
             }
         }
-        readonly Rectangle[] _colorTones = new Rectangle[ColorToneAdjustOperation.NumberOfTones];
+        Rectangle[]? _colorTones;
+
+        public bool IsDualToneModeEnabled
+        {
+            get => _colorToneOperation.DualToneMode;
+            set
+            {
+                if (value == IsDualToneModeEnabled)
+                    return;
+                _colorToneOperation.DualToneMode = value;
+                NotifyPropertyChanged(nameof(ColorTones));
+            }
+        }
 
         public int ActiveToneIndex
         {
@@ -280,14 +293,14 @@ namespace PhotoLocator
             {
                 if (SetProperty(ref field, value) && value >= 0)
                 {
-                    if (value == ColorToneAdjustOperation.NumberOfTones)
+                    if (value == _colorToneOperation.NumberOfTones)
                     {
-                        for (int i = 0; i < ColorToneAdjustOperation.NumberOfTones - 1; i++)
+                        for (int i = 0; i < _colorToneOperation.NumberOfTones - 1; i++)
                         {
-                            _colorToneOperation.ToneAdjustments[i].AdjustHue = _colorToneOperation.ToneAdjustments[ColorToneAdjustOperation.NumberOfTones - 1].AdjustHue;
-                            _colorToneOperation.ToneAdjustments[i].AdjustSaturation = _colorToneOperation.ToneAdjustments[ColorToneAdjustOperation.NumberOfTones - 1].AdjustSaturation;
-                            _colorToneOperation.ToneAdjustments[i].AdjustIntensity = _colorToneOperation.ToneAdjustments[ColorToneAdjustOperation.NumberOfTones - 1].AdjustIntensity;
-                            _colorToneOperation.ToneAdjustments[i].HueUniformity = _colorToneOperation.ToneAdjustments[ColorToneAdjustOperation.NumberOfTones - 1].HueUniformity;
+                            _colorToneOperation.ToneAdjustments[i].AdjustHue = _colorToneOperation.ToneAdjustments[_colorToneOperation.NumberOfTones - 1].AdjustHue;
+                            _colorToneOperation.ToneAdjustments[i].AdjustSaturation = _colorToneOperation.ToneAdjustments[_colorToneOperation.NumberOfTones - 1].AdjustSaturation;
+                            _colorToneOperation.ToneAdjustments[i].AdjustIntensity = _colorToneOperation.ToneAdjustments[_colorToneOperation.NumberOfTones - 1].AdjustIntensity;
+                            _colorToneOperation.ToneAdjustments[i].HueUniformity = _colorToneOperation.ToneAdjustments[_colorToneOperation.NumberOfTones - 1].HueUniformity;
                         }
                     }
                     PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(HueAdjust)));
@@ -296,16 +309,16 @@ namespace PhotoLocator
                     PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(HueUniformity)));
                 }
             }
-        } = ColorToneAdjustOperation.NumberOfTones;
+        } = ColorToneAdjustOperation.NumberOfHues;
 
         public float HueAdjust
         {
-            get => _colorToneOperation.ToneAdjustments[Math.Min(ActiveToneIndex, ColorToneAdjustOperation.NumberOfTones - 1)].AdjustHue;
+            get => _colorToneOperation.ToneAdjustments[Math.Min(ActiveToneIndex, _colorToneOperation.NumberOfTones - 1)].AdjustHue;
             set
             {
-                if (ActiveToneIndex == ColorToneAdjustOperation.NumberOfTones)
+                if (ActiveToneIndex == _colorToneOperation.NumberOfTones)
                 {
-                    for (int i = 0; i < ColorToneAdjustOperation.NumberOfTones; i++)
+                    for (int i = 0; i < _colorToneOperation.NumberOfTones; i++)
                         _colorToneOperation.ToneAdjustments[i].AdjustHue = value;
                     NotifyPropertyChanged();
                 }
@@ -318,12 +331,12 @@ namespace PhotoLocator
 
         public float SaturationAdjust
         {
-            get => _colorToneOperation.ToneAdjustments[Math.Min(ActiveToneIndex, ColorToneAdjustOperation.NumberOfTones - 1)].AdjustSaturation;
+            get => _colorToneOperation.ToneAdjustments[Math.Min(ActiveToneIndex, _colorToneOperation.NumberOfTones - 1)].AdjustSaturation;
             set
             {
-                if (ActiveToneIndex == ColorToneAdjustOperation.NumberOfTones)
+                if (ActiveToneIndex == _colorToneOperation.NumberOfTones)
                 {
-                    for (int i = 0; i < ColorToneAdjustOperation.NumberOfTones; i++)
+                    for (int i = 0; i < _colorToneOperation.NumberOfTones; i++)
                         _colorToneOperation.ToneAdjustments[i].AdjustSaturation = value;
                     NotifyPropertyChanged();
                 }
@@ -342,12 +355,12 @@ namespace PhotoLocator
 
         public float IntensityAdjust
         {
-            get => _colorToneOperation.ToneAdjustments[Math.Min(ActiveToneIndex, ColorToneAdjustOperation.NumberOfTones - 1)].AdjustIntensity;
+            get => _colorToneOperation.ToneAdjustments[Math.Min(ActiveToneIndex, _colorToneOperation.NumberOfTones - 1)].AdjustIntensity;
             set
             {
-                if (ActiveToneIndex == ColorToneAdjustOperation.NumberOfTones)
+                if (ActiveToneIndex == _colorToneOperation.NumberOfTones)
                 {
-                    for (int i = 0; i < ColorToneAdjustOperation.NumberOfTones; i++)
+                    for (int i = 0; i < _colorToneOperation.NumberOfTones; i++)
                         _colorToneOperation.ToneAdjustments[i].AdjustIntensity = value;
                     NotifyPropertyChanged();
                 }
@@ -360,12 +373,12 @@ namespace PhotoLocator
 
         public float HueUniformity
         {
-            get => _colorToneOperation.ToneAdjustments[Math.Min(ActiveToneIndex, ColorToneAdjustOperation.NumberOfTones - 1)].HueUniformity;
+            get => _colorToneOperation.ToneAdjustments[Math.Min(ActiveToneIndex, _colorToneOperation.NumberOfTones - 1)].HueUniformity;
             set
             {
-                if (ActiveToneIndex == ColorToneAdjustOperation.NumberOfTones)
+                if (ActiveToneIndex == _colorToneOperation.NumberOfTones)
                 {
-                    for (int i = 0; i < ColorToneAdjustOperation.NumberOfTones; i++)
+                    for (int i = 0; i < _colorToneOperation.NumberOfTones; i++)
                         _colorToneOperation.ToneAdjustments[i].HueUniformity = value;
                     NotifyPropertyChanged();
                 }
@@ -411,7 +424,7 @@ namespace PhotoLocator
             _colorToneOperation.ResetToneAdjustments();
             ToneRotation = 0;
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(null));
-            ActiveToneIndex = ColorToneAdjustOperation.NumberOfTones;
+            ActiveToneIndex = _colorToneOperation.NumberOfTones;
             StartUpdateTimer(FirstParamChanged.ColorTone);
         });
 
@@ -507,9 +520,12 @@ namespace PhotoLocator
             DetailHandling = av.DetailHandling;
             MaxStretch = av.MaxStretch;
             ToneRotation = av.ToneRotation;
-            if (_colorToneOperation.ToneAdjustments.Length != av.ToneAdjustments?.Length)
+
+            if (av.ToneAdjustments is null || av.ToneAdjustments.Length != ColorToneAdjustOperation.NumberOfHues && av.ToneAdjustments.Length != ColorToneAdjustOperation.NumberOfHues * 2)
                 _colorToneOperation.ResetToneAdjustments();
             else
+            {
+                _colorToneOperation.DualToneMode = av.ToneAdjustments.Length == ColorToneAdjustOperation.NumberOfHues * 2;
                 for (int i = 0; i < av.ToneAdjustments.Length; i++)
                 {
                     var src = av.ToneAdjustments[i];
@@ -518,8 +534,9 @@ namespace PhotoLocator
                     _colorToneOperation.ToneAdjustments[i].AdjustIntensity = src?.AdjustIntensity ?? 1;
                     _colorToneOperation.ToneAdjustments[i].HueUniformity = src?.HueUniformity ?? 0;
                 }
+            }
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(null));
-            ActiveToneIndex = _colorToneOperation.AreToneAdjustmentsChanged ? 0 : ColorToneAdjustOperation.NumberOfTones;
+            ActiveToneIndex = _colorToneOperation.AreToneAdjustmentsChanged ? 0 : _colorToneOperation   .NumberOfTones;
             StartUpdateTimer(FirstParamChanged.ColorTone);
         }
 
