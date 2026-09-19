@@ -135,7 +135,7 @@ namespace PhotoLocator.Controls
 
                 var group = new GeometryGroup();
                 group.Children.Add(new EllipseGeometry(p1, 2, 2));
-                group.Children.Add(new EllipseGeometry(p2, 2, 2));
+                group.Children.Add(new EllipseGeometry(p2, 1.5, 1.5));
                 group.Children.Add(new LineGeometry(p1, p2));
 
                 double thickness;
@@ -152,7 +152,7 @@ namespace PhotoLocator.Controls
                 ColorToneAdjustOperation.ColorTransformRGB2HSI(color[0], color[1], color[2], out float h, out float s, out _);
                 var xy = HS2XY(h, s);
                 var group = new GeometryGroup();
-                group.Children.Add(new EllipseGeometry(xy, 2, 2));
+                group.Children.Add(new EllipseGeometry(xy, 1.5, 1.5));
                 var drawing = new GeometryDrawing(Brushes.Transparent, new Pen(Brushes.White, InactivePenThickness), group);
                 drawings.Children.Add(drawing);
             }
