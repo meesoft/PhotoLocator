@@ -50,13 +50,12 @@ namespace PhotoLocator.BitmapOperations
             if (DualToneMode)
                 for (var i = 0; i < NumberOfHues; i++)
                 {
-                    ToneAdjustments[i] = new ToneAdjustment((float)i / NumberOfHues, ToneHighSaturation);
-                    ToneAdjustments[i + NumberOfHues] = new ToneAdjustment((float)i / NumberOfHues, ToneLowSaturation);
+                    ToneAdjustments[i] = new ToneAdjustment((float)i / NumberOfHues, ToneLowSaturation);
+                    ToneAdjustments[i + NumberOfHues] = new ToneAdjustment((float)i / NumberOfHues, ToneHighSaturation);
                 }
             else
                 for (var i = 0; i < NumberOfHues; i++)
                     ToneAdjustments[i] = new ToneAdjustment((float)i / NumberOfHues, SingleToneSaturation);
-
         }
 
         public bool DualToneMode

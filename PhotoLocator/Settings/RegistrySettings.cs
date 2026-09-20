@@ -60,7 +60,7 @@ namespace PhotoLocator.Settings
 
         public string SavedFilePostfix
         {
-            get => Key.GetValue(nameof(SavedFilePostfix)) as string ?? "[geo]";
+            get => Key.GetValue(nameof(SavedFilePostfix)) as string ?? "[PL]";
             set => Key.SetValue(nameof(SavedFilePostfix), value);
         }
         

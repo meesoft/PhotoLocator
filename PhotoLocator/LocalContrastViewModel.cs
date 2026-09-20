@@ -281,10 +281,11 @@ namespace PhotoLocator
             {
                 if (value == IsDualToneModeEnabled)
                     return;
+                var isAllSelected = ActiveToneIndex == _colorToneOperation.NumberOfTones;
                 _colorToneOperation.DualToneMode = value;
                 NotifyPropertyChanged(nameof(IsDualToneModeEnabled));
                 NotifyPropertyChanged(nameof(ColorTones));
-                ActiveToneIndex = 0;
+                ActiveToneIndex = isAllSelected ? _colorToneOperation.NumberOfTones : 0;
             }
         }
 
