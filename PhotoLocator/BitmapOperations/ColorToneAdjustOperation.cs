@@ -275,13 +275,13 @@ namespace PhotoLocator.BitmapOperations
                             }
                             var ha = toneAdjustments[toneIndex].AdjustHue;
                             var haNext = FixHue(toneAdjustments[nextToneIndex].AdjustHue, ha);
-                            var h = hue +
-                                ha * toneWeight +
-                                haNext * nextToneWeight;
+                            double hueVectorX = 0;
+                            double hueVectorY = 0;
+                            AddHueVector(hue + ha, toneAdjustments[toneIndex].AdjustSaturation, toneWeight, ref hueVectorX, ref hueVectorY);
+                            AddHueVector(hue + haNext, toneAdjustments[nextToneIndex].AdjustSaturation, nextToneWeight, ref hueVectorX, ref hueVectorY);
+                            GetHueAndSaturation(hueVectorX, hueVectorY, hue, out var h, out var saturationAdjust);
 
-                            var s = src[xx + 1] *
-                                (toneAdjustments[toneIndex].AdjustSaturation * toneWeight +
-                                 toneAdjustments[nextToneIndex].AdjustSaturation * nextToneWeight);
+                            var s = src[xx + 1] * saturationAdjust;
 
                             var i = src[xx + 2] *
                                 (toneAdjustments[toneIndex].AdjustIntensity * toneWeight +
@@ -363,13 +363,15 @@ namespace PhotoLocator.BitmapOperations
                             var haHigh = FixHue(toneAdjustments[hueIndex + NumberOfHues].AdjustHue, haLow);
                             var haLowNext = FixHue(toneAdjustments[nextHueIndex].AdjustHue, haLow);
                             var haHighNext = FixHue(toneAdjustments[nextHueIndex + NumberOfHues].AdjustHue, haLowNext);
-                            var h = hue +
-                                (haLow * lowSaturationWeight + haHigh * highSaturationWeight) * hueWeight +
-                                (haLowNext * lowSaturationWeight + haHighNext * highSaturationWeight) * nextHueWeight;
+                            double hueVectorX = 0;
+                            double hueVectorY = 0;
+                            AddHueVector(hue + haLow, toneAdjustments[hueIndex].AdjustSaturation, hueWeight * lowSaturationWeight, ref hueVectorX, ref hueVectorY);
+                            AddHueVector(hue + haHigh, toneAdjustments[hueIndex + NumberOfHues].AdjustSaturation, hueWeight * highSaturationWeight, ref hueVectorX, ref hueVectorY);
+                            AddHueVector(hue + haLowNext, toneAdjustments[nextHueIndex].AdjustSaturation, nextHueWeight * lowSaturationWeight, ref hueVectorX, ref hueVectorY);
+                            AddHueVector(hue + haHighNext, toneAdjustments[nextHueIndex + NumberOfHues].AdjustSaturation, nextHueWeight * highSaturationWeight, ref hueVectorX, ref hueVectorY);
+                            GetHueAndSaturation(hueVectorX, hueVectorY, hue, out var h, out var saturationAdjust);
 
-                            var s = src[xx + 1] *
-                                ((toneAdjustments[hueIndex].AdjustSaturation * lowSaturationWeight + toneAdjustments[hueIndex + NumberOfHues].AdjustSaturation * highSaturationWeight) * hueWeight +
-                                 (toneAdjustments[nextHueIndex].AdjustSaturation * lowSaturationWeight + toneAdjustments[nextHueIndex + NumberOfHues].AdjustSaturation * highSaturationWeight) * nextHueWeight);
+                            var s = src[xx + 1] * saturationAdjust;
                           
                             var i = src[xx + 2] *
                                 ((toneAdjustments[hueIndex].AdjustIntensity * lowSaturationWeight + toneAdjustments[hueIndex + NumberOfHues].AdjustIntensity * highSaturationWeight) * hueWeight +
@@ -390,6 +392,26 @@ namespace PhotoLocator.BitmapOperations
             else if (hueAdjust > hueAdjustBaseBase + 0.5f)
                 hueAdjust -= 1;
             return hueAdjust;
+        }
+
+        private static void AddHueVector(float hue, float saturation, float weight, ref double x, ref double y)
+        {
+            var angle = hue * (Math.PI * 2);
+            x += weight * saturation * Math.Cos(angle);
+            y += weight * saturation * Math.Sin(angle);
+        }
+
+        private static void GetHueAndSaturation(double x, double y, float fallbackHue, out float hue, out float saturation)
+        {
+            saturation = (float)Math.Sqrt(x * x + y * y);
+            if (saturation > 0)
+            {
+                hue = (float)(Math.Atan2(y, x) / (Math.PI * 2));
+                if (hue < 0)
+                    hue++;
+            }
+            else
+                hue = fallbackHue;
         }
     }
 }
