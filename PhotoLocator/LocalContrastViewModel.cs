@@ -282,7 +282,9 @@ namespace PhotoLocator
                 if (value == IsDualToneModeEnabled)
                     return;
                 _colorToneOperation.DualToneMode = value;
+                NotifyPropertyChanged(nameof(IsDualToneModeEnabled));
                 NotifyPropertyChanged(nameof(ColorTones));
+                ActiveToneIndex = 0;
             }
         }
 
