@@ -8,9 +8,9 @@ namespace PhotoLocator.BitmapOperations
     {
         public const int NumberOfHues = 8;
 
-        public const float SingleToneSaturation = 0.5f;
-        public const float ToneLowSaturation = 0.4f;
-        public const float ToneHighSaturation = 0.9f;
+        const float SingleToneSaturation = 0.5f;
+        const float ToneLowSaturation = 0.4f;
+        const float ToneHighSaturation = 0.9f;
 
         FloatBitmap? _srcHSI;
         bool _updateSrcHsi;
@@ -224,10 +224,10 @@ namespace PhotoLocator.BitmapOperations
             if (DualToneMode)
                 ApplyDualToneAdjustments();
             else
-                ApplyToneAdjustments();
+                ApplySingleToneAdjustments();
         }
 
-        void ApplyToneAdjustments()
+        void ApplySingleToneAdjustments()
         {
             Parallel.For(0, _srcHSI!.Height, y =>
             {

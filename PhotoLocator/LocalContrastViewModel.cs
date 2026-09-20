@@ -263,7 +263,7 @@ namespace PhotoLocator
         private void UpdateColorTones()
         {
             _colorTones = new Rectangle[_colorToneOperation.NumberOfTones];
-            for (int i = 0; i < _colorToneOperation.NumberOfTones; i++)
+            for (int i = 0; i < _colorTones.Length; i++)
             {
                 _colorTones[i] ??= new Rectangle() { Width = 35, Height = 12, RadiusX = 4, RadiusY = 4, Stroke = Brushes.Black };
                 ColorToneAdjustOperation.ColorTransformHSI2RGB(
@@ -298,12 +298,13 @@ namespace PhotoLocator
                 {
                     if (value == _colorToneOperation.NumberOfTones)
                     {
-                        for (int i = 0; i < _colorToneOperation.NumberOfTones - 1; i++)
+                        var numberOfTones_1 = _colorToneOperation.NumberOfTones - 1;
+                        for (int i = 0; i < numberOfTones_1; i++)
                         {
-                            _colorToneOperation.ToneAdjustments[i].AdjustHue = _colorToneOperation.ToneAdjustments[_colorToneOperation.NumberOfTones - 1].AdjustHue;
-                            _colorToneOperation.ToneAdjustments[i].AdjustSaturation = _colorToneOperation.ToneAdjustments[_colorToneOperation.NumberOfTones - 1].AdjustSaturation;
-                            _colorToneOperation.ToneAdjustments[i].AdjustIntensity = _colorToneOperation.ToneAdjustments[_colorToneOperation.NumberOfTones - 1].AdjustIntensity;
-                            _colorToneOperation.ToneAdjustments[i].HueUniformity = _colorToneOperation.ToneAdjustments[_colorToneOperation.NumberOfTones - 1].HueUniformity;
+                            _colorToneOperation.ToneAdjustments[i].AdjustHue = _colorToneOperation.ToneAdjustments[numberOfTones_1].AdjustHue;
+                            _colorToneOperation.ToneAdjustments[i].AdjustSaturation = _colorToneOperation.ToneAdjustments[numberOfTones_1].AdjustSaturation;
+                            _colorToneOperation.ToneAdjustments[i].AdjustIntensity = _colorToneOperation.ToneAdjustments[numberOfTones_1].AdjustIntensity;
+                            _colorToneOperation.ToneAdjustments[i].HueUniformity = _colorToneOperation.ToneAdjustments[numberOfTones_1].HueUniformity;
                         }
                     }
                     PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(HueAdjust)));
