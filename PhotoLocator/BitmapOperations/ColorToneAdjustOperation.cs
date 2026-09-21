@@ -396,9 +396,9 @@ namespace PhotoLocator.BitmapOperations
 
         private static void AddHueVector(float hue, float saturation, float weight, ref double x, ref double y)
         {
-            var angle = hue * (Math.PI * 2);
-            x += weight * saturation * Math.Cos(angle);
-            y += weight * saturation * Math.Sin(angle);
+            var (sin, cos) = Math.SinCos(hue * (Math.PI * 2));
+            x += weight * saturation * cos;
+            y += weight * saturation * sin;
         }
 
         private static void GetHueAndSaturation(double x, double y, float fallbackHue, out float hue, out float saturation)

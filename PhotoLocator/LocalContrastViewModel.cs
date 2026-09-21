@@ -387,7 +387,16 @@ namespace PhotoLocator
                     NotifyPropertyChanged();
                 }
                 else if (SetProperty(ref _colorToneOperation.ToneAdjustments[ActiveToneIndex].HueUniformity, value))
+                {
+                    if (IsDualToneModeEnabled)
+                    {
+                        if (ActiveToneIndex < ColorToneAdjustOperation.NumberOfHues)
+                            _colorToneOperation.ToneAdjustments[ActiveToneIndex + ColorToneAdjustOperation.NumberOfHues].HueUniformity = value;
+                        else
+                            _colorToneOperation.ToneAdjustments[ActiveToneIndex - ColorToneAdjustOperation.NumberOfHues].HueUniformity = value;
+                    }
                     StartUpdateTimer(FirstParamChanged.ColorTone);
+                }
             }
         }
 

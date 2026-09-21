@@ -35,7 +35,7 @@ namespace PhotoLocator.BitmapOperations
         }
 
         [TestMethod]
-        public void ApplySingleToneAdjustments_OppositeHueInterpolationReducesSaturation()
+        public void ApplySingleToneAdjustments_OppositeHueInterpolationShouldReducesSaturation()
         {
             var source = new FloatBitmap(1, 1, 3);
             ColorToneAdjustOperation.ColorTransformHSI2RGB(1f / 16, 1, 0.4f,
@@ -53,8 +53,8 @@ namespace PhotoLocator.BitmapOperations
 
             ColorToneAdjustOperation.ColorTransformRGB2HSI(
                 operation.DstBitmap.Elements[0, 0], operation.DstBitmap.Elements[0, 1], operation.DstBitmap.Elements[0, 2],
-                out _, out var saturation, out _);
-            Assert.IsTrue(saturation < 0.001f, $"Saturation was {saturation}");
+                out var hue, out var saturation, out var intensity);
+            Assert.IsLessThan(0.001f, saturation, $"Saturation was {saturation}");
         }
     }
 }
