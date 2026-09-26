@@ -6,28 +6,35 @@ namespace PhotoLocator.BitmapOperations
 {
     class ColorToneAdjustOperation : OperationBase
     {
-        public const int NumberOfTones = 8;
+        public const int NumberOfHues = 8;
+
+        const float SingleToneSaturation = 0.5f;
+        const float ToneLowSaturation = 0.4f;
+        const float ToneHighSaturation = 0.9f;
 
         FloatBitmap? _srcHSI;
         bool _updateSrcHsi;
 
-        public struct ToneAdjustment(float toneHue)
+        public struct ToneAdjustment(float toneHue, float toneSaturation)
         {
-            public readonly float ToneHue = toneHue;
+            public float ToneHue { get; } = toneHue;
+            public float ToneSaturation { get; internal set; } = toneSaturation;
             public float AdjustHue = 0;
             public float AdjustSaturation = 1;
             public float AdjustIntensity = 1;
             public float HueUniformity = 0;
         }
+       
+        public int NumberOfTones => ToneAdjustments.Length;
 
-        public ToneAdjustment[] ToneAdjustments { get; } = new ToneAdjustment[NumberOfTones];
+        public ToneAdjustment[] ToneAdjustments { get; private set; } = new ToneAdjustment[NumberOfHues];
 
         public float Rotation
         {
             get;
             set
             {
-                if (value <= -1 || value >= 1)
+                if (value is <= -1 or >= 1)
                     throw new ArgumentOutOfRangeException(nameof(value));
                 field = value;
             }
@@ -37,11 +44,49 @@ namespace PhotoLocator.BitmapOperations
         {
             ResetToneAdjustments();
         }
-
+     
         public void ResetToneAdjustments()
         {
-            for (var i = 0; i < NumberOfTones; i++)
-                ToneAdjustments[i] = new ToneAdjustment((float)i / NumberOfTones);
+            if (DualToneMode)
+                for (var i = 0; i < NumberOfHues; i++)
+                {
+                    ToneAdjustments[i] = new ToneAdjustment((float)i / NumberOfHues, ToneLowSaturation);
+                    ToneAdjustments[i + NumberOfHues] = new ToneAdjustment((float)i / NumberOfHues, ToneHighSaturation);
+                }
+            else
+                for (var i = 0; i < NumberOfHues; i++)
+                    ToneAdjustments[i] = new ToneAdjustment((float)i / NumberOfHues, SingleToneSaturation);
+        }
+
+        public bool DualToneMode
+        {
+            get => ToneAdjustments.Length > NumberOfHues;
+            set
+            {
+                if (value != DualToneMode)
+                {
+                    if (value)
+                    {
+                        var newToneAdjustments = new ToneAdjustment[NumberOfHues * 2];
+                        Array.Copy(ToneAdjustments, newToneAdjustments, NumberOfHues);
+                        Array.Copy(ToneAdjustments, 0, newToneAdjustments, NumberOfHues, NumberOfHues);
+                        for (var i = 0; i < NumberOfHues; i++)
+                        {
+                            newToneAdjustments[i].ToneSaturation = ToneLowSaturation;
+                            newToneAdjustments[i + NumberOfHues].ToneSaturation = ToneHighSaturation;
+                        }
+                        ToneAdjustments = newToneAdjustments;
+                    }
+                    else
+                    {
+                        var newToneAdjustments = new ToneAdjustment[NumberOfHues];
+                        Array.Copy(ToneAdjustments, newToneAdjustments, NumberOfHues);
+                        for (var i = 0; i < NumberOfHues; i++)
+                            newToneAdjustments[i].ToneSaturation = SingleToneSaturation;
+                        ToneAdjustments = newToneAdjustments;
+                    }
+                }
+            }
         }
 
         public bool AreToneAdjustmentsChanged
@@ -69,6 +114,8 @@ namespace PhotoLocator.BitmapOperations
                 h -= 1;
             else if (h < 0)
                 h += 1;
+            if (s > 1)
+                s = 1;
             double rr, rg, rb, rh;
             if (h <= 1f / 3) // 0°<H<=120°
             {
@@ -174,9 +221,18 @@ namespace PhotoLocator.BitmapOperations
                 ColorTransformRGB2HSI(SrcBitmap, _srcHSI);
             }
             DstBitmap.New(_srcHSI.Width, _srcHSI.Height, 3);
-            Parallel.For(0, _srcHSI.Height, y =>
+
+            var toneAdjustments = ToneAdjustments; // Guard against mode change during processing
+            if (toneAdjustments.Length > NumberOfHues)
+                ApplyDualToneAdjustments(toneAdjustments);
+            else
+                ApplySingleToneAdjustments(toneAdjustments);
+        }
+
+        void ApplySingleToneAdjustments(ToneAdjustment[] toneAdjustments)
+        {
+            Parallel.For(0, _srcHSI!.Height, y =>
             {
-                var toneAdjustments = ToneAdjustments;
                 var width = _srcHSI.Width;
                 unsafe
                 {
@@ -186,14 +242,14 @@ namespace PhotoLocator.BitmapOperations
                         int xx = 0;
                         for (var x = 0; x < width; x++)
                         {
-                            var tone = (src[xx] - Rotation) * NumberOfTones;
+                            var tone = (src[xx] - Rotation) * NumberOfHues;
                             if (tone < 0)
-                                tone += NumberOfTones;
-                            if (tone >= NumberOfTones)
-                                tone -= NumberOfTones;
+                                tone += NumberOfHues;
+                            if (tone >= NumberOfHues)
+                                tone -= NumberOfHues;
                             var toneIndex = (int)tone;
                             var nextToneIndex = toneIndex + 1;
-                            if (nextToneIndex == NumberOfTones)
+                            if (nextToneIndex == NumberOfHues)
                                 nextToneIndex = 0;
                             var nextToneWeight = RealMath.SmoothStep(tone - toneIndex);
                             var toneWeight = 1 - nextToneWeight;
@@ -218,23 +274,144 @@ namespace PhotoLocator.BitmapOperations
                                     toneHue * toneHueWeight +
                                     nextToneHue * nextToneHueWeight;
                             }
-                            var h = hue +
-                                toneAdjustments[toneIndex].AdjustHue * toneWeight +
-                                toneAdjustments[nextToneIndex].AdjustHue * nextToneWeight;
-                            var s = src[xx + 1] *
-                                (toneAdjustments[toneIndex].AdjustSaturation * toneWeight +
-                                 toneAdjustments[nextToneIndex].AdjustSaturation * nextToneWeight);
-                            if (s > 1)
-                                s = 1;
+                            var ha = toneAdjustments[toneIndex].AdjustHue;
+                            var haNext = FixHue(toneAdjustments[nextToneIndex].AdjustHue, ha);
+                            double hueVectorX = 0;
+                            double hueVectorY = 0;
+                            AddHueVector(hue + ha, toneAdjustments[toneIndex].AdjustSaturation, toneWeight, ref hueVectorX, ref hueVectorY);
+                            AddHueVector(hue + haNext, toneAdjustments[nextToneIndex].AdjustSaturation, nextToneWeight, ref hueVectorX, ref hueVectorY);
+                            GetHueAndSaturation(hueVectorX, hueVectorY, hue, out var h, out var saturationAdjust);
+
+                            var s = src[xx + 1] * saturationAdjust;
+
                             var i = src[xx + 2] *
                                 (toneAdjustments[toneIndex].AdjustIntensity * toneWeight +
                                  toneAdjustments[nextToneIndex].AdjustIntensity * nextToneWeight);
+
                             ColorTransformHSI2RGB(h, s, i, out dst[xx], out dst[xx + 1], out dst[xx + 2]);
                             xx += 3;
                         }
                     }
                 }
             });
+        }
+
+        void ApplyDualToneAdjustments(ToneAdjustment[] toneAdjustments)
+        { 
+            Parallel.For(0, _srcHSI!.Height, y =>
+            {
+                var width = _srcHSI.Width;
+                unsafe
+                {
+                    fixed (float* src = &_srcHSI.Elements[y, 0])
+                    fixed (float* dst = &DstBitmap.Elements[y, 0])
+                    {
+                        int xx = 0;
+                        for (var x = 0; x < width; x++)
+                        {
+                            var hueTone = (src[xx] - Rotation) * NumberOfHues;
+                            if (hueTone < 0)
+                                hueTone += NumberOfHues;
+                            if (hueTone >= NumberOfHues)
+                                hueTone -= NumberOfHues;
+                            var hueIndex = (int)hueTone;
+                            var nextHueIndex = hueIndex + 1;
+                            if (nextHueIndex == NumberOfHues)
+                                nextHueIndex = 0;
+                            var nextHueWeight = RealMath.SmoothStep(hueTone - hueIndex);
+                            var hueWeight = 1 - nextHueWeight;
+
+                            var saturation = src[xx + 1];
+                            float lowSaturationWeight, highSaturationWeight;
+                            if (saturation <= ToneLowSaturation)
+                            {
+                                lowSaturationWeight = 1; highSaturationWeight = 0;
+                            }
+                            else if (saturation >= ToneHighSaturation)
+                            {
+                                lowSaturationWeight = 0; highSaturationWeight = 1;
+                            }
+                            else
+                            {
+                                var saturationTone = (saturation - ToneLowSaturation) / (ToneHighSaturation - ToneLowSaturation);
+                                highSaturationWeight = RealMath.SmoothStep(saturationTone);
+                                lowSaturationWeight = 1 - highSaturationWeight;
+                            }
+
+                            var hue = src[xx];
+                            if (toneAdjustments[hueIndex].HueUniformity > 0 || toneAdjustments[nextHueIndex].HueUniformity > 0)
+                            {
+                                var toneHue = toneAdjustments[hueIndex].ToneHue + Rotation;
+                                if (toneHue < hue - 0.5f)
+                                    toneHue++;
+                                else if (toneHue > hue + 0.5f)
+                                    toneHue--;
+                                var nextToneHue = toneAdjustments[nextHueIndex].ToneHue + Rotation;
+                                if (nextToneHue < hue - 0.5f)
+                                    nextToneHue++;
+                                else if (nextToneHue > hue + 0.5f)
+                                    nextToneHue--;
+
+                                var toneHueWeight = toneAdjustments[hueIndex].HueUniformity * hueWeight;
+                                var nextToneHueWeight = toneAdjustments[nextHueIndex].HueUniformity * nextHueWeight;
+                                hue = hue * (1 - toneHueWeight - nextToneHueWeight) +
+                                    toneHue * toneHueWeight +
+                                    nextToneHue * nextToneHueWeight;
+                            }
+
+                            var haLow = toneAdjustments[hueIndex].AdjustHue;
+                            var haHigh = FixHue(toneAdjustments[hueIndex + NumberOfHues].AdjustHue, haLow);
+                            var haLowNext = FixHue(toneAdjustments[nextHueIndex].AdjustHue, haLow);
+                            var haHighNext = FixHue(toneAdjustments[nextHueIndex + NumberOfHues].AdjustHue, haLowNext);
+                            double hueVectorX = 0;
+                            double hueVectorY = 0;
+                            AddHueVector(hue + haLow, toneAdjustments[hueIndex].AdjustSaturation, hueWeight * lowSaturationWeight, ref hueVectorX, ref hueVectorY);
+                            AddHueVector(hue + haHigh, toneAdjustments[hueIndex + NumberOfHues].AdjustSaturation, hueWeight * highSaturationWeight, ref hueVectorX, ref hueVectorY);
+                            AddHueVector(hue + haLowNext, toneAdjustments[nextHueIndex].AdjustSaturation, nextHueWeight * lowSaturationWeight, ref hueVectorX, ref hueVectorY);
+                            AddHueVector(hue + haHighNext, toneAdjustments[nextHueIndex + NumberOfHues].AdjustSaturation, nextHueWeight * highSaturationWeight, ref hueVectorX, ref hueVectorY);
+                            GetHueAndSaturation(hueVectorX, hueVectorY, hue, out var h, out var saturationAdjust);
+
+                            var s = src[xx + 1] * saturationAdjust;
+                          
+                            var i = src[xx + 2] *
+                                ((toneAdjustments[hueIndex].AdjustIntensity * lowSaturationWeight + toneAdjustments[hueIndex + NumberOfHues].AdjustIntensity * highSaturationWeight) * hueWeight +
+                                 (toneAdjustments[nextHueIndex].AdjustIntensity * lowSaturationWeight + toneAdjustments[nextHueIndex + NumberOfHues].AdjustIntensity * highSaturationWeight) * nextHueWeight);
+                            
+                            ColorTransformHSI2RGB(h, s, i, out dst[xx], out dst[xx + 1], out dst[xx + 2]);
+                            xx += 3;
+                        }
+                    }
+                }
+            });
+        }
+
+        private static float FixHue(float hueAdjust, float hueAdjustBaseBase)
+        {
+            if (hueAdjust < hueAdjustBaseBase - 0.5f)
+                hueAdjust += 1;
+            else if (hueAdjust > hueAdjustBaseBase + 0.5f)
+                hueAdjust -= 1;
+            return hueAdjust;
+        }
+
+        private static void AddHueVector(float hue, float saturation, float weight, ref double x, ref double y)
+        {
+            var (sin, cos) = Math.SinCos(hue * (Math.PI * 2));
+            x += weight * saturation * cos;
+            y += weight * saturation * sin;
+        }
+
+        private static void GetHueAndSaturation(double x, double y, float fallbackHue, out float hue, out float saturation)
+        {
+            saturation = (float)Math.Sqrt(x * x + y * y);
+            if (saturation > 0)
+            {
+                hue = (float)(Math.Atan2(y, x) / (Math.PI * 2));
+                if (hue < 0)
+                    hue++;
+            }
+            else
+                hue = fallbackHue;
         }
     }
 }

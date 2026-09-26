@@ -33,5 +33,28 @@ namespace PhotoLocator.BitmapOperations
             GeneralFileFormatHandler.SaveToFile(result, "ColorToneAdjust.png");
 #endif
         }
+
+        [TestMethod]
+        public void ApplySingleToneAdjustments_OppositeHueInterpolationShouldReducesSaturation()
+        {
+            var source = new FloatBitmap(1, 1, 3);
+            ColorToneAdjustOperation.ColorTransformHSI2RGB(1f / 16, 1, 0.4f,
+                out source.Elements[0, 0], out source.Elements[0, 1], out source.Elements[0, 2]);
+
+            var operation = new ColorToneAdjustOperation
+            {
+                SrcBitmap = source,
+                DstBitmap = new FloatBitmap(),
+            };
+            operation.ToneAdjustments[0].AdjustHue = 0;
+            operation.ToneAdjustments[1].AdjustHue = 0.5f;
+
+            operation.Apply();
+
+            ColorToneAdjustOperation.ColorTransformRGB2HSI(
+                operation.DstBitmap.Elements[0, 0], operation.DstBitmap.Elements[0, 1], operation.DstBitmap.Elements[0, 2],
+                out var hue, out var saturation, out var intensity);
+            Assert.IsLessThan(0.001f, saturation, $"Saturation was {saturation}");
+        }
     }
 }

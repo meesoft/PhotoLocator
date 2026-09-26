@@ -46,6 +46,8 @@
             <MenuItem Header="Save adjustments (Ctrl+S)" Command="{Binding SaveAdjustmentsCommand}" />
             <MenuItem Header="Load adjustments (Ctrl+O)" Command="{Binding LoadAdjustmentsCommand}" />
             <MenuItem Header="Restore last used values (Ctrl+Shift+R)" Command="{Binding RestoreLastUsedValuesCommand}" />
+            <Separator/>
+            <MenuItem Header="Dual color tone mode" IsCheckable="True" IsChecked="{Binding IsDualToneModeEnabled}"/>
         </ContextMenu>
     </Window.ContextMenu>
 

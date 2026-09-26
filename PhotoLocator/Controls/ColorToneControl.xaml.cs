@@ -130,12 +130,12 @@ namespace PhotoLocator.Controls
             var rotation = _viewModel.ToneRotation;
             for (int i = 0; i < ToneAdjustments.Length; i++)
             {
-                var p1 = HS2XY(ToneAdjustments[i].ToneHue + rotation, 0.5);
-                var p2 = HS2XY(ToneAdjustments[i].ToneHue + rotation + ToneAdjustments[i].AdjustHue, 0.5 * ToneAdjustments[i].AdjustSaturation);
+                var p1 = HS2XY(ToneAdjustments[i].ToneHue + rotation, ToneAdjustments[i].ToneSaturation);
+                var p2 = HS2XY(ToneAdjustments[i].ToneHue + rotation + ToneAdjustments[i].AdjustHue, ToneAdjustments[i].ToneSaturation * ToneAdjustments[i].AdjustSaturation);
 
                 var group = new GeometryGroup();
                 group.Children.Add(new EllipseGeometry(p1, 2, 2));
-                group.Children.Add(new EllipseGeometry(p2, 2, 2));
+                group.Children.Add(new EllipseGeometry(p2, 1.5, 1.5));
                 group.Children.Add(new LineGeometry(p1, p2));
 
                 double thickness;
@@ -152,7 +152,7 @@ namespace PhotoLocator.Controls
                 ColorToneAdjustOperation.ColorTransformRGB2HSI(color[0], color[1], color[2], out float h, out float s, out _);
                 var xy = HS2XY(h, s);
                 var group = new GeometryGroup();
-                group.Children.Add(new EllipseGeometry(xy, 2, 2));
+                group.Children.Add(new EllipseGeometry(xy, 1.5, 1.5));
                 var drawing = new GeometryDrawing(Brushes.Transparent, new Pen(Brushes.White, InactivePenThickness), group);
                 drawings.Children.Add(drawing);
             }
@@ -187,7 +187,7 @@ namespace PhotoLocator.Controls
                     else if (h < -0.5f)
                         h += 1;
                     _viewModel.HueAdjust = h;
-                    _viewModel.SaturationAdjust = s * 2f;
+                    _viewModel.SaturationAdjust = s / ToneAdjustments[ActiveToneIndex].ToneSaturation;
                     UpdateToneControlImage();
                 }
             }
@@ -198,8 +198,8 @@ namespace PhotoLocator.Controls
                 _highlightTone = -1;
                 for (int i = 0; i < ToneAdjustments.Length; i++)
                 {
-                    var p1 = HS2XY(ToneAdjustments[i].ToneHue + rotation, 0.5);
-                    var p2 = HS2XY(ToneAdjustments[i].ToneHue + rotation + ToneAdjustments[i].AdjustHue, 0.5 * ToneAdjustments[i].AdjustSaturation);
+                    var p1 = HS2XY(ToneAdjustments[i].ToneHue + rotation, ToneAdjustments[i].ToneSaturation);
+                    var p2 = HS2XY(ToneAdjustments[i].ToneHue + rotation + ToneAdjustments[i].AdjustHue, ToneAdjustments[i].ToneSaturation * ToneAdjustments[i].AdjustSaturation);
                     var distance = SqrDistance(p1, pt);
                     if (distance < bestDistance)
                     {
