@@ -85,7 +85,7 @@
                         </TextBlock>
                         <TextBox Text="{Binding BackgroundRemovalSmooth,StringFormat=N2,UpdateSourceTrigger=PropertyChanged,Delay=500}" Width="80" HorizontalAlignment="Right" />
                     </DockPanel>
-                    <Slider Value="{Binding BackgroundRemovalSmooth}" Minimum="0" Maximum="16" SmallChange="0.05" LargeChange="0.1" />
+                    <Slider Value="{Binding BackgroundRemovalSmooth}" Minimum="0" Maximum="8" SmallChange="0.1" LargeChange="0.5" />
 
                     <DockPanel>
                         <TextBlock Text="Black point">

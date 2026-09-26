@@ -135,7 +135,7 @@ namespace PhotoLocator
         }
         public ICommand ResetAstroStretchCommand => new RelayCommand(o => AstroStretch = IsAstroModeEnabled ? AstroStretchOperation.OptimizeStretch(_sourceFloatBitmap) : 0);
 
-        public const double DefaultBackgroundRemovalSmooth = 8;
+        public const double DefaultBackgroundRemovalSmooth = 2;
         public double BackgroundRemovalSmooth
         {
             get;
