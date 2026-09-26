@@ -221,17 +221,18 @@ namespace PhotoLocator.BitmapOperations
                 ColorTransformRGB2HSI(SrcBitmap, _srcHSI);
             }
             DstBitmap.New(_srcHSI.Width, _srcHSI.Height, 3);
-            if (DualToneMode)
-                ApplyDualToneAdjustments();
+
+            var toneAdjustments = ToneAdjustments; // Guard against mode change during processing
+            if (toneAdjustments.Length > NumberOfHues)
+                ApplyDualToneAdjustments(toneAdjustments);
             else
-                ApplySingleToneAdjustments();
+                ApplySingleToneAdjustments(toneAdjustments);
         }
 
-        void ApplySingleToneAdjustments()
+        void ApplySingleToneAdjustments(ToneAdjustment[] toneAdjustments)
         {
             Parallel.For(0, _srcHSI!.Height, y =>
             {
-                var toneAdjustments = ToneAdjustments;
                 var width = _srcHSI.Width;
                 unsafe
                 {
@@ -295,11 +296,10 @@ namespace PhotoLocator.BitmapOperations
             });
         }
 
-        void ApplyDualToneAdjustments()
+        void ApplyDualToneAdjustments(ToneAdjustment[] toneAdjustments)
         { 
             Parallel.For(0, _srcHSI!.Height, y =>
             {
-                var toneAdjustments = ToneAdjustments;
                 var width = _srcHSI.Width;
                 unsafe
                 {
