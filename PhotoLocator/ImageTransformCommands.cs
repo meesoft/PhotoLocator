@@ -7,6 +7,7 @@ using System;
 using System.Globalization;
 using System.IO;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
@@ -43,16 +44,27 @@ namespace PhotoLocator
 
         private async Task RotateSelectedAsync(int angle)
         {
-            var allSelected = _mainViewModel.GetSelectedItems(true).Where(item => JpegTransformations.IsFileTypeSupported(item.Name)).ToArray();
-            if (allSelected.Length == 0)
-                throw new UserMessageException("Unsupported file format");
+            var allSelected = _mainViewModel.GetSelectedItems(true).ToArray();
             await _mainViewModel.RunProcessWithProgressBarAsync(async (progressCallback, ct) =>
             {
                 progressCallback(-1);
                 int i = 0;
                 foreach (var item in allSelected)
                 {
-                    await JpegTransformations.RotateAsync(item.FullPath, item.GetProcessedFileName(), angle, ct);
+                    if (JpegTransformations.IsFileTypeSupported(item.Name))
+                    {
+                        await JpegTransformations.RotateAsync(item.FullPath, item.GetProcessedFileName(), angle, ct);
+                    }
+                    else if (Path.GetExtension(item.Name).ToLowerInvariant() is ".tif" or ".tiff" or ".png" or ".bmp" or ".jxr")
+                    {
+                        item.Orientation = (Rotation)(((int)item.Orientation + angle / 90) % 4);
+                        var (image, metadata) = await LoadImageWithMetadataAsync(item, ct);
+                        var targetFileName = item.GetProcessedFileName();
+                        GeneralFileFormatHandler.SaveToFile(image, targetFileName, ExifHandler.ResetOrientation(metadata), _mainViewModel.Settings);
+                        item.Orientation = Rotation.Rotate0;
+                    }
+                    else
+                        throw new UserMessageException("Unsupported file format");
                     item.IsChecked = false;
                     progressCallback((double)(++i) / allSelected.Length);
                 }
@@ -72,7 +84,7 @@ namespace PhotoLocator
                 var targetFileName = selectedItem.GetProcessedFileName(); 
                 if (Path.GetExtension(selectedItem.Name).ToLowerInvariant() is ".tif" or ".tiff" or ".png" or ".bmp" or ".jxr")
                 {
-                    var (sourceImage, metadata) = await LoadImageWithMetadataAsync(selectedItem);
+                    var (sourceImage, metadata) = await LoadImageWithMetadataAsync(selectedItem, ct);
                     var cropped = new FloatBitmap(sourceImage, 1).CopyRect(
                         IntMath.Round(cropRectangle.Left), IntMath.Round(cropRectangle.Top), Math.Max(1, IntMath.Round(cropRectangle.Width)), Math.Max(1, IntMath.Round(cropRectangle.Height)));
                     var use16bit = sourceImage.Format == PixelFormats.Gray16 || sourceImage.Format == PixelFormats.Gray32Float || 
@@ -146,10 +158,10 @@ namespace PhotoLocator
                 await SaveProcessedImageAsync(localContrastViewModel, metadata, selectedItem);
         }, HasFileSelected);
 
-        private static async Task<(BitmapSource, BitmapMetadata?)> LoadImageWithMetadataAsync(PictureItemViewModel item)
+        private static async Task<(BitmapSource, BitmapMetadata?)> LoadImageWithMetadataAsync(PictureItemViewModel item, CancellationToken ct = default)
         {
             BitmapMetadata? metadata = null;
-            var image = await item.LoadPreviewAsync(default, preservePixelFormat: true).ConfigureAwait(false);
+            var image = await item.LoadPreviewAsync(ct, preservePixelFormat: true).ConfigureAwait(false);
             try
             {
                 using var file = File.OpenRead(item.FullPath);
@@ -261,7 +273,7 @@ namespace PhotoLocator
                     }
                     else
                     {
-                        var (image, itemMetadata) = await LoadImageWithMetadataAsync(item);
+                        var (image, itemMetadata) = await LoadImageWithMetadataAsync(item, ct);
                         await Task.Run(() => GeneralFileFormatHandler.SaveToFile(image, targetFileName,
                             ExifHandler.ResetOrientation(itemMetadata), _mainViewModel.Settings), ct);
                     }
@@ -311,7 +323,7 @@ namespace PhotoLocator
                         overwriteAll = true;
                     }
 
-                    var (image, itemMetadata) = await LoadImageWithMetadataAsync(item);
+                    var (image, itemMetadata) = await LoadImageWithMetadataAsync(item, ct);
 
                     var newImage = await Task.Run(
                         () => op.Apply(image, int.Max(1, IntMath.Round(image.PixelWidth * newHeight / (double)image.PixelHeight)), newHeight, image.DpiX, image.DpiY, ct)
