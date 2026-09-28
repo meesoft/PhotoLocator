@@ -36,10 +36,10 @@ namespace PhotoLocator
         public ICommand Rotate180Command => new RelayCommand(async o => await RotateSelectedAsync(180), HasFileSelected);
 
         public ICommand Rotate0Command => new RelayCommand(async o =>
-        { 
+        {
             if (MessageBox.Show("This will reset any rotation EXIF data from the selected images. Continue?", "Reset rotation tag", MessageBoxButton.OKCancel, MessageBoxImage.Question) != MessageBoxResult.OK)
                 return;
-            await RotateSelectedAsync(0); 
+            await RotateSelectedAsync(0);
         }, HasFileSelected);
 
         private async Task RotateSelectedAsync(int angle)
@@ -81,13 +81,13 @@ namespace PhotoLocator
                 progressCallback(-1);
                 await using var pause = _mainViewModel.PauseFileSystemWatcher();
                 var sourceFileName = selectedItem.FullPath;
-                var targetFileName = selectedItem.GetProcessedFileName(); 
+                var targetFileName = selectedItem.GetProcessedFileName();
                 if (Path.GetExtension(selectedItem.Name).ToLowerInvariant() is ".tif" or ".tiff" or ".png" or ".bmp" or ".jxr")
                 {
                     var (sourceImage, metadata) = await LoadImageWithMetadataAsync(selectedItem, ct);
                     var cropped = new FloatBitmap(sourceImage, 1).CopyRect(
                         IntMath.Round(cropRectangle.Left), IntMath.Round(cropRectangle.Top), Math.Max(1, IntMath.Round(cropRectangle.Width)), Math.Max(1, IntMath.Round(cropRectangle.Height)));
-                    var use16bit = sourceImage.Format == PixelFormats.Gray16 || sourceImage.Format == PixelFormats.Gray32Float || 
+                    var use16bit = sourceImage.Format == PixelFormats.Gray16 || sourceImage.Format == PixelFormats.Gray32Float ||
                         sourceImage.Format == PixelFormats.Rgb48 || sourceImage.Format.BitsPerPixel == 96;
                     await Task.Run(() => GeneralFileFormatHandler.SaveToFile(
                         use16bit ? cropped.ToBitmapSource16(sourceImage.DpiX, sourceImage.DpiY, 1) : cropped.ToBitmapSource(sourceImage.DpiX, sourceImage.DpiY, 1),
@@ -127,9 +127,9 @@ namespace PhotoLocator
             using (var cursor = new MouseCursorOverride())
             {
                 (var image, metadata) = await Task.Run(() => LoadImageWithMetadataAsync(selectedItem));
-                localContrastViewModel = new LocalContrastViewModel() 
-                { 
-                    IsAstroModeEnabled = o as string == AstroCommandParameter, 
+                localContrastViewModel = new LocalContrastViewModel()
+                {
+                    IsAstroModeEnabled = o as string == AstroCommandParameter,
                     SourceBitmap = image,
                     FileName = selectedItem.FullPath,
                 };
@@ -207,7 +207,7 @@ namespace PhotoLocator
                 if (sameDir)
                     await _mainViewModel.AddOrUpdateItemAsync(dlg.FileName, false, false);
             }
-        }    
+        }
 
         private async Task BatchProcessLocalContrastAsync(LocalContrastViewModel localContrastViewModel, BitmapMetadata? metadata, PictureItemViewModel[] allSelected, PictureItemViewModel selectedItem)
         {
@@ -291,7 +291,7 @@ namespace PhotoLocator
             if (allSelected.Length == 0)
                 return;
             int newHeight = 0;
-            if (TextInputWindow.Show("New image height (width will be adjusted to keep ratio):", str => int.TryParse(str, CultureInfo.CurrentCulture, out newHeight) && newHeight > 0, 
+            if (TextInputWindow.Show("New image height (width will be adjusted to keep ratio):", str => int.TryParse(str, CultureInfo.CurrentCulture, out newHeight) && newHeight > 0,
                 "Resize", _resizeTargetHeight.ToString(CultureInfo.CurrentCulture)) is null)
                 return;
             _resizeTargetHeight = newHeight;
@@ -308,8 +308,7 @@ namespace PhotoLocator
             await _mainViewModel.RunProcessWithProgressBarAsync(async (progressCallback, ct) =>
             {
                 var overwriteAll = targetIsSourceDir;
-                var op = new LanczosResizeOperation();
-                op.FilterFunc = LanczosResizeOperation.Lanczos2;
+                var op = new LanczosResizeOperation { FilterFunc = LanczosResizeOperation.Lanczos2, FilterWindow = 2 };
                 int i = 0;
                 Task? previousSaveTask = null;
                 foreach (var item in allSelected)
@@ -325,9 +324,15 @@ namespace PhotoLocator
 
                     var (image, itemMetadata) = await LoadImageWithMetadataAsync(item, ct);
 
-                    var newImage = await Task.Run(
-                        () => op.Apply(image, int.Max(1, IntMath.Round(image.PixelWidth * newHeight / (double)image.PixelHeight)), newHeight, image.DpiX, image.DpiY, ct)
-                        ?? throw new UserMessageException("Unsupported pixel format " + image.Format), ct);
+                    var newImage = await Task.Run(() =>
+                    {
+                        var newWidth = int.Max(1, IntMath.Round(image.PixelWidth * newHeight / (double)image.PixelHeight));
+                        var sourceBitsPerChannel = image.Format.BitsPerPixel / image.Format.Masks.Count;
+                        var gamma = sourceBitsPerChannel == 8 ? FloatBitmap.DefaultMonitorGamma : 1;
+                        var floatImage = new FloatBitmap(image, gamma);
+                        floatImage = op.Apply(floatImage, newWidth, newHeight, ct);
+                        return sourceBitsPerChannel == 8 ? floatImage.ToBitmapSource(image.DpiX, image.DpiY, gamma) : floatImage.ToBitmapSource16(image.DpiX, image.DpiY, gamma);
+                    }, ct);
 
                     await (previousSaveTask ?? Task.CompletedTask);
                     previousSaveTask = Task.Run(() =>
