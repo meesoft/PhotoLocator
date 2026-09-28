@@ -21,6 +21,7 @@ namespace PhotoLocator.BitmapOperations
             {
                 SrcBitmap = sourceFloat,
                 DstBitmap = new FloatBitmap(),
+                Stretch = AstroStretchOperation.OptimizeStretch(sourceFloat),
             };
             op.Apply();
             Console.WriteLine(sw.ElapsedMilliseconds);
@@ -28,11 +29,10 @@ namespace PhotoLocator.BitmapOperations
             sw.Restart();
             var result = op.DstBitmap.ToBitmapSource(source.DpiX, source.DpiY, FloatBitmap.DefaultMonitorGamma);
             Console.WriteLine(sw.ElapsedMilliseconds);
-
-            Assert.AreEqual(0.0026545193517195226, op.DstBitmap.Mean(), 1e-5);
 #if DEBUG
-            GeneralFileFormatHandler.SaveToFile(result, "astroStretch.png");
+            GeneralFileFormatHandler.SaveToFile(result, "astroStretch.jpg");
 #endif
+            Assert.AreEqual(0.04771542762189313, op.DstBitmap.Mean(), 1e-5);
         }
     }
 }

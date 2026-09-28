@@ -61,10 +61,10 @@ namespace PhotoLocator
                         var (image, metadata) = await LoadImageWithMetadataAsync(item, ct);
                         var targetFileName = item.GetProcessedFileName();
                         GeneralFileFormatHandler.SaveToFile(image, targetFileName, ExifHandler.ResetOrientation(metadata), _mainViewModel.Settings);
-                        item.Orientation = Rotation.Rotate0;
                     }
                     else
                         throw new UserMessageException("Unsupported file format");
+                    item.Orientation = Rotation.Rotate0;
                     item.IsChecked = false;
                     progressCallback((double)(++i) / allSelected.Length);
                 }
