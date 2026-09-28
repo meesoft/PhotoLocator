@@ -87,11 +87,10 @@ namespace PhotoLocator
                     var (sourceImage, metadata) = await LoadImageWithMetadataAsync(selectedItem, ct);
                     var cropped = new FloatBitmap(sourceImage, 1).CopyRect(
                         IntMath.Round(cropRectangle.Left), IntMath.Round(cropRectangle.Top), Math.Max(1, IntMath.Round(cropRectangle.Width)), Math.Max(1, IntMath.Round(cropRectangle.Height)));
-                    var use16bit = sourceImage.Format == PixelFormats.Gray16 || sourceImage.Format == PixelFormats.Gray32Float ||
-                        sourceImage.Format == PixelFormats.Rgb48 || sourceImage.Format.BitsPerPixel == 96;
+                    var sourceBitsPerChannel = sourceImage.Format.BitsPerPixel / sourceImage.Format.Masks.Count;
                     await Task.Run(() => GeneralFileFormatHandler.SaveToFile(
-                        use16bit ? cropped.ToBitmapSource16(sourceImage.DpiX, sourceImage.DpiY, 1) : cropped.ToBitmapSource(sourceImage.DpiX, sourceImage.DpiY, 1),
-                        targetFileName, sourceImage.Format.BitsPerPixel == 96 ? null : metadata, _mainViewModel.Settings), ct);
+                        sourceBitsPerChannel > 8 ? cropped.ToBitmapSource16(sourceImage.DpiX, sourceImage.DpiY, 1) : cropped.ToBitmapSource(sourceImage.DpiX, sourceImage.DpiY, 1),
+                        targetFileName, sourceImage.Format.BitsPerPixel == 96 ? null : ExifHandler.ResetOrientation(metadata), _mainViewModel.Settings), ct);
                 }
                 else
                 {
@@ -328,16 +327,16 @@ namespace PhotoLocator
                     {
                         var newWidth = int.Max(1, IntMath.Round(image.PixelWidth * newHeight / (double)image.PixelHeight));
                         var sourceBitsPerChannel = image.Format.BitsPerPixel / image.Format.Masks.Count;
-                        var gamma = sourceBitsPerChannel == 8 ? FloatBitmap.DefaultMonitorGamma : 1;
+                        var gamma = sourceBitsPerChannel > 8 ? 1 : FloatBitmap.DefaultMonitorGamma;
                         var floatImage = new FloatBitmap(image, gamma);
                         floatImage = op.Apply(floatImage, newWidth, newHeight, ct);
-                        return sourceBitsPerChannel == 8 ? floatImage.ToBitmapSource(image.DpiX, image.DpiY, gamma) : floatImage.ToBitmapSource16(image.DpiX, image.DpiY, gamma);
+                        return sourceBitsPerChannel > 8 ? floatImage.ToBitmapSource16(image.DpiX, image.DpiY, gamma) : floatImage.ToBitmapSource(image.DpiX, image.DpiY, gamma);
                     }, ct);
 
                     await (previousSaveTask ?? Task.CompletedTask);
                     previousSaveTask = Task.Run(() =>
                     {
-                        GeneralFileFormatHandler.SaveToFile(newImage, targetFileName, ExifHandler.ResetOrientation(itemMetadata), _mainViewModel.Settings);
+                        GeneralFileFormatHandler.SaveToFile(newImage, targetFileName, image.Format.BitsPerPixel == 96 ? null : ExifHandler.ResetOrientation(itemMetadata), _mainViewModel.Settings);
                         item.IsChecked = false;
                     }, ct);
                     progressCallback((double)(i++) / allSelected.Length);
