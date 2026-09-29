@@ -90,7 +90,7 @@ namespace PhotoLocator
                     var sourceBitsPerChannel = sourceImage.Format.BitsPerPixel / sourceImage.Format.Masks.Count;
                     await Task.Run(() => GeneralFileFormatHandler.SaveToFile(
                         sourceBitsPerChannel > 8 ? cropped.ToBitmapSource16(sourceImage.DpiX, sourceImage.DpiY, 1) : cropped.ToBitmapSource(sourceImage.DpiX, sourceImage.DpiY, 1),
-                        targetFileName, sourceImage.Format.BitsPerPixel == 96 ? null : ExifHandler.ResetOrientation(metadata), _mainViewModel.Settings), ct);
+                        targetFileName, ExifHandler.PrepareMetadataForProcessedImage(sourceImage.Format, metadata), _mainViewModel.Settings), ct);
                 }
                 else
                 {
@@ -149,6 +149,7 @@ namespace PhotoLocator
             }
             localContrastViewModel.SaveLastUsedValues();
 
+            metadata = ExifHandler.PrepareMetadataForProcessedImage(localContrastViewModel.SourceBitmap.Format, metadata);
             if (allSelected.Length > 1 &&
                 MessageBox.Show($"Apply operation to all {allSelected.Length} selected files and save to JPG?",
                     "Batch process", MessageBoxButton.YesNo, MessageBoxImage.Question) == MessageBoxResult.Yes)
@@ -201,7 +202,7 @@ namespace PhotoLocator
                     var resultImage = localContrastViewModel.GetResultImage(
                         localContrastViewModel.SourceBitmap?.Format != PixelFormats.Cmyk32 &&
                         GeneralFileFormatHandler.ShouldProduce16bitOutputForFormat(dlg.FileName, _mainViewModel.Settings));
-                    GeneralFileFormatHandler.SaveToFile(resultImage, dlg.FileName, ExifHandler.ResetOrientation(metadata), _mainViewModel.Settings);
+                    GeneralFileFormatHandler.SaveToFile(resultImage, dlg.FileName, metadata, _mainViewModel.Settings);
                 });
                 if (sameDir)
                     await _mainViewModel.AddOrUpdateItemAsync(dlg.FileName, false, false);
@@ -218,15 +219,14 @@ namespace PhotoLocator
                     var targetFileName = Path.ChangeExtension(item.GetProcessedFileName(), "jpg");
                     if (item == selectedItem)
                     {
-                        GeneralFileFormatHandler.SaveToFile(localContrastViewModel.PreviewPictureSource!, targetFileName,
-                            ExifHandler.ResetOrientation(metadata), _mainViewModel.Settings);
+                        GeneralFileFormatHandler.SaveToFile(localContrastViewModel.PreviewPictureSource!, targetFileName, metadata, _mainViewModel.Settings);
                     }
                     else
                     {
                         var (image, itemMetadata) = await LoadImageWithMetadataAsync(item);
                         image = localContrastViewModel.ApplyOperations(image);
-                        GeneralFileFormatHandler.SaveToFile(image, targetFileName,
-                            ExifHandler.ResetOrientation(itemMetadata), _mainViewModel.Settings);
+                        GeneralFileFormatHandler.SaveToFile(image, targetFileName, 
+                            ExifHandler.PrepareMetadataForProcessedImage(image.Format, itemMetadata), _mainViewModel.Settings);
                     }
                     item.IsChecked = false;
                     progressCallback((double)(++i) / allSelected.Length);
@@ -336,7 +336,7 @@ namespace PhotoLocator
                     await (previousSaveTask ?? Task.CompletedTask);
                     previousSaveTask = Task.Run(() =>
                     {
-                        GeneralFileFormatHandler.SaveToFile(newImage, targetFileName, image.Format.BitsPerPixel == 96 ? null : ExifHandler.ResetOrientation(itemMetadata), _mainViewModel.Settings);
+                        GeneralFileFormatHandler.SaveToFile(newImage, targetFileName, ExifHandler.PrepareMetadataForProcessedImage(image.Format, itemMetadata), _mainViewModel.Settings);
                         item.IsChecked = false;
                     }, ct);
                     progressCallback((double)(i++) / allSelected.Length);

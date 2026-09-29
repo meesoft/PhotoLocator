@@ -12,6 +12,7 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Windows.Media;
 using System.Windows.Media.Imaging;
 
 namespace PhotoLocator.Metadata
@@ -290,7 +291,29 @@ namespace PhotoLocator.Metadata
             ResetOrientationValue(OrientationQuery1);
             ResetOrientationValue(OrientationQuery2);
             return metadata;
+        }
 
+        [return: NotNullIfNotNull(nameof(metadata))]
+        public static BitmapMetadata? PrepareMetadataForProcessedImage(PixelFormat sourceFormat, BitmapMetadata? metadata)
+        {
+            static BitmapMetadata RemoveValue(BitmapMetadata metadata, string query)
+            {
+                if (metadata.GetQuery(query) is not null)
+                {
+                    if (metadata.IsFrozen)
+                        metadata = metadata.Clone();
+                    metadata.RemoveQuery(query);
+                }
+                return metadata;
+            }
+
+            if ( sourceFormat.BitsPerPixel == 96 && metadata is not null )
+            {
+                metadata = RemoveValue(metadata, "/ifd/{ushort=339}"); // Format
+                metadata = RemoveValue(metadata, "/ifd/{ushort=340}"); // Min value
+                metadata = RemoveValue(metadata, "/ifd/{ushort=341}"); // Max value
+            }
+            return ResetOrientation(metadata);
         }
 
         public static MemoryStream SetJpegMetadata(Stream source, BitmapMetadata metadata)
