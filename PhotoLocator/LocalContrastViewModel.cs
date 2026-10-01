@@ -567,7 +567,7 @@ namespace PhotoLocator
 
         void ApplyAstroStretchOperation()
         {
-            if (IsAstroModeEnabled && (AstroStretch > 0 || BackgroundRemovalSmooth > 0 || BlackPoint > 0))
+            if (IsAstroModeEnabled && (AstroStretch > 0 || BackgroundRemovalSmooth > 0 || BlackPoint != 0))
             {
                 var astroStretch = new AstroStretchOperation()
                 {

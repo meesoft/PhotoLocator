@@ -44,6 +44,7 @@ namespace PhotoLocator
 
         private async Task RotateSelectedAsync(int angle)
         {
+            await _mainViewModel.WaitForPicturesLoadedAsync();
             var allSelected = _mainViewModel.GetSelectedItems(true).ToArray();
             await _mainViewModel.RunProcessWithProgressBarAsync(async (progressCallback, ct) =>
             {
@@ -96,7 +97,7 @@ namespace PhotoLocator
                     var (sourceImage, metadata) = await LoadImageWithMetadataAsync(selectedItem, ct);
                     var cropped = new FloatBitmap(sourceImage, 1).CopyRect(
                         IntMath.Round(cropRectangle.Left), IntMath.Round(cropRectangle.Top), Math.Max(1, IntMath.Round(cropRectangle.Width)), Math.Max(1, IntMath.Round(cropRectangle.Height)));
-                    var sourceBitsPerChannel = sourceImage.Format.BitsPerPixel / sourceImage.Format.Masks.Count;
+                    var sourceBitsPerChannel = sourceImage.Format.BitsPerPixel / int.Max(1, sourceImage.Format.Masks.Count);
                     await Task.Run(() => GeneralFileFormatHandler.SaveToFile(
                         sourceBitsPerChannel > 8 ? cropped.ToBitmapSource16(sourceImage.DpiX, sourceImage.DpiY, 1) : cropped.ToBitmapSource(sourceImage.DpiX, sourceImage.DpiY, 1),
                         targetFileName, ExifHandler.PrepareMetadataForProcessedImage(sourceImage.Format, metadata), _mainViewModel.Settings), ct);
@@ -298,23 +299,27 @@ namespace PhotoLocator
             var allSelected = _mainViewModel.GetSelectedItems(true).ToArray();
             if (allSelected.Length == 0)
                 return;
-            int newHeight = 0;
-            if (TextInputWindow.Show("New image height (width will be adjusted to keep ratio):", str => int.TryParse(str, CultureInfo.CurrentCulture, out newHeight) && newHeight > 0,
-                "Resize", _resizeTargetHeight.ToString(CultureInfo.CurrentCulture)) is null)
-                return;
-            _resizeTargetHeight = newHeight;
 
-            var browser = new System.Windows.Forms.FolderBrowserDialog();
-            browser.InitialDirectory = Path.GetDirectoryName(allSelected[0].FullPath)!;
-            browser.Description = $"Select target folder for resized images";
-            browser.UseDescriptionForTitle = true;
-            if (browser.ShowDialog() != System.Windows.Forms.DialogResult.OK)
-                return;
-            var targetDir = browser.SelectedPath;
-            var targetIsSourceDir = string.Equals(targetDir, browser.InitialDirectory, StringComparison.OrdinalIgnoreCase);
+            if (o is not (string targetDir, int newHeight))
+            {
+                newHeight = 0;
+                if (TextInputWindow.Show("New image height (width will be adjusted to keep ratio):", str => int.TryParse(str, CultureInfo.CurrentCulture, out newHeight) && newHeight > 0,
+                    "Resize", _resizeTargetHeight.ToString(CultureInfo.CurrentCulture)) is null)
+                    return;
+                _resizeTargetHeight = newHeight;
+
+                var browser = new System.Windows.Forms.FolderBrowserDialog();
+                browser.InitialDirectory = Path.GetDirectoryName(allSelected[0].FullPath)!;
+                browser.Description = $"Select target folder for resized images";
+                browser.UseDescriptionForTitle = true;
+                if (browser.ShowDialog() != System.Windows.Forms.DialogResult.OK)
+                    return;
+                targetDir = browser.SelectedPath;
+            }
 
             await _mainViewModel.RunProcessWithProgressBarAsync(async (progressCallback, ct) =>
             {
+                var targetIsSourceDir = string.Equals(targetDir, Path.GetDirectoryName(allSelected[0].FullPath), StringComparison.OrdinalIgnoreCase);
                 var overwriteAll = targetIsSourceDir;
                 var op = new LanczosResizeOperation { FilterFunc = LanczosResizeOperation.Lanczos2, FilterWindow = 2 };
                 int i = 0;
@@ -335,7 +340,7 @@ namespace PhotoLocator
                     var newImage = await Task.Run(() =>
                     {
                         var newWidth = int.Max(1, IntMath.Round(image.PixelWidth * newHeight / (double)image.PixelHeight));
-                        var sourceBitsPerChannel = image.Format.BitsPerPixel / image.Format.Masks.Count;
+                        var sourceBitsPerChannel = image.Format.BitsPerPixel / int.Max(1, image.Format.Masks.Count);
                         var gamma = sourceBitsPerChannel > 8 ? 1 : FloatBitmap.DefaultMonitorGamma;
                         var floatImage = new FloatBitmap(image, gamma);
                         floatImage = op.Apply(floatImage, newWidth, newHeight, ct);

@@ -38,7 +38,7 @@ namespace PhotoLocator.BitmapOperations
                 var bp = (float)BlackPoint;
                 DstBitmap.ProcessElementWise(background, (p, b) => Math.Max(p - b - bp, 0));
             }
-            else if (BlackPoint > 0)
+            else if (BlackPoint != 0)
             {
                 var bp = (float)BlackPoint;
                 DstBitmap.ProcessElementWise(p => Math.Max(p - bp, 0));
