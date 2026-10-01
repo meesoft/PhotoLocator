@@ -122,7 +122,7 @@ namespace PhotoLocator.Metadata
         private void AppendMetadata(StringBuilder result, string query1, string? query2)
         {
             var metadata = GetMetadata();
-            var value = (metadata?.GetQuery(query1) ?? metadata?.GetQuery(query2))?.ToString();
+            var value = (metadata?.GetQuery(query1) ?? (query2 is null ? null : metadata?.GetQuery(query2)))?.ToString();
             AppendMetadata(result, value);
         }
 
@@ -253,7 +253,7 @@ namespace PhotoLocator.Metadata
                     {
                         AppendMetadata(result, ExifHandler.DescriptionQuery1, ExifHandler.DescriptionQuery2);
                     }
-                    else if (tag[0] == '/')
+                    else if (tag.StartsWith('/'))
                     {
                         AppendMetadata(result, tag, null);
                     }

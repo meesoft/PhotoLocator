@@ -57,10 +57,19 @@ namespace PhotoLocator
                     }
                     else if (Path.GetExtension(item.Name).ToLowerInvariant() is ".tif" or ".tiff" or ".png" or ".bmp" or ".jxr")
                     {
-                        item.Orientation = (Rotation)(((int)item.Orientation + angle / 90) % 4);
-                        var (image, metadata) = await LoadImageWithMetadataAsync(item, ct);
-                        var targetFileName = item.GetProcessedFileName();
-                        GeneralFileFormatHandler.SaveToFile(image, targetFileName, ExifHandler.ResetOrientation(metadata), _mainViewModel.Settings);
+                        var originalOrientation = item.Orientation;
+                        try
+                        {
+                            item.Orientation = (Rotation)(((int)item.Orientation + angle / 90) % 4);
+                            var (image, metadata) = await LoadImageWithMetadataAsync(item, ct);
+                            var targetFileName = item.GetProcessedFileName();
+                            GeneralFileFormatHandler.SaveToFile(image, targetFileName, ExifHandler.ResetOrientation(metadata), _mainViewModel.Settings);
+                        }
+                        catch
+                        {
+                            item.Orientation = originalOrientation;
+                            throw;
+                        }
                     }
                     else
                         throw new UserMessageException("Unsupported file format");
