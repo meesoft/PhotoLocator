@@ -87,10 +87,9 @@ static class HoleClosingOperation
                 }
         Log.Write($"Detected {remaining * 100 / holes.Length}% holes in mask");
 
+        var replacements = new List<(int X, int Y, float[] Values)>();
         while (remaining > 0)
         {
-            var replacements = new List<(int X, int Y, float[] Values)>();
-
             for (var y = 0; y < height; y++)
                 for (var x = 0; x < width; x++)
                 {
@@ -134,6 +133,7 @@ static class HoleClosingOperation
                 holes[replacement.Y * width + replacement.X] = false;
             }
             remaining -= replacements.Count;
+            replacements.Clear();
         }
     }
 }

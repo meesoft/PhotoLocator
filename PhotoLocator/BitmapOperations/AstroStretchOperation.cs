@@ -25,11 +25,11 @@ namespace PhotoLocator.BitmapOperations
 
                 var resizeOp = new LanczosResizeOperation { FilterFunc = LanczosResizeOperation.Lanczos2, FilterWindow = 1 };
                 var backgroundReduced = resizeOp.Apply(DstBitmap, BackgroundWidth, (int)Math.Ceiling((double)BackgroundWidth / DstBitmap.Width * DstBitmap.Height));
-                var smoothBackground = ConvertToGrayscaleOperation.ConvertToGrayscale(backgroundReduced);
-                var mask = new FloatBitmap(smoothBackground);
-                IIRSmoothOperation.Apply(smoothBackground, BackgroundWidth * BackgroundSmooth);
-                mask.ProcessElementWise(smoothBackground, (m, s) => m - s > 0 ? 1 : 0);
-                //DstBitmap.Assign(mask); return;
+                var grayBackground = ConvertToGrayscaleOperation.ConvertToGrayscale(backgroundReduced);
+                var mask = new FloatBitmap(grayBackground);
+                IIRSmoothOperation.Apply(grayBackground, BackgroundWidth * BackgroundSmooth);
+                mask.ProcessElementWise(grayBackground, (m, g) => m - g);
+                //DstBitmap.Assign(mask); DstBitmap.ProcessElementWise(p => p > 0 ? 1 : 0); return;
 
                 HoleClosingOperation.CloseHolesIteratively(backgroundReduced, mask, 0);
                 IIRSmoothOperation.Apply(backgroundReduced, BackgroundWidth * BackgroundSmooth);
