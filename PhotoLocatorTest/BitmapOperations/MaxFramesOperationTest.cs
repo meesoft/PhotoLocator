@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Linq;
 using System.Windows.Media.Imaging;
 
 namespace PhotoLocator.BitmapOperations;
@@ -52,7 +53,12 @@ public class MaxFramesOperationTest
         var time2 = sw.ElapsedMilliseconds;
         Debug.WriteLine($"Second frame processing time: {time2}ms");
 
-        //PictureFileFormats.GeneralFileFormatHandler.SaveToFile(op.GetResult8(), "MaxFrame.jpg");
+        var result = op.GetResult8();
+        //PictureFileFormats.GeneralFileFormatHandler.SaveToFile(result, "MaxFrame.jpg");
+
+        var pixels = new byte[result.PixelWidth * result.PixelHeight * 3];
+        result.CopyPixels(pixels, result.PixelWidth * 3, 0);
+        Assert.AreEqual(12367134, pixels.Sum(b => b));
         Assert.AreEqual(2, op.ProcessedImages);
         Assert.IsGreaterThan(time2, time1);
     }

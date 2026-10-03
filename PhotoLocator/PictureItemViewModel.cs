@@ -192,7 +192,7 @@ namespace PhotoLocator
             }
         }
 
-        public Rotation Orientation { get; private set; }
+        public Rotation Orientation { get; internal set; }
 
         public async ValueTask LoadThumbnailAndMetadataAsync(CancellationToken ct)
         {

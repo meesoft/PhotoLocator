@@ -287,7 +287,7 @@ namespace PhotoLocator.BitmapOperations
                 });
             }
 
-            PixelFormat pixelFormat16 = PlaneCount switch
+            var pixelFormat16 = PlaneCount switch
             {
                 1 => PixelFormats.Gray16,
                 3 => PixelFormats.Rgb48,

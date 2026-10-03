@@ -128,6 +128,23 @@ namespace PhotoLocator.BitmapOperations
                     dest[dstOffset + i * dstSampleDistance] = (byte)RealMath.Clamp(sum, 0, 255);
                 }
             }
+
+            public unsafe void Apply(float* source, int srcOffset, float* dest, int dstOffset, int dstSampleDistance)
+            {
+                var weights = _weights;
+                for (var i = 0; i < weights.Length; i++)
+                {
+                    double sum = 0;
+                    int length = weights[i].SourcePixelWeights.Length;
+                    fixed (SourcePixelWeight* sourceWeights = weights[i].SourcePixelWeights)
+                    {
+                        var sourceWeight = sourceWeights;
+                        for (var j = 0; j < length; j++, sourceWeight++)
+                            sum += source[srcOffset + (*sourceWeight).SourceIndex] * (*sourceWeight).SourceWeight;
+                    }
+                    dest[dstOffset + i * dstSampleDistance] = (float)sum;
+                }
+            }
         }
 
         class LineResamplerFixedPoint
@@ -319,5 +336,46 @@ namespace PhotoLocator.BitmapOperations
             result.Freeze();
             return result;
         }
+
+        public FloatBitmap Apply(FloatBitmap image, int newWidth, int newHeight, CancellationToken ct = default)
+        {
+            var planes = image.PlaneCount;
+            if (image.Width != newWidth)
+            {
+                var resampler = new LineResampler(FilterFunc, FilterWindow, image.Width, planes, newWidth);
+                var target = new FloatBitmap(newWidth, image.Height, planes);
+                Parallel.For(0, image.Height, y =>
+                {
+                    unsafe
+                    {
+                        fixed (float* src = &image.Elements[y, 0])
+                        fixed (float* dst = &target.Elements[y, 0])
+                            for (var p = 0; p < planes; p++)
+                                resampler.Apply(src, p, dst, p, planes);
+                    }
+                    ct.ThrowIfCancellationRequested();
+                });
+                image = target;
+            }
+            if (image.Height != newHeight)
+            {
+                var resampler = new LineResampler(FilterFunc, FilterWindow, image.Height, image.Stride, newHeight);
+                var target = new FloatBitmap(newWidth, newHeight, planes);
+                Parallel.For(0, image.Width, x =>
+                {
+                    unsafe
+                    {
+                        fixed (float* src = &image.Elements[0, x * planes])
+                        fixed (float* dst = &target.Elements[0, x * planes])
+                            for (var p = 0; p < planes; p++)
+                                resampler.Apply(src, p, dst, p, target.Stride);
+                    }
+                    ct.ThrowIfCancellationRequested();
+                });
+                image = target;
+            }
+            return image;
+        }
+
     }
 }
