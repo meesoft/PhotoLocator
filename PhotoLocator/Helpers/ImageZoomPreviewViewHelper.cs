@@ -5,6 +5,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
+using System.Windows.Media.Imaging;
 
 namespace PhotoLocator.Helpers
 {
@@ -43,7 +44,7 @@ namespace PhotoLocator.Helpers
 
             var previousImageRegistration = _previousImageRegistration;
             if (registerToPrevious)
-                _previousImageRegistration = Task.Run(() => new RegistrationOperation(_viewModel.PreviewPictureSource));
+                _previousImageRegistration = SetupRegistrationOperation(_viewModel.PreviewPictureSource);
             else
                 _previousImageRegistration = null;
 
@@ -54,14 +55,8 @@ namespace PhotoLocator.Helpers
                 {
                     try
                     {
-                        var registration = previousImageRegistration.Result;
-                        var translation = registration.GetTranslation(_viewModel.PreviewPictureSource);
-                        _zoomedPreviewImage.RenderTransform = new MatrixTransform(
-                            m.Matrix.M11, m.Matrix.M12,
-                            m.Matrix.M21, m.Matrix.M22,
-                            m.Matrix.OffsetX + translation.X * sx, m.Matrix.OffsetY + translation.Y * sy);
+                        ApplyRegistrationToPrevious(sx, sy, previousImageRegistration, m, _viewModel.PreviewPictureSource);
                         previousImageRegistration = null;
-                        registration.Dispose();
                     }
                     catch (Exception ex)
                     {
@@ -77,6 +72,23 @@ namespace PhotoLocator.Helpers
                     tx, ty);
             }
             previousImageRegistration?.ContinueWith(t => t.Result.Dispose(), TaskScheduler.Default);
+        }
+
+        static Task<RegistrationOperation> SetupRegistrationOperation(BitmapSource previewPictureSource)
+        {
+            // Extracted to separate method to avoid JIT failure if OpenCV is missing
+            return Task.Run(() => new RegistrationOperation(previewPictureSource));
+        }
+
+        void ApplyRegistrationToPrevious(double sx, double sy, Task<RegistrationOperation> previousImageRegistration, MatrixTransform m, BitmapSource previewPictureSource)
+        {
+            var registration = previousImageRegistration.Result;
+            var translation = registration.GetTranslation(previewPictureSource);
+            _zoomedPreviewImage.RenderTransform = new MatrixTransform(
+                m.Matrix.M11, m.Matrix.M12,
+                m.Matrix.M21, m.Matrix.M22,
+                m.Matrix.OffsetX + translation.X * sx, m.Matrix.OffsetY + translation.Y * sy);
+            registration.Dispose();
         }
 
         public static double CalcCenterTranslation(double canvasSizeIn96, int imageSize, int zoom, double screenDpi)

@@ -87,6 +87,7 @@ namespace PhotoLocator
             {
                 MainViewModel.AboutCommand.Execute(null);
                 registrySettings.FirstLaunch = 1;
+                _viewModel.Settings.TrackZoom = File.Exists(Path.Combine(AppContext.BaseDirectory, "OpenCvSharp.dll"));
             }
             PictureListBox.Focus();
 
