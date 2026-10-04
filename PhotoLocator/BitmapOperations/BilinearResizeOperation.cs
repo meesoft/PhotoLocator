@@ -162,6 +162,8 @@ namespace PhotoLocator.BitmapOperations
 
         public static void ApplyToPlaneParallel(FloatBitmap srcPlane, FloatBitmap dstPlane, ROI dstROI)
         {
+            Debug.Assert(srcPlane.PlaneCount == 1);
+            Debug.Assert(dstPlane.PlaneCount == 1);
             Debug.Assert(dstROI.Right <= dstPlane.Width && dstROI.Bottom <= dstPlane.Height, "Invalid ROI");
             float scaleX = 0, scaleY = 0;
             if (dstPlane.Width > 1)

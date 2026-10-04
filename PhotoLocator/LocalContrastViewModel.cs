@@ -42,6 +42,7 @@ namespace PhotoLocator
                 {
                     try
                     {
+                        Mouse.OverrideCursor = Cursors.AppStarting;
                         await UpdatePreviewAsync();
                     }
                     catch (Exception ex)
@@ -135,7 +136,7 @@ namespace PhotoLocator
         }
         public ICommand ResetAstroStretchCommand => new RelayCommand(o => AstroStretch = IsAstroModeEnabled ? AstroStretchOperation.OptimizeStretch(_sourceFloatBitmap) : 0);
 
-        public const double DefaultBackgroundRemovalSmooth = 8;
+        public const double DefaultBackgroundRemovalSmooth = 1;
         public double BackgroundRemovalSmooth
         {
             get;
@@ -566,7 +567,7 @@ namespace PhotoLocator
 
         void ApplyAstroStretchOperation()
         {
-            if (IsAstroModeEnabled && (AstroStretch > 0 || BackgroundRemovalSmooth > 0 || BlackPoint > 0))
+            if (IsAstroModeEnabled && (AstroStretch > 0 || BackgroundRemovalSmooth > 0 || BlackPoint != 0))
             {
                 var astroStretch = new AstroStretchOperation()
                 {
@@ -620,7 +621,7 @@ namespace PhotoLocator
         {
             _updateTimer.Stop();
             await _previewTask;
-            if (!_previewTask.IsCompleted) // We might have multiple instance of UpdatePreviewAsync running at the same time
+            if (!_previewTask.IsCompleted) // We might have multiple instances of UpdatePreviewAsync running at the same time
             {
                 await _previewTask;
                 return;
@@ -635,6 +636,8 @@ namespace PhotoLocator
                     _colorToneOperation.SourceChanged();
                 _firstParamChanged = FirstParamChanged.None;
                 ApplyAstroStretchOperation();
+                if (SourceBitmap is null || _updateTimer.IsEnabled)
+                    return;
                 ApplyLaplacianFilterOperation();
                 if (SourceBitmap is null || _updateTimer.IsEnabled)
                     return;
@@ -649,7 +652,8 @@ namespace PhotoLocator
                 (PreviewPictureSource, var histogramTask) = _localContrastOperation.DstBitmap.ToBitmapSourceWithHistogram(srcBitmap.DpiX, srcBitmap.DpiY, FloatBitmap.DefaultMonitorGamma);
                 await histogramTask.ContinueWith(task => SetHistogram(task.Result), TaskScheduler.Current);
             }));
-            Mouse.OverrideCursor = null;
+            if(!_updateTimer.IsEnabled && _previewTask.IsCompleted)
+                Mouse.OverrideCursor = null;
         }
 
         public void ShowSourceHistogram()

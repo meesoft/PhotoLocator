@@ -1,9 +1,9 @@
 ﻿using System;
-using System.Linq;
+using System.Globalization;
 using System.IO;
+using System.Linq;
 using System.Text;
 using System.Windows.Media.Imaging;
-using System.Globalization;
 
 namespace PhotoLocator.Metadata
 {
@@ -119,10 +119,28 @@ namespace PhotoLocator.Metadata
                 result.Append(Convert.ToInt32(value, CultureInfo.InvariantCulture).ToString("D" + tag[(iColon + 1)..], CultureInfo.CurrentCulture));
         }
 
-        private void AppendMetadata(StringBuilder result, string query1, string query2)
+        private void AppendMetadata(StringBuilder result, string query1, string? query2)
         {
             var metadata = GetMetadata();
-            var value = (metadata?.GetQuery(query1) ?? metadata?.GetQuery(query2))?.ToString();
+            var value = (metadata?.GetQuery(query1) ?? (query2 is null ? null : metadata?.GetQuery(query2)))?.ToString();
+            AppendMetadata(result, value);
+        }
+
+        private void AppendTitle(StringBuilder result)
+        {
+            var metadata = GetMetadata();
+            var value = metadata?.GetQuery(ExifHandler.DocNameQuery2) as string;
+            if (string.IsNullOrEmpty(value))
+                value = metadata?.Title;
+            if (string.IsNullOrEmpty(value))
+                value = metadata?.Subject;
+            if (string.IsNullOrEmpty(value))
+                value = metadata?.Comment;
+            AppendMetadata(result, value);
+        }
+
+        private static void AppendMetadata(StringBuilder result, string? value)
+        {
             if (value is null)
                 return;
             foreach (var ch in _invalidFileNameChars)
@@ -227,9 +245,17 @@ namespace PhotoLocator.Metadata
                     {
                         AppendMetadataInt(result, iColon, tag, ExifHandler.IsoQuery1, ExifHandler.IsoQuery2);
                     }
+                    else if (tag == "title")
+                    {
+                        AppendTitle(result);
+                    }
                     else if (tag == "desc")
                     {
                         AppendMetadata(result, ExifHandler.DescriptionQuery1, ExifHandler.DescriptionQuery2);
+                    }
+                    else if (tag.StartsWith('/'))
+                    {
+                        AppendMetadata(result, tag, null);
                     }
                     else
                         throw new ArgumentException($"Unsupported tag |{tag}|");

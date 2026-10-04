@@ -6,7 +6,7 @@ namespace PhotoLocator.BitmapOperations
     {
         public double Stretch { get; set; } = 10;
 
-        public double BackgroundSmooth { get; set; } = 8;
+        public double BackgroundSmooth { get; set; } = 2;
 
         public double BlackPoint { get; set; }
 
@@ -21,17 +21,24 @@ namespace PhotoLocator.BitmapOperations
             }
             if (BackgroundSmooth > 0)
             {
-                var background = ConvertToGrayscaleOperation.ConvertToGrayscale(DstBitmap);
-                IIRSmoothOperation.Apply(background, (float)Math.Exp(BackgroundSmooth));
-                if (BlackPoint > 0)
-                {
-                    var bp = (float)BlackPoint;
-                    DstBitmap.ProcessElementWise(background, (p, b) => Math.Max(p - b - bp, 0));
-                }
-                else
-                    DstBitmap.ProcessElementWise(background, (p, b) => Math.Max(p - b, 0));
+                const int BackgroundWidth = 128;
+
+                var resizeOp = new LanczosResizeOperation { FilterFunc = LanczosResizeOperation.Lanczos2, FilterWindow = 1 };
+                var backgroundReduced = resizeOp.Apply(DstBitmap, BackgroundWidth, (int)Math.Ceiling((double)BackgroundWidth / DstBitmap.Width * DstBitmap.Height));
+                var grayBackground = ConvertToGrayscaleOperation.ConvertToGrayscale(backgroundReduced);
+                var mask = new FloatBitmap(grayBackground);
+                IIRSmoothOperation.Apply(grayBackground, BackgroundWidth * BackgroundSmooth);
+                mask.ProcessElementWise(grayBackground, (m, g) => m - g);
+                //DstBitmap.Assign(mask); DstBitmap.ProcessElementWise(p => p > 0 ? 1 : 0); return;
+
+                HoleClosingOperation.CloseHolesIteratively(backgroundReduced, mask, 0);
+                IIRSmoothOperation.Apply(backgroundReduced, BackgroundWidth * BackgroundSmooth);
+                var background = resizeOp.Apply(backgroundReduced, DstBitmap.Width, DstBitmap.Height);
+
+                var bp = (float)BlackPoint;
+                DstBitmap.ProcessElementWise(background, (p, b) => Math.Max(p - b - bp, 0));
             }
-            else if (BlackPoint > 0)
+            else if (BlackPoint != 0)
             {
                 var bp = (float)BlackPoint;
                 DstBitmap.ProcessElementWise(p => Math.Max(p - bp, 0));

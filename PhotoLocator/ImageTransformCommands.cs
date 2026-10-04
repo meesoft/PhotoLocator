@@ -7,6 +7,7 @@ using System;
 using System.Globalization;
 using System.IO;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
@@ -35,24 +36,45 @@ namespace PhotoLocator
         public ICommand Rotate180Command => new RelayCommand(async o => await RotateSelectedAsync(180), HasFileSelected);
 
         public ICommand Rotate0Command => new RelayCommand(async o =>
-        { 
+        {
             if (MessageBox.Show("This will reset any rotation EXIF data from the selected images. Continue?", "Reset rotation tag", MessageBoxButton.OKCancel, MessageBoxImage.Question) != MessageBoxResult.OK)
                 return;
-            await RotateSelectedAsync(0); 
+            await RotateSelectedAsync(0);
         }, HasFileSelected);
 
         private async Task RotateSelectedAsync(int angle)
         {
-            var allSelected = _mainViewModel.GetSelectedItems(true).Where(item => JpegTransformations.IsFileTypeSupported(item.Name)).ToArray();
-            if (allSelected.Length == 0)
-                throw new UserMessageException("Unsupported file format");
+            await _mainViewModel.WaitForPicturesLoadedAsync();
+            var allSelected = _mainViewModel.GetSelectedItems(true).ToArray();
             await _mainViewModel.RunProcessWithProgressBarAsync(async (progressCallback, ct) =>
             {
                 progressCallback(-1);
                 int i = 0;
                 foreach (var item in allSelected)
                 {
-                    await JpegTransformations.RotateAsync(item.FullPath, item.GetProcessedFileName(), angle, ct);
+                    if (JpegTransformations.IsFileTypeSupported(item.Name))
+                    {
+                        await JpegTransformations.RotateAsync(item.FullPath, item.GetProcessedFileName(), angle, ct);
+                    }
+                    else if (Path.GetExtension(item.Name).ToLowerInvariant() is ".tif" or ".tiff" or ".png" or ".bmp" or ".jxr")
+                    {
+                        var originalOrientation = item.Orientation;
+                        try
+                        {
+                            item.Orientation = (Rotation)(((int)item.Orientation + angle / 90) % 4);
+                            var (image, metadata) = await LoadImageWithMetadataAsync(item, ct);
+                            var targetFileName = item.GetProcessedFileName();
+                            GeneralFileFormatHandler.SaveToFile(image, targetFileName, ExifHandler.ResetOrientation(metadata), _mainViewModel.Settings);
+                        }
+                        catch
+                        {
+                            item.Orientation = originalOrientation;
+                            throw;
+                        }
+                    }
+                    else
+                        throw new UserMessageException("Unsupported file format");
+                    item.Orientation = Rotation.Rotate0;
                     item.IsChecked = false;
                     progressCallback((double)(++i) / allSelected.Length);
                 }
@@ -69,17 +91,16 @@ namespace PhotoLocator
                 progressCallback(-1);
                 await using var pause = _mainViewModel.PauseFileSystemWatcher();
                 var sourceFileName = selectedItem.FullPath;
-                var targetFileName = selectedItem.GetProcessedFileName(); 
+                var targetFileName = selectedItem.GetProcessedFileName();
                 if (Path.GetExtension(selectedItem.Name).ToLowerInvariant() is ".tif" or ".tiff" or ".png" or ".bmp" or ".jxr")
                 {
-                    var (sourceImage, metadata) = await LoadImageWithMetadataAsync(selectedItem);
+                    var (sourceImage, metadata) = await LoadImageWithMetadataAsync(selectedItem, ct);
                     var cropped = new FloatBitmap(sourceImage, 1).CopyRect(
                         IntMath.Round(cropRectangle.Left), IntMath.Round(cropRectangle.Top), Math.Max(1, IntMath.Round(cropRectangle.Width)), Math.Max(1, IntMath.Round(cropRectangle.Height)));
-                    var use16bit = sourceImage.Format == PixelFormats.Gray16 || sourceImage.Format == PixelFormats.Gray32Float || 
-                        sourceImage.Format == PixelFormats.Rgb48 || sourceImage.Format.BitsPerPixel == 96;
+                    var sourceBitsPerChannel = sourceImage.Format.BitsPerPixel / int.Max(1, sourceImage.Format.Masks.Count);
                     await Task.Run(() => GeneralFileFormatHandler.SaveToFile(
-                        use16bit ? cropped.ToBitmapSource16(sourceImage.DpiX, sourceImage.DpiY, 1) : cropped.ToBitmapSource(sourceImage.DpiX, sourceImage.DpiY, 1),
-                        targetFileName, sourceImage.Format.BitsPerPixel == 96 ? null : metadata, _mainViewModel.Settings), ct);
+                        sourceBitsPerChannel > 8 ? cropped.ToBitmapSource16(sourceImage.DpiX, sourceImage.DpiY, 1) : cropped.ToBitmapSource(sourceImage.DpiX, sourceImage.DpiY, 1),
+                        targetFileName, ExifHandler.PrepareMetadataForProcessedImage(sourceImage.Format, metadata), _mainViewModel.Settings), ct);
                 }
                 else
                 {
@@ -115,9 +136,9 @@ namespace PhotoLocator
             using (var cursor = new MouseCursorOverride())
             {
                 (var image, metadata) = await Task.Run(() => LoadImageWithMetadataAsync(selectedItem));
-                localContrastViewModel = new LocalContrastViewModel() 
-                { 
-                    IsAstroModeEnabled = o as string == AstroCommandParameter, 
+                localContrastViewModel = new LocalContrastViewModel()
+                {
+                    IsAstroModeEnabled = o as string == AstroCommandParameter,
                     SourceBitmap = image,
                     FileName = selectedItem.FullPath,
                 };
@@ -138,6 +159,7 @@ namespace PhotoLocator
             }
             localContrastViewModel.SaveLastUsedValues();
 
+            metadata = ExifHandler.PrepareMetadataForProcessedImage(localContrastViewModel.SourceBitmap.Format, metadata);
             if (allSelected.Length > 1 &&
                 MessageBox.Show($"Apply operation to all {allSelected.Length} selected files and save to JPG?",
                     "Batch process", MessageBoxButton.YesNo, MessageBoxImage.Question) == MessageBoxResult.Yes)
@@ -146,10 +168,10 @@ namespace PhotoLocator
                 await SaveProcessedImageAsync(localContrastViewModel, metadata, selectedItem);
         }, HasFileSelected);
 
-        private static async Task<(BitmapSource, BitmapMetadata?)> LoadImageWithMetadataAsync(PictureItemViewModel item)
+        private static async Task<(BitmapSource, BitmapMetadata?)> LoadImageWithMetadataAsync(PictureItemViewModel item, CancellationToken ct = default)
         {
             BitmapMetadata? metadata = null;
-            var image = await item.LoadPreviewAsync(default, preservePixelFormat: true).ConfigureAwait(false);
+            var image = await item.LoadPreviewAsync(ct, preservePixelFormat: true).ConfigureAwait(false);
             try
             {
                 using var file = File.OpenRead(item.FullPath);
@@ -190,12 +212,12 @@ namespace PhotoLocator
                     var resultImage = localContrastViewModel.GetResultImage(
                         localContrastViewModel.SourceBitmap?.Format != PixelFormats.Cmyk32 &&
                         GeneralFileFormatHandler.ShouldProduce16bitOutputForFormat(dlg.FileName, _mainViewModel.Settings));
-                    GeneralFileFormatHandler.SaveToFile(resultImage, dlg.FileName, ExifHandler.ResetOrientation(metadata), _mainViewModel.Settings);
+                    GeneralFileFormatHandler.SaveToFile(resultImage, dlg.FileName, metadata, _mainViewModel.Settings);
                 });
                 if (sameDir)
                     await _mainViewModel.AddOrUpdateItemAsync(dlg.FileName, false, false);
             }
-        }    
+        }
 
         private async Task BatchProcessLocalContrastAsync(LocalContrastViewModel localContrastViewModel, BitmapMetadata? metadata, PictureItemViewModel[] allSelected, PictureItemViewModel selectedItem)
         {
@@ -207,15 +229,14 @@ namespace PhotoLocator
                     var targetFileName = Path.ChangeExtension(item.GetProcessedFileName(), "jpg");
                     if (item == selectedItem)
                     {
-                        GeneralFileFormatHandler.SaveToFile(localContrastViewModel.PreviewPictureSource!, targetFileName,
-                            ExifHandler.ResetOrientation(metadata), _mainViewModel.Settings);
+                        GeneralFileFormatHandler.SaveToFile(localContrastViewModel.PreviewPictureSource!, targetFileName, metadata, _mainViewModel.Settings);
                     }
                     else
                     {
                         var (image, itemMetadata) = await LoadImageWithMetadataAsync(item);
                         image = localContrastViewModel.ApplyOperations(image);
-                        GeneralFileFormatHandler.SaveToFile(image, targetFileName,
-                            ExifHandler.ResetOrientation(itemMetadata), _mainViewModel.Settings);
+                        GeneralFileFormatHandler.SaveToFile(image, targetFileName, 
+                            ExifHandler.PrepareMetadataForProcessedImage(image.Format, itemMetadata), _mainViewModel.Settings);
                     }
                     item.IsChecked = false;
                     progressCallback((double)(++i) / allSelected.Length);
@@ -261,7 +282,7 @@ namespace PhotoLocator
                     }
                     else
                     {
-                        var (image, itemMetadata) = await LoadImageWithMetadataAsync(item);
+                        var (image, itemMetadata) = await LoadImageWithMetadataAsync(item, ct);
                         await Task.Run(() => GeneralFileFormatHandler.SaveToFile(image, targetFileName,
                             ExifHandler.ResetOrientation(itemMetadata), _mainViewModel.Settings), ct);
                     }
@@ -278,26 +299,29 @@ namespace PhotoLocator
             var allSelected = _mainViewModel.GetSelectedItems(true).ToArray();
             if (allSelected.Length == 0)
                 return;
-            int newHeight = 0;
-            if (TextInputWindow.Show("New image height (width will be adjusted to keep ratio):", str => int.TryParse(str, CultureInfo.CurrentCulture, out newHeight) && newHeight > 0, 
-                "Resize", _resizeTargetHeight.ToString(CultureInfo.CurrentCulture)) is null)
-                return;
-            _resizeTargetHeight = newHeight;
 
-            var browser = new System.Windows.Forms.FolderBrowserDialog();
-            browser.InitialDirectory = Path.GetDirectoryName(allSelected[0].FullPath)!;
-            browser.Description = $"Select target folder for resized images";
-            browser.UseDescriptionForTitle = true;
-            if (browser.ShowDialog() != System.Windows.Forms.DialogResult.OK)
-                return;
-            var targetDir = browser.SelectedPath;
-            var targetIsSourceDir = string.Equals(targetDir, browser.InitialDirectory, StringComparison.OrdinalIgnoreCase);
+            if (o is not (string targetDir, int newHeight))
+            {
+                newHeight = 0;
+                if (TextInputWindow.Show("New image height (width will be adjusted to keep ratio):", str => int.TryParse(str, CultureInfo.CurrentCulture, out newHeight) && newHeight > 0,
+                    "Resize", _resizeTargetHeight.ToString(CultureInfo.CurrentCulture)) is null)
+                    return;
+                _resizeTargetHeight = newHeight;
+
+                var browser = new System.Windows.Forms.FolderBrowserDialog();
+                browser.InitialDirectory = Path.GetDirectoryName(allSelected[0].FullPath)!;
+                browser.Description = $"Select target folder for resized images";
+                browser.UseDescriptionForTitle = true;
+                if (browser.ShowDialog() != System.Windows.Forms.DialogResult.OK)
+                    return;
+                targetDir = browser.SelectedPath;
+            }
 
             await _mainViewModel.RunProcessWithProgressBarAsync(async (progressCallback, ct) =>
             {
+                var targetIsSourceDir = string.Equals(targetDir, Path.GetDirectoryName(allSelected[0].FullPath), StringComparison.OrdinalIgnoreCase);
                 var overwriteAll = targetIsSourceDir;
-                var op = new LanczosResizeOperation();
-                op.FilterFunc = LanczosResizeOperation.Lanczos2;
+                var op = new LanczosResizeOperation { FilterFunc = LanczosResizeOperation.Lanczos2, FilterWindow = 2 };
                 int i = 0;
                 Task? previousSaveTask = null;
                 foreach (var item in allSelected)
@@ -311,16 +335,22 @@ namespace PhotoLocator
                         overwriteAll = true;
                     }
 
-                    var (image, itemMetadata) = await LoadImageWithMetadataAsync(item);
+                    var (image, itemMetadata) = await LoadImageWithMetadataAsync(item, ct);
 
-                    var newImage = await Task.Run(
-                        () => op.Apply(image, int.Max(1, IntMath.Round(image.PixelWidth * newHeight / (double)image.PixelHeight)), newHeight, image.DpiX, image.DpiY, ct)
-                        ?? throw new UserMessageException("Unsupported pixel format " + image.Format), ct);
+                    var newImage = await Task.Run(() =>
+                    {
+                        var newWidth = int.Max(1, IntMath.Round(image.PixelWidth * newHeight / (double)image.PixelHeight));
+                        var sourceBitsPerChannel = image.Format.BitsPerPixel / int.Max(1, image.Format.Masks.Count);
+                        var gamma = sourceBitsPerChannel > 8 ? 1 : FloatBitmap.DefaultMonitorGamma;
+                        var floatImage = new FloatBitmap(image, gamma);
+                        floatImage = op.Apply(floatImage, newWidth, newHeight, ct);
+                        return sourceBitsPerChannel > 8 ? floatImage.ToBitmapSource16(image.DpiX, image.DpiY, gamma) : floatImage.ToBitmapSource(image.DpiX, image.DpiY, gamma);
+                    }, ct);
 
                     await (previousSaveTask ?? Task.CompletedTask);
                     previousSaveTask = Task.Run(() =>
                     {
-                        GeneralFileFormatHandler.SaveToFile(newImage, targetFileName, ExifHandler.ResetOrientation(itemMetadata), _mainViewModel.Settings);
+                        GeneralFileFormatHandler.SaveToFile(newImage, targetFileName, ExifHandler.PrepareMetadataForProcessedImage(image.Format, itemMetadata), _mainViewModel.Settings);
                         item.IsChecked = false;
                     }, ct);
                     progressCallback((double)(i++) / allSelected.Length);
