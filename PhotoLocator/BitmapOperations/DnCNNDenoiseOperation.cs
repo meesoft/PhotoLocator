@@ -1,5 +1,3 @@
-#nullable disable
-
 using Microsoft.ML.OnnxRuntime;
 using Microsoft.ML.OnnxRuntime.Tensors;
 using System;
@@ -47,7 +45,7 @@ namespace PhotoLocator.BitmapOperations
                 throw new InvalidOperationException("SrcBitmap cannot be null.");
 
             var source = SrcBitmap;
-            if (source.PlaneCount != 1 && source.PlaneCount != 3)
+            if (source.PlaneCount is not 1 and not 3)
                 throw new NotSupportedException("DnCNNDenoiseOperation supports grayscale (1 channel) and RGB (3 channels) images only.");
 
             var channels = source.PlaneCount;
@@ -79,8 +77,8 @@ namespace PhotoLocator.BitmapOperations
 
             using var session = new InferenceSession(modelPath);
             var inputName = session.InputMetadata.Keys.First();
-            using var output = session.Run(new[] { NamedOnnxValue.CreateFromTensor(inputName, new DenseTensor<float>(inputBuffer, new[] { 1, channels, height, width })) });
-            var outputTensor = output.First().AsTensor<float>();
+            using var output = session.Run([NamedOnnxValue.CreateFromTensor(inputName, new DenseTensor<float>(inputBuffer, [1, channels, height, width]))]);
+            var outputTensor = output[0].AsTensor<float>();
             var outputBuffer = outputTensor.ToArray();
 
             for (var y = 0; y < height; y++)
