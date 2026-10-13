@@ -296,6 +296,7 @@
                             </MenuItem.Icon>
                         </MenuItem>
                         <MenuItem Header="Resize" Command="{Binding ImageTransformCommands.ResizeCommand}" />
+                        <MenuItem Header="Denoise (AI)" Command="{Binding ImageTransformCommands.DenoiseCommand}" />
                     </MenuItem>
                     <MenuItem Header="Transform video" >
                         <MenuItem Header="Process selected (Ctrl+P)" Command="{Binding VideoTransformCommandsShared.ProcessSelected}">

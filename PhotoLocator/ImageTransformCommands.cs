@@ -294,6 +294,74 @@ namespace PhotoLocator
 
         int _resizeTargetHeight = 2160;
 
+        public ICommand DenoiseCommand => new RelayCommand(async o =>
+        {
+            var allSelected = _mainViewModel.GetSelectedItems(true).ToArray();
+            if (allSelected.Length == 0)
+                return;
+
+            var modelPath = DnCNNDenoiseOperation.TryFindModelInAppDirectory();
+            if (string.IsNullOrWhiteSpace(modelPath))
+            {
+                var ofd = new Microsoft.Win32.OpenFileDialog
+                {
+                    Title = "Select DnCNN ONNX model",
+                    Filter = "ONNX model (*.onnx)|*.onnx|All files (*.*)|*.*",
+                    CheckFileExists = true,
+                    CheckPathExists = true,
+                    InitialDirectory = Path.GetDirectoryName(allSelected[0].FullPath) ?? Environment.CurrentDirectory,
+                    FileName = DnCNNDenoiseOperation.DefaultModelFileName,
+                };
+                if (ofd.ShowDialog() != true)
+                    return;
+                modelPath = ofd.FileName;
+            }
+
+            var browser = new System.Windows.Forms.FolderBrowserDialog();
+            browser.InitialDirectory = Path.GetDirectoryName(allSelected[0].FullPath)!;
+            browser.Description = "Select target folder for denoised images";
+            browser.UseDescriptionForTitle = true;
+            if (browser.ShowDialog() != System.Windows.Forms.DialogResult.OK)
+                return;
+
+            var targetDir = browser.SelectedPath;
+            var targetIsSourceDir = string.Equals(targetDir, Path.GetDirectoryName(allSelected[0].FullPath), StringComparison.OrdinalIgnoreCase);
+            var overwriteAll = targetIsSourceDir;
+
+            await _mainViewModel.RunProcessWithProgressBarAsync(async (progressCallback, ct) =>
+            {
+                int i = 0;
+                foreach (var item in allSelected)
+                {
+                    var targetFileName = targetIsSourceDir ? item.GetProcessedFileName() : Path.Combine(targetDir, item.Name);
+                    if (!overwriteAll && File.Exists(targetFileName))
+                    {
+                        if (MessageBox.Show(App.Current.MainWindow, $"File {targetFileName} already exists. Overwrite all conflicting files?",
+                            "Confirm Overwrite All", MessageBoxButton.OKCancel, MessageBoxImage.Question) != MessageBoxResult.OK)
+                            break;
+                        overwriteAll = true;
+                    }
+
+                    var (image, itemMetadata) = await LoadImageWithMetadataAsync(item, ct);
+                    var sourceFloat = new FloatBitmap(image, FloatBitmap.DefaultMonitorGamma);
+                    var denoiseOperation = new DnCNNDenoiseOperation
+                    {
+                        SrcBitmap = sourceFloat,
+                        DstBitmap = new FloatBitmap(sourceFloat.Width, sourceFloat.Height, sourceFloat.PlaneCount),
+                        ModelPath = modelPath,
+                    };
+
+                    await Task.Run(() => denoiseOperation.Apply(), ct);
+                    var resultImage = denoiseOperation.DstBitmap.ToBitmapSource(image.DpiX, image.DpiY, FloatBitmap.DefaultMonitorGamma);
+                    await Task.Run(() => GeneralFileFormatHandler.SaveToFile(resultImage, targetFileName,
+                        ExifHandler.PrepareMetadataForProcessedImage(resultImage.Format, itemMetadata), _mainViewModel.Settings), ct);
+
+                    item.IsChecked = false;
+                    progressCallback((double)(++i) / allSelected.Length);
+                }
+            }, "Denoising");
+        }, HasFileSelected);
+
         public ICommand ResizeCommand => new RelayCommand(async o =>
         {
             var allSelected = _mainViewModel.GetSelectedItems(true).ToArray();
