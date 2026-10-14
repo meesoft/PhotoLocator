@@ -1421,6 +1421,7 @@ namespace PhotoLocator
 
             _loadCancellation?.Dispose();
             _loadCancellation = new CancellationTokenSource();
+            TaskbarProgressState = TaskbarItemProgressState.Normal;
             var ct = _loadCancellation.Token;
             var sw = Stopwatch.StartNew();
             do
@@ -1445,6 +1446,7 @@ namespace PhotoLocator
                         if (item.IsSelected && item.GeoTagPresent)
                             MapCenter = item.Location;
                         _loadImagesProgress = ++progress / (double)reordered.Length;
+                        ProgressBarValue = _loadImagesProgress;
                     });
                 await _loadPicturesTask;
                 _loadPicturesTask = null;
@@ -1457,6 +1459,7 @@ namespace PhotoLocator
                 Items.Sort();
                 SelectIfNotNull(selectedItem);
             }
+            TaskbarProgressState = TaskbarItemProgressState.None;
         }
 
         private static void AssertInMainThread()
