@@ -24,6 +24,7 @@ def create_identity_model(output_path: Path):
 
 	model = helper.make_model(graph, producer_name="PhotoLocatorTest")
 	model.opset_import[0].version = 17
+	model.ir_version = 13
 
 	output_path.parent.mkdir(parents=True, exist_ok=True)
 	onnx.save(model, str(output_path))
@@ -31,7 +32,7 @@ def create_identity_model(output_path: Path):
 
 
 def main():
-	repo_root = Path(__file__).resolve().parents[1]
+	repo_root = Path(__file__).resolve().parents[2]
 	output_path = repo_root / "PhotoLocatorTest" / "TestData" / "dncnn_test.onnx"
 	create_identity_model(output_path)
 

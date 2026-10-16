@@ -8,6 +8,7 @@ PhotoLocator/exiftool/
 PhotoLocator/ffmpeg/
 PhotoLocator/jpegli/
 PhotoLocatorTest/TestData/*.cr3
+PhotoLocatorTest/TestData/*.onnx
 PhotoLocatorSetup/*.cache
 PhotoLocatorSetup/*.pfx
 PhotoLocatorSetup/AppPackages/
