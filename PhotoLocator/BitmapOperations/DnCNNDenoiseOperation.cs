@@ -3,6 +3,7 @@ using Microsoft.ML.OnnxRuntime.Tensors;
 using System;
 using System.IO;
 using System.Linq;
+using System.Threading;
 
 namespace PhotoLocator.BitmapOperations
 {
@@ -15,6 +16,10 @@ namespace PhotoLocator.BitmapOperations
         public int TileOverlap { get; set; } = 32;
 
         public string ModelPath { get; set; } = DefaultModelFileName;
+
+        public CancellationToken CancellationToken { get; set; }
+
+        public Action<double>? ProgressCallback { get; set; }
 
         public static string ResolveModelPath(string modelPath)
         {
@@ -80,19 +85,20 @@ namespace PhotoLocator.BitmapOperations
             }
 
             var accumulator = new float[height, width, channels];
-            var weightMap = new float[height, width, channels];
+            var weightMap = new byte[height, width, channels];
             var step = Math.Max(1, TileSize - TileOverlap);
 
             for (var top = 0; top < height; top += step)
             {
                 var tileTop = top;
                 var tileBottom = Math.Min(top + TileSize, height);
+                var tileHeight = tileBottom - tileTop;
                 for (var left = 0; left < width; left += step)
                 {
+                    CancellationToken.ThrowIfCancellationRequested();
                     var tileLeft = left;
                     var tileRight = Math.Min(left + TileSize, width);
                     var tileWidth = tileRight - tileLeft;
-                    var tileHeight = tileBottom - tileTop;
 
                     var tileDst = new FloatBitmap(tileWidth, tileHeight, channels);
                     RunTileInference(modelPath, sourceCopy, tileLeft, tileTop, tileWidth, tileHeight, channels, tileDst, 0, 0);
@@ -106,13 +112,15 @@ namespace PhotoLocator.BitmapOperations
                             for (var c = 0; c < channels; c++)
                             {
                                 accumulator[globalY, globalX, c] += tileDst.Elements[y, x * channels + c];
-                                weightMap[globalY, globalX, c] += 1f;
+                                weightMap[globalY, globalX, c] += 1;
                             }
                         }
                     }
+                    ProgressCallback?.Invoke((top + (left + tileWidth) / (double)width * tileHeight) / height);
                 }
             }
 
+            CancellationToken.ThrowIfCancellationRequested();
             for (var y = 0; y < height; y++)
             {
                 for (var x = 0; x < width; x++)

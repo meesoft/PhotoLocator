@@ -343,16 +343,18 @@ namespace PhotoLocator
                     }
 
                     var (image, itemMetadata) = await LoadImageWithMetadataAsync(item, ct);
-                    var sourceFloat = new FloatBitmap(image, FloatBitmap.DefaultMonitorGamma);
+                    var sourceFloat = new FloatBitmap(image, 1);
                     var denoiseOperation = new DnCNNDenoiseOperation
                     {
                         SrcBitmap = sourceFloat,
                         DstBitmap = new FloatBitmap(sourceFloat.Width, sourceFloat.Height, sourceFloat.PlaneCount),
                         ModelPath = modelPath,
+                        CancellationToken = ct,
+                        ProgressCallback = progress => progressCallback((double)(i + progress) / allSelected.Length),
                     };
 
                     await Task.Run(() => denoiseOperation.Apply(), ct);
-                    var resultImage = denoiseOperation.DstBitmap.ToBitmapSource(image.DpiX, image.DpiY, FloatBitmap.DefaultMonitorGamma);
+                    var resultImage = denoiseOperation.DstBitmap.ToBitmapSource(image.DpiX, image.DpiY, 1);
                     await Task.Run(() => GeneralFileFormatHandler.SaveToFile(resultImage, targetFileName,
                         ExifHandler.PrepareMetadataForProcessedImage(resultImage.Format, itemMetadata), _mainViewModel.Settings), ct);
 
