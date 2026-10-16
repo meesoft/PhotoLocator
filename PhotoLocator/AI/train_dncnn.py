@@ -10,11 +10,12 @@ from torch.utils.data import DataLoader, Dataset
 
 
 class PairedImageDataset(Dataset):
-	def __init__(self, image_dir: str, clean_postfix: str = "_clean", patch_size: int = 64, channels: int = 3, use_augment: bool = True):
+	def __init__(self, image_dir: str, clean_postfix: str = "_clean", patch_size: int = 64, channels: int = 3, patches_per_image: int = 1, use_augment: bool = True):
 		self.image_dir = Path(image_dir)
 		self.clean_postfix = clean_postfix
 		self.patch_size = patch_size
 		self.channels = channels
+		self.patches_per_image = max(1, patches_per_image)
 		self.use_augment = use_augment
 
 		image_files = sorted(self.image_dir.glob("*"))
@@ -39,7 +40,7 @@ class PairedImageDataset(Dataset):
 		self.samples = [(noisy_map[name], clean_map[name]) for name in common_names]
 
 	def __len__(self):
-		return len(self.samples)
+		return len(self.samples) * self.patches_per_image
 
 	def _load_image(self, path: Path):
 		image = cv2.imread(str(path), cv2.IMREAD_UNCHANGED)
@@ -67,7 +68,8 @@ class PairedImageDataset(Dataset):
 		return image
 
 	def __getitem__(self, index):
-		noisy_path, clean_path = self.samples[index]
+		base_index = index // self.patches_per_image
+		noisy_path, clean_path = self.samples[base_index]
 		noisy = self._load_image(noisy_path)
 		clean = self._load_image(clean_path)
 
@@ -91,6 +93,11 @@ class PairedImageDataset(Dataset):
 			if np.random.rand() > 0.5:
 				noisy = noisy[::-1, :, :].copy()
 				clean = clean[::-1, :, :].copy()
+		else:
+			top = (index % self.patches_per_image) * 0
+			left = (index % self.patches_per_image) * 0
+			noisy = noisy[0:self.patch_size, 0:self.patch_size]
+			clean = clean[0:self.patch_size, 0:self.patch_size]
 
 		noisy = noisy.transpose(2, 0, 1).copy()
 		clean = clean.transpose(2, 0, 1).copy()
@@ -142,8 +149,9 @@ def main():
 	parser.add_argument("--checkpoint-interval", type=int, default=100, help="Save a model checkpoint every N epochs (set to 0 to disable intermediate saves)")
 	parser.add_argument("--channels", type=int, default=3, choices=[1, 3], help="Model input channels: 1 for grayscale, 3 for RGB")
 	parser.add_argument("--patch-size", type=int, default=64, help="Training patch size")
+	parser.add_argument("--patches-per-image", type=int, default=10, help="Number of random patches sampled from each image per epoch")
 	parser.add_argument("--batch-size", type=int, default=8, help="Training batch size")
-	parser.add_argument("--epochs", type=int, default=1000, help="Number of training epochs")
+	parser.add_argument("--epochs", type=int, default=100, help="Number of training epochs")
 	parser.add_argument("--lr", type=float, default=1e-4, help="Learning rate")
 	parser.add_argument("--device", type=str, default="cuda" if torch.cuda.is_available() else "cpu", help="Device to train on")
 	args = parser.parse_args()
@@ -153,7 +161,13 @@ def main():
 
 	validate_dataset(args.image_dir, args.clean_postfix)
 
-	dataset = PairedImageDataset(args.image_dir, clean_postfix=args.clean_postfix, patch_size=args.patch_size, channels=args.channels)
+	dataset = PairedImageDataset(
+		args.image_dir,
+		clean_postfix=args.clean_postfix,
+		patch_size=args.patch_size,
+		channels=args.channels,
+		patches_per_image=args.patches_per_image,
+	)
 	loader = DataLoader(dataset, batch_size=args.batch_size, shuffle=True, num_workers=0, pin_memory=torch.cuda.is_available())
 
 	model = DnCNN(channels=args.channels).to(args.device)
@@ -178,7 +192,7 @@ def main():
 		epoch_loss = running_loss / len(dataset)
 		print(f"epoch={epoch + 1}/{args.epochs} loss={epoch_loss:.6f}")
 
-		if args.checkpoint_interval > 0 and (epoch + 1) % args.checkpoint_interval == 0:
+		if args.checkpoint_interval > 0 and args.checkpoint_interval <args.epochs and (epoch + 1) % args.checkpoint_interval == 0:
 			checkpoint_path = f"{Path(args.output).with_suffix('')}_epoch_{epoch + 1}.pt"
 			torch.save(model.state_dict(), checkpoint_path)
 			print(f"Saved checkpoint to {checkpoint_path}")
