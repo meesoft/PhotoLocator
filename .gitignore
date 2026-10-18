@@ -15,4 +15,3 @@ PhotoLocatorSetup/BundleArtifacts/
 TestResults/
 __pycache__/
 publish.bat
-*.onnx

@@ -43,15 +43,10 @@ class PairedImageDataset(Dataset):
 		return len(self.samples) * self.patches_per_image
 
 	def _load_image(self, path: Path):
-		image = cv2.imread(str(path), cv2.IMREAD_UNCHANGED)
-		if image is None:
-			try:
+		#image = cv2.imread(str(path), cv2.IMREAD_UNCHANGED)
+		#if image is None:
 				encoded = path.read_bytes()
 				image = cv2.imdecode(np.frombuffer(encoded, dtype=np.uint8), cv2.IMREAD_UNCHANGED)
-			except Exception:
-				image = None
-		if image is None:
-			raise FileNotFoundError(f"Unable to read image: {path}")
 
 		if image.ndim == 2:
 			image = image[:, :, None]
@@ -64,7 +59,7 @@ class PairedImageDataset(Dataset):
 		if image.shape[2] != self.channels:
 			raise ValueError(f"Unexpected channel count {image.shape[2]} for channel setting {self.channels}: {path}")
 
-		image = image.astype(np.float32) / 255.0
+		image = image.astype(np.float32) / _image_max_value(image)
 		return image
 
 	def __getitem__(self, index):
@@ -127,6 +122,78 @@ class DnCNN(nn.Module):
 		return x - residual
 
 
+def _image_max_value(image: np.ndarray):
+	if image.dtype not in (np.uint8, np.uint16):
+		raise ValueError(f"Unsupported image dtype {image.dtype}; expected 8-bit or 16-bit unsigned pixels.")
+	return np.iinfo(image.dtype).max
+
+
+def _tile_starts(length: int, tile_size: int, overlap: int):
+	if length <= tile_size:
+		return [0]
+	step = tile_size - overlap
+	starts = list(range(0, length - tile_size + 1, step))
+	if starts[-1] != length - tile_size:
+		starts.append(length - tile_size)
+	return starts
+
+
+def denoise_image(model, image: np.ndarray, channels: int, device: str, tile_size: int = 512, overlap: int = 64):
+	if tile_size <= 0 or overlap < 0 or overlap >= tile_size:
+		raise ValueError("Tile size must be positive and overlap must be between 0 and tile size.")
+	edge_margin = min(model.num_layers, tile_size // 2)
+	if overlap < 2 * edge_margin and image.ndim >= 2 and max(image.shape[:2]) > tile_size:
+		raise ValueError(f"Tile overlap must be at least {2 * edge_margin} pixels for this model.")
+
+	if image.ndim == 2:
+		image = image[:, :, None]
+	output_dtype = image.dtype
+	image_max_value = _image_max_value(image)
+	if image.shape[2] == 4:
+		image = image[:, :, :3]
+	if image.shape[2] == 1 and channels == 3:
+		image = np.repeat(image, 3, axis=2)
+	elif image.shape[2] == 3 and channels == 1:
+		image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)[:, :, None]
+	if image.shape[2] != channels:
+		raise ValueError(f"Expected {channels} image channels, got {image.shape[2]}.")
+
+	image = image.astype(np.float32) / image_max_value
+	height, width = image.shape[:2]
+	output = np.zeros((height, width, channels), dtype=np.float32)
+	weights = np.zeros((height, width, 1), dtype=np.float32)
+	was_training = model.training
+	model.eval()
+	try:
+		with torch.inference_mode():
+			for top in _tile_starts(height, tile_size, overlap):
+				for left in _tile_starts(width, tile_size, overlap):
+					bottom = min(top + tile_size, height)
+					right = min(left + tile_size, width)
+					tile = image[top:bottom, left:right].transpose(2, 0, 1).copy()
+					tensor = torch.from_numpy(tile).unsqueeze(0).to(device)
+					denoised = model(tensor).squeeze(0).cpu().numpy().transpose(1, 2, 0)
+					tile_height, tile_width = denoised.shape[:2]
+					tile_weights = np.ones((tile_height, tile_width), dtype=np.float32)
+					if edge_margin:
+						ramp = np.linspace(1.0 / (edge_margin + 1), 1.0, edge_margin, dtype=np.float32)
+						if top > 0:
+							tile_weights[:edge_margin, :] *= ramp[:, None]
+						if bottom < height:
+							tile_weights[-edge_margin:, :] *= ramp[::-1, None]
+						if left > 0:
+							tile_weights[:, :edge_margin] *= ramp[None, :]
+						if right < width:
+							tile_weights[:, -edge_margin:] *= ramp[None, ::-1]
+					output[top:bottom, left:right] += denoised * tile_weights[:, :, None]
+					weights[top:bottom, left:right] += tile_weights[:, :, None]
+	finally:
+		model.train(was_training)
+
+	output = np.clip(output / weights, 0.0, 1.0)
+	return np.rint(output * image_max_value).astype(output_dtype)
+
+
 def validate_dataset(image_dir: str, clean_postfix: str):
 	image_path = Path(image_dir)
 	if not image_path.exists() or not image_path.is_dir():
@@ -146,19 +213,21 @@ def main():
 	parser.add_argument("--image-dir", type=str, required=True, help="Directory containing noisy images and matching clean images with a suffix")
 	parser.add_argument("--clean-postfix", type=str, default="_clean", help="File suffix used by the clean image, e.g. '_clean' for 'image_clean.png'")
 	parser.add_argument("--output", type=str, default="dncnn_model.pt", help="Path for the trained PyTorch model")
-	parser.add_argument("--checkpoint-interval", type=int, default=100, help="Save a model checkpoint every N epochs (set to 0 to disable intermediate saves)")
+	parser.add_argument("--validation-image", type=str, help="Optional noisy image to denoise whenever a checkpoint is saved")
+	parser.add_argument("--validation-output-dir", type=str, help="Directory for checkpoint validation previews; defaults to a 'validation' folder beside --output")
+	parser.add_argument("--checkpoint-interval", type=int, default=20, help="Save a model checkpoint every N epochs (set to 0 to disable intermediate saves)")
 	parser.add_argument("--channels", type=int, default=3, choices=[1, 3], help="Model input channels: 1 for grayscale, 3 for RGB")
-	parser.add_argument("--patch-size", type=int, default=64, help="Training patch size")
-	parser.add_argument("--patches-per-image", type=int, default=10, help="Number of random patches sampled from each image per epoch")
+	parser.add_argument("--patch-size", type=int, default=256, help="Training patch size")
+	parser.add_argument("--patches-per-image", type=int, default=4, help="Number of random patches sampled from each image per epoch")
 	parser.add_argument("--batch-size", type=int, default=8, help="Training batch size")
-	parser.add_argument("--epochs", type=int, default=100, help="Number of training epochs")
-	parser.add_argument("--lr", type=float, default=1e-4, help="Learning rate")
+	parser.add_argument("--epochs", type=int, default=500, help="Number of training epochs")
+	parser.add_argument("--lr", type=float, default=2e-4, help="Learning rate")
+	parser.add_argument("--weight-decay", type=float, default=0.01, help="AdamW weight decay")
 	parser.add_argument("--device", type=str, default="cuda" if torch.cuda.is_available() else "cpu", help="Device to train on")
 	args = parser.parse_args()
 
 	if not Path(args.image_dir).exists():
 		raise FileNotFoundError(f"Training dataset directory does not exist: {args.image_dir}")
-
 	validate_dataset(args.image_dir, args.clean_postfix)
 
 	dataset = PairedImageDataset(
@@ -170,9 +239,29 @@ def main():
 	)
 	loader = DataLoader(dataset, batch_size=args.batch_size, shuffle=True, num_workers=0, pin_memory=torch.cuda.is_available())
 
+	print(f"Training device: {args.device}")
+
 	model = DnCNN(channels=args.channels).to(args.device)
-	optimizer = torch.optim.AdamW(model.parameters(), lr=args.lr)
+	optimizer = torch.optim.AdamW(model.parameters(), lr=args.lr, weight_decay=args.weight_decay)
 	criterion = nn.MSELoss()
+	validation_image = None
+	validation_output_dir = None
+	if args.validation_image:
+		validation_image = cv2.imread(args.validation_image, cv2.IMREAD_UNCHANGED)
+		if validation_image is None:
+			raise FileNotFoundError(f"Unable to read validation image: {args.validation_image}")
+		validation_output_dir = Path(args.validation_output_dir) if args.validation_output_dir else Path(args.output).parent / "validation"
+		validation_output_dir.mkdir(parents=True, exist_ok=True)
+
+	def save_checkpoint(checkpoint_path: Path):
+		torch.save(model.state_dict(), checkpoint_path)
+		print(f"Saved checkpoint to {checkpoint_path}")
+		if validation_image is not None:
+			preview = denoise_image(model, validation_image, args.channels, args.device)
+			preview_path = validation_output_dir / f"{checkpoint_path.stem}_validation.png"
+			if not cv2.imwrite(str(preview_path), preview):
+				raise OSError(f"Unable to save validation preview: {preview_path}")
+			print(f"Saved validation preview to {preview_path}")
 
 	for epoch in range(args.epochs):
 		model.train()
@@ -192,13 +281,11 @@ def main():
 		epoch_loss = running_loss / len(dataset)
 		print(f"epoch={epoch + 1}/{args.epochs} loss={epoch_loss:.6f}")
 
-		if args.checkpoint_interval > 0 and args.checkpoint_interval <args.epochs and (epoch + 1) % args.checkpoint_interval == 0:
-			checkpoint_path = f"{Path(args.output).with_suffix('')}_epoch_{epoch + 1}.pt"
-			torch.save(model.state_dict(), checkpoint_path)
-			print(f"Saved checkpoint to {checkpoint_path}")
+		if args.checkpoint_interval > 0 and (epoch + 1) % args.checkpoint_interval == 0:
+			checkpoint_path = Path(f"{Path(args.output).with_suffix('')}_epoch_{epoch + 1}.pt")
+			save_checkpoint(checkpoint_path)
 
-	torch.save(model.state_dict(), args.output)
-	print(f"Saved trained model to {args.output}")
+	save_checkpoint(Path(args.output))
 
 
 if __name__ == "__main__":
