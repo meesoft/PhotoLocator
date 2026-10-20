@@ -4,7 +4,7 @@ from pathlib import Path
 import cv2
 import torch
 
-from train_dncnn import DnCNN, denoise_image
+from train_dncnn import DnCNN, checkpoint_model_state, denoise_image
 
 
 def main():
@@ -23,7 +23,8 @@ def main():
 		raise FileNotFoundError(f"Unable to read input image: {args.input}")
 
 	model = DnCNN(channels=args.channels).to(args.device)
-	model.load_state_dict(torch.load(args.model, map_location=args.device))
+	checkpoint = torch.load(args.model, map_location=args.device)
+	model.load_state_dict(checkpoint_model_state(checkpoint))
 	print(f"Inference device: {args.device}")
 	result = denoise_image(model, image, args.channels, args.device, args.tile_size, args.overlap)
 	if result.shape[2] == 1:

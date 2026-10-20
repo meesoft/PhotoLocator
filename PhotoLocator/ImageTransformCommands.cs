@@ -343,21 +343,24 @@ namespace PhotoLocator
                     }
 
                     var (image, itemMetadata) = await LoadImageWithMetadataAsync(item, ct);
-                    var sourceFloat = new FloatBitmap(image, 1);
-                    var denoiseOperation = new DnCNNDenoiseOperation
+                    await Task.Run(() =>
                     {
-                        SrcBitmap = sourceFloat,
-                        DstBitmap = new FloatBitmap(sourceFloat.Width, sourceFloat.Height, sourceFloat.PlaneCount),
-                        ModelPath = modelPath,
-                        CancellationToken = ct,
-                        ProgressCallback = progress => progressCallback((double)(i + progress) / allSelected.Length),
-                    };
+                        var sourceFloat = new FloatBitmap(image, 1);
+                        var denoiseOperation = new DnCNNDenoiseOperation
+                        {
+                            SrcBitmap = sourceFloat,
+                            DstBitmap = new FloatBitmap(sourceFloat.Width, sourceFloat.Height, sourceFloat.PlaneCount),
+                            ModelPath = modelPath,
+                            CancellationToken = ct,
+                            ProgressCallback = progress => progressCallback((double)(i + progress) / allSelected.Length),
+                        };
+                        denoiseOperation.Apply();
 
-                    await Task.Run(() => denoiseOperation.Apply(), ct);
-                    var resultImage = denoiseOperation.DstBitmap.ToBitmapSource(image.DpiX, image.DpiY, 1);
-                    await Task.Run(() => GeneralFileFormatHandler.SaveToFile(resultImage, targetFileName,
-                        ExifHandler.PrepareMetadataForProcessedImage(resultImage.Format, itemMetadata), _mainViewModel.Settings), ct);
-
+                        var sourceBitsPerChannel = image.Format.BitsPerPixel / int.Max(1, image.Format.Masks.Count);
+                        var resultImage = sourceBitsPerChannel > 8 ? denoiseOperation.DstBitmap.ToBitmapSource16(image.DpiX, image.DpiY, 1) : denoiseOperation.DstBitmap.ToBitmapSource(image.DpiX, image.DpiY, 1);
+                        GeneralFileFormatHandler.SaveToFile(resultImage, targetFileName,
+                        ExifHandler.PrepareMetadataForProcessedImage(resultImage.Format, itemMetadata), _mainViewModel.Settings);
+                    } , ct);
                     item.IsChecked = false;
                     progressCallback((double)(++i) / allSelected.Length);
                 }

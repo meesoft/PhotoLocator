@@ -34,6 +34,6 @@ public class DnCNNDenoiseOperationTest
         Assert.AreEqual(bitmap.Height, op.DstBitmap.Height);
         Assert.AreEqual(bitmap.PlaneCount, op.DstBitmap.PlaneCount);
         Assert.IsTrue(op.DstBitmap.Elements.Cast<float>().All(v => !float.IsNaN(v)), "Model output contains NaN values.");
-        Assert.IsTrue(op.DstBitmap.Elements.Cast<float>().All(v => v >= 0f && v <= 1f), "Model output is outside the normalized [0,1] range.");
+        Assert.IsTrue(op.DstBitmap.Elements.Cast<float>().All(v => v is >= 0f and <= 1f), "Model output is outside the normalized [0,1] range.");
     }
 }

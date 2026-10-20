@@ -31,6 +31,10 @@ class PairedImageDataset(Dataset):
 			else:
 				noisy_map[path.stem] = path
 
+		unmatched_noisy_names = sorted(set(noisy_map) - set(clean_map))
+		for name in unmatched_noisy_names:
+			print(f"No matching clean image for noisy file: {noisy_map[name].name}")
+
 		common_names = sorted(set(noisy_map).intersection(clean_map))
 		if not common_names:
 			raise FileNotFoundError(
@@ -120,6 +124,12 @@ class DnCNN(nn.Module):
 	def forward(self, x):
 		residual = self.model(x)
 		return x - residual
+
+
+def checkpoint_model_state(checkpoint):
+	if isinstance(checkpoint, dict) and "model_state_dict" in checkpoint:
+		return checkpoint["model_state_dict"]
+	return checkpoint
 
 
 def _image_max_value(image: np.ndarray):
@@ -214,13 +224,14 @@ def main():
 	parser.add_argument("--clean-postfix", type=str, default="_clean", help="File suffix used by the clean image, e.g. '_clean' for 'image_clean.png'")
 	parser.add_argument("--output", type=str, default="dncnn_model.pt", help="Path for the trained PyTorch model")
 	parser.add_argument("--validation-image", type=str, help="Optional noisy image to denoise whenever a checkpoint is saved")
+	parser.add_argument("--resume", type=str, help="Optional checkpoint to resume from; legacy weights-only files restart the optimizer")
 	parser.add_argument("--validation-output-dir", type=str, help="Directory for checkpoint validation previews; defaults to a 'validation' folder beside --output")
 	parser.add_argument("--checkpoint-interval", type=int, default=20, help="Save a model checkpoint every N epochs (set to 0 to disable intermediate saves)")
 	parser.add_argument("--channels", type=int, default=3, choices=[1, 3], help="Model input channels: 1 for grayscale, 3 for RGB")
 	parser.add_argument("--patch-size", type=int, default=256, help="Training patch size")
 	parser.add_argument("--patches-per-image", type=int, default=4, help="Number of random patches sampled from each image per epoch")
 	parser.add_argument("--batch-size", type=int, default=8, help="Training batch size")
-	parser.add_argument("--epochs", type=int, default=500, help="Number of training epochs")
+	parser.add_argument("--epochs", type=int, default=1000, help="Total target number of epochs, including epochs in a resumed checkpoint")
 	parser.add_argument("--lr", type=float, default=2e-4, help="Learning rate")
 	parser.add_argument("--weight-decay", type=float, default=0.01, help="AdamW weight decay")
 	parser.add_argument("--device", type=str, default="cuda" if torch.cuda.is_available() else "cpu", help="Device to train on")
@@ -239,10 +250,22 @@ def main():
 	)
 	loader = DataLoader(dataset, batch_size=args.batch_size, shuffle=True, num_workers=0, pin_memory=torch.cuda.is_available())
 
+	print(f"Image pairs: {len(dataset.samples)}")
 	print(f"Training device: {args.device}")
 
 	model = DnCNN(channels=args.channels).to(args.device)
 	optimizer = torch.optim.AdamW(model.parameters(), lr=args.lr, weight_decay=args.weight_decay)
+	start_epoch = 0
+	if args.resume:
+		checkpoint = torch.load(args.resume, map_location=args.device)
+		model.load_state_dict(checkpoint_model_state(checkpoint))
+		if isinstance(checkpoint, dict) and "model_state_dict" in checkpoint:
+			if "optimizer_state_dict" in checkpoint:
+				optimizer.load_state_dict(checkpoint["optimizer_state_dict"])
+			start_epoch = int(checkpoint.get("epoch", 0))
+			print(f"Resumed optimizer and model at epoch {start_epoch} from {args.resume}")
+		else:
+			print(f"Loaded model weights from {args.resume}; optimizer starts fresh")
 	criterion = nn.MSELoss()
 	validation_image = None
 	validation_output_dir = None
@@ -253,8 +276,12 @@ def main():
 		validation_output_dir = Path(args.validation_output_dir) if args.validation_output_dir else Path(args.output).parent / "validation"
 		validation_output_dir.mkdir(parents=True, exist_ok=True)
 
-	def save_checkpoint(checkpoint_path: Path):
-		torch.save(model.state_dict(), checkpoint_path)
+	def save_checkpoint(checkpoint_path: Path, completed_epochs: int):
+		torch.save({
+			"epoch": completed_epochs,
+			"model_state_dict": model.state_dict(),
+			"optimizer_state_dict": optimizer.state_dict(),
+		}, checkpoint_path)
 		print(f"Saved checkpoint to {checkpoint_path}")
 		if validation_image is not None:
 			preview = denoise_image(model, validation_image, args.channels, args.device)
@@ -263,7 +290,7 @@ def main():
 				raise OSError(f"Unable to save validation preview: {preview_path}")
 			print(f"Saved validation preview to {preview_path}")
 
-	for epoch in range(args.epochs):
+	for epoch in range(start_epoch, args.epochs):
 		model.train()
 		running_loss = 0.0
 		for noisy_batch, clean_batch in loader:
@@ -283,9 +310,9 @@ def main():
 
 		if args.checkpoint_interval > 0 and (epoch + 1) % args.checkpoint_interval == 0:
 			checkpoint_path = Path(f"{Path(args.output).with_suffix('')}_epoch_{epoch + 1}.pt")
-			save_checkpoint(checkpoint_path)
+			save_checkpoint(checkpoint_path, epoch + 1)
 
-	save_checkpoint(Path(args.output))
+	save_checkpoint(Path(args.output), max(start_epoch, args.epochs))
 
 
 if __name__ == "__main__":

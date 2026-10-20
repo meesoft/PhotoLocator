@@ -4,7 +4,7 @@ import os
 import onnx
 import torch
 
-from train_dncnn import DnCNN
+from train_dncnn import DnCNN, checkpoint_model_state
 
 
 def main():
@@ -18,15 +18,15 @@ def main():
 	args = parser.parse_args()
 
 	model = DnCNN(channels=args.channels)
-	model.load_state_dict(torch.load(args.model, map_location="cpu"))
+	checkpoint = torch.load(args.model, map_location="cpu")
+	model.load_state_dict(checkpoint_model_state(checkpoint))
 	model.eval()
-	model.ir_version = 13
 
 	dummy_input = torch.randn(1, args.channels, args.height, args.width)
 	temp_path = args.output + ".tmp"
 	torch.onnx.export(
 		model,
-		dummy_input,
+		(dummy_input,),
 		temp_path,
 		export_params=True,
 		opset_version=args.opset,
@@ -40,7 +40,6 @@ def main():
 	)
 
 	model_onnx = onnx.load(temp_path)
-	model_onnx.ir_version = 13
 	onnx.save_model(
 		model_onnx,
 		args.output,

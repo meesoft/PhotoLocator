@@ -18,6 +18,8 @@ public class DnCNNDenoiseOperation : OperationBase
 
     public string ModelPath { get; set; } = DefaultModelFileName;
 
+    public bool PreferDirectML { get; set; } = true;
+
     public CancellationToken CancellationToken { get; set; }
 
     public Action<double>? ProgressCallback { get; set; }
@@ -78,9 +80,11 @@ public class DnCNNDenoiseOperation : OperationBase
         else
             DstBitmap.New(width, height, channels);
 
+        using var session = CreateSession(modelPath, PreferDirectML);
+
         if (width <= TileSize && height <= TileSize)
         {
-            RunTileInference(modelPath, SrcBitmap, 0, 0, width, height, channels, DstBitmap, 0, 0);
+            RunTileInference(session, SrcBitmap, 0, 0, width, height, channels, DstBitmap, 0, 0);
             return;
         }
 
@@ -101,7 +105,7 @@ public class DnCNNDenoiseOperation : OperationBase
                 var tileWidth = tileRight - tileLeft;
 
                 var tileDst = new FloatBitmap(tileWidth, tileHeight, channels);
-                RunTileInference(modelPath, SrcBitmap, tileLeft, tileTop, tileWidth, tileHeight, channels, tileDst, 0, 0);
+                RunTileInference(session, SrcBitmap, tileLeft, tileTop, tileWidth, tileHeight, channels, tileDst, 0, 0);
 
                 for (var y = 0; y < tileHeight; y++)
                 {
@@ -134,7 +138,24 @@ public class DnCNNDenoiseOperation : OperationBase
         });
     }
 
-    private static void RunTileInference(string modelPath, FloatBitmap source, int srcLeft, int srcTop, int tileWidth, int tileHeight, int channels, FloatBitmap dstBitmap, int dstLeft, int dstTop)
+    private static InferenceSession CreateSession(string modelPath, bool preferDirectML)
+    {
+        if (!preferDirectML)
+            return new InferenceSession(modelPath);
+
+        try
+        {
+            using var sessionOptions = new SessionOptions();
+            sessionOptions.AppendExecutionProvider_DML(0);
+            return new InferenceSession(modelPath, sessionOptions);
+        }
+        catch (Exception exception) when (exception is OnnxRuntimeException or DllNotFoundException)
+        {
+            return new InferenceSession(modelPath);
+        }
+    }
+
+    private static void RunTileInference(InferenceSession session, FloatBitmap source, int srcLeft, int srcTop, int tileWidth, int tileHeight, int channels, FloatBitmap dstBitmap, int dstLeft, int dstTop)
     {
         var inputBuffer = new float[1 * channels * tileHeight * tileWidth];
         for (var y = 0; y < tileHeight; y++)
@@ -151,7 +172,6 @@ public class DnCNNDenoiseOperation : OperationBase
             }
         }
 
-        using var session = new InferenceSession(modelPath);
         var inputName = session.InputMetadata.Keys.First();
         using var output = session.Run([NamedOnnxValue.CreateFromTensor(inputName, new DenseTensor<float>(inputBuffer, [1, channels, tileHeight, tileWidth]))]);
         var outputBuffer = output[0].AsTensor<float>().ToArray();
