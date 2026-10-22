@@ -20,6 +20,8 @@ public class DnCNNDenoiseOperation : OperationBase
 
     public bool PreferDirectML { get; set; } = true;
 
+    public bool ExpectColorModel { get; set; }
+
     public CancellationToken CancellationToken { get; set; }
 
     public Action<double>? ProgressCallback { get; set; }
@@ -75,7 +77,15 @@ public class DnCNNDenoiseOperation : OperationBase
         if (TileOverlap >= TileSize)
             TileOverlap = Math.Max(0, TileSize / 4);
 
-        if (DstBitmap == null || DstBitmap == SrcBitmap)
+        bool processGrayscaleWithColorModel = ExpectColorModel && channels == 1;
+        if (processGrayscaleWithColorModel)
+        {
+            source = new FloatBitmap(SrcBitmap.Width, SrcBitmap.Height, 3);
+            source.ProcessElementWise(SrcBitmap, (_, s) => s);
+            channels = 3;
+        }
+
+        if (DstBitmap == null || DstBitmap == source)
             DstBitmap = new FloatBitmap(width, height, channels);
         else
             DstBitmap.New(width, height, channels);
@@ -84,7 +94,7 @@ public class DnCNNDenoiseOperation : OperationBase
 
         if (width <= TileSize && height <= TileSize)
         {
-            RunTileInference(session, SrcBitmap, 0, 0, width, height, channels, DstBitmap, 0, 0);
+            RunTileInference(session, source, 0, 0, width, height, channels, DstBitmap, 0, 0);
             return;
         }
 
@@ -105,7 +115,7 @@ public class DnCNNDenoiseOperation : OperationBase
                 var tileWidth = tileRight - tileLeft;
 
                 var tileDst = new FloatBitmap(tileWidth, tileHeight, channels);
-                RunTileInference(session, SrcBitmap, tileLeft, tileTop, tileWidth, tileHeight, channels, tileDst, 0, 0);
+                RunTileInference(session, source, tileLeft, tileTop, tileWidth, tileHeight, channels, tileDst, 0, 0);
 
                 for (var y = 0; y < tileHeight; y++)
                 {
@@ -131,11 +141,14 @@ public class DnCNNDenoiseOperation : OperationBase
             {
                 for (var c = 0; c < channels; c++)
                 {
-                    var value = weightMap[y, x, c] > 0 ? accumulator[y, x, c] / weightMap[y, x, c] : SrcBitmap.Elements[y, x * channels + c];
+                    var value = weightMap[y, x, c] > 0 ? accumulator[y, x, c] / weightMap[y, x, c] : source.Elements[y, x * channels + c];
                     DstBitmap.Elements[y, x * channels + c] = Math.Clamp(value, 0f, 1f);
                 }
             }
         });
+
+        if (processGrayscaleWithColorModel)
+            DstBitmap.Assign(ConvertToGrayscaleOperation.ConvertToGrayscale(DstBitmap));
     }
 
     private static InferenceSession CreateSession(string modelPath, bool preferDirectML)

@@ -303,18 +303,17 @@ namespace PhotoLocator
             var modelPath = DnCNNDenoiseOperation.TryFindModelInAppDirectory();
             if (string.IsNullOrWhiteSpace(modelPath))
             {
-                var ofd = new Microsoft.Win32.OpenFileDialog
+                var dlg = new Microsoft.Win32.OpenFileDialog
                 {
                     Title = "Select DnCNN ONNX model",
-                    Filter = "ONNX model (*.onnx)|*.onnx|All files (*.*)|*.*",
+                    Filter = "ONNX model (*.onnx)|*.onnx",
                     CheckFileExists = true,
                     CheckPathExists = true,
                     InitialDirectory = Path.GetDirectoryName(allSelected[0].FullPath) ?? Environment.CurrentDirectory,
-                    FileName = DnCNNDenoiseOperation.DefaultModelFileName,
                 };
-                if (ofd.ShowDialog() != true)
+                if (dlg.ShowDialog() != true)
                     return;
-                modelPath = ofd.FileName;
+                modelPath = dlg.FileName;
             }
 
             var browser = new System.Windows.Forms.FolderBrowserDialog();
@@ -351,8 +350,9 @@ namespace PhotoLocator
                             SrcBitmap = sourceFloat,
                             DstBitmap = new FloatBitmap(sourceFloat.Width, sourceFloat.Height, sourceFloat.PlaneCount),
                             ModelPath = modelPath,
+                            ExpectColorModel = true,
                             CancellationToken = ct,
-                            ProgressCallback = progress => progressCallback((double)(i + progress) / allSelected.Length),
+                            ProgressCallback = progress => progressCallback((double)(i + progress * 0.95) / allSelected.Length),
                         };
                         denoiseOperation.Apply();
 
