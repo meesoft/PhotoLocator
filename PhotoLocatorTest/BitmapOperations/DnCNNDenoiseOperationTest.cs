@@ -25,6 +25,8 @@ public class DnCNNDenoiseOperationTest
         {
             SrcBitmap = bitmap,
             ModelPath = modelPath,
+            TileSize = 6,
+            TileOverlap = 2,
         };
 
         op.Apply();

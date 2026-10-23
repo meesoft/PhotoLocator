@@ -309,7 +309,7 @@ namespace PhotoLocator
                     Filter = "ONNX model (*.onnx)|*.onnx",
                     CheckFileExists = true,
                     CheckPathExists = true,
-                    InitialDirectory = Path.GetDirectoryName(allSelected[0].FullPath) ?? Environment.CurrentDirectory,
+                    InitialDirectory = Path.Combine(AppContext.BaseDirectory, "AI"),
                 };
                 if (dlg.ShowDialog() != true)
                     return;

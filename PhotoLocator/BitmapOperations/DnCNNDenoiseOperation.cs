@@ -99,7 +99,7 @@ public class DnCNNDenoiseOperation : OperationBase
         }
 
         var accumulator = new float[height, width, channels];
-        var weightMap = new byte[height, width, channels];
+        var weightMap = new float[height, width];
         var step = Math.Max(1, TileSize - TileOverlap);
 
         for (var top = 0; top < height; top += step)
@@ -116,20 +116,24 @@ public class DnCNNDenoiseOperation : OperationBase
 
                 var tileDst = new FloatBitmap(tileWidth, tileHeight, channels);
                 RunTileInference(session, source, tileLeft, tileTop, tileWidth, tileHeight, channels, tileDst, 0, 0);
+				var topOverlap = tileTop > 0 ? Math.Min(TileOverlap, tileHeight) : 0;
+				var bottomOverlap = tileBottom < height ? Math.Min(TileOverlap, tileHeight) : 0;
+				var leftOverlap = tileLeft > 0 ? Math.Min(TileOverlap, tileWidth) : 0;
+				var rightOverlap = tileRight < width ? Math.Min(TileOverlap, tileWidth) : 0;
 
-                for (var y = 0; y < tileHeight; y++)
+                Parallel.For(0, tileHeight, y =>
                 {
                     var globalY = tileTop + y;
+                    var yWeight = GetRampWeight(y, tileHeight, topOverlap, bottomOverlap);
                     for (var x = 0; x < tileWidth; x++)
                     {
                         var globalX = tileLeft + x;
+                        var weight = yWeight * GetRampWeight(x, tileWidth, leftOverlap, rightOverlap);
+                        weightMap[globalY, globalX] += weight;
                         for (var c = 0; c < channels; c++)
-                        {
-                            accumulator[globalY, globalX, c] += tileDst.Elements[y, x * channels + c];
-                            weightMap[globalY, globalX, c] += 1;
-                        }
+                            accumulator[globalY, globalX, c] += tileDst.Elements[y, x * channels + c] * weight;
                     }
-                }
+                });
                 ProgressCallback?.Invoke((top + (left + tileWidth) / (double)width * tileHeight) / height);
             }
         }
@@ -141,7 +145,7 @@ public class DnCNNDenoiseOperation : OperationBase
             {
                 for (var c = 0; c < channels; c++)
                 {
-                    var value = weightMap[y, x, c] > 0 ? accumulator[y, x, c] / weightMap[y, x, c] : source.Elements[y, x * channels + c];
+                    var value = weightMap[y, x] > 0 ? accumulator[y, x, c] / weightMap[y, x] : source.Elements[y, x * channels + c];
                     DstBitmap.Elements[y, x * channels + c] = Math.Clamp(value, 0f, 1f);
                 }
             }
@@ -149,6 +153,16 @@ public class DnCNNDenoiseOperation : OperationBase
 
         if (processGrayscaleWithColorModel)
             DstBitmap.Assign(ConvertToGrayscaleOperation.ConvertToGrayscale(DstBitmap));
+    }
+
+    private static float GetRampWeight(int position, int length, int leadingOverlap, int trailingOverlap)
+    {
+        var weight = 1f;
+        if (leadingOverlap > 0 && position < leadingOverlap)
+            weight = (position + 1f) / (leadingOverlap + 1f);
+        if (trailingOverlap > 0 && position >= length - trailingOverlap)
+            weight = Math.Min(weight, (length - position) / (float)(trailingOverlap + 1));
+        return weight;
     }
 
     private static InferenceSession CreateSession(string modelPath, bool preferDirectML)
