@@ -1,5 +1,6 @@
 using Microsoft.ML.OnnxRuntime;
 using Microsoft.ML.OnnxRuntime.Tensors;
+using PhotoLocator.Helpers;
 using System;
 using System.IO;
 using System.Linq;
@@ -85,11 +86,6 @@ public class DnCNNDenoiseOperation : OperationBase
             channels = 3;
         }
 
-        if (DstBitmap == null || DstBitmap == source)
-            DstBitmap = new FloatBitmap(width, height, channels);
-        else
-            DstBitmap.New(width, height, channels);
-
         using var session = CreateSession(modelPath, PreferDirectML);
 
         if (width <= TileSize && height <= TileSize)
@@ -139,15 +135,15 @@ public class DnCNNDenoiseOperation : OperationBase
         }
 
         CancellationToken.ThrowIfCancellationRequested();
+        DstBitmap.New(width, height, channels);
         Parallel.For(0, height, y =>
         {
             for (var x = 0; x < width; x++)
             {
+                if (weightMap[y, x] == 0)
+                    throw new InvalidOperationException($"Weight map at ({x}, {y}) is zero, which should not happen.");
                 for (var c = 0; c < channels; c++)
-                {
-                    var value = weightMap[y, x] > 0 ? accumulator[y, x, c] / weightMap[y, x] : source.Elements[y, x * channels + c];
-                    DstBitmap.Elements[y, x * channels + c] = Math.Clamp(value, 0f, 1f);
-                }
+                    DstBitmap.Elements[y, x * channels + c] = RealMath.Clamp(accumulator[y, x, c] / weightMap[y, x], 0, 1);
             }
         });
 
@@ -159,7 +155,7 @@ public class DnCNNDenoiseOperation : OperationBase
     {
         var weight = 1f;
         if (leadingOverlap > 0 && position < leadingOverlap)
-            weight = (position + 1f) / (leadingOverlap + 1f);
+            weight = (position + 1) / (leadingOverlap + 1);
         if (trailingOverlap > 0 && position >= length - trailingOverlap)
             weight = Math.Min(weight, (length - position) / (float)(trailingOverlap + 1));
         return weight;
@@ -193,7 +189,7 @@ public class DnCNNDenoiseOperation : OperationBase
                 var sourceX = srcLeft + x;
                 for (var c = 0; c < channels; c++)
                 {
-                    var index = (((0 * channels) + c) * tileHeight + y) * tileWidth + x;
+                    var index = (c * tileHeight + y) * tileWidth + x;
                     inputBuffer[index] = source.Elements[sourceY, sourceX * channels + c];
                 }
             }
@@ -209,8 +205,8 @@ public class DnCNNDenoiseOperation : OperationBase
             {
                 for (var c = 0; c < channels; c++)
                 {
-                    var index = (((0 * channels) + c) * tileHeight + y) * tileWidth + x;
-                    var outValue = Math.Clamp(outputBuffer[index], 0f, 1f);
+                    var index = (c * tileHeight + y) * tileWidth + x;
+                    var outValue = RealMath.Clamp(outputBuffer[index], 0, 1);
                     var dstY = dstTop + y;
                     var dstX = dstLeft + x;
                     if (dstY >= 0 && dstY < dstBitmap.Height && dstX >= 0 && dstX < dstBitmap.Width)
