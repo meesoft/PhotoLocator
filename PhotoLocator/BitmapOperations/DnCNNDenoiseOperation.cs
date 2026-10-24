@@ -158,7 +158,7 @@ public class DnCNNDenoiseOperation : OperationBase
     {
         var weight = 1f;
         if (leadingOverlap > 0 && position < leadingOverlap)
-            weight = (position + 1) / (leadingOverlap + 1);
+            weight = (position + 1) / (float)(leadingOverlap + 1);
         if (trailingOverlap > 0 && position >= length - trailingOverlap)
             weight = Math.Min(weight, (length - position) / (float)(trailingOverlap + 1));
         return weight;
