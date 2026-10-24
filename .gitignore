@@ -13,4 +13,5 @@ PhotoLocatorSetup/*.pfx
 PhotoLocatorSetup/AppPackages/
 PhotoLocatorSetup/BundleArtifacts/
 TestResults/
+__pycache__/
 publish.bat
