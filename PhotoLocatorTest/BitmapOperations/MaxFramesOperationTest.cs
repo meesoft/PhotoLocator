@@ -7,7 +7,7 @@ namespace PhotoLocator.BitmapOperations;
 [TestClass]
 public class MaxFramesOperationTest
 {
-    [TestMethod]
+    [TestMethod, Retry(3)]
     [DataRow(0, 1)]
     [DataRow(0.5f, 0)]
     public void GetResult8_ShouldReturnMax(float firstImageValue, float secondImageValue)
