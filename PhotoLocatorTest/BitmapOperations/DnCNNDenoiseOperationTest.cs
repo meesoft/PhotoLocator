@@ -24,6 +24,7 @@ public class DnCNNDenoiseOperationTest
         var op = new DnCNNDenoiseOperation
         {
             SrcBitmap = bitmap,
+            DstBitmap = new FloatBitmap(),
             ModelPath = modelPath,
             TileSize = 6,
             TileOverlap = 2,

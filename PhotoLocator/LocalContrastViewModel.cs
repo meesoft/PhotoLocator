@@ -255,7 +255,7 @@ namespace PhotoLocator
             get;
             set
             {
-                if (SetProperty(ref field, RealMath.Clamp(value, 0, 1)))
+                if (SetProperty(ref field, RealMath.Clamp(value, 0, 2)))
                     StartUpdateTimer(FirstParamChanged.Denoising);
             }
         }
@@ -628,6 +628,7 @@ namespace PhotoLocator
         {
             if (DenoisingStrength <= 0)
                 return;
+            var denoiseWeight = DenoisingStrength;
             if (_denoiseOperation.DstBitmap is null)
             {
                 _denoiseOperation.SrcBitmap ??= new();
@@ -635,8 +636,15 @@ namespace PhotoLocator
                 _denoiseOperation.SrcBitmap.ProcessElementWise(_localContrastOperation.DstBitmap, (_, s) => (float)Math.Pow(float.Clamp(s, 0, 1), 1 / FloatBitmap.DefaultMonitorGamma));
                 _denoiseOperation.DstBitmap = _denoiseOperation.SrcBitmap;
                 _denoiseOperation.Apply();
+                if (DenoisingStrength > 1)
+                {
+                    _denoiseOperation.Apply();
+                    denoiseWeight = 0.5 + (denoiseWeight - 1) / 2;
+                }
             }
-            _localContrastOperation.DstBitmap.ProcessElementWise(_denoiseOperation.DstBitmap, (s, d) => (float)(Math.Pow(d, FloatBitmap.DefaultMonitorGamma) * DenoisingStrength + s * (1 - DenoisingStrength)));
+            _localContrastOperation.DstBitmap.ProcessElementWise(_denoiseOperation.DstBitmap, (s, d) => (float)(Math.Pow(d, FloatBitmap.DefaultMonitorGamma) * denoiseWeight + s * (1 - denoiseWeight)));
+            if (DenoisingStrength > 1)
+                _denoiseOperation.DstBitmap = null;
         }
 
         private void ApplyColorToneOperation()

@@ -58,6 +58,8 @@ public class DnCNNDenoiseOperation : OperationBase
             throw new InvalidOperationException("ModelPath must be set before applying DnCNNDenoiseOperation.");
         if (SrcBitmap == null)
             throw new InvalidOperationException("SrcBitmap cannot be null.");
+        if (DstBitmap == null)
+            throw new InvalidOperationException("DstBitmap cannot be null.");
 
         var source = SrcBitmap;
         if (source.PlaneCount is not 1 and not 3)
@@ -90,6 +92,7 @@ public class DnCNNDenoiseOperation : OperationBase
 
         if (width <= TileSize && height <= TileSize)
         {
+            DstBitmap.New(width, height, channels);
             RunTileInference(session, source, 0, 0, width, height, channels, DstBitmap, 0, 0);
             return;
         }
