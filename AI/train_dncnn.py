@@ -53,6 +53,8 @@ class PairedImageDataset(Dataset):
 		#if image is None:
 				encoded = path.read_bytes()
 				image = cv2.imdecode(np.frombuffer(encoded, dtype=np.uint8), cv2.IMREAD_UNCHANGED)
+		if image is None:
+			raise FileNotFoundError(f"Unable to read image: {path}")
 
 		if image.ndim == 2:
 			image = image[:, :, None]
@@ -272,7 +274,7 @@ def main():
 					group["weight_decay"] = args.weight_decay
 
 			start_epoch = int(checkpoint.get("epoch", 0))
-			print(f"Resumed optimizer and model at epoch {start_epoch} from {args.resume}, lr={optimizer.param_groups[0]["lr"]}, weight_decay={optimizer.param_groups[0]["weight_decay"]}")
+			print(f"Resumed optimizer and model at epoch {start_epoch} from {args.resume}, lr={optimizer.param_groups[0]['lr']}, weight_decay={optimizer.param_groups[0]['weight_decay']}")
 		else:
 			print(f"Loaded model weights from {args.resume}; optimizer starts fresh")
 	criterion = nn.MSELoss()

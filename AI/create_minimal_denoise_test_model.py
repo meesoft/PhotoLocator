@@ -32,7 +32,7 @@ def create_identity_model(output_path: Path):
 
 
 def main():
-	repo_root = Path(__file__).resolve().parents[2]
+	repo_root = Path(__file__).resolve().parents[1]
 	output_path = repo_root / "PhotoLocatorTest" / "TestData" / "dncnn_test.onnx"
 	create_identity_model(output_path)
 
