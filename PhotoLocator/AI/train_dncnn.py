@@ -8,9 +8,11 @@ import torch
 from torch import nn
 from torch.utils.data import DataLoader, Dataset
 
+MONITOR_GAMMA = 1
+
 
 class PairedImageDataset(Dataset):
-	def __init__(self, image_dir: str, clean_postfix: str = "_clean", patch_size: int = 64, channels: int = 3, patches_per_image: int = 1, use_augment: bool = True):
+	def __init__(self, image_dir: str, clean_postfix: str, patch_size: int, channels, patches_per_image, use_augment: bool = True):
 		self.image_dir = Path(image_dir)
 		self.clean_postfix = clean_postfix
 		self.patch_size = patch_size
@@ -54,6 +56,8 @@ class PairedImageDataset(Dataset):
 
 		if image.ndim == 2:
 			image = image[:, :, None]
+		image = image.astype(np.float32) / _image_max_value(image)
+		image = np.power(image, MONITOR_GAMMA)
 
 		if image.shape[2] == 1 and self.channels == 3:
 			image = np.repeat(image, 3, axis=2)
@@ -63,7 +67,6 @@ class PairedImageDataset(Dataset):
 		if image.shape[2] != self.channels:
 			raise ValueError(f"Unexpected channel count {image.shape[2]} for channel setting {self.channels}: {path}")
 
-		image = image.astype(np.float32) / _image_max_value(image)
 		return image
 
 	def __getitem__(self, index):
@@ -161,6 +164,8 @@ def denoise_image(model, image: np.ndarray, channels: int, device: str, tile_siz
 	image_max_value = _image_max_value(image)
 	if image.shape[2] == 4:
 		image = image[:, :, :3]
+	image = image.astype(np.float32) / image_max_value
+	image = np.power(image, MONITOR_GAMMA)
 	if image.shape[2] == 1 and channels == 3:
 		image = np.repeat(image, 3, axis=2)
 	elif image.shape[2] == 3 and channels == 1:
@@ -168,7 +173,6 @@ def denoise_image(model, image: np.ndarray, channels: int, device: str, tile_siz
 	if image.shape[2] != channels:
 		raise ValueError(f"Expected {channels} image channels, got {image.shape[2]}.")
 
-	image = image.astype(np.float32) / image_max_value
 	height, width = image.shape[:2]
 	output = np.zeros((height, width, channels), dtype=np.float32)
 	weights = np.zeros((height, width, 1), dtype=np.float32)
@@ -200,7 +204,7 @@ def denoise_image(model, image: np.ndarray, channels: int, device: str, tile_siz
 	finally:
 		model.train(was_training)
 
-	output = np.clip(output / weights, 0.0, 1.0)
+	output = np.power(np.clip(output / weights, 0.0, 1.0), 1.0 / MONITOR_GAMMA)
 	return np.rint(output * image_max_value).astype(output_dtype)
 
 
@@ -262,8 +266,13 @@ def main():
 		if isinstance(checkpoint, dict) and "model_state_dict" in checkpoint:
 			if "optimizer_state_dict" in checkpoint:
 				optimizer.load_state_dict(checkpoint["optimizer_state_dict"])
+
+				for group in optimizer.param_groups:
+					group["lr"] = args.lr
+					group["weight_decay"] = args.weight_decay
+
 			start_epoch = int(checkpoint.get("epoch", 0))
-			print(f"Resumed optimizer and model at epoch {start_epoch} from {args.resume}")
+			print(f"Resumed optimizer and model at epoch {start_epoch} from {args.resume}, lr={optimizer.param_groups[0]["lr"]}, weight_decay={optimizer.param_groups[0]["weight_decay"]}")
 		else:
 			print(f"Loaded model weights from {args.resume}; optimizer starts fresh")
 	criterion = nn.MSELoss()

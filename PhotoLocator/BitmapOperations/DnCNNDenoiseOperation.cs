@@ -94,6 +94,8 @@ public class DnCNNDenoiseOperation : OperationBase
         {
             DstBitmap.New(width, height, channels);
             RunTileInference(session, source, 0, 0, width, height, channels, DstBitmap, 0, 0);
+            if (processGrayscaleWithColorModel)
+                DstBitmap.Assign(ConvertToGrayscaleOperation.ConvertToGrayscale(DstBitmap));
             return;
         }
 
