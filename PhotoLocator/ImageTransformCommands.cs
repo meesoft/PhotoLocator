@@ -333,6 +333,8 @@ namespace PhotoLocator
                 foreach (var item in allSelected)
                 {
                     var targetFileName = targetIsSourceDir ? item.GetProcessedFileName() : Path.Combine(targetDir, item.Name);
+                    if (Path.GetExtension(targetFileName).ToLowerInvariant() is not (".jpg" or ".jpeg" or ".tif" or ".tiff" or ".png" or ".bmp" or ".jxr"))
+                        targetFileName = Path.ChangeExtension(targetFileName, ".jpg");
                     if (!overwriteAll && File.Exists(targetFileName))
                     {
                         if (MessageBox.Show(App.Current.MainWindow, $"File {targetFileName} already exists. Overwrite all conflicting files?",
@@ -400,6 +402,8 @@ namespace PhotoLocator
                 foreach (var item in allSelected)
                 {
                     var targetFileName = targetIsSourceDir ? item.GetProcessedFileName() : Path.Combine(targetDir, item.Name);
+                    if (Path.GetExtension(targetFileName).ToLowerInvariant() is not (".jpg" or ".jpeg" or ".tif" or ".tiff" or ".png" or ".bmp" or ".jxr"))
+                        targetFileName = Path.ChangeExtension(targetFileName, ".jpg");
                     if (!overwriteAll && File.Exists(targetFileName))
                     {
                         if (MessageBox.Show(App.Current.MainWindow, $"File {targetFileName} already exists. Overwrite all conflicting files?",
