@@ -13,4 +13,7 @@ PhotoLocatorSetup/*.pfx
 PhotoLocatorSetup/AppPackages/
 PhotoLocatorSetup/BundleArtifacts/
 TestResults/
+__pycache__/
+validation*/
+dncnn*.pt
 publish.bat

@@ -294,6 +294,81 @@ namespace PhotoLocator
 
         int _resizeTargetHeight = 2160;
 
+        public ICommand DenoiseCommand => new RelayCommand(async o =>
+        {
+            var allSelected = _mainViewModel.GetSelectedItems(true).ToArray();
+            if (allSelected.Length == 0)
+                return;
+
+            var modelPath = DnCNNDenoiseOperation.TryFindModelInAppDirectory();
+            if (string.IsNullOrWhiteSpace(modelPath))
+            {
+                var dlg = new Microsoft.Win32.OpenFileDialog
+                {
+                    Title = "Select DnCNN ONNX model",
+                    Filter = "ONNX model (*.onnx)|*.onnx",
+                    CheckFileExists = true,
+                    CheckPathExists = true,
+                    InitialDirectory = Path.Combine(AppContext.BaseDirectory, "AI"),
+                };
+                if (dlg.ShowDialog() != true)
+                    return;
+                modelPath = dlg.FileName;
+            }
+
+            var browser = new System.Windows.Forms.FolderBrowserDialog();
+            browser.InitialDirectory = Path.GetDirectoryName(allSelected[0].FullPath)!;
+            browser.Description = "Select target folder for denoised images";
+            browser.UseDescriptionForTitle = true;
+            if (browser.ShowDialog() != System.Windows.Forms.DialogResult.OK)
+                return;
+
+            var targetDir = browser.SelectedPath;
+            var targetIsSourceDir = string.Equals(targetDir, Path.GetDirectoryName(allSelected[0].FullPath), StringComparison.OrdinalIgnoreCase);
+            var overwriteAll = targetIsSourceDir;
+
+            await _mainViewModel.RunProcessWithProgressBarAsync(async (progressCallback, ct) =>
+            {
+                int i = 0;
+                foreach (var item in allSelected)
+                {
+                    var targetFileName = targetIsSourceDir ? item.GetProcessedFileName() : Path.Combine(targetDir, item.Name);
+                    if (Path.GetExtension(targetFileName).ToLowerInvariant() is not (".jpg" or ".jpeg" or ".tif" or ".tiff" or ".png" or ".bmp" or ".jxr"))
+                        targetFileName = Path.ChangeExtension(targetFileName, ".jpg");
+                    if (!overwriteAll && File.Exists(targetFileName))
+                    {
+                        if (MessageBox.Show(App.Current.MainWindow, $"File {targetFileName} already exists. Overwrite all conflicting files?",
+                            "Confirm Overwrite All", MessageBoxButton.OKCancel, MessageBoxImage.Question) != MessageBoxResult.OK)
+                            break;
+                        overwriteAll = true;
+                    }
+
+                    var (image, itemMetadata) = await LoadImageWithMetadataAsync(item, ct);
+                    await Task.Run(() =>
+                    {
+                        var sourceFloat = new FloatBitmap(image, 1);
+                        var denoiseOperation = new DnCNNDenoiseOperation
+                        {
+                            SrcBitmap = sourceFloat,
+                            DstBitmap = new FloatBitmap(sourceFloat.Width, sourceFloat.Height, sourceFloat.PlaneCount),
+                            ModelPath = modelPath,
+                            ExpectColorModel = true,
+                            CancellationToken = ct,
+                            ProgressCallback = progress => progressCallback((double)(i + progress * 0.95) / allSelected.Length),
+                        };
+                        denoiseOperation.Apply();
+
+                        var sourceBitsPerChannel = image.Format.BitsPerPixel / int.Max(1, image.Format.Masks.Count);
+                        var resultImage = sourceBitsPerChannel > 8 ? denoiseOperation.DstBitmap.ToBitmapSource16(image.DpiX, image.DpiY, 1) : denoiseOperation.DstBitmap.ToBitmapSource(image.DpiX, image.DpiY, 1);
+                        GeneralFileFormatHandler.SaveToFile(resultImage, targetFileName,
+                        ExifHandler.PrepareMetadataForProcessedImage(resultImage.Format, itemMetadata), _mainViewModel.Settings);
+                    } , ct);
+                    item.IsChecked = false;
+                    progressCallback((double)(++i) / allSelected.Length);
+                }
+            }, "Denoising");
+        }, HasFileSelected);
+
         public ICommand ResizeCommand => new RelayCommand(async o =>
         {
             var allSelected = _mainViewModel.GetSelectedItems(true).ToArray();
@@ -327,6 +402,8 @@ namespace PhotoLocator
                 foreach (var item in allSelected)
                 {
                     var targetFileName = targetIsSourceDir ? item.GetProcessedFileName() : Path.Combine(targetDir, item.Name);
+                    if (Path.GetExtension(targetFileName).ToLowerInvariant() is not (".jpg" or ".jpeg" or ".tif" or ".tiff" or ".png" or ".bmp" or ".jxr"))
+                        targetFileName = Path.ChangeExtension(targetFileName, ".jpg");
                     if (!overwriteAll && File.Exists(targetFileName))
                     {
                         if (MessageBox.Show(App.Current.MainWindow, $"File {targetFileName} already exists. Overwrite all conflicting files?",

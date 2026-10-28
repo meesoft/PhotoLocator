@@ -6,9 +6,9 @@
             "name": "C#: PhotoLocator Debug",
             "type": "coreclr",
             "request": "launch",
-            "program": "${workspaceFolder}/PhotoLocator/bin/Debug/net8.0-windows/PhotoLocator.exe",
+            "program": "${workspaceFolder}/PhotoLocator/bin/Debug/net10.0-windows/PhotoLocator.exe",
             "args": [],
-            "cwd": "${workspaceFolder}/PhotoLocator/bin/Debug/net8.0-windows/",
+            "cwd": "${workspaceFolder}/PhotoLocator/bin/Debug/net10.0-windows/",
             "stopAtEntry": false,
             "preLaunchTask": "build"
         }  
