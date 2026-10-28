@@ -29,7 +29,7 @@ namespace PhotoLocator
         readonly DispatcherTimer _updateTimer;
         readonly LaplacianFilterOperation _laplacianFilterOperation = new();
         readonly IncreaseLocalContrastOperation _localContrastOperation = new() { DstBitmap = new() };
-        readonly DnCNNDenoiseOperation _denoiseOperation = new() { ModelPath = System.IO.Path.Combine(AppContext.BaseDirectory, "AI", "dncnn-17l-64f-2000e.onnx") };
+        readonly DnCNNDenoiseOperation _denoiseOperation = new() { ModelPath = System.IO.Path.Combine(AppContext.BaseDirectory, "AI", "dncnn-20l-80f-1660e.onnx") };
         readonly ColorToneAdjustOperation _colorToneOperation = new();
         Task _previewTask = Task.CompletedTask;
         FirstParamChanged _firstParamChanged = FirstParamChanged.None;
@@ -449,6 +449,7 @@ namespace PhotoLocator
             ToneMapping = DefaultToneMapping;
             DetailHandling = DefaultDetailHandling;
             ResetMaxStretchCommand.Execute(null);
+            DenoisingStrength = 0;
             _colorToneOperation.ResetToneAdjustments();
             ToneRotation = 0;
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(null));
