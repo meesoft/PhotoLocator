@@ -109,25 +109,32 @@ class PairedImageDataset(Dataset):
 		return torch.from_numpy(noisy), torch.from_numpy(clean)
 
 
+class ResidualBlock(nn.Module):
+	def __init__(self, features: int):
+		super().__init__()
+		self.conv1 = nn.Conv2d(features, features, kernel_size=3, stride=1, padding=1, bias=True)
+		self.relu = nn.ReLU(inplace=True)
+		self.conv2 = nn.Conv2d(features, features, kernel_size=3, stride=1, padding=1, bias=True)
+
+	def forward(self, x):
+		return x + self.conv2(self.relu(self.conv1(x)))
+
+
 class DnCNN(nn.Module):
-	def __init__(self, channels: int = 3, num_layers: int = 17, features: int = 64):
+	def __init__(self, channels: int = 3, num_layers: int = 20, features: int = 80):
 		super().__init__()
 		self.channels = channels
 		self.num_layers = num_layers
-
-		layers = [nn.Conv2d(channels, features, kernel_size=3, stride=1, padding=1, bias=False)]
-		layers.append(nn.ReLU(inplace=True))
-
-		for _ in range(num_layers - 2):
-			layers.append(nn.Conv2d(features, features, kernel_size=3, stride=1, padding=1, bias=False))
-			layers.append(nn.BatchNorm2d(features))
-			layers.append(nn.ReLU(inplace=True))
-
-		layers.append(nn.Conv2d(features, channels, kernel_size=3, stride=1, padding=1, bias=False))
-		self.model = nn.Sequential(*layers)
+		residual_block_count = max(1, (num_layers - 2) // 2)
+		self.input_conv = nn.Conv2d(channels, features, kernel_size=3, stride=1, padding=1, bias=True)
+		self.input_relu = nn.ReLU(inplace=True)
+		self.residual_blocks = nn.Sequential(*(ResidualBlock(features) for _ in range(residual_block_count)))
+		self.output_conv = nn.Conv2d(features, channels, kernel_size=3, stride=1, padding=1, bias=True)
 
 	def forward(self, x):
-		residual = self.model(x)
+		features = self.input_relu(self.input_conv(x))
+		features = self.residual_blocks(features)
+		residual = self.output_conv(features)
 		return x - residual
 
 
@@ -294,7 +301,7 @@ def main():
 			"optimizer_state_dict": optimizer.state_dict(),
 		}, checkpoint_path)
 		print(f"Saved checkpoint to {checkpoint_path}")
-		if validation_image is not None:
+		if validation_image is not None and validation_output_dir is not None:
 			preview = denoise_image(model, validation_image, args.channels, args.device)
 			preview_path = validation_output_dir / f"{checkpoint_path.stem}_validation.png"
 			if not cv2.imwrite(str(preview_path), preview):
