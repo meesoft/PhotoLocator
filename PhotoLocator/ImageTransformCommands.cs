@@ -4,6 +4,7 @@ using PhotoLocator.Helpers;
 using PhotoLocator.Metadata;
 using PhotoLocator.PictureFileFormats;
 using System;
+using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.Linq;
@@ -347,16 +348,18 @@ namespace PhotoLocator
                     await Task.Run(() =>
                     {
                         var sourceFloat = new FloatBitmap(image, 1);
+                        var sw = Stopwatch.StartNew();
                         var denoiseOperation = new DnCNNDenoiseOperation
                         {
                             SrcBitmap = sourceFloat,
-                            DstBitmap = new FloatBitmap(sourceFloat.Width, sourceFloat.Height, sourceFloat.PlaneCount),
+                            DstBitmap = sourceFloat,
                             ModelPath = modelPath,
                             ExpectColorModel = true,
                             CancellationToken = ct,
                             ProgressCallback = progress => progressCallback((double)(i + progress * 0.95) / allSelected.Length),
                         };
                         denoiseOperation.Apply();
+                        Log.Write($"Denoised '{item.Name}' in {sw.Elapsed.TotalSeconds:F1} seconds");
 
                         var sourceBitsPerChannel = image.Format.BitsPerPixel / int.Max(1, image.Format.Masks.Count);
                         var resultImage = sourceBitsPerChannel > 8 ? denoiseOperation.DstBitmap.ToBitmapSource16(image.DpiX, image.DpiY, 1) : denoiseOperation.DstBitmap.ToBitmapSource(image.DpiX, image.DpiY, 1);

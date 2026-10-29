@@ -245,7 +245,7 @@ def main():
 	parser.add_argument("--patches-per-image", type=int, default=4, help="Number of random patches sampled from each image per epoch")
 	parser.add_argument("--batch-size", type=int, default=8, help="Training batch size")
 	parser.add_argument("--epochs", type=int, default=1000, help="Total target number of epochs, including epochs in a resumed checkpoint")
-	parser.add_argument("--lr", type=float, default=2e-4, help="Learning rate")
+	parser.add_argument("--lr", type=float, default=1e-4, help="Learning rate")
 	parser.add_argument("--weight-decay", type=float, default=0.01, help="AdamW weight decay")
 	parser.add_argument("--device", type=str, default="cuda" if torch.cuda.is_available() else "cpu", help="Device to train on")
 	args = parser.parse_args()
