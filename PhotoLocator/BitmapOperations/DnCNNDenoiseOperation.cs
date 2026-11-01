@@ -13,11 +13,11 @@ public class DnCNNDenoiseOperation : OperationBase
 {
     public const string DefaultModelFileName = "dncnn.onnx";
 
-    public int TileSize { get; set; } = 512;
+    public int TileSize { get; set; } = 768;
 
     public int TileOverlap { get; set; } = 40;
 
-    public string ModelPath { get; set; } = DefaultModelFileName;
+    public string? ModelPath { get; set; } = DefaultModelFileName;
 
     public bool PreferDirectML { get; set; } = true;
 
@@ -27,7 +27,7 @@ public class DnCNNDenoiseOperation : OperationBase
 
     public Action<double>? ProgressCallback { get; set; }
 
-    public static string ResolveModelPath(string modelPath)
+    public static string ResolveModelPath(string? modelPath)
     {
         if (string.IsNullOrWhiteSpace(modelPath))
             modelPath = DefaultModelFileName;
@@ -40,9 +40,8 @@ public class DnCNNDenoiseOperation : OperationBase
     {
         foreach (var candidate in new[]
         {
+            Path.Combine("ai", DefaultModelFileName),
             DefaultModelFileName,
-            Path.Combine("models", DefaultModelFileName),
-            Path.Combine("ai", DefaultModelFileName)
         })
         {
             var fullPath = ResolveModelPath(candidate);
@@ -54,8 +53,6 @@ public class DnCNNDenoiseOperation : OperationBase
 
     public override void Apply()
     {
-        if (string.IsNullOrWhiteSpace(ModelPath))
-            throw new InvalidOperationException("ModelPath must be set before applying DnCNNDenoiseOperation.");
         if (SrcBitmap == null)
             throw new InvalidOperationException("SrcBitmap cannot be null.");
         if (DstBitmap == null)

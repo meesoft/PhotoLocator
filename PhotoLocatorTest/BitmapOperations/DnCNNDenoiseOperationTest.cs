@@ -1,10 +1,12 @@
+using System.Diagnostics;
+
 namespace PhotoLocator.BitmapOperations;
 
 [TestClass]
 public class DnCNNDenoiseOperationTest
 {
     [TestMethod]
-    public void Apply_ShouldRunModel_WhenPretrainedOnnxExists()
+    public void Apply_ShouldRunDnCNNModel_WhenPretrainedOnnxExists()
     {
         var modelPath = Path.Combine(AppContext.BaseDirectory, "TestData", "dncnn_test.onnx");
         if (!File.Exists(modelPath))
@@ -30,7 +32,9 @@ public class DnCNNDenoiseOperationTest
             TileOverlap = 2,
         };
 
+        var sw = Stopwatch.StartNew();
         op.Apply();
+        Debug.WriteLine($"DnCNN denoise operation completed in {sw.Elapsed.TotalSeconds:F1} s.");
 
         Assert.IsNotNull(op.DstBitmap);
         Assert.AreEqual(bitmap.Width, op.DstBitmap.Width);

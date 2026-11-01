@@ -29,7 +29,7 @@ namespace PhotoLocator
         readonly DispatcherTimer _updateTimer;
         readonly LaplacianFilterOperation _laplacianFilterOperation = new();
         readonly IncreaseLocalContrastOperation _localContrastOperation = new() { DstBitmap = new() };
-        readonly DnCNNDenoiseOperation _denoiseOperation = new() { ModelPath = System.IO.Path.Combine(AppContext.BaseDirectory, "AI", "dncnn-20l-80f-1660e.onnx") };
+        readonly DnCNNDenoiseOperation _denoiseOperation = new() { ModelPath = DnCNNDenoiseOperation.TryFindModelInAppDirectory() };
         readonly ColorToneAdjustOperation _colorToneOperation = new();
         Task _previewTask = Task.CompletedTask;
         FirstParamChanged _firstParamChanged = FirstParamChanged.None;
@@ -248,7 +248,7 @@ namespace PhotoLocator
         } = DefaultDetailHandling;
         public ICommand ResetDetailHandlingCommand => new RelayCommand(o => DetailHandling = DefaultDetailHandling);
 
-        public bool IsDenoisingEnabled => File.Exists(_denoiseOperation.ModelPath);
+        public bool IsDenoisingEnabled => _denoiseOperation.ModelPath is not null;
 
         public double DenoisingStrength
         {
