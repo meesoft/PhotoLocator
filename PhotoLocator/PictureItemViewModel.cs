@@ -311,6 +311,8 @@ namespace PhotoLocator
                     return CR3FileFormatHandler.LoadFromStream(fileStream, Orientation, maxPixelWidth, preservePixelFormat, ct);
                 if (PhotoshopFileFormatHandler.CanLoad(ext))
                     return PhotoshopFileFormatHandler.LoadFromStream(fileStream, ct);
+                if (FitsFileFormatHandler.CanLoad(ext))
+                    return FitsFileFormatHandler.LoadFromFile(FullPath, out _metadataString, ct);
             }
             catch (OperationCanceledException)
             {

@@ -32,6 +32,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="FITS.Lib" Version="6.4.571" />
     <PackageReference Include="Microsoft-WindowsAPICodePack-ShellExtensions" Version="1.1.5" />
     <PackageReference Include="OpenCvSharp4.Windows" Version="4.10.0.20240616" />
     <PackageReference Include="SunCalcNet" Version="1.2.3" />
@@ -52,6 +53,7 @@
     <EmbeddedResource Include="Resources\Apache2License.txt" />
     <EmbeddedResource Include="Resources\ArtisticLicense.txt" />
     <EmbeddedResource Include="Resources\ExplorerShellContextMenuLicense.txt" />
+    <EmbeddedResource Include="Resources\FITS.LibLicense.txt" />
     <EmbeddedResource Include="Resources\GPLv3License.txt" />
     <EmbeddedResource Include="Resources\JPEG-XL-LICENSE.txt" />
     <EmbeddedResource Include="Resources\SunCalcNetLicense.txt" />
