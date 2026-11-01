@@ -73,6 +73,7 @@ class FitsFileFormatHandler
             result.Freeze();
             return result;
         }
+
         if (format == 16 && channels == 3)
         {
             var offset = (int)hdu.BZero;
@@ -97,6 +98,6 @@ class FitsFileFormatHandler
             return result;
         }
 
-        throw new FileFormatException("Unsupported FITS format: " + format + " with " + channels + " channels.");
+        throw new FileFormatException("Unsupported FITS format: " + format + " bits with " + channels + " channels");
     }
 }
