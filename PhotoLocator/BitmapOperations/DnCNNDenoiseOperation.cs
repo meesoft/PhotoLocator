@@ -15,7 +15,7 @@ public class DnCNNDenoiseOperation : OperationBase
 
     public int TileSize { get; set; } = 512;
 
-    public int TileOverlap { get; set; } = 32;
+    public int TileOverlap { get; set; } = 40;
 
     public string ModelPath { get; set; } = DefaultModelFileName;
 

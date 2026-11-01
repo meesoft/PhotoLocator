@@ -51,8 +51,8 @@ class PairedImageDataset(Dataset):
 	def _load_image(self, path: Path):
 		#image = cv2.imread(str(path), cv2.IMREAD_UNCHANGED)
 		#if image is None:
-				encoded = path.read_bytes()
-				image = cv2.imdecode(np.frombuffer(encoded, dtype=np.uint8), cv2.IMREAD_UNCHANGED)
+		encoded = path.read_bytes()
+		image = cv2.imdecode(np.frombuffer(encoded, dtype=np.uint8), cv2.IMREAD_UNCHANGED)
 		if image is None:
 			raise FileNotFoundError(f"Unable to read image: {path}")
 
