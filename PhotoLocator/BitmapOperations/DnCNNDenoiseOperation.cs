@@ -201,7 +201,7 @@ public class DnCNNDenoiseOperation : OperationBase
         using var output = session.Run([NamedOnnxValue.CreateFromTensor(inputName, new DenseTensor<float>(inputBuffer, [1, channels, tileHeight, tileWidth]))]);
         var outputBuffer = output[0].AsTensor<float>().ToArray();
 
-        for (var y = 0; y < tileHeight; y++)
+        Parallel.For(0, tileHeight, y =>
         {
             for (var x = 0; x < tileWidth; x++)
             {
@@ -215,6 +215,6 @@ public class DnCNNDenoiseOperation : OperationBase
                         dstBitmap.Elements[dstY, dstX * channels + c] = outValue;
                 }
             }
-        }
+        });
     }
 }
