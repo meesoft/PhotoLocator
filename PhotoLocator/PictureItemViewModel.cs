@@ -311,6 +311,15 @@ namespace PhotoLocator
                     return CR3FileFormatHandler.LoadFromStream(fileStream, Orientation, maxPixelWidth, preservePixelFormat, ct);
                 if (PhotoshopFileFormatHandler.CanLoad(ext))
                     return PhotoshopFileFormatHandler.LoadFromStream(fileStream, ct);
+                if (FitsFileFormatHandler.CanLoad(ext))
+                {
+                    var (bitmap, timestamp, metadata) = FitsFileFormatHandler.LoadFromFile(FullPath, preservePixelFormat, ct);
+                    if (metadata is not null && string.IsNullOrEmpty(MetadataString))
+                        MetadataString = metadata;
+                    if (timestamp.HasValue && !TimeStamp.HasValue)
+                        _timeStamp = timestamp.Value;
+                    return bitmap;
+                }
             }
             catch (OperationCanceledException)
             {
