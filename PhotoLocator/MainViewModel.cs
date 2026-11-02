@@ -647,7 +647,7 @@ namespace PhotoLocator
             var selectedItem = SelectedItem!;
             if (selectedItems.Any(i => i.ThumbnailImage is null))
                 await WaitForPicturesLoadedAsync();
-            var renameWin = new RenameWindow(selectedItems, Items, selectedItem, Settings);
+            using var renameWin = new RenameWindow(selectedItems, Items, selectedItem, Settings);
             renameWin.Owner = App.Current.MainWindow;
             renameWin.DataContext = renameWin;
             await using (PauseFileSystemWatcher())

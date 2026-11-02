@@ -1,9 +1,9 @@
 ﻿using nom.tam.fits;
-using OpenCvSharp;
+using PhotoLocator.Helpers;
 using PhotoLocator.Metadata;
 using System;
-using System.Collections;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
@@ -19,7 +19,7 @@ class FitsFileFormatHandler
     /// </summary>
     public static bool CanLoad(string extension)
     {
-        return extension == ".fits";
+        return extension is ".fits" or ".fit" or ".fts" or ".fz";
     }
 
     private static string BuildMetadataString(ImageHDU hdu, int width, int height, DateTimeOffset? timeStamp)
@@ -73,7 +73,7 @@ class FitsFileFormatHandler
         using var fits = new Fits(fileName, FileAccess.Read);
         var basicHdu = fits.ReadHDU();
         ImageHDU? hdu = null;
-        while (basicHdu is not null && (hdu = basicHdu as ImageHDU) is null)
+        while (basicHdu is not null && ((hdu = basicHdu as ImageHDU) is null || hdu.BitPix != BasicHDU.BITPIX_SHORT))
             basicHdu = fits.ReadHDU();
         if (hdu is null)
             throw new FileFormatException("No supported image HDU found in FITS file.");
@@ -86,12 +86,15 @@ class FitsFileFormatHandler
         DateTimeOffset? timeStamp = observationDate == default ? null : observationDate;
         var metadataString = BuildMetadataString(hdu, width, height, timeStamp);
 
+        var offset = IntMath.Round(hdu.BZero);
+        if (offset == 0)
+            offset = 32768;
+        //var scale = hdu.BScale;
+
         BitmapSource bitmap;
         if (format == BasicHDU.BITPIX_SHORT && channels == 1)
         {
-            var offset = (int)hdu.BZero;
-            //var scale = hdu.BScale;
-            var ch0 = (ushort[,])hdu.GetChannel(0);
+            var ch0 = (short[,])hdu.GetChannel(0);
             if (preservePixelFormatAndMetadata)
             {
 
@@ -120,11 +123,9 @@ class FitsFileFormatHandler
         }
         else if (format == BasicHDU.BITPIX_SHORT && channels == 3)
         {
-            var offset = (int)hdu.BZero;
-            //var scale = hdu.BScale;
-            var ch0 = (ushort[,])hdu.GetChannel(0);
-            var ch1 = (ushort[,])hdu.GetChannel(1);
-            var ch2 = (ushort[,])hdu.GetChannel(2);
+            var ch0 = (short[,])hdu.GetChannel(0);
+            var ch1 = (short[,])hdu.GetChannel(1);
+            var ch2 = (short[,])hdu.GetChannel(2);
 
             if (preservePixelFormatAndMetadata)
             {
@@ -166,15 +167,21 @@ class FitsFileFormatHandler
         if (preservePixelFormatAndMetadata)
         {
             var metadata = new BitmapMetadata("jpg");
-            metadata.CameraModel = hdu.Instrument;
-            metadata.Subject = hdu.Object;
-            
+            string value;
+            if (!string.IsNullOrEmpty(value = hdu.Instrument))
+                metadata.CameraModel = value;
+            if (!string.IsNullOrEmpty(value = hdu.Object))
+                metadata.Subject = value;
             if (timeStamp.HasValue)
                 ExifHandler.SetDateTaken(metadata, timeStamp.Value);
-
             var expTimeStr = hdu.Header.FindCard("EXPTIME")?.Value;
-            if (expTimeStr is not null && int.TryParse(expTimeStr.TrimEnd('.'), out var expTime))
-                metadata.SetQuery(ExifHandler.ExposureTimeQuery1, new Rational(expTime, 1).Bytes);
+            if (expTimeStr is not null && double.TryParse(expTimeStr.TrimEnd('.'), CultureInfo.InvariantCulture, out var expTime) && expTime > 1e-6)
+            {
+                var denominator = 1;
+                while (expTime * denominator < 1)
+                    denominator *= 10;
+                metadata.SetQuery(ExifHandler.ExposureTimeQuery1, new Rational(IntMath.Round(expTime * denominator), denominator).Bytes);
+            }
             metadata.Freeze();
 
             var result = BitmapFrame.Create(bitmap, thumbnail: null, metadata, colorContexts: null);

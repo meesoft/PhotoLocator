@@ -313,7 +313,11 @@ namespace PhotoLocator
                     return PhotoshopFileFormatHandler.LoadFromStream(fileStream, ct);
                 if (FitsFileFormatHandler.CanLoad(ext))
                 {
-                    (var bitmap, _timeStamp, MetadataString) = FitsFileFormatHandler.LoadFromFile(FullPath, preservePixelFormat, ct);
+                    var (bitmap, timestamp, metadata) = FitsFileFormatHandler.LoadFromFile(FullPath, preservePixelFormat, ct);
+                    if (metadata is not null && string.IsNullOrEmpty(MetadataString))
+                        MetadataString = metadata;
+                    if (timestamp.HasValue && !TimeStamp.HasValue)
+                        _timeStamp = timestamp.Value;
                     return bitmap;
                 }
             }
