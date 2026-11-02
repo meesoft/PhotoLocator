@@ -118,18 +118,13 @@ namespace PhotoLocator.Metadata
             else
                 result.Append(Convert.ToInt32(value, CultureInfo.InvariantCulture).ToString("D" + tag[(iColon + 1)..], CultureInfo.CurrentCulture));
         }
-
-        private void AppendMetadata(StringBuilder result, string query1, string? query2)
+       
+        private void AppendTitle(StringBuilder result, string query1, string? query2)
         {
             var metadata = GetMetadata();
-            var value = (metadata?.GetQuery(query1) ?? (query2 is null ? null : metadata?.GetQuery(query2)))?.ToString();
-            AppendMetadata(result, value);
-        }
-
-        private void AppendTitle(StringBuilder result)
-        {
-            var metadata = GetMetadata();
-            var value = metadata?.GetQuery(ExifHandler.DocNameQuery2) as string;
+            var value = metadata?.GetQuery(query1)?.ToString();
+            if (string.IsNullOrEmpty(value) && query2 is not null)
+                value = metadata?.GetQuery(query2)?.ToString();
             if (string.IsNullOrEmpty(value))
                 value = metadata?.Title;
             if (string.IsNullOrEmpty(value))
@@ -247,15 +242,15 @@ namespace PhotoLocator.Metadata
                     }
                     else if (tag == "title")
                     {
-                        AppendTitle(result);
+                        AppendTitle(result, ExifHandler.DocNameQuery2, null);
                     }
                     else if (tag == "desc")
                     {
-                        AppendMetadata(result, ExifHandler.DescriptionQuery1, ExifHandler.DescriptionQuery2);
+                        AppendTitle(result, ExifHandler.DescriptionQuery1, ExifHandler.DescriptionQuery2);
                     }
                     else if (tag.StartsWith('/'))
                     {
-                        AppendMetadata(result, tag, null);
+                        AppendMetadata(result, GetMetadata()?.GetQuery(tag)?.ToString());
                     }
                     else
                         throw new ArgumentException($"Unsupported tag |{tag}|");

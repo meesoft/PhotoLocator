@@ -171,8 +171,10 @@ namespace PhotoLocator
 
         private static async Task<(BitmapSource, BitmapMetadata?)> LoadImageWithMetadataAsync(PictureItemViewModel item, CancellationToken ct = default)
         {
-            BitmapMetadata? metadata = null;
             var image = await item.LoadPreviewAsync(ct, preservePixelFormat: true).ConfigureAwait(false);
+            var metadata = image is BitmapFrame frame ? frame.Metadata as BitmapMetadata : null;
+            if (image is not null && metadata is not null)
+                return (image, metadata);
             try
             {
                 using var file = File.OpenRead(item.FullPath);
@@ -185,11 +187,13 @@ namespace PhotoLocator
                 if (image is null)
                     throw new UserMessageException(item.ErrorMessage ?? ex.Message, ex);
             }
-            if (metadata is null && item.GeoTagPresent)
+            if (metadata is null && (item.TimeStamp.HasValue || item.GeoTagPresent))
             {
                 metadata = new BitmapMetadata("jpg");
-                ExifHandler.SetDateTaken(metadata, item.TimeStamp ?? File.GetLastWriteTime(item.FullPath));
-                ExifHandler.SetGeotag(metadata, item.Location);
+                if (item.TimeStamp.HasValue)
+                    ExifHandler.SetDateTaken(metadata, item.TimeStamp.Value);
+                if (item.Location is not null)
+                    ExifHandler.SetGeotag(metadata, item.Location);
                 metadata.Freeze();
             }
             return (image, metadata);
