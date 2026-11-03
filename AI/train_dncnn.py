@@ -163,7 +163,7 @@ def _tile_starts(length: int, tile_size: int, overlap: int):
 def denoise_image(model, image: np.ndarray, channels: int, device: str, tile_size: int = 512, overlap: int = 64):
 	if tile_size <= 0 or overlap < 0 or overlap >= tile_size:
 		raise ValueError("Tile size must be positive and overlap must be between 0 and tile size.")
-	edge_margin = min(model.num_layers, tile_size // 2)
+	edge_margin = min(getattr(model, "tile_edge_margin", getattr(model, "num_layers", 0)), tile_size // 2)
 	if overlap < 2 * edge_margin and image.ndim >= 2 and max(image.shape[:2]) > tile_size:
 		raise ValueError(f"Tile overlap must be at least {2 * edge_margin} pixels for this model.")
 
@@ -241,7 +241,7 @@ def main():
 	parser.add_argument("--validation-output-dir", type=str, help="Directory for checkpoint validation previews; defaults to a 'validation' folder beside --output")
 	parser.add_argument("--checkpoint-interval", type=int, default=20, help="Save a model checkpoint every N epochs (set to 0 to disable intermediate saves)")
 	parser.add_argument("--channels", type=int, default=3, choices=[1, 3], help="Model input channels: 1 for grayscale, 3 for RGB")
-	parser.add_argument("--patch-size", type=int, default=256, help="Training patch size")
+	parser.add_argument("--patch-size", type=int, default=384, help="Training patch size")
 	parser.add_argument("--patches-per-image", type=int, default=4, help="Number of random patches sampled from each image per epoch")
 	parser.add_argument("--batch-size", type=int, default=8, help="Training batch size")
 	parser.add_argument("--epochs", type=int, default=1000, help="Total target number of epochs, including epochs in a resumed checkpoint")
