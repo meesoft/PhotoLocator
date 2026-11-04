@@ -305,7 +305,7 @@ namespace PhotoLocator
             if (allSelected.Length == 0)
                 return;
 
-            var modelPath = DnCNNDenoiseOperation.TryFindModelInAppDirectory();
+            var modelPath = AiDenoiseOperation.TryFindModelInAppDirectory();
             if (string.IsNullOrWhiteSpace(modelPath))
             {
                 var dlg = new Microsoft.Win32.OpenFileDialog
@@ -353,7 +353,7 @@ namespace PhotoLocator
                     {
                         var sourceFloat = new FloatBitmap(image, 1);
                         var sw = Stopwatch.StartNew();
-                        var denoiseOperation = new DnCNNDenoiseOperation
+                        var denoiseOperation = new AiDenoiseOperation
                         {
                             SrcBitmap = sourceFloat,
                             DstBitmap = sourceFloat,

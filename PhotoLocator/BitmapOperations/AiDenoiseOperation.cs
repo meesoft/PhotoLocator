@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 
 namespace PhotoLocator.BitmapOperations;
 
-public class DnCNNDenoiseOperation : OperationBase
+public class AiDenoiseOperation : OperationBase
 {
     public const string DefaultModelFileName = "dncnn.onnx";
 
@@ -60,7 +60,7 @@ public class DnCNNDenoiseOperation : OperationBase
 
         var source = SrcBitmap;
         if (source.PlaneCount is not 1 and not 3)
-            throw new NotSupportedException("DnCNNDenoiseOperation supports grayscale (1 channel) and RGB (3 channels) images only.");
+            throw new NotSupportedException("Denoise operation supports grayscale (1 channel) and RGB (3 channels) images only.");
 
         var channels = source.PlaneCount;
         var height = source.Height;
@@ -71,7 +71,7 @@ public class DnCNNDenoiseOperation : OperationBase
             throw new FileNotFoundException($"ONNX model not found: {modelPath}");
 
         if (TileSize <= 0)
-            TileSize = 512;
+            throw new InvalidOperationException("TileSize must be greater than zero.");
         if (TileOverlap < 0)
             TileOverlap = 0;
         if (TileOverlap >= TileSize)
@@ -167,7 +167,6 @@ public class DnCNNDenoiseOperation : OperationBase
     {
         if (!preferDirectML)
             return new InferenceSession(modelPath);
-
         try
         {
             using var sessionOptions = new SessionOptions();

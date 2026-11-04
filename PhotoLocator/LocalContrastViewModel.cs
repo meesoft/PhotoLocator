@@ -29,7 +29,7 @@ namespace PhotoLocator
         readonly DispatcherTimer _updateTimer;
         readonly LaplacianFilterOperation _laplacianFilterOperation = new();
         readonly IncreaseLocalContrastOperation _localContrastOperation = new() { DstBitmap = new() };
-        readonly DnCNNDenoiseOperation _denoiseOperation = new() { ModelPath = DnCNNDenoiseOperation.TryFindModelInAppDirectory() };
+        readonly AiDenoiseOperation _denoiseOperation = new() { ModelPath = AiDenoiseOperation.TryFindModelInAppDirectory() };
         readonly ColorToneAdjustOperation _colorToneOperation = new();
         Task _previewTask = Task.CompletedTask;
         FirstParamChanged _firstParamChanged = FirstParamChanged.None;

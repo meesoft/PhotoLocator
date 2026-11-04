@@ -3,10 +3,10 @@ using System.Diagnostics;
 namespace PhotoLocator.BitmapOperations;
 
 [TestClass]
-public class DnCNNDenoiseOperationTest
+public class AiDenoiseOperationTest
 {
     [TestMethod]
-    public void Apply_ShouldRunDnCNNModel_WhenPretrainedOnnxExists()
+    public void Apply_ShouldRunDenoiseModel_WhenPretrainedOnnxExists()
     {
         var modelPath = Path.Combine(AppContext.BaseDirectory, "TestData", "dncnn_test.onnx");
         if (!File.Exists(modelPath))
@@ -23,7 +23,7 @@ public class DnCNNDenoiseOperationTest
             }
         }
 
-        var op = new DnCNNDenoiseOperation
+        var op = new AiDenoiseOperation
         {
             SrcBitmap = bitmap,
             DstBitmap = new FloatBitmap(),
@@ -34,7 +34,7 @@ public class DnCNNDenoiseOperationTest
 
         var sw = Stopwatch.StartNew();
         op.Apply();
-        Debug.WriteLine($"DnCNN denoise operation completed in {sw.Elapsed.TotalSeconds:F1} s.");
+        Debug.WriteLine($"Denoise operation completed in {sw.Elapsed.TotalSeconds:F1} s.");
 
         Assert.IsNotNull(op.DstBitmap);
         Assert.AreEqual(bitmap.Width, op.DstBitmap.Width);

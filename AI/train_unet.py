@@ -86,7 +86,7 @@ def main():
 	parser.add_argument("--channels", type=int, default=3, choices=[1, 3], help="Model input channels")
 	parser.add_argument("--base-features", type=int, default=32, help="Number of feature maps in the first U-Net level")
 	parser.add_argument("--levels", type=int, default=3, help="Number of downsampling levels")
-	parser.add_argument("--patch-size", type=int, default=352, help="Training patch size")
+	parser.add_argument("--patch-size", type=int, default=640, help="Training patch size")
 	parser.add_argument("--patches-per-image", type=int, default=4, help="Random patches sampled from each image per epoch")
 	parser.add_argument("--batch-size", type=int, default=8, help="Training batch size")
 	parser.add_argument("--epochs", type=int, default=1000, help="Total target epochs, including epochs in a resumed checkpoint")
