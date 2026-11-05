@@ -351,14 +351,13 @@ namespace PhotoLocator
                     var (image, itemMetadata) = await LoadImageWithMetadataAsync(item, ct);
                     await Task.Run(() =>
                     {
-                        var sourceFloat = new FloatBitmap(image, 1);
+                        var floatBitmap = new FloatBitmap(image, 1);
                         var sw = Stopwatch.StartNew();
                         var denoiseOperation = new AiDenoiseOperation
                         {
-                            SrcBitmap = sourceFloat,
-                            DstBitmap = sourceFloat,
+                            SrcBitmap = floatBitmap,
+                            DstBitmap = floatBitmap,
                             ModelPath = modelPath,
-                            ExpectColorModel = true,
                             CancellationToken = ct,
                             ProgressCallback = progress => progressCallback((double)(i + progress * 0.95) / allSelected.Length),
                         };
@@ -366,7 +365,7 @@ namespace PhotoLocator
                         Log.Write($"Denoised '{item.Name}' in {sw.Elapsed.TotalSeconds:F1} seconds");
 
                         var sourceBitsPerChannel = image.Format.BitsPerPixel / int.Max(1, image.Format.Masks.Count);
-                        var resultImage = sourceBitsPerChannel > 8 ? denoiseOperation.DstBitmap.ToBitmapSource16(image.DpiX, image.DpiY, 1) : denoiseOperation.DstBitmap.ToBitmapSource(image.DpiX, image.DpiY, 1);
+                        var resultImage = sourceBitsPerChannel > 8 ? floatBitmap.ToBitmapSource16(image.DpiX, image.DpiY, 1) : floatBitmap.ToBitmapSource(image.DpiX, image.DpiY, 1);
                         GeneralFileFormatHandler.SaveToFile(resultImage, targetFileName,
                         ExifHandler.PrepareMetadataForProcessedImage(resultImage.Format, itemMetadata), _mainViewModel.Settings);
                     } , ct);

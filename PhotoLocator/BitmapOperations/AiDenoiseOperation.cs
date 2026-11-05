@@ -11,17 +11,17 @@ namespace PhotoLocator.BitmapOperations;
 
 public class AiDenoiseOperation : OperationBase
 {
-    public const string DefaultModelFileName = "dncnn.onnx";
+    public const string DefaultModelFileName = "unet-3l-32f_1000e.onnx";
 
     public int TileSize { get; set; } = 768;
 
-    public int TileOverlap { get; set; } = 40;
+    public int TileOverlap { get; set; } = 50;
 
     public string? ModelPath { get; set; } = DefaultModelFileName;
 
     public bool PreferDirectML { get; set; } = true;
 
-    public bool ExpectColorModel { get; set; }
+    public bool ExpectColorModel { get; set; } = true;
 
     public CancellationToken CancellationToken { get; set; }
 
