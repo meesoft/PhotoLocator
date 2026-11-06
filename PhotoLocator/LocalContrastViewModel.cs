@@ -83,6 +83,7 @@ namespace PhotoLocator
                 _previewPictureSource = value;
                 _laplacianFilterOperation.SourceChanged();
                 _localContrastOperation.SourceChanged();
+                _denoiseOperation.DstBitmap = null;
                 _colorToneOperation.SourceChanged();
                 if (value is not null)
                 {
@@ -627,10 +628,10 @@ namespace PhotoLocator
 
         private void ApplyDenoisingOperation()
         {
-            if (DenoisingStrength <= 0)
+            if (DenoisingStrength <= 0 || !IsDenoisingEnabled)
                 return;
             var denoiseWeight = DenoisingStrength;
-            if (_denoiseOperation.DstBitmap is null)
+            if (_denoiseOperation.DstBitmap is null || denoiseWeight > 1)
             {
                 _denoiseOperation.SrcBitmap ??= new();
                 _denoiseOperation.SrcBitmap.New(_localContrastOperation.DstBitmap.Width, _localContrastOperation.DstBitmap.Height, _localContrastOperation.DstBitmap.PlaneCount);
@@ -746,6 +747,7 @@ namespace PhotoLocator
             ApplyLaplacianFilterOperation();
             _localContrastOperation.SourceChanged();
             ApplyLocalContrastOperation();
+            _denoiseOperation.DstBitmap = null;
             ApplyDenoisingOperation();
             BrightnessContrastOperation.ApplyContrast(_localContrastOperation.DstBitmap, (float)Contrast);
             _colorToneOperation.SourceChanged();

@@ -53,18 +53,18 @@ namespace PhotoLocator
                 int i = 0;
                 foreach (var item in allSelected)
                 {
-                    if (JpegTransformations.IsFileTypeSupported(item.Name))
+                    var targetFileName = item.GetProcessedFileName();
+                    if (JpegTransformations.IsFileTypeSupported(targetFileName))
                     {
-                        await JpegTransformations.RotateAsync(item.FullPath, item.GetProcessedFileName(), angle, ct);
+                        await JpegTransformations.RotateAsync(item.FullPath, targetFileName, angle, ct);
                     }
-                    else if (Path.GetExtension(item.Name).ToLowerInvariant() is ".tif" or ".tiff" or ".png" or ".bmp" or ".jxr")
+                    else if (GeneralFileFormatHandler.CanSave(targetFileName))
                     {
                         var originalOrientation = item.Orientation;
                         try
                         {
                             item.Orientation = (Rotation)(((int)item.Orientation + angle / 90) % 4);
                             var (image, metadata) = await LoadImageWithMetadataAsync(item, ct);
-                            var targetFileName = item.GetProcessedFileName();
                             GeneralFileFormatHandler.SaveToFile(image, targetFileName, ExifHandler.ResetOrientation(metadata), _mainViewModel.Settings);
                         }
                         catch
@@ -91,9 +91,9 @@ namespace PhotoLocator
             {
                 progressCallback(-1);
                 await using var pause = _mainViewModel.PauseFileSystemWatcher();
-                var sourceFileName = selectedItem.FullPath;
                 var targetFileName = selectedItem.GetProcessedFileName();
-                if (Path.GetExtension(selectedItem.Name).ToLowerInvariant() is ".tif" or ".tiff" or ".png" or ".bmp" or ".jxr")
+                var isJpeg = JpegTransformations.IsFileTypeSupported(targetFileName);
+                if (!isJpeg && GeneralFileFormatHandler.CanSave(targetFileName))
                 {
                     var (sourceImage, metadata) = await LoadImageWithMetadataAsync(selectedItem, ct);
                     var cropped = new FloatBitmap(sourceImage, 1).CopyRect(
@@ -105,7 +105,8 @@ namespace PhotoLocator
                 }
                 else
                 {
-                    if (!JpegTransformations.IsFileTypeSupported(selectedItem.Name))
+                    var sourceFileName = selectedItem.FullPath;
+                    if (!isJpeg)
                     {
                         sourceFileName = targetFileName = Path.ChangeExtension(targetFileName, "jpg");
                         if (File.Exists(targetFileName) && MessageBox.Show($"Do you wish to overwrite the file '{Path.GetFileName(targetFileName)}'?", "Crop", MessageBoxButton.OKCancel, MessageBoxImage.Question) != MessageBoxResult.OK)
@@ -338,7 +339,7 @@ namespace PhotoLocator
                 foreach (var item in allSelected)
                 {
                     var targetFileName = targetIsSourceDir ? item.GetProcessedFileName() : Path.Combine(targetDir, item.Name);
-                    if (Path.GetExtension(targetFileName).ToLowerInvariant() is not (".jpg" or ".jpeg" or ".tif" or ".tiff" or ".png" or ".bmp" or ".jxr"))
+                    if (!GeneralFileFormatHandler.CanSave(targetFileName))
                         targetFileName = Path.ChangeExtension(targetFileName, ".jpg");
                     if (!overwriteAll && File.Exists(targetFileName))
                     {
@@ -408,7 +409,7 @@ namespace PhotoLocator
                 foreach (var item in allSelected)
                 {
                     var targetFileName = targetIsSourceDir ? item.GetProcessedFileName() : Path.Combine(targetDir, item.Name);
-                    if (Path.GetExtension(targetFileName).ToLowerInvariant() is not (".jpg" or ".jpeg" or ".tif" or ".tiff" or ".png" or ".bmp" or ".jxr"))
+                    if (!GeneralFileFormatHandler.CanSave(targetFileName))
                         targetFileName = Path.ChangeExtension(targetFileName, ".jpg");
                     if (!overwriteAll && File.Exists(targetFileName))
                     {

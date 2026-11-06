@@ -52,6 +52,7 @@ def main():
 	os.remove(temp_path)
 	if os.path.exists(temp_path + ".data"):
 		os.remove(temp_path + ".data")
+		
 	print(f"Exported U-Net ONNX model to {args.output}")
 
 

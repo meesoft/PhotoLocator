@@ -48,7 +48,8 @@ def main():
 	)
 
 	os.remove(temp_path)
-	os.remove(temp_path + ".data")
+	if os.path.exists(temp_path + ".data"):
+		os.remove(temp_path + ".data")
 
 	print(f"Exported ONNX model to {args.output}")
 
