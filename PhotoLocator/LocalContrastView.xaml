@@ -168,6 +168,18 @@
                 </DockPanel>
                 <Slider Value="{Binding DetailHandling}" Minimum="0" Maximum="2" SmallChange="0.02" LargeChange="0.1"/>
 
+                <StackPanel Visibility="{Binding IsDenoisingEnabled, Converter={StaticResource BooleanToVisibility}}">
+                    <DockPanel>
+                        <TextBlock Text="Denoising">
+                            <TextBlock.InputBindings>
+                                <MouseBinding Command="{Binding ResetDenoisingCommand}" MouseAction="LeftClick" />
+                            </TextBlock.InputBindings>
+                        </TextBlock>
+                        <TextBox Text="{Binding DenoisingStrength,StringFormat=N2,UpdateSourceTrigger=PropertyChanged,Delay=500}" Width="80" HorizontalAlignment="Right" />
+                    </DockPanel>
+                    <Slider Value="{Binding DenoisingStrength}" Minimum="0" Maximum="1" SmallChange="0.1" LargeChange="0.5"/>
+                </StackPanel>
+
                 <DockPanel Margin="0,8,0,4">
                     <TextBlock Text="Color tone" FontWeight="Bold"/>
                     <ComboBox ItemsSource="{Binding ColorTones}" SelectedIndex="{Binding ActiveToneIndex}" Width="80" HorizontalAlignment="Right"/>

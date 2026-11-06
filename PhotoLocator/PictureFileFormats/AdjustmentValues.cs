@@ -19,6 +19,7 @@ namespace PhotoLocator.PictureFileFormats
         public double HighlightStrength { get; set; }
         public double ShadowStrength { get; set; }
         public double OutlierReductionStrength { get; set; }
+        public double DenoisingStrength { get; set; }
         public double Contrast { get; set; }
         public double ToneMapping { get; set; }
         public double DetailHandling { get; set; }

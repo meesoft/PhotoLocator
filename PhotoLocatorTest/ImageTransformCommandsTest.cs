@@ -66,7 +66,7 @@ public class ImageTransformCommandsTest
         var mainViewModel = SetupMainViewModelMock(settings, item);
         var outputPath = item.GetProcessedFileName();
         File.Delete(outputPath);
-        
+
         var commands = new ImageTransformCommands(mainViewModel.Object);
         commands.ResizeCommand.Execute((Path.GetDirectoryName(sourcePath), 24));
         await (_processTask ?? throw new InvalidOperationException("The resize process was not started"));
@@ -75,6 +75,31 @@ public class ImageTransformCommandsTest
         var frame = BitmapDecoder.Create(stream, BitmapCreateOptions.PreservePixelFormat, BitmapCacheOption.OnLoad).Frames[0];
         Assert.AreEqual(42, frame.PixelWidth);
         Assert.AreEqual(24, frame.PixelHeight);
+        Assert.AreEqual(PixelFormats.Rgb48, frame.Format);
+    }
+
+    [TestMethod]
+    public async Task DenoiseCommand_ShouldProduce48BppFile()
+    {
+        var sourcePath = Path.Combine(AppContext.BaseDirectory, "TestData", "RGB48.tif");
+        var modelPath = Path.Combine(AppContext.BaseDirectory, "TestData", "dncnn_test.onnx");
+        if (!File.Exists(modelPath))
+            Assert.Inconclusive($"Pretrained ONNX file not found: {modelPath}. Add a trained dncnn model to PhotoLocatorTest/TestData/dncnn_test.onnx to run this test.");
+
+        var settings = new ObservableSettings { SavedFilePostfix = "_denoised" };
+        var item = new PictureItemViewModel(sourcePath, false, null, settings);
+        var mainViewModel = SetupMainViewModelMock(settings, item);
+        var outputPath = item.GetProcessedFileName();
+        File.Delete(outputPath);
+
+        var commands = new ImageTransformCommands(mainViewModel.Object);
+        commands.DenoiseCommand.Execute((Path.GetDirectoryName(sourcePath), modelPath));
+        await (_processTask ?? throw new InvalidOperationException("The denoise process was not started"));
+
+        using var stream = File.OpenRead(outputPath);
+        var frame = BitmapDecoder.Create(stream, BitmapCreateOptions.PreservePixelFormat, BitmapCacheOption.OnLoad).Frames[0];
+        Assert.AreEqual(85, frame.PixelWidth);
+        Assert.AreEqual(48, frame.PixelHeight);
         Assert.AreEqual(PixelFormats.Rgb48, frame.Format);
     }
 
