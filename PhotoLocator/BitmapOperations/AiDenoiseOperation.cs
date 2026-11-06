@@ -38,11 +38,7 @@ public class AiDenoiseOperation : OperationBase
 
     public static string? TryFindModelInAppDirectory()
     {
-        foreach (var candidate in new[]
-        {
-            Path.Combine("ai", DefaultModelFileName),
-            DefaultModelFileName,
-        })
+        foreach (var candidate in new[] { Path.Combine("ai", DefaultModelFileName), DefaultModelFileName })
         {
             var fullPath = ResolveModelPath(candidate);
             if (File.Exists(fullPath))

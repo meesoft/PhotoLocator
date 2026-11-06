@@ -306,30 +306,34 @@ namespace PhotoLocator
             if (allSelected.Length == 0)
                 return;
 
-            var modelPath = AiDenoiseOperation.TryFindModelInAppDirectory();
-            if (string.IsNullOrWhiteSpace(modelPath))
+            if (o is not (string targetDir, string modelPath))
             {
-                var dlg = new Microsoft.Win32.OpenFileDialog
+                var defaultModelPath = AiDenoiseOperation.TryFindModelInAppDirectory();
+                if (string.IsNullOrWhiteSpace(defaultModelPath))
                 {
-                    Title = "Select DnCNN ONNX model",
-                    Filter = "ONNX model (*.onnx)|*.onnx",
-                    CheckFileExists = true,
-                    CheckPathExists = true,
-                    InitialDirectory = Path.Combine(AppContext.BaseDirectory, "AI"),
-                };
-                if (dlg.ShowDialog() != true)
+                    var dlg = new Microsoft.Win32.OpenFileDialog
+                    {
+                        Title = "Select DnCNN ONNX model",
+                        Filter = "ONNX model (*.onnx)|*.onnx",
+                        CheckFileExists = true,
+                        CheckPathExists = true,
+                        InitialDirectory = Path.Combine(AppContext.BaseDirectory, "AI"),
+                    };
+                    if (dlg.ShowDialog() != true)
+                        return;
+                    modelPath = dlg.FileName;
+                }
+                else
+                    modelPath = defaultModelPath;
+
+                var browser = new System.Windows.Forms.FolderBrowserDialog();
+                browser.InitialDirectory = Path.GetDirectoryName(allSelected[0].FullPath)!;
+                browser.Description = "Select target folder for denoised images";
+                browser.UseDescriptionForTitle = true;
+                if (browser.ShowDialog() != System.Windows.Forms.DialogResult.OK)
                     return;
-                modelPath = dlg.FileName;
+                targetDir = browser.SelectedPath;
             }
-
-            var browser = new System.Windows.Forms.FolderBrowserDialog();
-            browser.InitialDirectory = Path.GetDirectoryName(allSelected[0].FullPath)!;
-            browser.Description = "Select target folder for denoised images";
-            browser.UseDescriptionForTitle = true;
-            if (browser.ShowDialog() != System.Windows.Forms.DialogResult.OK)
-                return;
-
-            var targetDir = browser.SelectedPath;
             var targetIsSourceDir = string.Equals(targetDir, Path.GetDirectoryName(allSelected[0].FullPath), StringComparison.OrdinalIgnoreCase);
             var overwriteAll = targetIsSourceDir;
 
