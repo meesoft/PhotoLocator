@@ -2,12 +2,13 @@ import argparse
 from pathlib import Path
 
 import cv2
+import numpy as np
 import torch
 import torch.nn.functional as functional
 from torch import nn
 from torch.utils.data import DataLoader
 
-from train_dncnn import PairedImageDataset, checkpoint_model_state, denoise_image, validate_dataset
+from train_dncnn import MONITOR_GAMMA, PairedImageDataset, checkpoint_model_state, denoise_image, validate_dataset
 
 
 class RGBPairedImageDataset(PairedImageDataset):
@@ -74,6 +75,17 @@ class UNetDenoiser(nn.Module):
 		return original - self.output_conv(x)
 
 
+def calculate_validation_loss(model, noisy_image, clean_image, channels: int, device: str, tile_size: int, tile_overlap: int):
+	prediction = denoise_image(model, noisy_image, channels, device, tile_size, tile_overlap)
+	prediction = prediction.astype(np.float32) / np.iinfo(prediction.dtype).max
+	prediction = np.power(prediction, MONITOR_GAMMA)
+	if prediction.ndim == 2:
+		prediction = prediction[:, :, None]
+	if prediction.shape != clean_image.shape:
+		raise ValueError(f"Validation prediction and target shapes differ: {prediction.shape} vs {clean_image.shape}")
+	return float(np.mean(np.square(prediction - clean_image), dtype=np.float64))
+
+
 def main():
 	parser = argparse.ArgumentParser(description="Train a U-Net denoiser from paired noisy/clean images.")
 	parser.add_argument("--image-dir", type=str, required=True, help="Directory containing noisy images and matching clean images with a suffix")
@@ -81,12 +93,13 @@ def main():
 	parser.add_argument("--output", type=str, default="unet_model.pt", help="Path for the trained PyTorch checkpoint")
 	parser.add_argument("--resume", type=str, help="Optional U-Net checkpoint to resume from")
 	parser.add_argument("--validation-image", type=str, help="Optional noisy image to denoise whenever a checkpoint is saved")
+	parser.add_argument("--validation-target", type=str, help="Optional clean reference image paired with --validation-image; enables per-epoch evaluation loss")
 	parser.add_argument("--validation-output-dir", type=str, help="Directory for validation previews; defaults to a 'validation' folder beside --output")
 	parser.add_argument("--checkpoint-interval", type=int, default=20, help="Save a checkpoint every N epochs; set to 0 to disable intermediate saves")
 	parser.add_argument("--channels", type=int, default=3, choices=[1, 3], help="Model input channels")
 	parser.add_argument("--base-features", type=int, default=32, help="Number of feature maps in the first U-Net level")
 	parser.add_argument("--levels", type=int, default=3, help="Number of downsampling levels")
-	parser.add_argument("--patch-size", type=int, default=640, help="Training patch size")
+	parser.add_argument("--patch-size", type=int, default=720, help="Training patch size")
 	parser.add_argument("--patches-per-image", type=int, default=4, help="Random patches sampled from each image per epoch")
 	parser.add_argument("--batch-size", type=int, default=8, help="Training batch size")
 	parser.add_argument("--epochs", type=int, default=1000, help="Total target epochs, including epochs in a resumed checkpoint")
@@ -132,13 +145,27 @@ def main():
 			print(f"Loaded model weights from {args.resume}; optimizer starts fresh")
 
 	validation_image = None
+	validation_target = None
 	validation_output_dir = None
 	if args.validation_image:
 		validation_image = cv2.imread(args.validation_image, cv2.IMREAD_UNCHANGED)
 		if validation_image is None:
 			raise FileNotFoundError(f"Unable to read validation image: {args.validation_image}")
+		if args.channels == 3 and validation_image.ndim == 3:
+			if validation_image.shape[2] == 4:
+				validation_image = cv2.cvtColor(validation_image, cv2.COLOR_BGRA2RGBA)
+			else:
+				validation_image = cv2.cvtColor(validation_image, cv2.COLOR_BGR2RGB)
 		validation_output_dir = Path(args.validation_output_dir) if args.validation_output_dir else Path(args.output).parent / "validation"
 		validation_output_dir.mkdir(parents=True, exist_ok=True)
+	elif args.validation_target:
+		raise ValueError("--validation-target requires --validation-image")
+	if args.validation_target:
+		if validation_image is None:
+			raise ValueError("--validation-target requires --validation-image")
+		validation_target = dataset._load_image(Path(args.validation_target))
+		if validation_image.shape[:2] != validation_target.shape[:2]:
+			raise ValueError(f"Validation image and target dimensions differ: {validation_image.shape[:2]} vs {validation_target.shape[:2]}")
 
 	criterion = nn.MSELoss()
 	def save_checkpoint(path: Path, completed_epochs: int):
@@ -150,13 +177,7 @@ def main():
 		}, path)
 		print(f"Saved checkpoint to {path}")
 		if validation_image is not None and validation_output_dir is not None:
-			inference_image = validation_image
-			if args.channels == 3:
-				if validation_image.shape[2] == 4:
-					inference_image = cv2.cvtColor(validation_image, cv2.COLOR_BGRA2RGBA)
-				else:
-					inference_image = cv2.cvtColor(validation_image, cv2.COLOR_BGR2RGB)
-			preview = denoise_image(model, inference_image, args.channels, args.device, args.tile_size, args.tile_overlap)
+			preview = denoise_image(model, validation_image, args.channels, args.device, args.tile_size, args.tile_overlap)
 			if args.channels == 3:
 				preview = cv2.cvtColor(preview, cv2.COLOR_RGB2BGR)
 			preview_path = validation_output_dir / f"{path.stem}_validation.png"
@@ -178,7 +199,13 @@ def main():
 			running_loss += loss.item() * noisy_batch.size(0)
 
 		epoch_loss = running_loss / len(dataset)
-		print(f"epoch={epoch + 1}/{args.epochs} loss={epoch_loss:.6f}")
+		log_message = f"epoch={epoch + 1}/{args.epochs} loss={epoch_loss:.6f}"
+		if validation_target is not None:
+			validation_loss = calculate_validation_loss(
+				model, validation_image, validation_target, args.channels, args.device, args.tile_size, args.tile_overlap
+			)
+			log_message += f" eval_loss={validation_loss:.6f}"
+		print(log_message)
 		if args.checkpoint_interval > 0 and (epoch + 1) % args.checkpoint_interval == 0:
 			checkpoint_path = Path(f"{Path(args.output).with_suffix('')}_epoch_{epoch + 1}.pt")
 			save_checkpoint(checkpoint_path, epoch + 1)
