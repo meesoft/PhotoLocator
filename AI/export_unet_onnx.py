@@ -4,7 +4,7 @@ import os
 import onnx
 import torch
 
-from train_dncnn import checkpoint_model_state
+from denoising_common import checkpoint_model_state
 from train_unet import UNetDenoiser
 
 

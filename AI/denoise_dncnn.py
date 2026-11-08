@@ -4,7 +4,8 @@ from pathlib import Path
 import cv2
 import torch
 
-from train_dncnn import DnCNN, checkpoint_model_state, denoise_image
+from denoising_common import checkpoint_model_state, denoise_image
+from train_dncnn import DnCNN
 
 
 def main():

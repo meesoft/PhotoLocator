@@ -2,13 +2,12 @@ import argparse
 from pathlib import Path
 
 import cv2
-import numpy as np
 import torch
 import torch.nn.functional as functional
 from torch import nn
 from torch.utils.data import DataLoader
 
-from train_dncnn import MONITOR_GAMMA, PairedImageDataset, checkpoint_model_state, denoise_image, validate_dataset
+from denoising_common import PairedImageDataset, calculate_validation_loss, checkpoint_model_state, denoise_image, validate_dataset
 
 
 class RGBPairedImageDataset(PairedImageDataset):
@@ -73,17 +72,6 @@ class UNetDenoiser(nn.Module):
 			x = decoder(torch.cat((skip, x), dim=1))
 
 		return original - self.output_conv(x)
-
-
-def calculate_validation_loss(model, noisy_image, clean_image, channels: int, device: str, tile_size: int, tile_overlap: int):
-	prediction = denoise_image(model, noisy_image, channels, device, tile_size, tile_overlap)
-	prediction = prediction.astype(np.float32) / np.iinfo(prediction.dtype).max
-	prediction = np.power(prediction, MONITOR_GAMMA)
-	if prediction.ndim == 2:
-		prediction = prediction[:, :, None]
-	if prediction.shape != clean_image.shape:
-		raise ValueError(f"Validation prediction and target shapes differ: {prediction.shape} vs {clean_image.shape}")
-	return float(np.mean(np.square(prediction - clean_image), dtype=np.float64))
 
 
 def main():
@@ -201,6 +189,8 @@ def main():
 		epoch_loss = running_loss / len(dataset)
 		log_message = f"epoch={epoch + 1}/{args.epochs} loss={epoch_loss:.6f}"
 		if validation_target is not None:
+			if validation_image is None:
+				raise ValueError("A validation target requires a validation input image.")
 			validation_loss = calculate_validation_loss(
 				model, validation_image, validation_target, args.channels, args.device, args.tile_size, args.tile_overlap
 			)

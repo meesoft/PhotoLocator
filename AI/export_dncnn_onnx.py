@@ -4,7 +4,8 @@ import os
 import onnx
 import torch
 
-from train_dncnn import DnCNN, checkpoint_model_state
+from denoising_common import checkpoint_model_state
+from train_dncnn import DnCNN
 
 
 def main():
