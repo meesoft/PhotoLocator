@@ -22,12 +22,19 @@ def main():
 	image = cv2.imread(args.input, cv2.IMREAD_UNCHANGED)
 	if image is None:
 		raise FileNotFoundError(f"Unable to read input image: {args.input}")
+	if args.channels == 3 and image.ndim == 3:
+		if image.shape[2] == 4:
+			image = cv2.cvtColor(image, cv2.COLOR_BGRA2RGB)
+		else:
+			image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
 
 	model = DnCNN(channels=args.channels).to(args.device)
 	checkpoint = torch.load(args.model, map_location=args.device)
 	model.load_state_dict(checkpoint_model_state(checkpoint))
 	print(f"Inference device: {args.device}")
 	result = denoise_image(model, image, args.channels, args.device, args.tile_size, args.overlap)
+	if args.channels == 3:
+		result = cv2.cvtColor(result, cv2.COLOR_RGB2BGR)
 	if result.shape[2] == 1:
 		result = result[:, :, 0]
 

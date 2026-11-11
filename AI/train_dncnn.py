@@ -6,7 +6,7 @@ import torch
 from torch import nn
 from torch.utils.data import DataLoader
 
-from denoising_common import PairedImageDataset, checkpoint_model_state, denoise_image, validate_dataset
+from denoising_common import RGBPairedImageDataset, checkpoint_model_state, denoise_image, validate_dataset
 
 
 class ResidualBlock(nn.Module):
@@ -51,7 +51,7 @@ def main():
 	parser.add_argument("--patch-size", type=int, default=384, help="Training patch size")
 	parser.add_argument("--patches-per-image", type=int, default=4, help="Number of random patches sampled from each image per epoch")
 	parser.add_argument("--batch-size", type=int, default=8, help="Training batch size")
-	parser.add_argument("--epochs", type=int, default=1000, help="Total target number of epochs, including epochs in a resumed checkpoint")
+	parser.add_argument("--epochs", type=int, default=2000, help="Total target number of epochs, including epochs in a resumed checkpoint")
 	parser.add_argument("--lr", type=float, default=1e-4, help="Learning rate")
 	parser.add_argument("--weight-decay", type=float, default=0.01, help="AdamW weight decay")
 	parser.add_argument("--device", type=str, default="cuda" if torch.cuda.is_available() else "cpu", help="Device to train on")
@@ -61,7 +61,7 @@ def main():
 		raise FileNotFoundError(f"Training dataset directory does not exist: {args.image_dir}")
 	validate_dataset(args.image_dir, args.clean_postfix)
 
-	dataset = PairedImageDataset(
+	dataset = RGBPairedImageDataset(
 		args.image_dir,
 		clean_postfix=args.clean_postfix,
 		patch_size=args.patch_size,
@@ -98,6 +98,11 @@ def main():
 		validation_image = cv2.imread(args.validation_image, cv2.IMREAD_UNCHANGED)
 		if validation_image is None:
 			raise FileNotFoundError(f"Unable to read validation image: {args.validation_image}")
+		if args.channels == 3 and validation_image.ndim == 3:
+			if validation_image.shape[2] == 4:
+				validation_image = cv2.cvtColor(validation_image, cv2.COLOR_BGRA2RGB)
+			else:
+				validation_image = cv2.cvtColor(validation_image, cv2.COLOR_BGR2RGB)
 		validation_output_dir = Path(args.validation_output_dir) if args.validation_output_dir else Path(args.output).parent / "validation"
 		validation_output_dir.mkdir(parents=True, exist_ok=True)
 
@@ -110,6 +115,8 @@ def main():
 		print(f"Saved checkpoint to {checkpoint_path}")
 		if validation_image is not None and validation_output_dir is not None:
 			preview = denoise_image(model, validation_image, args.channels, args.device)
+			if args.channels == 3:
+				preview = cv2.cvtColor(preview, cv2.COLOR_RGB2BGR)
 			preview_path = validation_output_dir / f"{checkpoint_path.stem}_validation.png"
 			if not cv2.imwrite(str(preview_path), preview):
 				raise OSError(f"Unable to save validation preview: {preview_path}")

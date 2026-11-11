@@ -11,7 +11,7 @@ namespace PhotoLocator.BitmapOperations;
 
 public class AiDenoiseOperation : OperationBase
 {
-    public const string DefaultModelFileName = "unet-3l-32f_1000e.onnx";
+    public const string DefaultModelFileName = "unet-3l-32f_2000e.onnx";
 
     public int TileSize { get; set; } = 768;
 

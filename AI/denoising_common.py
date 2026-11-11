@@ -101,6 +101,14 @@ class PairedImageDataset(Dataset):
 		return torch.from_numpy(noisy), torch.from_numpy(clean)
 
 
+class RGBPairedImageDataset(PairedImageDataset):
+	def _load_image(self, path: Path):
+		image = super()._load_image(path)
+		if self.channels == 3:
+			image = image[:, :, ::-1].copy()
+		return image
+
+
 def checkpoint_model_state(checkpoint):
 	if isinstance(checkpoint, dict) and "model_state_dict" in checkpoint:
 		return checkpoint["model_state_dict"]

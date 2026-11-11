@@ -7,15 +7,7 @@ import torch.nn.functional as functional
 from torch import nn
 from torch.utils.data import DataLoader
 
-from denoising_common import PairedImageDataset, calculate_validation_loss, checkpoint_model_state, denoise_image, validate_dataset
-
-
-class RGBPairedImageDataset(PairedImageDataset):
-	def _load_image(self, path: Path):
-		image = super()._load_image(path)
-		if self.channels == 3:
-			image = image[:, :, ::-1].copy()
-		return image
+from denoising_common import RGBPairedImageDataset, calculate_validation_loss, checkpoint_model_state, denoise_image, validate_dataset
 
 
 class ConvBlock(nn.Module):
@@ -90,8 +82,8 @@ def main():
 	parser.add_argument("--patch-size", type=int, default=720, help="Training patch size")
 	parser.add_argument("--patches-per-image", type=int, default=4, help="Random patches sampled from each image per epoch")
 	parser.add_argument("--batch-size", type=int, default=8, help="Training batch size")
-	parser.add_argument("--epochs", type=int, default=1000, help="Total target epochs, including epochs in a resumed checkpoint")
-	parser.add_argument("--lr", type=float, default=1e-4, help="Learning rate")
+	parser.add_argument("--epochs", type=int, default=2000, help="Total target epochs, including epochs in a resumed checkpoint")
+	parser.add_argument("--lr", type=float, default=1e-4, help="Learning rate (consider decreasing after initial epochs)")
 	parser.add_argument("--weight-decay", type=float, default=0.001, help="AdamW weight decay")
 	parser.add_argument("--tile-size", type=int, default=512, help="Tile size for validation-image inference")
 	parser.add_argument("--tile-overlap", type=int, default=64, help="Overlap for validation-image inference")
@@ -141,7 +133,7 @@ def main():
 			raise FileNotFoundError(f"Unable to read validation image: {args.validation_image}")
 		if args.channels == 3 and validation_image.ndim == 3:
 			if validation_image.shape[2] == 4:
-				validation_image = cv2.cvtColor(validation_image, cv2.COLOR_BGRA2RGBA)
+				validation_image = cv2.cvtColor(validation_image, cv2.COLOR_BGRA2RGB)
 			else:
 				validation_image = cv2.cvtColor(validation_image, cv2.COLOR_BGR2RGB)
 		validation_output_dir = Path(args.validation_output_dir) if args.validation_output_dir else Path(args.output).parent / "validation"
