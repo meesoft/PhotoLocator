@@ -27,6 +27,11 @@ namespace PhotoLocator.PictureFileFormats
             return Path.GetExtension(fileName).ToLowerInvariant() is ".mp4" or ".mov" or ".avi";
         }
 
+        public static bool CanSave(string fileName)
+        {
+            return Path.GetExtension(fileName).ToLowerInvariant() is ".jpg" or ".jpeg" or ".tif" or ".tiff" or ".png" or ".bmp" or ".jxr" or ".jxl";
+        }
+
         public static BitmapSource LoadFromStream(Stream source, Rotation rotation, int maxPixelWidth, bool preservePixelFormat, CancellationToken ct)
         {
             var bitmap = new BitmapImage();

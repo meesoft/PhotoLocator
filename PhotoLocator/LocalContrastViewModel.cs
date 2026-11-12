@@ -22,13 +22,14 @@ namespace PhotoLocator
 {
     class LocalContrastViewModel : INotifyPropertyChanged, IImageZoomPreviewViewModel
     {
-        enum FirstParamChanged { Astro, LaplacianPyramid, LocalContrast, ColorTone, None }
+        enum FirstParamChanged { Astro, LaplacianPyramid, LocalContrast, Denoising, ColorTone, None }
 
         static AdjustmentValues? _adjustmentClipboard;
         static AdjustmentValues? _lastUsedValues;
         readonly DispatcherTimer _updateTimer;
         readonly LaplacianFilterOperation _laplacianFilterOperation = new();
         readonly IncreaseLocalContrastOperation _localContrastOperation = new() { DstBitmap = new() };
+        readonly AiDenoiseOperation _denoiseOperation = new() { ModelPath = AiDenoiseOperation.TryFindModelInAppDirectory() };
         readonly ColorToneAdjustOperation _colorToneOperation = new();
         Task _previewTask = Task.CompletedTask;
         FirstParamChanged _firstParamChanged = FirstParamChanged.None;
@@ -82,6 +83,7 @@ namespace PhotoLocator
                 _previewPictureSource = value;
                 _laplacianFilterOperation.SourceChanged();
                 _localContrastOperation.SourceChanged();
+                _denoiseOperation.DstBitmap = null;
                 _colorToneOperation.SourceChanged();
                 if (value is not null)
                 {
@@ -246,6 +248,19 @@ namespace PhotoLocator
             }
         } = DefaultDetailHandling;
         public ICommand ResetDetailHandlingCommand => new RelayCommand(o => DetailHandling = DefaultDetailHandling);
+
+        public bool IsDenoisingEnabled => _denoiseOperation.ModelPath is not null;
+
+        public double DenoisingStrength
+        {
+            get;
+            set
+            {
+                if (SetProperty(ref field, RealMath.Clamp(value, 0, 2)))
+                    StartUpdateTimer(FirstParamChanged.Denoising);
+            }
+        }
+        public ICommand ResetDenoisingCommand => new RelayCommand(o => DenoisingStrength = 0);
 
         public ColorToneAdjustOperation.ToneAdjustment[] ToneAdjustments => _colorToneOperation.ToneAdjustments;
 
@@ -435,6 +450,7 @@ namespace PhotoLocator
             ToneMapping = DefaultToneMapping;
             DetailHandling = DefaultDetailHandling;
             ResetMaxStretchCommand.Execute(null);
+            DenoisingStrength = 0;
             _colorToneOperation.ResetToneAdjustments();
             ToneRotation = 0;
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(null));
@@ -504,6 +520,7 @@ namespace PhotoLocator
             av.ToneMapping = ToneMapping;
             av.DetailHandling = DetailHandling;
             av.MaxStretch = MaxStretch;
+            av.DenoisingStrength = DenoisingStrength;
             av.ToneRotation = ToneRotation;
             if (_colorToneOperation.AreToneAdjustmentsChanged)
             {
@@ -533,6 +550,7 @@ namespace PhotoLocator
             ToneMapping = av.ToneMapping;
             DetailHandling = av.DetailHandling;
             MaxStretch = av.MaxStretch;
+            DenoisingStrength = av.DenoisingStrength;
             ToneRotation = av.ToneRotation;
 
             if (av.ToneAdjustments is null || av.ToneAdjustments.Length != ColorToneAdjustOperation.NumberOfHues && av.ToneAdjustments.Length != ColorToneAdjustOperation.NumberOfHues * 2)
@@ -608,6 +626,29 @@ namespace PhotoLocator
             _localContrastOperation.Apply();
         }
 
+        private void ApplyDenoisingOperation()
+        {
+            if (DenoisingStrength <= 0 || !IsDenoisingEnabled)
+                return;
+            var denoiseWeight = DenoisingStrength;
+            if (_denoiseOperation.DstBitmap is null || denoiseWeight > 1)
+            {
+                _denoiseOperation.SrcBitmap ??= new();
+                _denoiseOperation.SrcBitmap.New(_localContrastOperation.DstBitmap.Width, _localContrastOperation.DstBitmap.Height, _localContrastOperation.DstBitmap.PlaneCount);
+                _denoiseOperation.SrcBitmap.ProcessElementWise(_localContrastOperation.DstBitmap, (_, s) => (float)Math.Pow(float.Clamp(s, 0, 1), 1 / FloatBitmap.DefaultMonitorGamma));
+                _denoiseOperation.DstBitmap = _denoiseOperation.SrcBitmap;
+                _denoiseOperation.Apply();
+                if (DenoisingStrength > 1)
+                {
+                    _denoiseOperation.Apply();
+                    denoiseWeight = 0.5 + (denoiseWeight - 1) / 2;
+                }
+            }
+            _localContrastOperation.DstBitmap.ProcessElementWise(_denoiseOperation.DstBitmap, (s, d) => (float)(Math.Pow(d, FloatBitmap.DefaultMonitorGamma) * denoiseWeight + s * (1 - denoiseWeight)));
+            if (DenoisingStrength > 1)
+                _denoiseOperation.DstBitmap = null;
+        }
+
         private void ApplyColorToneOperation()
         {
             if (!_colorToneOperation.AreToneAdjustmentsChanged)
@@ -632,6 +673,8 @@ namespace PhotoLocator
                     _laplacianFilterOperation.SourceChanged();
                 if (_firstParamChanged < FirstParamChanged.LocalContrast)
                     _localContrastOperation.SourceChanged();
+                if (_firstParamChanged < FirstParamChanged.Denoising)
+                    _denoiseOperation.DstBitmap = null;
                 if (_firstParamChanged < FirstParamChanged.ColorTone)
                     _colorToneOperation.SourceChanged();
                 _firstParamChanged = FirstParamChanged.None;
@@ -642,6 +685,9 @@ namespace PhotoLocator
                 if (SourceBitmap is null || _updateTimer.IsEnabled)
                     return;
                 ApplyLocalContrastOperation();
+                if (SourceBitmap is null || _updateTimer.IsEnabled)
+                    return;
+                ApplyDenoisingOperation();
                 if (SourceBitmap is null || _updateTimer.IsEnabled)
                     return;
                 BrightnessContrastOperation.ApplyContrast(_localContrastOperation.DstBitmap, (float)Contrast);
@@ -678,7 +724,7 @@ namespace PhotoLocator
         }
 
         public bool IsNoOperation => (!IsAstroModeEnabled || AstroStretch == 0 && BackgroundRemovalSmooth == 0 && BlackPoint == 0)
-            && DetailHandling == 1 && ToneMapping == 1 && HighlightStrength == 0 && ShadowStrength == 0 && Contrast == DefaultContrast
+            && DetailHandling == 1 && ToneMapping == 1 && HighlightStrength == 0 && ShadowStrength == 0 && DenoisingStrength == 0 && Contrast == DefaultContrast
             && !_colorToneOperation.AreToneAdjustmentsChanged;
 
         public BitmapSource GetResultImage(bool produce16bitOutput)
@@ -701,6 +747,8 @@ namespace PhotoLocator
             ApplyLaplacianFilterOperation();
             _localContrastOperation.SourceChanged();
             ApplyLocalContrastOperation();
+            _denoiseOperation.DstBitmap = null;
+            ApplyDenoisingOperation();
             BrightnessContrastOperation.ApplyContrast(_localContrastOperation.DstBitmap, (float)Contrast);
             _colorToneOperation.SourceChanged();
             ApplyColorToneOperation();
