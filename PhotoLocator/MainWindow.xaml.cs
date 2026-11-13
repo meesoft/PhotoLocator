@@ -432,6 +432,11 @@ namespace PhotoLocator
 
         private void HandleLogEventAdded(string line)
         {
+            Threads.DefaultDispatcher.SwitchToMainThreadAsync().ContinueWith(_ =>
+            {
+                LogTextBox.AppendText("\n" + line);
+                LogTextBox.ScrollToEnd();
+            }, TaskScheduler.FromCurrentSynchronizationContext());
             Dispatcher.BeginInvoke(() =>
             { 
                 LogTextBox.AppendText("\n" + line); 
