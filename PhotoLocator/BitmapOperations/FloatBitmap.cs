@@ -3,12 +3,14 @@ using PhotoLocator.PictureFileFormats;
 using System;
 using System.Buffers;
 using System.Diagnostics;
+using System.Globalization;
 using System.Threading.Tasks;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 
 namespace PhotoLocator.BitmapOperations
 {
+    [DebuggerDisplay("{Width}x{Height}x{PlaneCount}")]
     public class FloatBitmap
     {
         public const double DefaultMonitorGamma = 2.2;
@@ -32,6 +34,14 @@ namespace PhotoLocator.BitmapOperations
             Assign(source, gamma);
         }
 
+        public FloatBitmap(params float[][] elements)
+        {
+            New(elements[0].Length, elements.Length, 1);
+            for(int y = 0; y < elements.Length; y++)
+                for (int x = 0; x < elements[y].Length; x++)
+                    Elements[y, x] = elements[y][x];
+        }
+
         public float[,] Elements { get; private set; } = null!;
 
         public float this[int x, int y]
@@ -53,7 +63,20 @@ namespace PhotoLocator.BitmapOperations
 
         public override string ToString()
         {
-            return $"{Width}x{Height}x{PlaneCount}";
+            if (Width> 100 || Height > 100 || PlaneCount > 1)
+                return $"{Width}x{Height}x{PlaneCount}";
+            var sb = new System.Text.StringBuilder();
+            for (int y = 0; y < Height; y++)
+            {
+                for (int x = 0; x < Width; x++)
+                {
+                    sb.Append(Elements[y, x].ToString("F2", CultureInfo.InvariantCulture));
+                    if (x < Width - 1)
+                        sb.Append(", ");
+                }
+                sb.AppendLine();
+            }
+            return sb.ToString();
         }
 
         public void New(int width, int height, int planes)
