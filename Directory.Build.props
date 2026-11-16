@@ -1,13 +1,16 @@
 <Project>
   <PropertyGroup>
-	  
-    <AccelerateBuildsInVisualStudio>true</AccelerateBuildsInVisualStudio>
 
-	<!-- Use hard links to speed up build -->
-	<CreateHardLinksForAdditionalFilesIfPossible>true</CreateHardLinksForAdditionalFilesIfPossible>
-	<CreateHardLinksForCopyLocalIfPossible>true</CreateHardLinksForCopyLocalIfPossible>
-	<CreateHardLinksForCopyFilesToOutputDirectoryIfPossible>true</CreateHardLinksForCopyFilesToOutputDirectoryIfPossible>
-	<CreateHardLinksForPublishFilesIfPossible>true</CreateHardLinksForPublishFilesIfPossible>
+    <LangVersion>15</LangVersion>
+    <AccelerateBuildsInVisualStudio>true</AccelerateBuildsInVisualStudio>
+    <Platforms>x64</Platforms>
+    <AppendPlatformToOutputPath>false</AppendPlatformToOutputPath>
+
+    <!-- Use hard links to speed up build -->
+    <CreateHardLinksForAdditionalFilesIfPossible>true</CreateHardLinksForAdditionalFilesIfPossible>
+    <CreateHardLinksForCopyLocalIfPossible>true</CreateHardLinksForCopyLocalIfPossible>
+    <CreateHardLinksForCopyFilesToOutputDirectoryIfPossible>true</CreateHardLinksForCopyFilesToOutputDirectoryIfPossible>
+    <CreateHardLinksForPublishFilesIfPossible>true</CreateHardLinksForPublishFilesIfPossible>
 
   </PropertyGroup>
 </Project>
