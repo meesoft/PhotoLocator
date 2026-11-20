@@ -164,6 +164,20 @@ namespace PhotoLocator.Metadata
         }
 
         [TestMethod]
+        public void SetMetadata_ShouldSetEmptyPngMetadataOnTiff()
+        {
+            const string TestFileName = "fromEmptyPng.tif";
+
+            var source = new BitmapMetadata("png");
+            var bitmap = BitmapSource.Create(2, 2, 96, 96, PixelFormats.Gray8, null, new byte[4], 2);
+
+            GeneralFileFormatHandler.SaveToFile(bitmap, TestFileName, source);
+
+            using var targetStream = File.OpenRead(TestFileName);
+            var target = ExifHandler.LoadMetadata(targetStream)!;
+        }
+
+        [TestMethod]
         public void SetMetadata_ShouldSetTiffMetadataOnJpeg()
         {
             const string TestFileName = "fromTiff.jpg";
