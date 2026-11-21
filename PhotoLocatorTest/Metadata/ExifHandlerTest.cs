@@ -175,6 +175,8 @@ namespace PhotoLocator.Metadata
 
             using var targetStream = File.OpenRead(TestFileName);
             var target = ExifHandler.LoadMetadata(targetStream)!;
+            Assert.AreAllNotNull(target);
+            Assert.AreEqual("PhotoLocator", target.ApplicationName);
         }
 
         [TestMethod]
