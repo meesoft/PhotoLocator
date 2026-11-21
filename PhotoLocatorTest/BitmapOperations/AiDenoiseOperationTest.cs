@@ -6,21 +6,32 @@ namespace PhotoLocator.BitmapOperations;
 public class AiDenoiseOperationTest
 {
     [TestMethod]
-    public void Apply_ShouldRunDenoiseModel_WhenPretrainedOnnxExists()
+    [DataRow(8, 1, 6, 2)]
+    [DataRow(8, 1, 8, 0)]
+    [DataRow(8, 3, 6, 2)]
+    [DataRow(8, 3, 8, 0)]
+    public void Apply_ShouldRunDenoiseModel_With3Planes(int imageSize, int planes, int tileSize, int tileOverlap)
     {
         var modelPath = Path.Combine(AppContext.BaseDirectory, "TestData", "dncnn_test.onnx");
         if (!File.Exists(modelPath))
             Assert.Inconclusive($"Pretrained ONNX file not found: {modelPath}. Add a trained dncnn model to PhotoLocatorTest/TestData/dncnn_test.onnx to run this test.");
 
-        var bitmap = new FloatBitmap(8, 8, 3);
-        for (var y = 0; y < bitmap.Height; y++)
+        var bitmap = new FloatBitmap(imageSize, imageSize, planes);
+        if (planes == 1)
         {
-            for (var x = 0; x < bitmap.Width; x++)
-            {
-                bitmap.Elements[y, x * 3 + 0] = ((x * 13 + y * 7) % 17) / 16f;
-                bitmap.Elements[y, x * 3 + 1] = (float)(0.5 + 0.2 * Math.Sin(x * 0.7 + y * 0.9));
-                bitmap.Elements[y, x * 3 + 2] = (float)(1.0 - 0.3 * Math.Cos(x * 0.5 + y * 0.4));
-            }
+            for (var y = 0; y < bitmap.Height; y++)
+                for (var x = 0; x < bitmap.Width; x++)
+                    bitmap.Elements[y, x] = ((x * 13 + y * 7) % 17) / 16f;
+        }
+        else
+        {
+            for (var y = 0; y < bitmap.Height; y++)
+                for (var x = 0; x < bitmap.Width; x++)
+                {
+                    bitmap.Elements[y, x * 3 + 0] = ((x * 13 + y * 7) % 17) / 16f;
+                    bitmap.Elements[y, x * 3 + 1] = (float)(0.5 + 0.2 * Math.Sin(x * 0.7 + y * 0.9));
+                    bitmap.Elements[y, x * 3 + 2] = (float)(1.0 - 0.3 * Math.Cos(x * 0.5 + y * 0.4));
+                }
         }
 
         var op = new AiDenoiseOperation
@@ -28,8 +39,9 @@ public class AiDenoiseOperationTest
             SrcBitmap = bitmap,
             DstBitmap = new FloatBitmap(),
             ModelPath = modelPath,
-            TileSize = 6,
-            TileOverlap = 2,
+            ExpectColorModel = true,
+            TileSize = tileSize,
+            TileOverlap = tileOverlap,
         };
 
         var sw = Stopwatch.StartNew();
