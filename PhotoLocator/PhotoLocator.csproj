@@ -6,7 +6,7 @@
     <Nullable>enable</Nullable>
     <UseWPF>true</UseWPF>
     <ApplicationManifest>app.manifest</ApplicationManifest>
-    <Version>2026.10.4.0</Version>
+    <Version>2026.11.21.0</Version>
     <Copyright>(c) 2022-2026 Michael Vinther</Copyright>
     <Company>MeeSoft</Company>
     <ApplicationIcon>Resources\PhotoLocator.ico</ApplicationIcon>
@@ -62,6 +62,9 @@
 
   <ItemGroup>
     <None Include="..\JpegTransform\JpegTransform.exe" Link="JpegTransform.exe">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="ai\**">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Include="exiftool\**">

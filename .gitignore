@@ -4,6 +4,7 @@ obj/
 bin/
 PublishProfiles/
 Properties/
+PhotoLocator/ai/
 PhotoLocator/exiftool/
 PhotoLocator/ffmpeg/
 PhotoLocator/jpegli/
