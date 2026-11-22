@@ -39,6 +39,7 @@ namespace PhotoLocator.PictureFileFormats
         {
             using var process = new Process();
             process.StartInfo.FileName = EncoderPath;
+            process.StartInfo.WorkingDirectory = AppContext.BaseDirectory;
             process.StartInfo.UseShellExecute = false;
             process.StartInfo.RedirectStandardError = true;
             process.StartInfo.CreateNoWindow = true;

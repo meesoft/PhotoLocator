@@ -178,7 +178,7 @@ public class AiDenoiseOperation : OperationBase
     private static void RunTileInference(InferenceSession session, FloatBitmap source, int srcLeft, int srcTop, int tileWidth, int tileHeight, int channels, FloatBitmap dstBitmap, int dstLeft, int dstTop)
     {
         var inputBuffer = new float[1 * channels * tileHeight * tileWidth];
-        for (var y = 0; y < tileHeight; y++)
+        Parallel.For(0, tileHeight, y =>
         {
             var sourceY = srcTop + y;
             for (var x = 0; x < tileWidth; x++)
@@ -190,7 +190,7 @@ public class AiDenoiseOperation : OperationBase
                     inputBuffer[index] = source.Elements[sourceY, sourceX * channels + c];
                 }
             }
-        }
+        });
 
         var inputName = session.InputMetadata.Keys.First();
         using var output = session.Run([NamedOnnxValue.CreateFromTensor(inputName, new DenseTensor<float>(inputBuffer, [1, channels, tileHeight, tileWidth]))]);

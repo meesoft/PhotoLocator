@@ -6,7 +6,7 @@
     <Nullable>enable</Nullable>
     <UseWPF>true</UseWPF>
     <ApplicationManifest>app.manifest</ApplicationManifest>
-    <Version>2026.10.4.0</Version>
+    <Version>2026.11.21.0</Version>
     <Copyright>(c) 2022-2026 Michael Vinther</Copyright>
     <Company>MeeSoft</Company>
     <ApplicationIcon>Resources\PhotoLocator.ico</ApplicationIcon>
@@ -14,13 +14,12 @@
     <AnalysisMode>All</AnalysisMode>
     <NoWarn>CA1014,CA1309,CA1515,CA1814,CA1819,IDE0017</NoWarn>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-    <Platforms>x64</Platforms>
-    <AppendPlatformToOutputPath>false</AppendPlatformToOutputPath>
     <IsPackable>false</IsPackable>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)' == 'Release'">
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <Microsoft_AI_DirectML_SkipDebugLayerCopy>True</Microsoft_AI_DirectML_SkipDebugLayerCopy>
   </PropertyGroup>
 
   <ItemGroup>
@@ -63,6 +62,9 @@
 
   <ItemGroup>
     <None Include="..\JpegTransform\JpegTransform.exe" Link="JpegTransform.exe">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="ai\**">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Include="exiftool\**">

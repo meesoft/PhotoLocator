@@ -210,6 +210,7 @@ namespace PhotoLocator.Metadata
 
                 if (source.TryGetFormat() == "png")
                 {
+                    result.ApplicationName = nameof(PhotoLocator);
                     var (exposureTime, location) = DecodePngMetadata(source);
                     if (exposureTime is not null)
                     {
